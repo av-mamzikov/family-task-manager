@@ -56,5 +56,6 @@
     <PackageVersion Include="Aspire.Hosting.Testing" Version="9.5.1" />
     <PackageVersion Include="Vogen" Version="8.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+    <PackageVersion Include="Telegram.Bot" Version="19.0.0" />
   </ItemGroup>
 </Project>

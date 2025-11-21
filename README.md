@@ -72,11 +72,16 @@ Family Task Manager помогает семьям организовать вы�
 
 ### Требования
 
-- .NET 10 SDK
+- .NET 9.0+ SDK
 - PostgreSQL 15+
+- Telegram Bot Token (получить у [@BotFather](https://t.me/BotFather))
 - Docker (опционально, для .NET Aspire)
 
-### Установка
+### Запуск Telegram Bot
+
+Подробная инструкция: [Bot Quick Start Guide](src/FamilyTaskManager.Bot/QUICK_START.md)
+
+**Краткая версия:**
 
 1. Клонируйте репозиторий:
    ```bash
@@ -84,22 +89,28 @@ Family Task Manager помогает семьям организовать вы�
    cd family-task-manager
    ```
 
-2. Восстановите пакеты:
+2. Создайте бота в Telegram через [@BotFather](https://t.me/BotFather)
+
+3. Настройте токен бота:
    ```bash
-   dotnet restore FamilyTaskManager.sln
+   cd src/FamilyTaskManager.Bot
+   dotnet user-secrets set "Bot:BotToken" "YOUR_BOT_TOKEN"
+   dotnet user-secrets set "Bot:BotUsername" "your_bot_username"
    ```
 
-3. Настройте connection string в `appsettings.json` или используйте .NET Aspire
-
-4. Примените миграции:
+4. Настройте PostgreSQL и примените миграции:
    ```bash
-   dotnet ef database update --project src\FamilyTaskManager.Infrastructure\FamilyTaskManager.Infrastructure.csproj --context AppDbContext
+   cd ../FamilyTaskManager.Infrastructure
+   dotnet ef database update --startup-project ../FamilyTaskManager.Web
    ```
 
-5. Запустите приложение через .NET Aspire:
+5. Запустите бота:
    ```bash
-   dotnet run --project src\FamilyTaskManager.AspireHost\FamilyTaskManager.AspireHost.csproj
+   cd ../FamilyTaskManager.Bot
+   dotnet run
    ```
+
+6. Откройте бота в Telegram и отправьте `/start`
 
 ## 🧪 Тестирование
 
@@ -126,19 +137,29 @@ dotnet test /p:CollectCoverage=true
   - Управление питомцами (создание, получение, обновление имени)
   - Статистика (лидерборд, история действий)
 
+### ✅ Telegram Bot (Реализовано)
+- **Команды**: /start, /family, /tasks, /pet, /stats, /help
+- **Persistent Menu**: Постоянное меню с кнопками
+- **Inline Keyboards**: Интерактивные кнопки для действий
+- **Conversation Flows**: Создание семьи, создание питомца
+- **Session Management**: In-Memory сессии с автоочисткой
+- **Интеграция с Use Cases**: Полная интеграция через Mediator
+- **Обработка задач**: Взятие в работу и выполнение задач
+
+См. [Bot Quick Start](src/FamilyTaskManager.Bot/QUICK_START.md) и [Implementation Status](src/FamilyTaskManager.Bot/IMPLEMENTATION_STATUS.md)
+
 ### 🚧 В разработке
-- Telegram Bot handlers
-- Quartz Worker для периодических задач
-- .NET Aspire configuration
+- Quartz Worker для периодических задач и напоминаний
+- Система уведомлений в Telegram
+- Управление приглашениями (invite codes)
 - Domain Event Handlers
 
 ### 📋 Запланировано
 - API endpoints (FastEndpoints)
-- Система уведомлений
 - Автоматическое создание TaskTemplate при создании питомца
-- Управление приглашениями (invite codes)
 - Интеграция с S3/MinIO для фото
-- Unit и Integration тесты для Use Cases
+- Webhook режим для Telegram Bot
+- Redis для сессий (масштабирование)
 
 ## 🤝 Вклад в проект
 

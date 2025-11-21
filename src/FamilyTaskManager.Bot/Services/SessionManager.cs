@@ -1,0 +1,35 @@
+using System.Collections.Concurrent;
+using FamilyTaskManager.Bot.Models;
+
+namespace FamilyTaskManager.Bot.Services;
+
+public interface ISessionManager
+{
+  UserSession GetSession(long telegramId);
+  void ClearInactiveSessions();
+}
+
+public class SessionManager : ISessionManager
+{
+  private readonly ConcurrentDictionary<long, UserSession> _sessions = new();
+  private readonly TimeSpan _inactivityTimeout = TimeSpan.FromHours(24);
+
+  public UserSession GetSession(long telegramId)
+  {
+    return _sessions.GetOrAdd(telegramId, _ => new UserSession());
+  }
+
+  public void ClearInactiveSessions()
+  {
+    var now = DateTime.UtcNow;
+    var inactiveSessions = _sessions
+      .Where(kvp => now - kvp.Value.LastActivity > _inactivityTimeout)
+      .Select(kvp => kvp.Key)
+      .ToList();
+
+    foreach (var telegramId in inactiveSessions)
+    {
+      _sessions.TryRemove(telegramId, out _);
+    }
+  }
+}
