@@ -2,7 +2,7 @@
 
 ## Обзор
 
-Unit тесты для всех Use Cases проекта. Используют NSubstitute для мокирования зависимостей и Shouldly для assertions.
+Unit тесты для всех Use Cases проекта FamilyTaskManager. Используют NSubstitute для мокирования зависимостей и Shouldly для assertions.
 
 ## Покрытие тестами
 

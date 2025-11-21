@@ -1,43 +1,195 @@
+# Family Task Manager API
 # For more info on HTTP files go to https://aka.ms/vs/httpfile
+#
+# NOTE: API endpoints are not yet implemented. This file contains planned endpoints
+# for future FastEndpoints implementation. Currently, the application works through
+# Telegram Bot interface only.
+
 @host=https://localhost
 @port=57679
+@baseUrl={{host}}:{{port}}
 
-// List all contributors
-GET {{host}}:{{port}}/Contributors
+### Variables (replace with actual IDs from your database)
+@familyId=00000000-0000-0000-0000-000000000001
+@userId=00000000-0000-0000-0000-000000000001
+@taskId=00000000-0000-0000-0000-000000000001
+@petId=00000000-0000-0000-0000-000000000001
+@templateId=00000000-0000-0000-0000-000000000001
 
-###
+###############################################################################
+# Development Tools
+###############################################################################
 
-// Get a specific contributor
-@id_to_get=1
-GET {{host}}:{{port}}/Contributors/{{id_to_get}}
+### List All Services (Development only)
+# Shows all registered services in DI container
+GET {{baseUrl}}/listservices
 
-###
+### Health Check
+GET {{baseUrl}}/health
 
-// Add a new contributor
-POST {{host}}:{{port}}/Contributors
+### OpenAPI/Swagger
+GET {{baseUrl}}/swagger
+
+###############################################################################
+# Users
+###############################################################################
+
+### Register User
+POST {{baseUrl}}/users/register
 Content-Type: application/json
 
 {
-  "name": "John Doe 3",
-  "email": "test@test.com",
-  "phoneNumber": "1234567890"
+  "telegramId": 123456789,
+  "name": "John Doe"
 }
 
-###
+###############################################################################
+# Families
+###############################################################################
 
-// Update a contributor
-@id_to_update=3
-PUT {{host}}:{{port}}/Contributors/{{id_to_update}}
+### Create Family
+POST {{baseUrl}}/families
 Content-Type: application/json
 
 {
-  "id": {{id_to_update}},
-  "name": "ardalis2"
+  "userId": "{{userId}}",
+  "name": "Семья Ивановых",
+  "timezone": "Asia/Yekaterinburg"
 }
 
-###
+### Get User Families
+GET {{baseUrl}}/families/user/{{userId}}
 
-// Delete a contributor
-@id_to_delete=1
-DELETE {{host}}:{{port}}/Contributors/{{id_to_delete}}
+### Join Family
+POST {{baseUrl}}/families/{{familyId}}/join
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "role": "Child"
+}
+
+###############################################################################
+# Tasks
+###############################################################################
+
+### Get Active Tasks
+GET {{baseUrl}}/families/{{familyId}}/tasks/active
+
+### Create Task
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+  "familyId": "{{familyId}}",
+  "title": "Покормить кота",
+  "description": "Насыпать корм и налить воды",
+  "points": 10,
+  "petId": "{{petId}}"
+}
+
+### Take Task
+POST {{baseUrl}}/tasks/{{taskId}}/take
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}"
+}
+
+### Complete Task
+POST {{baseUrl}}/tasks/{{taskId}}/complete
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}"
+}
+
+###############################################################################
+# Pets
+###############################################################################
+
+### Get Pets
+GET {{baseUrl}}/families/{{familyId}}/pets
+
+### Create Pet
+POST {{baseUrl}}/pets
+Content-Type: application/json
+
+{
+  "familyId": "{{familyId}}",
+  "name": "Мурзик",
+  "type": "Cat"
+}
+
+### Update Pet Name
+PUT {{baseUrl}}/pets/{{petId}}/name
+Content-Type: application/json
+
+{
+  "name": "Барсик"
+}
+
+###############################################################################
+# Statistics
+###############################################################################
+
+### Get Leaderboard
+GET {{baseUrl}}/families/{{familyId}}/leaderboard
+
+### Get Action History
+GET {{baseUrl}}/families/{{familyId}}/history?limit=20
+
+###############################################################################
+# Task Templates (Periodic Tasks)
+###############################################################################
+
+### Create Task Template
+POST {{baseUrl}}/task-templates
+Content-Type: application/json
+
+{
+  "familyId": "{{familyId}}",
+  "title": "Покормить питомца",
+  "description": "Ежедневное кормление",
+  "points": 10,
+  "petId": "{{petId}}",
+  "cronExpression": "0 8 * * *"
+}
+
+### Update Task Template
+PUT {{baseUrl}}/task-templates/{{templateId}}
+Content-Type: application/json
+
+{
+  "title": "Покормить питомца утром",
+  "description": "Утреннее кормление в 8:00",
+  "points": 15,
+  "cronExpression": "0 8 * * *"
+}
+
+### Deactivate Task Template
+DELETE {{baseUrl}}/task-templates/{{templateId}}
+
+###############################################################################
+# NOTES
+###############################################################################
+#
+# Current Status:
+# - ✅ Use Cases implemented and tested
+# - ✅ Telegram Bot fully functional
+# - ⏳ FastEndpoints API - planned for future implementation
+#
+# Available Use Cases (ready for API implementation):
+# - Users: RegisterUserCommand
+# - Families: CreateFamilyCommand, JoinFamilyCommand, GetUserFamiliesQuery
+# - Tasks: CreateTaskCommand, TakeTaskCommand, CompleteTaskCommand, GetActiveTasksQuery
+# - TaskTemplates: CreateTaskTemplateCommand, UpdateTaskTemplateCommand, DeactivateTaskTemplateCommand
+# - Pets: CreatePetCommand, GetPetsQuery, UpdatePetNameCommand
+# - Statistics: GetLeaderboardQuery, GetActionHistoryQuery
+#
+# To implement API endpoints:
+# 1. Create FastEndpoints classes in FamilyTaskManager.Web/Endpoints/
+# 2. Map Use Cases to HTTP endpoints
+# 3. Add authentication/authorization
+# 4. Update this file with actual working endpoints
 
