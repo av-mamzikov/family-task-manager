@@ -17,12 +17,15 @@
     <PackageReference Include="Testcontainers" />
     <PackageReference Include="Testcontainers.MsSql" />
     <PackageReference Include="Ardalis.HttpClientTestExtensions" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="Telegram.Bot" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FamilyTaskManager.Infrastructure\FamilyTaskManager.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\FamilyTaskManager.UseCases\FamilyTaskManager.UseCases.csproj" />
     <ProjectReference Include="..\..\src\FamilyTaskManager.Web\FamilyTaskManager.Web.csproj" />
+    <ProjectReference Include="..\..\src\FamilyTaskManager.Host\FamilyTaskManager.Host.csproj" />
   </ItemGroup>
 
 </Project>
