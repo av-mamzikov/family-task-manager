@@ -45,17 +45,29 @@ Family Task Manager помогает семьям организовать вы�
 
 ## 🏗️ Архитектура
 
-Проект построен на основе **Clean Architecture** (Ardalis.CleanArchitecture.Template):
+Проект построен на основе **Clean Architecture** с **модульным монолитом**:
 
 ```
 ├── FamilyTaskManager.Core          # Доменная модель и бизнес-логика
 ├── FamilyTaskManager.UseCases      # Use Cases (Application Layer)
 ├── FamilyTaskManager.Infrastructure # EF Core, PostgreSQL, Email
-├── FamilyTaskManager.Web           # API (FastEndpoints)
-├── FamilyTaskManager.Bot           # Telegram Bot
-├── FamilyTaskManager.Worker        # Quartz.NET Worker (периодические задачи)
+├── FamilyTaskManager.Host          # 🎯 Модульный монолит (Bot + Worker)
+│   ├── Modules/
+│   │   ├── Bot/                    # Telegram Bot модуль
+│   │   └── Worker/                 # Quartz Worker модуль
+│   └── Program.cs                  # Единая точка входа
+├── FamilyTaskManager.Bot           # (legacy, код используется через Compile Include)
+├── FamilyTaskManager.Worker        # (legacy, код используется через Compile Include)
 └── FamilyTaskManager.AspireHost    # .NET Aspire orchestration
 ```
+
+### Модульный монолит
+
+**Один процесс** объединяет Bot и Worker:
+- ✅ Проще разработка и отладка
+- ✅ Меньше overhead
+- ✅ Общий DbContext pool
+- ✅ Легко выделить в микросервисы позже
 
 ### Технологический стек
 
@@ -75,11 +87,10 @@ Family Task Manager помогает семьям организовать вы�
 - .NET 9.0+ SDK
 - PostgreSQL 15+
 - Telegram Bot Token (получить у [@BotFather](https://t.me/BotFather))
-- Docker (опционально, для .NET Aspire)
 
-### Запуск Telegram Bot
+### Запуск (Модульный монолит)
 
-Подробная инструкция: [Bot Quick Start Guide](src/FamilyTaskManager.Bot/QUICK_START.md)
+Подробная инструкция: [Host Quick Start Guide](src/FamilyTaskManager.Host/QUICK_START.md)
 
 **Краткая версия:**
 
@@ -91,26 +102,25 @@ Family Task Manager помогает семьям организовать вы�
 
 2. Создайте бота в Telegram через [@BotFather](https://t.me/BotFather)
 
-3. Настройте токен бота:
+3. Настройте конфигурацию:
    ```bash
-   cd src/FamilyTaskManager.Bot
+   cd src/FamilyTaskManager.Host
    dotnet user-secrets set "Bot:BotToken" "YOUR_BOT_TOKEN"
    dotnet user-secrets set "Bot:BotUsername" "your_bot_username"
+   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=FamilyTaskManager;Username=postgres;Password=YOUR_PASSWORD"
    ```
 
-4. Настройте PostgreSQL и примените миграции:
+4. Запустите приложение (Bot + Worker в одном процессе):
    ```bash
-   cd ../FamilyTaskManager.Infrastructure
-   dotnet ef database update --startup-project ../FamilyTaskManager.Web
-   ```
-
-5. Запустите бота:
-   ```bash
-   cd ../FamilyTaskManager.Bot
    dotnet run
    ```
 
-6. Откройте бота в Telegram и отправьте `/start`
+5. Откройте бота в Telegram и отправьте `/start`
+
+**Что запустилось:**
+- ✅ Telegram Bot (Long Polling)
+- ✅ Quartz Worker (3 Jobs)
+- ✅ Автоматические миграции БД
 
 ## 🧪 Тестирование
 
@@ -137,7 +147,11 @@ dotnet test /p:CollectCoverage=true
   - Управление питомцами (создание, получение, обновление имени)
   - Статистика (лидерборд, история действий)
 
-### ✅ Telegram Bot (Реализовано)
+### ✅ FamilyTaskManager.Host - Модульный монолит (Реализовано)
+
+**Единый процесс**, объединяющий Bot и Worker модули.
+
+#### Bot Module
 - **Команды**: /start, /family, /tasks, /pet, /stats, /help
 - **Persistent Menu**: Постоянное меню с кнопками
 - **Inline Keyboards**: Интерактивные кнопки для действий
@@ -146,16 +160,14 @@ dotnet test /p:CollectCoverage=true
 - **Интеграция с Use Cases**: Полная интеграция через Mediator
 - **Обработка задач**: Взятие в работу и выполнение задач
 
-См. [Bot Quick Start](src/FamilyTaskManager.Bot/QUICK_START.md) и [Implementation Status](src/FamilyTaskManager.Bot/IMPLEMENTATION_STATUS.md)
-
-### ✅ Quartz.NET Worker (Реализовано)
+#### Worker Module
 - **TaskInstanceCreatorJob**: Создание TaskInstance из TaskTemplate по расписанию (каждую минуту)
 - **TaskReminderJob**: Отправка напоминаний о задачах (каждые 15 минут)
 - **PetMoodCalculatorJob**: Пересчет настроения питомцев (каждые 30 минут)
 - **PostgreSQL Persistence**: Хранение состояния Jobs в БД
 - **Graceful Shutdown**: Корректное завершение задач при остановке
 
-См. [Worker Quick Start](src/FamilyTaskManager.Worker/QUICK_START.md) и [Worker README](src/FamilyTaskManager.Worker/README.md)
+См. [Host Quick Start](src/FamilyTaskManager.Host/QUICK_START.md) и [Host README](src/FamilyTaskManager.Host/README.md)
 
 ### 🚧 В разработке
 - Интеграция Telegram уведомлений в Worker
