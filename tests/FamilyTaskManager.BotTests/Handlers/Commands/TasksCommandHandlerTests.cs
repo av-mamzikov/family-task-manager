@@ -1,0 +1,180 @@
+using FamilyTaskManager.Bot.Handlers.Commands;
+using FamilyTaskManager.Bot.Models;
+using FamilyTaskManager.UseCases.Tasks;
+using Mediator;
+using Telegram.Bot;
+using Telegram.Bot.Types;
+using Ardalis.Result;
+using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
+
+namespace FamilyTaskManager.BotTests.Handlers.Commands;
+
+public class TasksCommandHandlerTests
+{
+  private readonly IMediator _mediator;
+  private readonly ILogger<TasksCommandHandler> _logger;
+  private readonly TasksCommandHandler _handler;
+  private readonly ITelegramBotClient _botClient;
+
+  public TasksCommandHandlerTests()
+  {
+    _mediator = Substitute.For<IMediator>();
+    _logger = Substitute.For<ILogger<TasksCommandHandler>>();
+    _handler = new TasksCommandHandler(_mediator, _logger);
+    _botClient = Substitute.For<ITelegramBotClient>();
+  }
+
+  [Fact]
+  public async Task HandleAsync_ShouldPromptSelectFamily_WhenNoActiveFamilySelected()
+  {
+    // Arrange
+    var message = CreateMessage(chatId: 123);
+    var session = new UserSession(); // No CurrentFamilyId
+    var userId = Guid.NewGuid();
+
+    // Act
+    await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
+
+    // Assert
+    await _botClient.Received(1).SendTextMessageAsync(
+      Arg.Is<long>(123),
+      Arg.Is<string>(text => text.Contains("выберите активную семью")),
+      cancellationToken: Arg.Any<CancellationToken>());
+  }
+
+  [Fact]
+  public async Task HandleAsync_ShouldDisplayNoTasksMessage_WhenNoActiveTasks()
+  {
+    // Arrange
+    var message = CreateMessage(chatId: 123);
+    var familyId = Guid.NewGuid();
+    var session = new UserSession { CurrentFamilyId = familyId };
+    var userId = Guid.NewGuid();
+
+    _mediator.Send(Arg.Any<GetActiveTasksQuery>(), Arg.Any<CancellationToken>())
+      .Returns(Result<List<TaskDto>>.Success(new List<TaskDto>()));
+
+    // Act
+    await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
+
+    // Assert
+    await _botClient.Received(1).SendTextMessageAsync(
+      Arg.Is<long>(123),
+      Arg.Is<string>(text => text.Contains("Активных задач пока нет")),
+      cancellationToken: Arg.Any<CancellationToken>());
+  }
+
+  [Fact]
+  public async Task HandleAsync_ShouldDisplayTasks_WhenTasksExist()
+  {
+    // Arrange
+    var message = CreateMessage(chatId: 123);
+    var familyId = Guid.NewGuid();
+    var session = new UserSession { CurrentFamilyId = familyId };
+    var userId = Guid.NewGuid();
+
+    var tasks = new List<TaskDto>
+    {
+      new TaskDto(
+        Guid.NewGuid(),
+        "Feed the cat",
+        10,
+        TaskStatus.Active,
+        DateTime.UtcNow.AddHours(2),
+        Guid.NewGuid(),
+        "Fluffy")
+    };
+
+    _mediator.Send(Arg.Any<GetActiveTasksQuery>(), Arg.Any<CancellationToken>())
+      .Returns(Result<List<TaskDto>>.Success(tasks));
+
+    // Act
+    await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
+
+    // Assert
+    await _botClient.Received(1).SendTextMessageAsync(
+      Arg.Any<long>(),
+      Arg.Is<string>(text => text.Contains("Feed the cat") && text.Contains("Fluffy") && text.Contains("10")),
+      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
+      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
+      cancellationToken: Arg.Any<CancellationToken>());
+  }
+
+  [Fact]
+  public async Task HandleAsync_ShouldShowOverdueMarker_ForOverdueTasks()
+  {
+    // Arrange
+    var message = CreateMessage(chatId: 123);
+    var familyId = Guid.NewGuid();
+    var session = new UserSession { CurrentFamilyId = familyId };
+    var userId = Guid.NewGuid();
+
+    var tasks = new List<TaskDto>
+    {
+      new TaskDto(
+        Guid.NewGuid(),
+        "Overdue task",
+        10,
+        TaskStatus.Active,
+        DateTime.UtcNow.AddHours(-2), // Overdue
+        Guid.NewGuid(),
+        "Pet")
+    };
+
+    _mediator.Send(Arg.Any<GetActiveTasksQuery>(), Arg.Any<CancellationToken>())
+      .Returns(Result<List<TaskDto>>.Success(tasks));
+
+    // Act
+    await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
+
+    // Assert
+    await _botClient.Received(1).SendTextMessageAsync(
+      Arg.Any<long>(),
+      Arg.Is<string>(text => text.Contains("⚠️")),
+      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
+      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
+      cancellationToken: Arg.Any<CancellationToken>());
+  }
+
+  [Fact]
+  public async Task HandleAsync_ShouldGroupTasksByStatus()
+  {
+    // Arrange
+    var message = CreateMessage(chatId: 123);
+    var familyId = Guid.NewGuid();
+    var session = new UserSession { CurrentFamilyId = familyId };
+    var userId = Guid.NewGuid();
+
+    var tasks = new List<TaskDto>
+    {
+      new TaskDto(Guid.NewGuid(), "Active task", 10, TaskStatus.Active, DateTime.UtcNow.AddHours(2), Guid.NewGuid(), "Pet1"),
+      new TaskDto(Guid.NewGuid(), "In progress task", 15, TaskStatus.InProgress, DateTime.UtcNow.AddHours(1), Guid.NewGuid(), "Pet2")
+    };
+
+    _mediator.Send(Arg.Any<GetActiveTasksQuery>(), Arg.Any<CancellationToken>())
+      .Returns(Result<List<TaskDto>>.Success(tasks));
+
+    // Act
+    await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
+
+    // Assert
+    await _botClient.Received(1).SendTextMessageAsync(
+      Arg.Any<long>(),
+      Arg.Is<string>(text => text.Contains("Доступные задачи") && text.Contains("В работе")),
+      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
+      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
+      cancellationToken: Arg.Any<CancellationToken>());
+  }
+
+  private static Message CreateMessage(long chatId, string text = "/tasks")
+  {
+    return new Message
+    {
+      MessageId = 1,
+      Chat = new Chat { Id = chatId },
+      From = new User { Id = chatId, FirstName = "Test" },
+      Text = text,
+      Date = DateTime.UtcNow
+    };
+  }
+}
