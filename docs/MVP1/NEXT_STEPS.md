@@ -10,65 +10,9 @@
 6. **Telegram уведомления** - отправка уведомлений о задачах и настроении питомца
 7. **Система invite-кодов** - возможность приглашения участников в семью
 8. **Создание задач через бота**
+9. **Автоматическое создание TaskTemplate**
 
-### 5. Автоматическое создание TaskTemplate (1-2 дня)
-
-**Что делать**:
-
-```csharp
-// 1. Создать глобальные шаблоны
-public static class PetTaskTemplates
-{
-    public static List<TaskTemplateDto> GetTemplatesForPetType(PetType type)
-    {
-        return type switch
-        {
-            PetType.Cat => new List<TaskTemplateDto>
-            {
-                new("Покормить кота", 10, "0 0 9,20 * * ?"),
-                new("Поменять воду", 5, "0 0 9 * * ?"),
-                new("Почистить лоток", 15, "0 0 20 * * ?"),
-            },
-            PetType.Dog => new List<TaskTemplateDto>
-            {
-                new("Покормить собаку", 10, "0 0 8,18 * * ?"),
-                new("Выгулять собаку", 20, "0 0 8,14,20 * * ?"),
-                new("Поменять воду", 5, "0 0 9 * * ?"),
-            },
-            // ...
-        };
-    }
-}
-
-// 2. Обновить CreatePetHandler
-public async ValueTask<Result<Guid>> Handle(CreatePetCommand request, CancellationToken cancellationToken)
-{
-    var pet = new Pet(request.FamilyId, request.Type, request.Name);
-    await _petRepository.AddAsync(pet, cancellationToken);
-    
-    // Создать шаблоны задач
-    var templates = PetTaskTemplates.GetTemplatesForPetType(request.Type);
-    foreach (var template in templates)
-    {
-        var taskTemplate = new TaskTemplate(
-            request.FamilyId,
-            pet.Id,
-            template.Title,
-            template.Points,
-            template.Schedule,
-            request.CreatedBy
-        );
-        await _templateRepository.AddAsync(taskTemplate, cancellationToken);
-    }
-    
-    await _petRepository.SaveChangesAsync(cancellationToken);
-    return Result.Success(pet.Id);
-}
-```
-
-**Файлы для создания/изменения**:
-- `src/FamilyTaskManager.Core/PetAggregate/PetTaskTemplates.cs` (создать)
-- `src/FamilyTaskManager.UseCases/Pets/CreatePet.cs` (обновить)
+## Что осталось сделать
 
 ### 6. Unit и Integration тесты (3-5 дней)
 

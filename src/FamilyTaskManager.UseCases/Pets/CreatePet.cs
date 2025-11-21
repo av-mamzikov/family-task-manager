@@ -4,7 +4,8 @@ public record CreatePetCommand(Guid FamilyId, PetType Type, string Name) : IComm
 
 public class CreatePetHandler(
   IRepository<Pet> petRepository,
-  IRepository<Family> familyRepository) : ICommandHandler<CreatePetCommand, Result<Guid>>
+  IRepository<Family> familyRepository,
+  IRepository<TaskTemplate> taskTemplateRepository) : ICommandHandler<CreatePetCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreatePetCommand command, CancellationToken cancellationToken)
   {
@@ -25,8 +26,22 @@ public class CreatePetHandler(
     var pet = new Pet(command.FamilyId, command.Type, command.Name);
     await petRepository.AddAsync(pet, cancellationToken);
 
-    // TODO: Create default task templates for this pet type
-    // This will be implemented when TaskTemplate use cases are added
+    // Create default task templates for this pet type
+    var defaultTemplates = PetTaskTemplateData.GetDefaultTemplates(command.Type);
+    var systemUserId = Guid.Empty; // System-created templates
+    
+    foreach (var templateData in defaultTemplates)
+    {
+      var taskTemplate = new TaskTemplate(
+        familyId: command.FamilyId,
+        petId: pet.Id,
+        title: templateData.Title,
+        points: templateData.Points,
+        schedule: templateData.Schedule,
+        createdBy: systemUserId);
+      
+      await taskTemplateRepository.AddAsync(taskTemplate, cancellationToken);
+    }
 
     return Result<Guid>.Success(pet.Id);
   }
