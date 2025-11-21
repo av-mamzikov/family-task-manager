@@ -20,7 +20,7 @@ public class CreateFamilyHandler(
     var family = new Family(command.Name, command.Timezone, command.LeaderboardEnabled);
     
     // Add creator as Admin
-    family.AddMember(command.UserId, family.Id, FamilyRole.Admin);
+    family.AddMember(command.UserId, FamilyRole.Admin);
     
     await familyRepository.AddAsync(family, cancellationToken);
 

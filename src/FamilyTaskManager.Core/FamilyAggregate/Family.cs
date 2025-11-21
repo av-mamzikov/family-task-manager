@@ -17,6 +17,7 @@ public class Family : EntityBase<Family, Guid>, IAggregateRoot
     Guard.Against.NullOrWhiteSpace(name);
     Guard.Against.NullOrWhiteSpace(timezone);
 
+    Id = Guid.NewGuid(); // Generate ID immediately
     Name = name.Trim();
     Timezone = timezone;
     LeaderboardEnabled = leaderboardEnabled;
@@ -25,9 +26,9 @@ public class Family : EntityBase<Family, Guid>, IAggregateRoot
     RegisterDomainEvent(new Events.FamilyCreatedEvent(this));
   }
 
-  public FamilyMember AddMember(Guid userId, Guid familyId, FamilyRole role)
+  public FamilyMember AddMember(Guid userId, FamilyRole role)
   {
-    var member = new FamilyMember(userId, familyId, role);
+    var member = new FamilyMember(userId, this.Id, role);
     _members.Add(member);
 
     RegisterDomainEvent(new Events.MemberAddedEvent(this, member));

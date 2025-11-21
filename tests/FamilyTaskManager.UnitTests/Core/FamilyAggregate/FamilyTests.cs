@@ -102,7 +102,7 @@ public class FamilyTests
     var role = FamilyRole.Admin;
 
     // Act
-    var member = family.AddMember(userId, familyId, role);
+    var member = family.AddMember(userId, role);
 
     // Assert
     member.ShouldNotBeNull();
@@ -123,7 +123,7 @@ public class FamilyTests
     var role = FamilyRole.Admin;
 
     // Act
-    family.AddMember(userId, familyId, role);
+    family.AddMember(userId, role);
 
     // Assert
     family.DomainEvents.ShouldContain(e => e is MemberAddedEvent);
@@ -139,8 +139,8 @@ public class FamilyTests
     var familyId = Guid.NewGuid();
 
     // Act
-    var member1 = family.AddMember(userId1, familyId, FamilyRole.Admin);
-    var member2 = family.AddMember(userId2, familyId, FamilyRole.Child);
+    var member1 = family.AddMember(userId1, FamilyRole.Admin);
+    var member2 = family.AddMember(userId2, FamilyRole.Child);
 
     // Assert
     family.Members.Count.ShouldBe(2);

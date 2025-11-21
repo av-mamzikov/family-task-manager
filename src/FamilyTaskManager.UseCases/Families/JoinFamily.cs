@@ -30,7 +30,7 @@ public class JoinFamilyHandler(
     }
 
     // Add member
-    var member = family.AddMember(command.UserId, command.FamilyId, command.Role);
+    var member = family.AddMember(command.UserId, command.Role);
     await familyRepository.UpdateAsync(family, cancellationToken);
 
     return Result<Guid>.Success(member.Id);
