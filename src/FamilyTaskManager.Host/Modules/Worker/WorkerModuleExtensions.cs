@@ -5,8 +5,13 @@ namespace FamilyTaskManager.Host.Modules.Worker;
 
 public static class WorkerModuleExtensions
 {
-  public static IServiceCollection AddWorkerModule(this IServiceCollection services, IConfiguration configuration)
+  public static IServiceCollection AddWorkerModule(
+    this IServiceCollection services, 
+    IConfiguration configuration,
+    ILogger? logger = null)
   {
+    logger?.LogInformation("Registering Worker Module...");
+    
     var connectionString = configuration.GetConnectionString("DefaultConnection");
 
     // Add Quartz services
@@ -53,6 +58,8 @@ public static class WorkerModuleExtensions
       options.WaitForJobsToComplete = true;
     });
 
+    logger?.LogInformation("Worker Module registered: Quartz.NET Jobs (TaskInstanceCreator, TaskReminder, PetMoodCalculator)");
+    
     return services;
   }
 }

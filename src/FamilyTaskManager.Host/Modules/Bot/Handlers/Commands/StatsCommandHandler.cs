@@ -8,16 +8,8 @@ using Mediator;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 
-public class StatsCommandHandler
+public class StatsCommandHandler(IMediator mediator)
 {
-  private readonly IMediator _mediator;
-  private readonly ILogger<StatsCommandHandler> _logger;
-
-  public StatsCommandHandler(IMediator mediator, ILogger<StatsCommandHandler> logger)
-  {
-    _mediator = mediator;
-    _logger = logger;
-  }
 
   public async Task HandleAsync(
     ITelegramBotClient botClient,
@@ -37,7 +29,7 @@ public class StatsCommandHandler
 
     // Get leaderboard
     var getLeaderboardQuery = new GetLeaderboardQuery(session.CurrentFamilyId.Value);
-    var leaderboardResult = await _mediator.Send(getLeaderboardQuery, cancellationToken);
+    var leaderboardResult = await mediator.Send(getLeaderboardQuery, cancellationToken);
 
     var messageText = "📊 *Статистика семьи*\n\n";
 

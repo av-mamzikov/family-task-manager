@@ -1,5 +1,7 @@
 using FamilyTaskManager.Host.Modules.Bot;
 using FamilyTaskManager.Host.Modules.Worker;
+using FamilyTaskManager.Core;
+using FamilyTaskManager.UseCases;
 using FamilyTaskManager.Infrastructure;
 using FamilyTaskManager.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -19,27 +21,25 @@ try
   // Add Serilog
   builder.Services.AddSerilog();
 
-  // Add DbContext
-  var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-  builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
-
-  // Add Infrastructure services
+  // Register services by layer (Clean Architecture)
   var loggerFactory = LoggerFactory.Create(b => b.AddSerilog());
-  var logger = loggerFactory.CreateLogger("Infrastructure");
-  builder.Services.AddInfrastructureServices(builder.Configuration, logger);
-
-  // Add Mediator
+  var logger = loggerFactory.CreateLogger("Startup");
+  
+  builder.Services
+    .AddCoreServices()                                    // Domain layer
+    .AddUseCasesServices()                                // Application layer
+    .AddInfrastructureServices(builder.Configuration, logger);  // Infrastructure layer
+  
+  // Register Mediator (must be in Host where SourceGenerator can scan all assemblies)
   builder.Services.AddMediator(options =>
   {
     options.ServiceLifetime = ServiceLifetime.Scoped;
   });
 
-  // Register Bot Module
-  builder.Services.AddBotModule(builder.Configuration);
-
-  // Register Worker Module
-  builder.Services.AddWorkerModule(builder.Configuration);
+  // Register modules
+  builder.Services
+    .AddBotModule(builder.Configuration, logger)
+    .AddWorkerModule(builder.Configuration, logger);
 
   var host = builder.Build();
 

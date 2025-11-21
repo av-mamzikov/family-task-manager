@@ -10,17 +10,8 @@ using Mediator;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 
-public class FamilyCommandHandler
+public class FamilyCommandHandler(IMediator mediator)
 {
-  private readonly IMediator _mediator;
-  private readonly ILogger<FamilyCommandHandler> _logger;
-
-  public FamilyCommandHandler(IMediator mediator, ILogger<FamilyCommandHandler> logger)
-  {
-    _mediator = mediator;
-    _logger = logger;
-  }
-
   public async Task HandleAsync(
     ITelegramBotClient botClient,
     Message message,
@@ -30,7 +21,7 @@ public class FamilyCommandHandler
   {
     // Get user families
     var getFamiliesQuery = new GetUserFamiliesQuery(userId);
-    var familiesResult = await _mediator.Send(getFamiliesQuery, cancellationToken);
+    var familiesResult = await mediator.Send(getFamiliesQuery, cancellationToken);
 
     if (!familiesResult.IsSuccess || !familiesResult.Value.Any())
     {

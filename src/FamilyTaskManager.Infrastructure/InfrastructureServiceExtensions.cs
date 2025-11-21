@@ -1,15 +1,20 @@
 ﻿using FamilyTaskManager.Infrastructure.Data;
 using FamilyTaskManager.Infrastructure.Notifications;
+using FamilyTaskManager.Infrastructure.Behaviors;
 using Telegram.Bot;
+using Mediator;
 
 namespace FamilyTaskManager.Infrastructure;
+
 public static class InfrastructureServiceExtensions
 {
   public static IServiceCollection AddInfrastructureServices(
     this IServiceCollection services,
-    ConfigurationManager config,
-    ILogger logger)
+    IConfiguration config,
+    ILogger? logger = null)
   {
+    logger ??= LoggerFactory.Create(builder => { })
+      .CreateLogger(nameof(InfrastructureServiceExtensions));
     // Try to get connection strings in order of priority:
     // 1. "cleanarchitecture" - provided by Aspire when using .WithReference(cleanArchDb)
     // 2. "DefaultConnection" - traditional SQL Server connection
@@ -42,6 +47,10 @@ public static class InfrastructureServiceExtensions
 
     services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>))
            .AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
+
+    // Register Mediator Pipeline Behaviors
+    services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(MediatorLoggingBehavior<,>));
+    logger.LogInformation("Mediator pipeline behaviors registered");
 
     // Telegram Bot Client (from configuration)
     var botToken = config["Bot:BotToken"];

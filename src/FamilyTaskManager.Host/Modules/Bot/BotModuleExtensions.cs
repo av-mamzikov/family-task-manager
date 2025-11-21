@@ -9,8 +9,13 @@ namespace FamilyTaskManager.Host.Modules.Bot;
 
 public static class BotModuleExtensions
 {
-  public static IServiceCollection AddBotModule(this IServiceCollection services, IConfiguration configuration)
+  public static IServiceCollection AddBotModule(
+    this IServiceCollection services, 
+    IConfiguration configuration,
+    ILogger? logger = null)
   {
+    logger?.LogInformation("Registering Bot Module...");
+    
     // Bot Configuration
     var botConfig = configuration.GetSection("Bot").Get<BotConfiguration>();
     if (botConfig == null || string.IsNullOrEmpty(botConfig.BotToken))
@@ -43,6 +48,8 @@ public static class BotModuleExtensions
     services.AddScoped<PetCommandHandler>();
     services.AddScoped<StatsCommandHandler>();
 
+    logger?.LogInformation("Bot Module registered: Telegram Bot with Long Polling");
+    
     return services;
   }
 }

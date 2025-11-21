@@ -8,17 +8,8 @@ using Mediator;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 
-public class PetCommandHandler
+public class PetCommandHandler(IMediator mediator)
 {
-  private readonly IMediator _mediator;
-  private readonly ILogger<PetCommandHandler> _logger;
-
-  public PetCommandHandler(IMediator mediator, ILogger<PetCommandHandler> logger)
-  {
-    _mediator = mediator;
-    _logger = logger;
-  }
-
   public async Task HandleAsync(
     ITelegramBotClient botClient,
     Message message,
@@ -37,7 +28,7 @@ public class PetCommandHandler
 
     // Get pets
     var getPetsQuery = new GetPetsQuery(session.CurrentFamilyId.Value);
-    var petsResult = await _mediator.Send(getPetsQuery, cancellationToken);
+    var petsResult = await mediator.Send(getPetsQuery, cancellationToken);
 
     if (!petsResult.IsSuccess)
     {

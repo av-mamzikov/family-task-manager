@@ -8,17 +8,8 @@ using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 
-public class TasksCommandHandler
+public class TasksCommandHandler(IMediator mediator)
 {
-  private readonly IMediator _mediator;
-  private readonly ILogger<TasksCommandHandler> _logger;
-
-  public TasksCommandHandler(IMediator mediator, ILogger<TasksCommandHandler> logger)
-  {
-    _mediator = mediator;
-    _logger = logger;
-  }
-
   public async Task HandleAsync(
     ITelegramBotClient botClient,
     Message message,
@@ -37,7 +28,7 @@ public class TasksCommandHandler
 
     // Get active tasks
     var getTasksQuery = new GetActiveTasksQuery(session.CurrentFamilyId.Value);
-    var tasksResult = await _mediator.Send(getTasksQuery, cancellationToken);
+    var tasksResult = await mediator.Send(getTasksQuery, cancellationToken);
 
     if (!tasksResult.IsSuccess)
     {
