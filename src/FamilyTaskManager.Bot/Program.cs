@@ -24,7 +24,9 @@ try
     builder.Configuration.GetSection("Bot"));
 
   // Add Infrastructure (EF Core, Repositories)
-  builder.Services.AddInfrastructureServices(builder.Configuration);
+  using var loggerFactory = LoggerFactory.Create(loggingBuilder => loggingBuilder.AddSerilog());
+  var logger = loggerFactory.CreateLogger<Program>();
+  builder.Services.AddInfrastructureServices(builder.Configuration, logger);
 
   // Add Bot Services
   builder.Services.AddSingleton<ISessionManager, SessionManager>();

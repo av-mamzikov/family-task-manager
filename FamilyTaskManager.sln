@@ -40,6 +40,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FamilyTaskManager.Integrati
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FamilyTaskManager.AspireTests", "tests\FamilyTaskManager.AspireTests\FamilyTaskManager.AspireTests.csproj", "{9C022DB2-410E-497F-BA27-0D701AE3E509}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FamilyTaskManager.BotTests", "tests\FamilyTaskManager.BotTests\FamilyTaskManager.BotTests.csproj", "{709569D7-6109-4983-9921-54CDCBD16C4B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -194,6 +196,18 @@ Global
 		{9C022DB2-410E-497F-BA27-0D701AE3E509}.Release|x64.Build.0 = Release|Any CPU
 		{9C022DB2-410E-497F-BA27-0D701AE3E509}.Release|x86.ActiveCfg = Release|Any CPU
 		{9C022DB2-410E-497F-BA27-0D701AE3E509}.Release|x86.Build.0 = Release|Any CPU
+		{709569D7-6109-4983-9921-54CDCBD16C4B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{709569D7-6109-4983-9921-54CDCBD16C4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{709569D7-6109-4983-9921-54CDCBD16C4B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{709569D7-6109-4983-9921-54CDCBD16C4B}.Debug|x64.Build.0 = Debug|Any CPU
+		{709569D7-6109-4983-9921-54CDCBD16C4B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{709569D7-6109-4983-9921-54CDCBD16C4B}.Debug|x86.Build.0 = Debug|Any CPU
+		{709569D7-6109-4983-9921-54CDCBD16C4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{709569D7-6109-4983-9921-54CDCBD16C4B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{709569D7-6109-4983-9921-54CDCBD16C4B}.Release|x64.ActiveCfg = Release|Any CPU
+		{709569D7-6109-4983-9921-54CDCBD16C4B}.Release|x64.Build.0 = Release|Any CPU
+		{709569D7-6109-4983-9921-54CDCBD16C4B}.Release|x86.ActiveCfg = Release|Any CPU
+		{709569D7-6109-4983-9921-54CDCBD16C4B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -211,5 +225,6 @@ Global
 		{E6B7FA9C-24A3-4990-9B50-5A1E4B2D514B} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{A83148CF-71CA-46F5-B873-AED20046B972} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{9C022DB2-410E-497F-BA27-0D701AE3E509} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{709569D7-6109-4983-9921-54CDCBD16C4B} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
