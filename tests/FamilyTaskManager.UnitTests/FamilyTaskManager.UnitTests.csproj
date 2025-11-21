@@ -25,7 +25,9 @@
     <PackageReference Include="ReportGenerator" />
     <PackageReference Include="xunit" />
     <PackageReference Include="Mediator.Abstractions" />
-    <PackageReference Include="Mediator.SourceGenerator" />
+    <PackageReference Include="Telegram.Bot" />
+    <PackageReference Include="Quartz" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   </ItemGroup>
 
   <ItemGroup>
@@ -42,6 +44,13 @@
     <ProjectReference Include="..\..\src\FamilyTaskManager.Core\FamilyTaskManager.Core.csproj" />
     <ProjectReference Include="..\..\src\FamilyTaskManager.UseCases\FamilyTaskManager.UseCases.csproj" />
     <ProjectReference Include="..\..\src\FamilyTaskManager.Infrastructure\FamilyTaskManager.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Include Host modules for testing without Mediator conflicts -->
+    <Compile Include="..\..\src\FamilyTaskManager.Host\Modules\**\*.cs" 
+             Exclude="..\..\src\FamilyTaskManager.Host\Modules\**\*Extensions.cs;..\..\src\FamilyTaskManager.Host\Modules\**\*HostedService.cs"
+             Link="Host\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

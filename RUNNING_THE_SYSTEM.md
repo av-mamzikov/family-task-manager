@@ -1,12 +1,18 @@
 # Запуск системы FamilyTaskManager
 
-Полная инструкция по запуску Telegram Bot + Quartz Worker.
+Полная инструкция по запуску модульного монолита (Telegram Bot + Quartz Worker в одном процессе).
 
 ## Предварительные требования
 
 - ✅ .NET 9.0 SDK
 - ✅ PostgreSQL 15+
 - ✅ Telegram Bot Token (от @BotFather)
+
+## Архитектура
+
+**Модульный монолит** - единый процесс `FamilyTaskManager.Host`, объединяющий:
+- **Bot Module**: Telegram Bot с Long Polling
+- **Worker Module**: Quartz.NET Jobs (TaskInstanceCreator, TaskReminder, PetMoodCalculator)
 
 ## Быстрый старт
 
@@ -19,16 +25,14 @@ cd family-task-manager
 
 # Создать базу данных
 psql -U postgres -c "CREATE DATABASE FamilyTaskManager;"
-
-# Применить миграции
-cd src/FamilyTaskManager.Infrastructure
-dotnet ef database update --startup-project ../FamilyTaskManager.Web
 ```
 
-### 2. Настройка Telegram Bot
+**Примечание**: Миграции применяются автоматически при запуске Host.
+
+### 2. Настройка Host
 
 ```bash
-cd ../FamilyTaskManager.Bot
+cd src/FamilyTaskManager.Host
 
 # Настроить токен бота
 dotnet user-secrets set "Bot:BotToken" "YOUR_BOT_TOKEN"
@@ -38,51 +42,27 @@ dotnet user-secrets set "Bot:BotUsername" "your_bot_username"
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=FamilyTaskManager;Username=postgres;Password=YOUR_PASSWORD"
 ```
 
-### 3. Настройка Worker
+### 3. Запуск системы
+
+Откройте **1 терминал** (вместо 3!):
 
 ```bash
-cd ../FamilyTaskManager.Worker
-
-# Настроить строку подключения
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=FamilyTaskManager;Username=postgres;Password=YOUR_PASSWORD"
-```
-
-### 4. Запуск системы
-
-Откройте **3 терминала**:
-
-#### Терминал 1: Telegram Bot
-```bash
-cd src/FamilyTaskManager.Bot
+cd src/FamilyTaskManager.Host
 dotnet run
 ```
 
 Вы должны увидеть:
 ```
-[INF] Starting Telegram Bot
-[INF] Bot @your_bot_username is running
-[INF] Session cleanup scheduled
-```
-
-#### Терминал 2: Quartz Worker
-```bash
-cd src/FamilyTaskManager.Worker
-dotnet run
-```
-
-Вы должны увидеть:
-```
-[INF] Starting FamilyTaskManager Worker
+[INF] Starting FamilyTaskManager Host (Modular Monolith)
 [INF] Database migration completed
+[INF] All modules registered successfully
+[INF] Bot Module: Telegram Bot with Long Polling
+[INF] Worker Module: Quartz.NET Jobs (TaskInstanceCreator, TaskReminder, PetMoodCalculator)
+[INF] Bot Module started: @your_bot_username
 [INF] Quartz Scheduler 'FamilyTaskManagerScheduler' started
-[INF] TaskInstanceCreatorJob started
 ```
 
-#### Терминал 3: API (опционально, если нужен)
-```bash
-cd src/FamilyTaskManager.Web
-dotnet run
-```
+**Готово!** Оба модуля (Bot и Worker) работают в одном процессе.
 
 ## Проверка работы
 
@@ -176,29 +156,36 @@ FROM "Pets";
 
 ## Мониторинг
 
-### Логи Bot
+### Единый поток логов
+
+Все логи (Bot и Worker) в одном терминале:
 
 ```bash
-# Терминал с Bot
-[INF] Received message from user 123456: /start
-[INF] User registered: John Doe (TelegramId: 123456)
-[INF] Family created: My Family (Id: abc-123)
+# Терминал с Host
+[INF] Bot Module: Received message from user 123456: /start
+[INF] Bot Module: User registered: John Doe (TelegramId: 123456)
+[INF] Bot Module: Family created: My Family (Id: abc-123)
+
+[INF] Worker Module: TaskInstanceCreatorJob started at 2025-11-21T12:00:00Z
+[INF] Worker Module: Found 1 active task templates
+[INF] Worker Module: Creating TaskInstance for template abc-123 (Покормить кота)
+[INF] Worker Module: Successfully created TaskInstance xyz-789 from template abc-123
+[INF] Worker Module: TaskInstanceCreatorJob completed. Created 1 new task instances
+
+[INF] Worker Module: PetMoodCalculatorJob started at 2025-11-21T12:30:00Z
+[INF] Worker Module: Found 1 pets to update mood scores
+[INF] Worker Module: Updated mood score for pet abc-456 (Мурзик): 85
+[INF] Worker Module: PetMoodCalculatorJob completed. Updated 1 pet mood scores
 ```
 
-### Логи Worker
+### Фильтрация логов
 
 ```bash
-# Терминал с Worker
-[INF] TaskInstanceCreatorJob started at 2025-11-21T12:00:00Z
-[INF] Found 1 active task templates
-[INF] Creating TaskInstance for template abc-123 (Покормить кота), due at 2025-11-21T12:00:00Z
-[INF] Successfully created TaskInstance xyz-789 from template abc-123
-[INF] TaskInstanceCreatorJob completed. Created 1 new task instances
+# Только Bot логи
+dotnet run | grep "Bot Module"
 
-[INF] PetMoodCalculatorJob started at 2025-11-21T12:30:00Z
-[INF] Found 1 pets to update mood scores
-[INF] Updated mood score for pet abc-456 (Мурзик): 85
-[INF] PetMoodCalculatorJob completed. Updated 1 pet mood scores
+# Только Worker логи
+dotnet run | grep "Worker Module"
 ```
 
 ### Проверка состояния Quartz
@@ -228,11 +215,11 @@ LIMIT 10;
 
 ## Остановка системы
 
-Нажмите `Ctrl+C` в каждом терминале. Система корректно завершит работу:
+Нажмите `Ctrl+C` в терминале с Host. Система корректно завершит работу:
 
-1. **Bot**: Завершит обработку текущих сообщений
-2. **Worker**: Завершит текущие Jobs (graceful shutdown)
-3. **API**: Завершит обработку текущих запросов
+1. **Bot Module**: Завершит обработку текущих сообщений
+2. **Worker Module**: Завершит текущие Jobs (graceful shutdown)
+3. **Host**: Корректно закроет все соединения
 
 ## Troubleshooting
 
@@ -291,30 +278,33 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  worker:
+  host:
     build:
       context: .
-      dockerfile: src/FamilyTaskManager.Worker/Dockerfile
-    environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres;Database=FamilyTaskManager;Username=postgres;Password=${DB_PASSWORD}"
-    depends_on:
-      - postgres
-
-  bot:
-    build:
-      context: .
-      dockerfile: src/FamilyTaskManager.Bot/Dockerfile
+      dockerfile: src/FamilyTaskManager.Host/Dockerfile
     environment:
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=FamilyTaskManager;Username=postgres;Password=${DB_PASSWORD}"
       Bot__BotToken: ${TELEGRAM_BOT_TOKEN}
       Bot__BotUsername: ${TELEGRAM_BOT_USERNAME}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres_data:
 ```
+
+**Преимущества модульного монолита:**
+- 2 контейнера вместо 4 (postgres + host vs postgres + bot + worker + web)
+- Проще управление
+- Меньше overhead
 
 Запуск:
 ```bash

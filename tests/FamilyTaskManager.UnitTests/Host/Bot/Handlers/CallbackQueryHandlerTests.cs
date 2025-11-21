@@ -1,6 +1,6 @@
-using FamilyTaskManager.Bot.Handlers;
-using FamilyTaskManager.Bot.Services;
-using FamilyTaskManager.Bot.Models;
+using FamilyTaskManager.Host.Modules.Bot.Handlers;
+using FamilyTaskManager.Host.Modules.Bot.Services;
+using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Users;
 using FamilyTaskManager.UseCases.Families;
 using FamilyTaskManager.UseCases.Pets;
@@ -11,7 +11,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Ardalis.Result;
 
-namespace FamilyTaskManager.BotTests.Handlers;
+namespace FamilyTaskManager.UnitTests.Host.Bot.Handlers;
 
 public class CallbackQueryHandlerTests
 {

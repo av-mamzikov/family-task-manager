@@ -1,5 +1,5 @@
-using FamilyTaskManager.Bot.Handlers.Commands;
-using FamilyTaskManager.Bot.Models;
+using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
+using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Pets;
 using FamilyTaskManager.Core.PetAggregate;
 using Mediator;
@@ -7,7 +7,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Ardalis.Result;
 
-namespace FamilyTaskManager.BotTests.Handlers.Commands;
+namespace FamilyTaskManager.UnitTests.Host.Bot.Handlers.Commands;
 
 public class PetCommandHandlerTests
 {

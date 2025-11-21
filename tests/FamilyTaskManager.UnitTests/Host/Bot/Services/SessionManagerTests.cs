@@ -1,7 +1,7 @@
-using FamilyTaskManager.Bot.Services;
-using FamilyTaskManager.Bot.Models;
+using FamilyTaskManager.Host.Modules.Bot.Services;
+using FamilyTaskManager.Host.Modules.Bot.Models;
 
-namespace FamilyTaskManager.BotTests.Services;
+namespace FamilyTaskManager.UnitTests.Host.Bot.Services;
 
 public class SessionManagerTests
 {

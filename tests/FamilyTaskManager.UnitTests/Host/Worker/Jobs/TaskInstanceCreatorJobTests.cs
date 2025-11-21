@@ -1,12 +1,12 @@
 using Ardalis.Result;
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.UseCases.Tasks;
-using FamilyTaskManager.Worker.Jobs;
+using FamilyTaskManager.Host.Modules.Worker.Jobs;
 using Mediator;
 using Microsoft.Extensions.Logging;
 using Quartz;
 
-namespace FamilyTaskManager.WorkerTests.Jobs;
+namespace FamilyTaskManager.UnitTests.Host.Worker.Jobs;
 
 public class TaskInstanceCreatorJobTests
 {

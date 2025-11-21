@@ -5,7 +5,7 @@ using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.UseCases.Pets;
 using FamilyTaskManager.UseCases.Tasks.Specifications;
 
-namespace FamilyTaskManager.WorkerTests.UseCases;
+namespace FamilyTaskManager.UnitTests.Host.Worker.UseCases;
 
 public class CalculatePetMoodScoreTests
 {

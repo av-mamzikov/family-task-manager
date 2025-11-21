@@ -1,12 +1,12 @@
 using Ardalis.Result;
 using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.UseCases.Pets;
-using FamilyTaskManager.Worker.Jobs;
+using FamilyTaskManager.Host.Modules.Worker.Jobs;
 using Mediator;
 using Microsoft.Extensions.Logging;
 using Quartz;
 
-namespace FamilyTaskManager.WorkerTests.Jobs;
+namespace FamilyTaskManager.UnitTests.Host.Worker.Jobs;
 
 public class PetMoodCalculatorJobTests
 {

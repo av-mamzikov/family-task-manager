@@ -1,6 +1,6 @@
-using FamilyTaskManager.Bot.Models;
+using FamilyTaskManager.Host.Modules.Bot.Models;
 
-namespace FamilyTaskManager.BotTests.Models;
+namespace FamilyTaskManager.UnitTests.Host.Bot.Models;
 
 public class UserSessionTests
 {

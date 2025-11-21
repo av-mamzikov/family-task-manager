@@ -1,6 +1,6 @@
 using Quartz;
 
-namespace FamilyTaskManager.WorkerTests;
+namespace FamilyTaskManager.UnitTests.Host.Worker;
 
 public class CronExpressionTests
 {

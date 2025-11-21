@@ -406,9 +406,32 @@
 
 ### 6.2. Архитектурные решения
 
-**Telegram Bot API:**
+**Модульный монолит (FamilyTaskManager.Host):**
+* Единый процесс, объединяющий Bot и Worker модули.
+* **Преимущества**: проще разработка, меньше overhead, общий DbContext pool.
+* **Модули**:
+  - **Bot Module**: Telegram Bot с Long Polling, обработка команд, сессии.
+  - **Worker Module**: Quartz.NET Jobs для периодических задач и напоминаний.
+* **Масштабирование**: при необходимости модули можно выделить в отдельные микросервисы.
+
+**Структура проектов:**
+```
+├── FamilyTaskManager.Core          # Доменная модель (Entities, Aggregates)
+├── FamilyTaskManager.UseCases      # Use Cases (Application Layer, CQRS)
+├── FamilyTaskManager.Infrastructure # EF Core, PostgreSQL, Email
+├── FamilyTaskManager.Host          # Модульный монолит (Bot + Worker)
+│   ├── Modules/
+│   │   ├── Bot/                    # Telegram Bot модуль
+│   │   └── Worker/                 # Quartz Worker модуль
+│   └── Program.cs                  # Единая точка входа
+└── FamilyTaskManager.AspireHost    # .NET Aspire orchestration
+```
+
+**Telegram Bot API (Bot Module):**
 * Режим: Long Polling (проще для MVP, не требует SSL и публичного IP).
 * При масштабировании можно переключиться на Webhook.
+* Persistent Menu с кнопками для основных команд.
+* Inline Keyboards для интерактивных действий.
 
 **Сессии (In-Memory):**
 * Хранение в `ConcurrentDictionary<long, UserSession>` где `long` — telegramId.
@@ -421,11 +444,17 @@
 * Публичный доступ: нет (только через signed URLs, TTL 1 час).
 * Очистка старых фото: автоматическая через lifecycle policy (хранение 1 год).
 
-**Quartz.NET Worker:**
-* Проверка расписания: каждую минуту.
-* Создание TaskInstance для периодических задач по cron.
-* Отправка напоминаний за 1 час до времени задачи.
+**Quartz.NET Worker (Worker Module):**
+* **TaskInstanceCreatorJob**: проверка расписания каждую минуту, создание TaskInstance из TaskTemplate.
+* **TaskReminderJob**: отправка напоминаний за 1 час до времени задачи (каждые 15 минут).
+* **PetMoodCalculatorJob**: пересчет настроения питомцев (каждые 30 минут).
 * Персистентность: Quartz использует PostgreSQL для хранения состояния (избежание дублирования при рестарте).
+
+**Тестирование:**
+* Тесты организованы по типам (Unit, Integration, Functional), а не по проектам.
+* **UnitTests**: тесты Core, UseCases, Host модулей (~120 тестов).
+* **IntegrationTests**: тесты репозиториев с реальной БД (~10 тестов).
+* **FunctionalTests**: E2E тесты полного стека (~5 тестов).
 
 ### 6.3. Безопасность
 
@@ -502,6 +531,7 @@
 
 **Документ готов к передаче команде разработки.**
 
-**Версия**: 1.0  
-**Дата**: 2025-11-20  
-**Статус**: Утверждено
+**Версия**: 1.1  
+**Дата**: 2025-11-21  
+**Статус**: Утверждено  
+**Изменения в 1.1**: Обновлена архитектура - переход на модульный монолит (FamilyTaskManager.Host), реорганизация тестов по типам.
