@@ -24,9 +24,4 @@
     <ProjectReference Include="..\FamilyTaskManager.UseCases\FamilyTaskManager.UseCases.csproj" />
     <ProjectReference Include="..\FamilyTaskManager.Infrastructure\FamilyTaskManager.Infrastructure.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\FamilyTaskManager.Worker\Jobs\*.cs" Link="Modules\Worker\Jobs\%(Filename)%(Extension)" />
-    <Compile Include="..\FamilyTaskManager.Bot\**\*.cs" Exclude="..\FamilyTaskManager.Bot\Program.cs;..\FamilyTaskManager.Bot\Worker.cs;..\FamilyTaskManager.Bot\obj\**;..\FamilyTaskManager.Bot\bin\**" Link="Modules\Bot\%(RecursiveDir)%(Filename)%(Extension)" />
-  </ItemGroup>
 </Project>

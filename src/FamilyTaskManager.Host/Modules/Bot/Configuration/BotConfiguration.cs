@@ -1,4 +1,4 @@
-namespace FamilyTaskManager.Bot.Configuration;
+namespace FamilyTaskManager.Host.Modules.Bot.Configuration;
 
 public class BotConfiguration
 {

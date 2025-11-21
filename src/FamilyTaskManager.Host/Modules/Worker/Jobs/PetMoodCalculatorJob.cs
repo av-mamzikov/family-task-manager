@@ -2,7 +2,7 @@ using Mediator;
 using Quartz;
 using FamilyTaskManager.UseCases.Pets;
 
-namespace FamilyTaskManager.Worker.Jobs;
+namespace FamilyTaskManager.Host.Modules.Worker.Jobs;
 
 /// <summary>
 /// Job that recalculates mood scores for all pets.

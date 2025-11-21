@@ -2,11 +2,11 @@ using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using FamilyTaskManager.Bot.Handlers;
+using FamilyTaskManager.Host.Modules.Bot.Handlers;
 using Microsoft.Extensions.Options;
-using FamilyTaskManager.Bot.Configuration;
+using FamilyTaskManager.Host.Modules.Bot.Configuration;
 
-namespace FamilyTaskManager.Bot.Services;
+namespace FamilyTaskManager.Host.Modules.Bot.Services;
 
 public interface ITelegramBotService
 {

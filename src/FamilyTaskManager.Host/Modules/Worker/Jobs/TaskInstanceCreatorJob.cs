@@ -2,7 +2,7 @@ using Mediator;
 using Quartz;
 using FamilyTaskManager.UseCases.Tasks;
 
-namespace FamilyTaskManager.Worker.Jobs;
+namespace FamilyTaskManager.Host.Modules.Worker.Jobs;
 
 /// <summary>
 /// Job that creates TaskInstance from TaskTemplate based on schedule.

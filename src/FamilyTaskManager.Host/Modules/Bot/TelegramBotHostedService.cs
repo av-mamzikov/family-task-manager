@@ -1,4 +1,4 @@
-using FamilyTaskManager.Bot.Services;
+using FamilyTaskManager.Host.Modules.Bot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;

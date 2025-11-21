@@ -1,16 +1,16 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
-using FamilyTaskManager.Bot.Services;
-using FamilyTaskManager.Bot.Models;
-using FamilyTaskManager.Bot.Handlers.Commands;
+using FamilyTaskManager.Host.Modules.Bot.Services;
+using FamilyTaskManager.Host.Modules.Bot.Models;
+using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.UseCases.Users;
 using FamilyTaskManager.UseCases.Families;
 using FamilyTaskManager.UseCases.Pets;
 using FamilyTaskManager.Core.PetAggregate;
 using Mediator;
 
-namespace FamilyTaskManager.Bot.Handlers;
+namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
 public class CommandHandler : ICommandHandler
 {

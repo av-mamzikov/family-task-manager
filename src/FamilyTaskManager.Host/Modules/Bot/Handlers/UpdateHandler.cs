@@ -3,7 +3,7 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace FamilyTaskManager.Bot.Handlers;
+namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
 public class UpdateHandler : IUpdateHandler
 {

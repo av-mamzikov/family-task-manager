@@ -1,4 +1,4 @@
-namespace FamilyTaskManager.Bot.Models;
+namespace FamilyTaskManager.Host.Modules.Bot.Models;
 
 public class UserSession
 {

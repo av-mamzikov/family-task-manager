@@ -1,7 +1,7 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
-namespace FamilyTaskManager.Bot.Handlers;
+namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
 public interface ICallbackQueryHandler
 {

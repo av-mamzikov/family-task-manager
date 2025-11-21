@@ -1,4 +1,4 @@
-using FamilyTaskManager.Worker.Jobs;
+using FamilyTaskManager.Host.Modules.Worker.Jobs;
 using Quartz;
 
 namespace FamilyTaskManager.Host.Modules.Worker;

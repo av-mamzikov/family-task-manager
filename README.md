@@ -56,8 +56,6 @@ Family Task Manager помогает семьям организовать вы�
 │   │   ├── Bot/                    # Telegram Bot модуль
 │   │   └── Worker/                 # Quartz Worker модуль
 │   └── Program.cs                  # Единая точка входа
-├── FamilyTaskManager.Bot           # (legacy, код используется через Compile Include)
-├── FamilyTaskManager.Worker        # (legacy, код используется через Compile Include)
 └── FamilyTaskManager.AspireHost    # .NET Aspire orchestration
 ```
 

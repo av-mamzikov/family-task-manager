@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
-using FamilyTaskManager.Bot.Models;
+using FamilyTaskManager.Host.Modules.Bot.Models;
 
-namespace FamilyTaskManager.Bot.Services;
+namespace FamilyTaskManager.Host.Modules.Bot.Services;
 
 public interface ISessionManager
 {

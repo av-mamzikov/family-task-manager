@@ -1,14 +1,14 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
-using FamilyTaskManager.Bot.Services;
-using FamilyTaskManager.Bot.Models;
+using FamilyTaskManager.Host.Modules.Bot.Services;
+using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Families;
 using FamilyTaskManager.UseCases.Users;
 using FamilyTaskManager.Core.FamilyAggregate;
 using Mediator;
 
-namespace FamilyTaskManager.Bot.Handlers.Commands;
+namespace FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 
 public class FamilyCommandHandler
 {

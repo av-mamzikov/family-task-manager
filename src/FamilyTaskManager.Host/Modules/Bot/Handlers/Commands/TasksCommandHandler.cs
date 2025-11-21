@@ -1,12 +1,12 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
-using FamilyTaskManager.Bot.Models;
+using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Tasks;
 using Mediator;
 using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
 
-namespace FamilyTaskManager.Bot.Handlers.Commands;
+namespace FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 
 public class TasksCommandHandler
 {

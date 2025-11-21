@@ -1,7 +1,7 @@
-using FamilyTaskManager.Bot.Configuration;
-using FamilyTaskManager.Bot.Handlers;
-using FamilyTaskManager.Bot.Handlers.Commands;
-using FamilyTaskManager.Bot.Services;
+using FamilyTaskManager.Host.Modules.Bot.Configuration;
+using FamilyTaskManager.Host.Modules.Bot.Handlers;
+using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
+using FamilyTaskManager.Host.Modules.Bot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 

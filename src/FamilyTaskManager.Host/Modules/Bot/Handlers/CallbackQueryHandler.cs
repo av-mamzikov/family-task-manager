@@ -1,8 +1,8 @@
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
-using FamilyTaskManager.Bot.Services;
-using FamilyTaskManager.Bot.Models;
+using FamilyTaskManager.Host.Modules.Bot.Services;
+using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Users;
 using FamilyTaskManager.UseCases.Users.Specifications;
 using FamilyTaskManager.UseCases.Families;
@@ -10,7 +10,7 @@ using FamilyTaskManager.UseCases.Pets;
 using FamilyTaskManager.UseCases.Tasks;
 using Mediator;
 
-namespace FamilyTaskManager.Bot.Handlers;
+namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
 public class CallbackQueryHandler : ICallbackQueryHandler
 {

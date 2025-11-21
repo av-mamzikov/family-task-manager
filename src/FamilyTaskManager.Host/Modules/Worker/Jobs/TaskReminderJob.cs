@@ -3,7 +3,7 @@ using Quartz;
 using FamilyTaskManager.UseCases.Tasks;
 using FamilyTaskManager.UseCases.Users;
 
-namespace FamilyTaskManager.Worker.Jobs;
+namespace FamilyTaskManager.Host.Modules.Worker.Jobs;
 
 /// <summary>
 /// Job that sends reminders for tasks due within the next hour.
