@@ -5,22 +5,22 @@ public class NoOpMediator : IMediator
   public async Task<IAsyncEnumerable<TResponse>> CreateStream<TResponse>(IStreamQuery<TResponse> query, CancellationToken cancellationToken = default)
   {
     await Task.Delay(1);
-    return AsyncEnumerable.Empty<TResponse>();
+    return EmptyAsyncEnumerable<TResponse>();
   }
 
   public IAsyncEnumerable<TResponse> CreateStream<TResponse>(IStreamRequest<TResponse> request, CancellationToken cancellationToken = default)
   {
-    return AsyncEnumerable.Empty<TResponse>();
+    return EmptyAsyncEnumerable<TResponse>();
   }
 
   public IAsyncEnumerable<TResponse> CreateStream<TResponse>(IStreamCommand<TResponse> command, CancellationToken cancellationToken = default)
   {
-    return AsyncEnumerable.Empty<TResponse>();
+    return EmptyAsyncEnumerable<TResponse>();
   }
 
   public IAsyncEnumerable<object?> CreateStream(object message, CancellationToken cancellationToken = default)
   {
-    return AsyncEnumerable.Empty<object?>();
+    return EmptyAsyncEnumerable<object?>();
   }
 
   public ValueTask Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default) where TNotification : INotification
@@ -55,6 +55,12 @@ public class NoOpMediator : IMediator
 
   IAsyncEnumerable<TResponse> ISender.CreateStream<TResponse>(IStreamQuery<TResponse> query, CancellationToken cancellationToken)
   {
-    return AsyncEnumerable.Empty<TResponse>();
+    return EmptyAsyncEnumerable<TResponse>();
+  }
+
+  private static async IAsyncEnumerable<T> EmptyAsyncEnumerable<T>()
+  {
+    await Task.CompletedTask;
+    yield break;
   }
 }

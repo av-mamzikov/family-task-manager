@@ -292,6 +292,8 @@
 
 ## 4. Архитектура (Clean Architecture)
 
+Использовать Ardalis.CleanArchitecture.Template
+
 ### 4.1. Слои
 
 * **Core**: Domain, Application (use cases).
