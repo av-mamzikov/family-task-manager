@@ -22,6 +22,7 @@ public class Pet : EntityBase<Pet, Guid>, IAggregateRoot
     Guard.Against.Default(familyId);
     Guard.Against.NullOrWhiteSpace(name);
 
+    Id = Guid.NewGuid();
     FamilyId = familyId;
     Type = type;
     Name = name.Trim();

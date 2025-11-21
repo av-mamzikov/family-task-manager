@@ -40,7 +40,7 @@ public class CalculatePetMoodScoreTests
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        result.Value.ShouldBe(100);
+        result.Value.NewMoodScore.ShouldBe(100);
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class CalculatePetMoodScoreTests
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        result.Value.ShouldBe(100); // All tasks completed on time = 100% mood
+        result.Value.NewMoodScore.ShouldBe(100); // All tasks completed on time = 100% mood
     }
 
     [Fact]
@@ -114,8 +114,8 @@ public class CalculatePetMoodScoreTests
         // 10 points overdue (1 hour) = -10 * (1/24/7) ≈ -0.06
         // effectiveSum ≈ 9.94, maxPoints = 20
         // mood = 100 * (9.94 / 20) ≈ 50
-        result.Value.ShouldBeGreaterThan(45);
-        result.Value.ShouldBeLessThan(55);
+        result.Value.NewMoodScore.ShouldBeGreaterThan(45);
+        result.Value.NewMoodScore.ShouldBeLessThan(55);
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public class CalculatePetMoodScoreTests
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        result.Value.ShouldBe(0); // All tasks overdue for > 7 days = 0% mood
+        result.Value.NewMoodScore.ShouldBe(0); // All tasks overdue for > 7 days = 0% mood
     }
 
     [Fact]
@@ -172,7 +172,7 @@ public class CalculatePetMoodScoreTests
         // Late completion gives 50% of points (kLate = 0.5)
         // effectiveSum = 10 * 0.5 = 5, maxPoints = 10
         // mood = 100 * (5 / 10) = 50
-        result.Value.ShouldBe(50);
+        result.Value.NewMoodScore.ShouldBe(50);
     }
 
     [Fact]

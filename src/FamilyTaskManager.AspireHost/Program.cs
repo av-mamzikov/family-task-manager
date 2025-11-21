@@ -25,8 +25,8 @@ var papercut = builder.AddContainer("papercut", "jijiechen/papercut", "latest")
     e.UriScheme = "http";
   });
 
-// Add the web project with the database connection
-builder.AddProject<Projects.FamilyTaskManager_Web>("web")
+// Add the host project with the database connection
+builder.AddProject<Projects.FamilyTaskManager_Host>("host")
   .WithReference(cleanArchDb)
   .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
   .WithEnvironment("Papercut__Smtp__Url", papercut.GetEndpoint("smtp"))

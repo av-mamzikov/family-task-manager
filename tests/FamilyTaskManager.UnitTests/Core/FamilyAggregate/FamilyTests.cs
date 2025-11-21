@@ -98,7 +98,6 @@ public class FamilyTests
     // Arrange
     var family = new Family("Smith Family", "UTC");
     var userId = Guid.NewGuid();
-    var familyId = Guid.NewGuid();
     var role = FamilyRole.Admin;
 
     // Act
@@ -107,7 +106,7 @@ public class FamilyTests
     // Assert
     member.ShouldNotBeNull();
     member.UserId.ShouldBe(userId);
-    member.FamilyId.ShouldBe(familyId);
+    member.FamilyId.ShouldBe(family.Id);
     member.Role.ShouldBe(role);
     family.Members.ShouldContain(member);
     family.Members.Count.ShouldBe(1);

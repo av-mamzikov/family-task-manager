@@ -28,7 +28,8 @@ public class CreatePetHandler(
 
     // Create default task templates for this pet type
     var defaultTemplates = PetTaskTemplateData.GetDefaultTemplates(command.Type);
-    var systemUserId = Guid.Empty; // System-created templates
+    // Use a well-known GUID for system-created templates (not Guid.Empty to pass validation)
+    var systemUserId = new Guid("00000000-0000-0000-0000-000000000001");
     
     foreach (var templateData in defaultTemplates)
     {
@@ -42,6 +43,8 @@ public class CreatePetHandler(
       
       await taskTemplateRepository.AddAsync(taskTemplate, cancellationToken);
     }
+    
+    await taskTemplateRepository.SaveChangesAsync(cancellationToken);
 
     return Result<Guid>.Success(pet.Id);
   }

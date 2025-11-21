@@ -106,7 +106,7 @@ public class FamilyRepositoryTests : BaseRepositoryTestFixture
     var userId = Guid.NewGuid();
     
     // Act
-    var member = family.AddMember(userId, family.Id, FamilyRole.Admin);
+    var member = family.AddMember(userId, FamilyRole.Admin);
     await Repository.UpdateAsync(family);
     await DbContext.SaveChangesAsync();
 

@@ -5,6 +5,7 @@ using FamilyTaskManager.Core.PetAggregate;
 using Mediator;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Requests;
 using Ardalis.Result;
 
 namespace FamilyTaskManager.UnitTests.Host.Bot.Handlers.Commands;
@@ -12,15 +13,13 @@ namespace FamilyTaskManager.UnitTests.Host.Bot.Handlers.Commands;
 public class PetCommandHandlerTests
 {
   private readonly IMediator _mediator;
-  private readonly ILogger<PetCommandHandler> _logger;
   private readonly PetCommandHandler _handler;
   private readonly ITelegramBotClient _botClient;
 
   public PetCommandHandlerTests()
   {
     _mediator = Substitute.For<IMediator>();
-    _logger = Substitute.For<ILogger<PetCommandHandler>>();
-    _handler = new PetCommandHandler(_mediator, _logger);
+    _handler = new PetCommandHandler(_mediator);
     _botClient = Substitute.For<ITelegramBotClient>();
   }
 
@@ -36,10 +35,9 @@ public class PetCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Is<long>(123),
-      Arg.Is<string>(text => text.Contains("выберите активную семью")),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.ChatId.Identifier == 123 && req.Text.Contains("выберите активную семью")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -58,11 +56,9 @@ public class PetCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Is<long>(123),
-      Arg.Is<string>(text => text.Contains("нет питомцев")),
-      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.ChatId.Identifier == 123 && req.Text.Contains("нет питомцев")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -76,8 +72,8 @@ public class PetCommandHandlerTests
 
     var pets = new List<PetDto>
     {
-      new PetDto(Guid.NewGuid(), "Fluffy", PetType.Cat, 85),
-      new PetDto(Guid.NewGuid(), "Rex", PetType.Dog, 60)
+      new PetDto(Guid.NewGuid(), familyId, "Fluffy", PetType.Cat, 85),
+      new PetDto(Guid.NewGuid(), familyId, "Rex", PetType.Dog, 60)
     };
 
     _mediator.Send(Arg.Any<GetPetsQuery>(), Arg.Any<CancellationToken>())
@@ -87,16 +83,13 @@ public class PetCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Any<long>(),
-      Arg.Is<string>(text => 
-        text.Contains("Fluffy") && 
-        text.Contains("Rex") &&
-        text.Contains("🐱") &&
-        text.Contains("🐶")),
-      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
-      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => 
+        req.Text.Contains("Fluffy") && 
+        req.Text.Contains("Rex") &&
+        req.Text.Contains("🐱") &&
+        req.Text.Contains("🐶")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -110,7 +103,7 @@ public class PetCommandHandlerTests
 
     var pets = new List<PetDto>
     {
-      new PetDto(Guid.NewGuid(), "Happy Cat", PetType.Cat, 90) // High mood
+      new PetDto(Guid.NewGuid(), familyId, "Happy Cat", PetType.Cat, 90) // High mood
     };
 
     _mediator.Send(Arg.Any<GetPetsQuery>(), Arg.Any<CancellationToken>())
@@ -120,12 +113,9 @@ public class PetCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Any<long>(),
-      Arg.Is<string>(text => text.Contains("😊") && text.Contains("Отлично")),
-      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
-      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.Text.Contains("😊") && req.Text.Contains("Отлично")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -139,7 +129,7 @@ public class PetCommandHandlerTests
 
     var pets = new List<PetDto>
     {
-      new PetDto(Guid.NewGuid(), "Sad Cat", PetType.Cat, 15) // Low mood
+      new PetDto(Guid.NewGuid(), familyId, "Sad Cat", PetType.Cat, 15) // Low mood
     };
 
     _mediator.Send(Arg.Any<GetPetsQuery>(), Arg.Any<CancellationToken>())
@@ -149,12 +139,9 @@ public class PetCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Any<long>(),
-      Arg.Is<string>(text => text.Contains("😢") && text.Contains("Очень грустно")),
-      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
-      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.Text.Contains("😢") && req.Text.Contains("Очень грустно")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -168,9 +155,9 @@ public class PetCommandHandlerTests
 
     var pets = new List<PetDto>
     {
-      new PetDto(Guid.NewGuid(), "Cat", PetType.Cat, 50),
-      new PetDto(Guid.NewGuid(), "Dog", PetType.Dog, 50),
-      new PetDto(Guid.NewGuid(), "Hamster", PetType.Hamster, 50)
+      new PetDto(Guid.NewGuid(), familyId, "Cat", PetType.Cat, 50),
+      new PetDto(Guid.NewGuid(), familyId, "Dog", PetType.Dog, 50),
+      new PetDto(Guid.NewGuid(), familyId, "Hamster", PetType.Hamster, 50)
     };
 
     _mediator.Send(Arg.Any<GetPetsQuery>(), Arg.Any<CancellationToken>())
@@ -180,15 +167,12 @@ public class PetCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Any<long>(),
-      Arg.Is<string>(text => 
-        text.Contains("Кот") && 
-        text.Contains("Собака") && 
-        text.Contains("Хомяк")),
-      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
-      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => 
+        req.Text.Contains("Кот") && 
+        req.Text.Contains("Собака") && 
+        req.Text.Contains("Хомяк")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -207,10 +191,9 @@ public class PetCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Is<long>(123),
-      Arg.Is<string>(text => text.Contains("Ошибка")),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.ChatId.Identifier == 123 && req.Text.Contains("Ошибка")),
+      Arg.Any<CancellationToken>());
   }
 
   private static Message CreateMessage(long chatId, string text = "/pet")

@@ -86,7 +86,12 @@ public class InvitationTests
   public void IsExpired_Expired_ReturnsTrue()
   {
     // Arrange
-    var invitation = new Invitation(Guid.NewGuid(), FamilyRole.Adult, Guid.NewGuid(), -1);
+    var invitation = new Invitation(Guid.NewGuid(), FamilyRole.Adult, Guid.NewGuid(), 1);
+    
+    // Use reflection to set ExpiresAt to a past date
+    var expiresAtProperty = typeof(Invitation).GetProperty("ExpiresAt", 
+        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+    expiresAtProperty!.SetValue(invitation, DateTime.UtcNow.AddDays(-1));
 
     // Act
     var result = invitation.IsExpired();
@@ -139,7 +144,12 @@ public class InvitationTests
   public void IsValid_Expired_ReturnsFalse()
   {
     // Arrange
-    var invitation = new Invitation(Guid.NewGuid(), FamilyRole.Adult, Guid.NewGuid(), -1);
+    var invitation = new Invitation(Guid.NewGuid(), FamilyRole.Adult, Guid.NewGuid(), 1);
+    
+    // Use reflection to set ExpiresAt to a past date to make it expired
+    var expiresAtProperty = typeof(Invitation).GetProperty("ExpiresAt", 
+        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+    expiresAtProperty!.SetValue(invitation, DateTime.UtcNow.AddDays(-1));
 
     // Act
     var result = invitation.IsValid();

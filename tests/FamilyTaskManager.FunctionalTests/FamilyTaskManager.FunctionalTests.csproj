@@ -1,5 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Sdk Name="Microsoft.Build.CentralPackageVersions" Version="2.1.3" />
+  
+  <PropertyGroup>
+    <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Shouldly" />
@@ -24,8 +28,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\FamilyTaskManager.Infrastructure\FamilyTaskManager.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\FamilyTaskManager.UseCases\FamilyTaskManager.UseCases.csproj" />
-    <ProjectReference Include="..\..\src\FamilyTaskManager.Web\FamilyTaskManager.Web.csproj" />
-    <ProjectReference Include="..\..\src\FamilyTaskManager.Host\FamilyTaskManager.Host.csproj" />
   </ItemGroup>
 
 </Project>

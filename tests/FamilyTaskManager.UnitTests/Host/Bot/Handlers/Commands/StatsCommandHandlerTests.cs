@@ -5,6 +5,7 @@ using FamilyTaskManager.Core.FamilyAggregate;
 using Mediator;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Requests;
 using Ardalis.Result;
 
 namespace FamilyTaskManager.UnitTests.Host.Bot.Handlers.Commands;
@@ -12,15 +13,13 @@ namespace FamilyTaskManager.UnitTests.Host.Bot.Handlers.Commands;
 public class StatsCommandHandlerTests
 {
   private readonly IMediator _mediator;
-  private readonly ILogger<StatsCommandHandler> _logger;
   private readonly StatsCommandHandler _handler;
   private readonly ITelegramBotClient _botClient;
 
   public StatsCommandHandlerTests()
   {
     _mediator = Substitute.For<IMediator>();
-    _logger = Substitute.For<ILogger<StatsCommandHandler>>();
-    _handler = new StatsCommandHandler(_mediator, _logger);
+    _handler = new StatsCommandHandler(_mediator);
     _botClient = Substitute.For<ITelegramBotClient>();
   }
 
@@ -36,10 +35,9 @@ public class StatsCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Is<long>(123),
-      Arg.Is<string>(text => text.Contains("выберите активную семью")),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.ChatId.Identifier == 123 && req.Text.Contains("выберите активную семью")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -58,12 +56,9 @@ public class StatsCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Any<long>(),
-      Arg.Is<string>(text => text.Contains("отключён")),
-      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
-      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.Text.Contains("отключён")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -89,12 +84,9 @@ public class StatsCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Any<long>(),
-      Arg.Is<string>(text => text.Contains("Alice") && text.Contains("Bob") && text.Contains("Charlie")),
-      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
-      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.Text.Contains("Alice") && req.Text.Contains("Bob") && req.Text.Contains("Charlie")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -120,12 +112,9 @@ public class StatsCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Any<long>(),
-      Arg.Is<string>(text => text.Contains("🥇") && text.Contains("🥈") && text.Contains("🥉")),
-      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
-      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.Text.Contains("🥇") && req.Text.Contains("🥈") && req.Text.Contains("🥉")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -150,12 +139,9 @@ public class StatsCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Any<long>(),
-      Arg.Is<string>(text => text.Contains("➡️")),
-      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
-      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.Text.Contains("➡️")),
+      Arg.Any<CancellationToken>());
   }
 
   private static Message CreateMessage(long chatId, string text = "/stats")

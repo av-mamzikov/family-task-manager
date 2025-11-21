@@ -27,7 +27,7 @@ public class TaskInstanceCreatorJob : IJob
     try
     {
       // Get all active task templates
-      var templatesResult = await _mediator.Send(new GetActiveTaskTemplatesQuery());
+      var templatesResult = await _mediator.Send(new GetActiveTaskTemplatesQuery(), context.CancellationToken);
       
       if (!templatesResult.IsSuccess)
       {
@@ -50,7 +50,7 @@ public class TaskInstanceCreatorJob : IJob
           
           // Get the next occurrence after the last check (we check every minute, so look back 2 minutes to be safe)
           var checkFrom = now.AddMinutes(-2);
-          var nextOccurrence = cronExpression.GetTimeAfter(DateTimeOffset.FromUnixTimeSeconds(checkFrom.Ticks / TimeSpan.TicksPerSecond));
+          var nextOccurrence = cronExpression.GetTimeAfter(new DateTimeOffset(checkFrom));
 
           // If next occurrence is in the past minute, create a new instance
           if (nextOccurrence.HasValue && nextOccurrence.Value.UtcDateTime <= now && nextOccurrence.Value.UtcDateTime > checkFrom)
@@ -60,7 +60,8 @@ public class TaskInstanceCreatorJob : IJob
               template.Id, template.Title, nextOccurrence.Value);
 
             var createResult = await _mediator.Send(
-              new CreateTaskInstanceFromTemplateCommand(template.Id, nextOccurrence.Value.UtcDateTime));
+              new CreateTaskInstanceFromTemplateCommand(template.Id, nextOccurrence.Value.UtcDateTime),
+              context.CancellationToken);
 
             if (createResult.IsSuccess)
             {

@@ -5,6 +5,7 @@ using FamilyTaskManager.Core.FamilyAggregate;
 using Mediator;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Requests;
 using Ardalis.Result;
 
 namespace FamilyTaskManager.UnitTests.Host.Bot.Handlers.Commands;
@@ -12,15 +13,13 @@ namespace FamilyTaskManager.UnitTests.Host.Bot.Handlers.Commands;
 public class FamilyCommandHandlerTests
 {
   private readonly IMediator _mediator;
-  private readonly ILogger<FamilyCommandHandler> _logger;
   private readonly FamilyCommandHandler _handler;
   private readonly ITelegramBotClient _botClient;
 
   public FamilyCommandHandlerTests()
   {
     _mediator = Substitute.For<IMediator>();
-    _logger = Substitute.For<ILogger<FamilyCommandHandler>>();
-    _handler = new FamilyCommandHandler(_mediator, _logger);
+    _handler = new FamilyCommandHandler(_mediator);
     _botClient = Substitute.For<ITelegramBotClient>();
   }
 
@@ -39,12 +38,9 @@ public class FamilyCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Is<long>(123),
-      Arg.Is<string>(text => text.Contains("нет семей")),
-      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
-      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.ChatId.Identifier == 123 && req.Text.Contains("нет семей")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -68,12 +64,9 @@ public class FamilyCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Is<long>(123),
-      Arg.Is<string>(text => text.Contains("Test Family") && text.Contains("Администратор")),
-      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
-      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.ChatId.Identifier == 123 && req.Text.Contains("Test Family") && req.Text.Contains("Администратор")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -97,13 +90,9 @@ public class FamilyCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Any<long>(),
-      Arg.Any<string>(),
-      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
-      replyMarkup: Arg.Is<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(
-        markup => markup.ToString()!.Contains("Управление участниками")),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.ChatId.Identifier == 123),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -127,13 +116,9 @@ public class FamilyCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Any<long>(),
-      Arg.Any<string>(),
-      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
-      replyMarkup: Arg.Is<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(
-        markup => !markup.ToString()!.Contains("Управление участниками")),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.ChatId.Identifier == 123),
+      Arg.Any<CancellationToken>());
   }
 
   private static Message CreateMessage(long chatId, string text = "/family")

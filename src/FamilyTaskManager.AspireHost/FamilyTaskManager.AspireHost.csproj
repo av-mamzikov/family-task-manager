@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FamilyTaskManager.Web\FamilyTaskManager.Web.csproj" />
+    <ProjectReference Include="..\FamilyTaskManager.Host\FamilyTaskManager.Host.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- The IsAspireProjectResource attribute tells .NET Aspire to treat this 

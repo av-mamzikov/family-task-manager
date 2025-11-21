@@ -4,6 +4,7 @@ using FamilyTaskManager.UseCases.Tasks;
 using Mediator;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Requests;
 using Ardalis.Result;
 using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
 
@@ -12,15 +13,13 @@ namespace FamilyTaskManager.UnitTests.Host.Bot.Handlers.Commands;
 public class TasksCommandHandlerTests
 {
   private readonly IMediator _mediator;
-  private readonly ILogger<TasksCommandHandler> _logger;
   private readonly TasksCommandHandler _handler;
   private readonly ITelegramBotClient _botClient;
 
   public TasksCommandHandlerTests()
   {
     _mediator = Substitute.For<IMediator>();
-    _logger = Substitute.For<ILogger<TasksCommandHandler>>();
-    _handler = new TasksCommandHandler(_mediator, _logger);
+    _handler = new TasksCommandHandler(_mediator);
     _botClient = Substitute.For<ITelegramBotClient>();
   }
 
@@ -36,10 +35,9 @@ public class TasksCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Is<long>(123),
-      Arg.Is<string>(text => text.Contains("выберите активную семью")),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.ChatId.Identifier == 123 && req.Text.Contains("выберите активную семью")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -58,10 +56,9 @@ public class TasksCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Is<long>(123),
-      Arg.Is<string>(text => text.Contains("Активных задач пока нет")),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.ChatId.Identifier == 123 && req.Text.Contains("Активных задач пока нет")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -92,12 +89,9 @@ public class TasksCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Any<long>(),
-      Arg.Is<string>(text => text.Contains("Feed the cat") && text.Contains("Fluffy") && text.Contains("10")),
-      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
-      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.Text.Contains("Feed the cat") && req.Text.Contains("Fluffy") && req.Text.Contains("10")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -128,12 +122,9 @@ public class TasksCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Any<long>(),
-      Arg.Is<string>(text => text.Contains("⚠️")),
-      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
-      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.Text.Contains("⚠️")),
+      Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -158,12 +149,9 @@ public class TasksCommandHandlerTests
     await _handler.HandleAsync(_botClient, message, session, userId, CancellationToken.None);
 
     // Assert
-    await _botClient.Received(1).SendTextMessageAsync(
-      Arg.Any<long>(),
-      Arg.Is<string>(text => text.Contains("Доступные задачи") && text.Contains("В работе")),
-      parseMode: Arg.Any<Telegram.Bot.Types.Enums.ParseMode?>(),
-      replyMarkup: Arg.Any<Telegram.Bot.Types.ReplyMarkups.IReplyMarkup>(),
-      cancellationToken: Arg.Any<CancellationToken>());
+    await _botClient.Received(1).MakeRequestAsync(
+      Arg.Is<SendMessageRequest>(req => req.Text.Contains("Доступные задачи") && req.Text.Contains("В работе")),
+      Arg.Any<CancellationToken>());
   }
 
   private static Message CreateMessage(long chatId, string text = "/tasks")

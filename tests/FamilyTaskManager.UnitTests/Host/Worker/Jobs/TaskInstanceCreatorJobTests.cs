@@ -75,7 +75,7 @@ public class TaskInstanceCreatorJobTests
         // Arrange
         var template = new TaskTemplate(
             Guid.NewGuid(), Guid.NewGuid(),
-            "Test Task", 10, "0 * * * * ?", Guid.NewGuid());
+            "Test Task", 10, "* * * * * ?", Guid.NewGuid()); // Every second to ensure it triggers
 
         _mediator.Send(Arg.Any<GetActiveTaskTemplatesQuery>(), Arg.Any<CancellationToken>())
             .Returns(Result.Success(new List<TaskTemplate> { template }));

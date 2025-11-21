@@ -17,11 +17,12 @@ public class CronExpressionTests
     {
         // Arrange
         var cron = new CronExpression(cronExpression);
-        var current = DateTime.Parse(currentTime);
-        var expected = DateTime.Parse(expectedNext);
+        cron.TimeZone = TimeZoneInfo.Utc;
+        var current = DateTime.SpecifyKind(DateTime.Parse(currentTime), DateTimeKind.Utc);
+        var expected = DateTime.SpecifyKind(DateTime.Parse(expectedNext), DateTimeKind.Utc);
 
         // Act
-        var next = cron.GetTimeAfter(DateTimeOffset.Parse(currentTime));
+        var next = cron.GetTimeAfter(new DateTimeOffset(current, TimeSpan.Zero));
 
         // Assert
         next.ShouldNotBeNull();
@@ -32,7 +33,7 @@ public class CronExpressionTests
     [InlineData("0 0 9 * * ?")]      // Daily at 9:00
     [InlineData("0 */15 * * * ?")]   // Every 15 minutes
     [InlineData("0 0 9,20 * * ?")]   // Daily at 9:00 and 20:00
-    [InlineData("0 0 9 * * MON")]    // Every Monday at 9:00
+    [InlineData("0 0 9 ? * MON")]    // Every Monday at 9:00
     [InlineData("0 0 9 1 * ?")]      // First day of month at 9:00
     public void CronExpression_ValidatesCorrectly_ForValidExpressions(string cronExpression)
     {
@@ -57,11 +58,12 @@ public class CronExpressionTests
     {
         // Arrange
         var cron = new CronExpression("0 * * * * ?");
-        var start = new DateTime(2025, 11, 21, 12, 0, 0);
+        cron.TimeZone = TimeZoneInfo.Utc;
+        var start = DateTime.SpecifyKind(new DateTime(2025, 11, 21, 12, 0, 0), DateTimeKind.Utc);
 
         // Act
         var occurrences = new List<DateTime>();
-        var current = DateTimeOffset.Parse(start.ToString());
+        var current = new DateTimeOffset(start, TimeSpan.Zero);
         
         for (int i = 0; i < 5; i++)
         {
@@ -85,11 +87,12 @@ public class CronExpressionTests
     {
         // Arrange
         var cron = new CronExpression("0 0 9 */5 * ?");
-        var start = new DateTime(2025, 11, 1, 9, 0, 0);
+        cron.TimeZone = TimeZoneInfo.Utc;
+        var start = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 9, 0, 0), DateTimeKind.Utc);
 
         // Act
         var occurrences = new List<DateTime>();
-        var current = DateTimeOffset.Parse(start.ToString());
+        var current = new DateTimeOffset(start, TimeSpan.Zero);
         
         for (int i = 0; i < 4; i++)
         {
@@ -112,10 +115,11 @@ public class CronExpressionTests
     {
         // Arrange
         var cron = new CronExpression("0 0 9,20 * * ?");
-        var start = new DateTime(2025, 11, 21, 8, 0, 0);
+        cron.TimeZone = TimeZoneInfo.Utc;
+        var start = DateTime.SpecifyKind(new DateTime(2025, 11, 21, 8, 0, 0), DateTimeKind.Utc);
 
         // Act
-        var next1 = cron.GetTimeAfter(DateTimeOffset.Parse(start.ToString()));
+        var next1 = cron.GetTimeAfter(new DateTimeOffset(start, TimeSpan.Zero));
         var next2 = cron.GetTimeAfter(next1!.Value);
         var next3 = cron.GetTimeAfter(next2!.Value);
 
