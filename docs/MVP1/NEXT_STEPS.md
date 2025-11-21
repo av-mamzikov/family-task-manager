@@ -7,44 +7,15 @@
 3. **Jobs** - TaskInstanceCreator, TaskReminder, PetMoodCalculator
 4. **Документация** - полная документация и инструкции
 5. **Скрипты** - автоматизация запуска и тестирования
+6. **Telegram уведомления** - отправка уведомлений о задачах и настроении питомца
 
-## 🎯 Приоритет 1: Критично для MVP
 
-### 1. Telegram уведомления (2-3 дня)
-
-**Почему важно**: Без уведомлений пользователи не узнают о задачах и событиях
-
-**Что делать**:
-
-```csharp
-// 1. Создать интерфейс
-public interface ITelegramNotificationService
-{
-    Task SendTaskReminderAsync(long telegramId, TaskReminderDto task);
-    Task SendTaskCompletedAsync(Guid familyId, string userName, string taskTitle);
-    Task SendPetMoodChangedAsync(Guid familyId, string petName, int moodScore);
-    Task SendMemberJoinedAsync(Guid familyId, string userName);
-}
-
-// 2. Реализовать сервис
-public class TelegramNotificationService : ITelegramNotificationService
-{
-    private readonly ITelegramBotClient _botClient;
-    private readonly IRepository<User> _userRepository;
-    private readonly IRepository<Family> _familyRepository;
-    
-    // Реализация методов...
-}
-
-// 3. Интегрировать в TaskReminderJob
-var notificationService = scope.ServiceProvider.GetRequiredService<ITelegramNotificationService>();
-await notificationService.SendTaskReminderAsync(user.TelegramId, task);
-```
-
-**Файлы для изменения**:
-- `src/FamilyTaskManager.Bot/Services/TelegramNotificationService.cs` (создать)
-- `src/FamilyTaskManager.Worker/Jobs/TaskReminderJob.cs` (обновить)
-- `src/FamilyTaskManager.Bot/Program.cs` (зарегистрировать сервис)
+**Архитектура уведомлений**:
+- ✅ Рефакторинг в Clean Architecture с Domain Events (ЗАВЕРШЕНО)
+- ✅ TelegramNotificationService перемещен в Infrastructure
+- ✅ Уведомления отправляются через Event Handlers
+- ✅ UseCases не зависят от деталей уведомлений
+- ⏳ Добавить unit тесты для notification service
 
 ### 2. Система invite-кодов (2-3 дня)
 
@@ -378,7 +349,7 @@ var nextOccurrence = cronExpression.GetTimeAfter(DateTimeOffset.UtcNow);
 
 ### Неделя 1 (21-27 ноября)
 - ✅ День 1-2: Реализация Worker (завершено)
-- ⏳ День 3-4: Telegram уведомления
+- ✅ День 3-4: Telegram уведомления (завершено)
 - ⏳ День 5-6: Система invite-кодов
 - ⏳ День 7: Тестирование и багфиксы
 
@@ -404,7 +375,7 @@ var nextOccurrence = cronExpression.GetTimeAfter(DateTimeOffset.UtcNow);
 - ✅ Telegram Bot работает
 - ✅ Worker создает задачи
 - ✅ Worker пересчитывает настроение
-- ⏳ Уведомления работают
+- ✅ Уведомления работают
 - ⏳ Invite codes реализованы
 - ⏳ Можно создавать задачи через бота
 
@@ -433,4 +404,7 @@ var nextOccurrence = cronExpression.GetTimeAfter(DateTimeOffset.UtcNow);
 - Telegram Bot API: https://core.telegram.org/bots/api
 - Cron Expression Generator: https://www.freeformatter.com/cron-expression-generator-quartz.html
 
-**Следующая задача**: Реализация Telegram уведомлений в TaskReminderJob
+**Следующая задача**: Реализация системы invite-кодов для приглашения участников в семью
+
+**Документация**:
+- [Telegram Notifications](TELEGRAM_NOTIFICATIONS.md) - полная документация по уведомлениям

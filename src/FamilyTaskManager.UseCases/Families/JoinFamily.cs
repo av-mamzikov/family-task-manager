@@ -29,8 +29,10 @@ public class JoinFamilyHandler(
       return Result<Guid>.Error("User is already a member of this family");
     }
 
-    // Add member
+    // Add member (registers MemberAddedEvent)
     var member = family.AddMember(command.UserId, command.Role);
+    
+    // Update family (domain events will be dispatched automatically)
     await familyRepository.UpdateAsync(family, cancellationToken);
 
     return Result<Guid>.Success(member.Id);

@@ -1,0 +1,241 @@
+using Telegram.Bot;
+using Telegram.Bot.Types.Enums;
+using FamilyTaskManager.UseCases.Tasks;
+using FamilyTaskManager.UseCases.Families.Specifications;
+using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.UserAggregate;
+using Ardalis.SharedKernel;
+
+namespace FamilyTaskManager.Infrastructure.Notifications;
+
+/// <summary>
+/// Service for sending Telegram notifications to family members
+/// </summary>
+public class TelegramNotificationService
+{
+  private readonly ITelegramBotClient _botClient;
+  private readonly IRepository<Family> _familyRepository;
+  private readonly IRepository<User> _userRepository;
+  private readonly ILogger<TelegramNotificationService> _logger;
+
+  public TelegramNotificationService(
+    ITelegramBotClient botClient,
+    IRepository<Family> familyRepository,
+    IRepository<User> userRepository,
+    ILogger<TelegramNotificationService> logger)
+  {
+    _botClient = botClient;
+    _familyRepository = familyRepository;
+    _userRepository = userRepository;
+    _logger = logger;
+  }
+
+  public async Task SendTaskReminderAsync(long telegramId, TaskReminderDto task, CancellationToken cancellationToken = default)
+  {
+    try
+    {
+      var message = $"⏰ <b>Напоминание о задаче</b>\n\n" +
+                   $"📝 {EscapeHtml(task.Title)}\n" +
+                   $"⏳ Срок: {task.DueAt:dd.MM.yyyy HH:mm}\n\n" +
+                   $"Не забудьте выполнить задачу вовремя! 🎯";
+
+      await _botClient.SendTextMessageAsync(
+        chatId: telegramId,
+        text: message,
+        parseMode: ParseMode.Html,
+        cancellationToken: cancellationToken);
+
+      _logger.LogInformation(
+        "Task reminder sent to TelegramId {TelegramId} for task '{TaskTitle}'",
+        telegramId, task.Title);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex,
+        "Failed to send task reminder to TelegramId {TelegramId} for task '{TaskTitle}'",
+        telegramId, task.Title);
+      throw;
+    }
+  }
+
+  public async Task SendTaskCompletedAsync(Guid familyId, string userName, string taskTitle, int points, CancellationToken cancellationToken = default)
+  {
+    try
+    {
+      var message = $"✅ <b>Задача выполнена!</b>\n\n" +
+                   $"👤 {EscapeHtml(userName)}\n" +
+                   $"📝 {EscapeHtml(taskTitle)}\n" +
+                   $"⭐ +{points} очков\n\n" +
+                   $"Отличная работа! 🎉";
+
+      await SendToFamilyMembersAsync(familyId, message, cancellationToken);
+
+      _logger.LogInformation(
+        "Task completed notification sent to family {FamilyId}: user '{UserName}' completed '{TaskTitle}'",
+        familyId, userName, taskTitle);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex,
+        "Failed to send task completed notification to family {FamilyId}",
+        familyId);
+      throw;
+    }
+  }
+
+  public async Task SendPetMoodChangedAsync(Guid familyId, string petName, int moodScore, CancellationToken cancellationToken = default)
+  {
+    try
+    {
+      string emoji;
+      string status;
+
+      if (moodScore >= 80)
+      {
+        emoji = "😊";
+        status = "отличное";
+      }
+      else if (moodScore >= 50)
+      {
+        emoji = "😐";
+        status = "нормальное";
+      }
+      else if (moodScore >= 20)
+      {
+        emoji = "😟";
+        status = "плохое";
+      }
+      else
+      {
+        emoji = "😢";
+        status = "критическое";
+      }
+
+      var message = $"{emoji} <b>Настроение питомца изменилось</b>\n\n" +
+                   $"🐾 {EscapeHtml(petName)}\n" +
+                   $"💭 Настроение: {status} ({moodScore}/100)\n\n";
+
+      if (moodScore < 20)
+      {
+        message += "⚠️ Срочно нужно выполнить задачи по уходу за питомцем!";
+      }
+      else if (moodScore < 50)
+      {
+        message += "⚡ Не забывайте о задачах по уходу за питомцем!";
+      }
+      else if (moodScore >= 80)
+      {
+        message += "🎉 Питомец очень доволен! Продолжайте в том же духе!";
+      }
+
+      await SendToFamilyMembersAsync(familyId, message, cancellationToken);
+
+      _logger.LogInformation(
+        "Pet mood changed notification sent to family {FamilyId}: pet '{PetName}' mood is {MoodScore}",
+        familyId, petName, moodScore);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex,
+        "Failed to send pet mood notification to family {FamilyId}",
+        familyId);
+      throw;
+    }
+  }
+
+  public async Task SendMemberJoinedAsync(Guid familyId, string userName, CancellationToken cancellationToken = default)
+  {
+    try
+    {
+      var message = $"👋 <b>Новый участник присоединился к семье!</b>\n\n" +
+                   $"👤 {EscapeHtml(userName)}\n\n" +
+                   $"Добро пожаловать в семью! 🎉";
+
+      await SendToFamilyMembersAsync(familyId, message, cancellationToken);
+
+      _logger.LogInformation(
+        "Member joined notification sent to family {FamilyId}: user '{UserName}' joined",
+        familyId, userName);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex,
+        "Failed to send member joined notification to family {FamilyId}",
+        familyId);
+      throw;
+    }
+  }
+
+  /// <summary>
+  /// Send message to all active members of a family
+  /// </summary>
+  private async Task SendToFamilyMembersAsync(Guid familyId, string message, CancellationToken cancellationToken)
+  {
+    // Get family with members
+    var spec = new GetFamilyWithMembersSpec(familyId);
+    var family = await _familyRepository.FirstOrDefaultAsync(spec, cancellationToken);
+
+    if (family == null)
+    {
+      _logger.LogWarning("Family {FamilyId} not found for notification", familyId);
+      return;
+    }
+
+    var activeMembers = family.Members.Where(m => m.IsActive).ToList();
+
+    if (activeMembers.Count == 0)
+    {
+      _logger.LogWarning("No active members found in family {FamilyId}", familyId);
+      return;
+    }
+
+    // Send to each member
+    var tasks = new List<Task>();
+    foreach (var member in activeMembers)
+    {
+      tasks.Add(SendToUserAsync(member.UserId, message, cancellationToken));
+    }
+
+    await Task.WhenAll(tasks);
+  }
+
+  /// <summary>
+  /// Send message to a specific user by userId
+  /// </summary>
+  private async Task SendToUserAsync(Guid userId, string message, CancellationToken cancellationToken)
+  {
+    try
+    {
+      var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
+      if (user == null)
+      {
+        _logger.LogWarning("User {UserId} not found for notification", userId);
+        return;
+      }
+
+      await _botClient.SendTextMessageAsync(
+        chatId: user.TelegramId,
+        text: message,
+        parseMode: ParseMode.Html,
+        cancellationToken: cancellationToken);
+
+      _logger.LogDebug("Notification sent to user {UserId} (TelegramId: {TelegramId})", userId, user.TelegramId);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Failed to send notification to user {UserId}", userId);
+      // Don't throw - we want to continue sending to other users
+    }
+  }
+
+  /// <summary>
+  /// Escape HTML special characters for Telegram HTML parse mode
+  /// </summary>
+  private static string EscapeHtml(string text)
+  {
+    return text
+      .Replace("&", "&amp;")
+      .Replace("<", "&lt;")
+      .Replace(">", "&gt;");
+  }
+}

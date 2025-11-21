@@ -35,13 +35,13 @@ public class CompleteTaskHandler(
       return Result.Error("User is not a member of this family");
     }
 
-    // Complete task
+    // Complete task (registers TaskCompletedEvent)
     task.Complete(command.UserId, DateTime.UtcNow);
     
     // Add points to member
     member.AddPoints(task.Points);
 
-    // Update both entities
+    // Update both entities (domain events will be dispatched automatically)
     await taskRepository.UpdateAsync(task, cancellationToken);
     await familyRepository.UpdateAsync(family, cancellationToken);
 

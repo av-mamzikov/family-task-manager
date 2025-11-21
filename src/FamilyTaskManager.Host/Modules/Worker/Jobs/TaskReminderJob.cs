@@ -2,6 +2,7 @@ using Mediator;
 using Quartz;
 using FamilyTaskManager.UseCases.Tasks;
 using FamilyTaskManager.UseCases.Users;
+using FamilyTaskManager.UseCases.Notifications;
 
 namespace FamilyTaskManager.Host.Modules.Worker.Jobs;
 
@@ -13,12 +14,16 @@ namespace FamilyTaskManager.Host.Modules.Worker.Jobs;
 public class TaskReminderJob : IJob
 {
   private readonly IMediator _mediator;
+  private readonly IServiceProvider _serviceProvider;
   private readonly ILogger<TaskReminderJob> _logger;
-  // TODO: Add ITelegramNotificationService when notification system is implemented
 
-  public TaskReminderJob(IMediator mediator, ILogger<TaskReminderJob> logger)
+  public TaskReminderJob(
+    IMediator mediator, 
+    IServiceProvider serviceProvider,
+    ILogger<TaskReminderJob> logger)
   {
     _mediator = mediator;
+    _serviceProvider = serviceProvider;
     _logger = logger;
   }
 
@@ -46,37 +51,40 @@ public class TaskReminderJob : IJob
 
       var sentCount = 0;
 
-      foreach (var task in tasks)
+      // Create a scope to resolve scoped services
+      using (var scope = _serviceProvider.CreateScope())
       {
-        try
+        var notificationService = scope.ServiceProvider.GetRequiredService<ITelegramNotificationService>();
+
+        foreach (var task in tasks)
         {
-          // Get telegram IDs for all family members
-          foreach (var userId in task.FamilyMemberIds)
+          try
           {
-            var userResult = await _mediator.Send(new GetUserByIdQuery(userId));
-            
-            if (!userResult.IsSuccess || userResult.Value == null)
+            // Get telegram IDs for all family members
+            foreach (var userId in task.FamilyMemberIds)
             {
-              _logger.LogWarning("User {UserId} not found for reminder", userId);
-              continue;
+              var userResult = await _mediator.Send(new GetUserByIdQuery(userId));
+              
+              if (!userResult.IsSuccess || userResult.Value == null)
+              {
+                _logger.LogWarning("User {UserId} not found for reminder", userId);
+                continue;
+              }
+
+              var user = userResult.Value;
+
+              // Send Telegram notification
+              await notificationService.SendTaskReminderAsync(user.TelegramId, task, context.CancellationToken);
+
+              sentCount++;
             }
-
-            var user = userResult.Value;
-
-            // TODO: Send Telegram notification when notification service is implemented
-            // For now, just log
-            _logger.LogInformation(
-              "Would send reminder to user {UserId} (TelegramId: {TelegramId}) for task '{Title}' due at {DueAt}",
-              userId, user.TelegramId, task.Title, task.DueAt);
-
-            sentCount++;
           }
-        }
-        catch (Exception ex)
-        {
-          _logger.LogError(ex, 
-            "Error sending reminder for task {TaskId}", 
-            task.TaskId);
+          catch (Exception ex)
+          {
+            _logger.LogError(ex, 
+              "Error sending reminder for task {TaskId}", 
+              task.TaskId);
+          }
         }
       }
 

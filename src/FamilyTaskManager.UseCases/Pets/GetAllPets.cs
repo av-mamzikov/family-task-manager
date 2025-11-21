@@ -9,7 +9,7 @@ public class GetAllPetsHandler(IRepository<Pet> repository)
   {
     var pets = await repository.ListAsync(cancellationToken);
     
-    var result = pets.Select(p => new PetDto(p.Id, p.Name, p.Type, p.MoodScore)).ToList();
+    var result = pets.Select(p => new PetDto(p.Id, p.FamilyId, p.Name, p.Type, p.MoodScore)).ToList();
 
     return Result.Success(result);
   }
