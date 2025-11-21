@@ -7,7 +7,9 @@ using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.UseCases.Users;
 using FamilyTaskManager.UseCases.Families;
 using FamilyTaskManager.UseCases.Pets;
+using FamilyTaskManager.UseCases.Tasks;
 using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Core.FamilyAggregate;
 using Mediator;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
@@ -144,12 +146,58 @@ public class CommandHandler : ICommandHandler
     string inviteCode,
     CancellationToken cancellationToken)
   {
-    // TODO: Implement invite handling
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      "🔗 Обработка приглашения...\n(В разработке)",
-      cancellationToken: cancellationToken);
+    // Extract code from "invite_CODE" format
+    var code = inviteCode.Replace("invite_", "");
+
+    // Join family by invite code
+    var joinCommand = new JoinByInviteCodeCommand(userId, code);
+    var result = await _mediator.Send(joinCommand, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      var errorMessage = result.Errors.FirstOrDefault() ?? "Неизвестная ошибка";
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        $"❌ Не удалось присоединиться к семье:\n{errorMessage}",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Get updated family list
+    var getFamiliesQuery = new GetUserFamiliesQuery(userId);
+    var familiesResult = await _mediator.Send(getFamiliesQuery, cancellationToken);
+
+    if (familiesResult.IsSuccess && familiesResult.Value.Any())
+    {
+      var newFamily = familiesResult.Value.First();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        $"🎉 *Добро пожаловать в семью!*\n\n" +
+        $"Вы успешно присоединились к семье *{newFamily.Name}*\n" +
+        $"Ваша роль: {GetRoleText(newFamily.UserRole)}\n\n" +
+        $"Используйте /tasks чтобы посмотреть задачи",
+        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+        cancellationToken: cancellationToken);
+
+      // Show main menu
+      await SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken);
+    }
+    else
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "✅ Вы присоединились к семье!",
+        cancellationToken: cancellationToken);
+    }
   }
+
+  private string GetRoleText(FamilyRole role) => role switch
+  {
+    FamilyRole.Admin => "👑 Администратор",
+    FamilyRole.Adult => "👤 Взрослый",
+    FamilyRole.Child => "👶 Ребёнок",
+    _ => "❓ Неизвестно"
+  };
 
   private async Task HandleFamilyCommandAsync(
     ITelegramBotClient botClient,
@@ -326,6 +374,22 @@ public class CommandHandler : ICommandHandler
       case ConversationState.AwaitingPetName:
         await HandlePetNameInputAsync(botClient, message, session, text, cancellationToken);
         break;
+      
+      case ConversationState.AwaitingTaskTitle:
+        await HandleTaskTitleInputAsync(botClient, message, session, text, cancellationToken);
+        break;
+      
+      case ConversationState.AwaitingTaskPoints:
+        await HandleTaskPointsInputAsync(botClient, message, session, text, cancellationToken);
+        break;
+      
+      case ConversationState.AwaitingTaskDueDate:
+        await HandleTaskDueDateInputAsync(botClient, message, session, text, cancellationToken);
+        break;
+      
+      case ConversationState.AwaitingTaskSchedule:
+        await HandleTaskScheduleInputAsync(botClient, message, session, text, cancellationToken);
+        break;
 
       // Add more conversation handlers as needed
       default:
@@ -458,6 +522,240 @@ public class CommandHandler : ICommandHandler
       message.Chat.Id,
       $"✅ Питомец {petEmoji} \"{petName}\" успешно создан!\n\n" +
       "Теперь вы можете создавать задачи для ухода за питомцем.",
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleTaskTitleInputAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    string title,
+    CancellationToken cancellationToken)
+  {
+    if (string.IsNullOrWhiteSpace(title) || title.Length < 3 || title.Length > 100)
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Название задачи должно содержать от 3 до 100 символов. Попробуйте снова:",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Store title and move to points input
+    session.Data["title"] = title;
+    session.State = ConversationState.AwaitingTaskPoints;
+
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      "💯 Введите количество очков за выполнение задачи (от 1 до 100):",
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleTaskPointsInputAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    string pointsText,
+    CancellationToken cancellationToken)
+  {
+    if (!int.TryParse(pointsText, out var points) || points < 1 || points > 100)
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Количество очков должно быть числом от 1 до 100. Попробуйте снова:",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Store points and show pet selection
+    session.Data["points"] = points;
+    session.State = ConversationState.AwaitingTaskPetSelection;
+
+    // Get family pets
+    if (!session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId)
+    {
+      session.ClearState();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Ошибка. Попробуйте создать задачу заново.",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var getPetsQuery = new GetPetsQuery(familyId);
+    var petsResult = await _mediator.Send(getPetsQuery, cancellationToken);
+
+    if (!petsResult.IsSuccess || !petsResult.Value.Any())
+    {
+      session.ClearState();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ В семье нет питомцев. Сначала создайте питомца через /pet",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var buttons = petsResult.Value.Select(p =>
+    {
+      var petEmoji = p.Type switch
+      {
+        PetType.Cat => "🐱",
+        PetType.Dog => "🐶",
+        PetType.Hamster => "🐹",
+        _ => "🐾"
+      };
+      return new[] { InlineKeyboardButton.WithCallbackData($"{petEmoji} {p.Name}", $"taskpet_{p.Id}") };
+    }).ToArray();
+
+    var keyboard = new InlineKeyboardMarkup(buttons);
+
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      "🐾 Выберите питомца, к которому относится задача:",
+      replyMarkup: keyboard,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleTaskDueDateInputAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    string dueDateText,
+    CancellationToken cancellationToken)
+  {
+    // Try to parse the date
+    if (!int.TryParse(dueDateText, out var days) || days < 0 || days > 365)
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Введите количество дней (от 0 до 365). Например: 1 (завтра), 7 (через неделю):",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var dueAt = DateTime.UtcNow.AddDays(days);
+    
+    // Get all required data from session
+    if (!session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId ||
+        !session.Data.TryGetValue("petId", out var petIdObj) || petIdObj is not Guid petId ||
+        !session.Data.TryGetValue("title", out var titleObj) || titleObj is not string title ||
+        !session.Data.TryGetValue("points", out var pointsObj) || pointsObj is not int points)
+    {
+      session.ClearState();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Ошибка. Попробуйте создать задачу заново.",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Get user ID
+    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
+    var userResult = await _mediator.Send(registerCommand, cancellationToken);
+    
+    if (!userResult.IsSuccess)
+    {
+      session.ClearState();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Ошибка. Попробуйте /start",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Create one-time task
+    var createTaskCommand = new CreateTaskCommand(familyId, petId, title, points, dueAt, userResult.Value);
+    var result = await _mediator.Send(createTaskCommand, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        $"❌ Ошибка создания задачи: {result.Errors.FirstOrDefault()}",
+        cancellationToken: cancellationToken);
+      session.ClearState();
+      return;
+    }
+
+    session.ClearState();
+
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      $"✅ Задача \"{title}\" успешно создана!\n\n" +
+      $"💯 Очки: {points}\n" +
+      $"📅 Срок: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
+      "Задача доступна всем участникам семьи.",
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleTaskScheduleInputAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    string schedule,
+    CancellationToken cancellationToken)
+  {
+    // Validate schedule (basic check)
+    if (string.IsNullOrWhiteSpace(schedule))
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Расписание не может быть пустым. Попробуйте снова:",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Get all required data from session
+    if (!session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId ||
+        !session.Data.TryGetValue("petId", out var petIdObj) || petIdObj is not Guid petId ||
+        !session.Data.TryGetValue("title", out var titleObj) || titleObj is not string title ||
+        !session.Data.TryGetValue("points", out var pointsObj) || pointsObj is not int points)
+    {
+      session.ClearState();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Ошибка. Попробуйте создать задачу заново.",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Get user ID
+    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
+    var userResult = await _mediator.Send(registerCommand, cancellationToken);
+    
+    if (!userResult.IsSuccess)
+    {
+      session.ClearState();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Ошибка. Попробуйте /start",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Create periodic task template
+    var createTemplateCommand = new CreateTaskTemplateCommand(familyId, petId, title, points, schedule, userResult.Value);
+    var result = await _mediator.Send(createTemplateCommand, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        $"❌ Ошибка создания задачи: {result.Errors.FirstOrDefault()}\n\n" +
+        "Проверьте правильность cron-выражения.",
+        cancellationToken: cancellationToken);
+      session.ClearState();
+      return;
+    }
+
+    session.ClearState();
+
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      $"✅ Периодическая задача \"{title}\" успешно создана!\n\n" +
+      $"💯 Очки: {points}\n" +
+      $"🔄 Расписание: {schedule}\n\n" +
+      "Задача будет автоматически создаваться по расписанию.",
       cancellationToken: cancellationToken);
   }
 

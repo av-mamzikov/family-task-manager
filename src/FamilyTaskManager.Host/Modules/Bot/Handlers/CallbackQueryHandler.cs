@@ -55,8 +55,10 @@ public class CallbackQueryHandler : ICallbackQueryHandler
         "create" => HandleCreateActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
         "select" => HandleSelectActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
         "task" => HandleTaskActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
+        "taskpet" => HandleTaskPetSelectionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
         "pet" => HandlePetActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
         "family" => HandleFamilyActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
+        "invite" => HandleInviteActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
         _ => HandleUnknownCallbackAsync(botClient, chatId, cancellationToken)
       });
     }
@@ -178,9 +180,19 @@ public class CallbackQueryHandler : ICallbackQueryHandler
       return;
     }
 
-    await botClient.SendTextMessageAsync(
+    // Ask user to select task type
+    var keyboard = new InlineKeyboardMarkup(new[]
+    {
+      new[] { InlineKeyboardButton.WithCallbackData("📝 Разовая задача", "select_tasktype_onetime") },
+      new[] { InlineKeyboardButton.WithCallbackData("🔄 Периодическая задача", "select_tasktype_recurring") }
+    });
+
+    await botClient.EditMessageTextAsync(
       chatId,
-      "✅ Создание задачи\n(В разработке)",
+      messageId,
+      "📋 *Создание задачи*\n\nВыберите тип задачи:",
+      parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+      replyMarkup: keyboard,
       cancellationToken: cancellationToken);
   }
 
@@ -206,6 +218,10 @@ public class CallbackQueryHandler : ICallbackQueryHandler
       
       case "family":
         await HandleFamilySelectionAsync(botClient, chatId, messageId, value, session, cancellationToken);
+        break;
+      
+      case "tasktype":
+        await HandleTaskTypeSelectionAsync(botClient, chatId, messageId, value, session, cancellationToken);
         break;
     }
   }
@@ -394,10 +410,258 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     UserSession session,
     CancellationToken cancellationToken)
   {
+    if (parts.Length < 3)
+      return;
+
+    var familyAction = parts[1];
+    var familyIdStr = parts[2];
+
+    if (!Guid.TryParse(familyIdStr, out var familyId))
+      return;
+
+    switch (familyAction)
+    {
+      case "invite":
+        await HandleCreateInviteAsync(botClient, chatId, messageId, familyId, session, cancellationToken);
+        break;
+      
+      case "members":
+        await HandleFamilyMembersAsync(botClient, chatId, messageId, familyId, cancellationToken);
+        break;
+      
+      case "settings":
+        await HandleFamilySettingsAsync(botClient, chatId, messageId, familyId, cancellationToken);
+        break;
+      
+      default:
+        await botClient.SendTextMessageAsync(
+          chatId,
+          "🏠 Действие с семьей\n(В разработке)",
+          cancellationToken: cancellationToken);
+        break;
+    }
+  }
+
+  private async Task HandleCreateInviteAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    Guid familyId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    // Get user by telegram ID
+    var registerCommand = new RegisterUserCommand(chatId, "User");
+    var userResult = await _mediator.Send(registerCommand, cancellationToken);
+
+    if (!userResult.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        "❌ Ошибка. Попробуйте /start",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Show role selection
+    var keyboard = new InlineKeyboardMarkup(new[]
+    {
+      new[] { InlineKeyboardButton.WithCallbackData("👑 Администратор", $"invite_role_{familyId}_Admin") },
+      new[] { InlineKeyboardButton.WithCallbackData("👤 Взрослый", $"invite_role_{familyId}_Adult") },
+      new[] { InlineKeyboardButton.WithCallbackData("👶 Ребёнок", $"invite_role_{familyId}_Child") }
+    });
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      "🔗 *Создание приглашения*\n\nВыберите роль для нового участника:",
+      parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+      replyMarkup: keyboard,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleFamilyMembersAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    Guid familyId,
+    CancellationToken cancellationToken)
+  {
     await botClient.SendTextMessageAsync(
       chatId,
-      "🏠 Действие с семьей\n(В разработке)",
+      "👥 Управление участниками\n(В разработке)",
       cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleFamilySettingsAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    Guid familyId,
+    CancellationToken cancellationToken)
+  {
+    await botClient.SendTextMessageAsync(
+      chatId,
+      "⚙️ Настройки семьи\n(В разработке)",
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleInviteActionAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] parts,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (parts.Length < 4)
+      return;
+
+    var inviteAction = parts[1];
+    var familyIdStr = parts[2];
+    var roleStr = parts[3];
+
+    if (!Guid.TryParse(familyIdStr, out var familyId))
+      return;
+
+    if (!Enum.TryParse<FamilyTaskManager.Core.FamilyAggregate.FamilyRole>(roleStr, out var role))
+      return;
+
+    // Get user by telegram ID
+    var registerCommand = new RegisterUserCommand(chatId, "User");
+    var userResult = await _mediator.Send(registerCommand, cancellationToken);
+
+    if (!userResult.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        "❌ Ошибка. Попробуйте /start",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Create invite code
+    var createInviteCommand = new CreateInviteCodeCommand(familyId, role, userResult.Value, 7);
+    var result = await _mediator.Send(createInviteCommand, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        $"❌ Ошибка: {result.Errors.FirstOrDefault()}",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var inviteCode = result.Value;
+    var botUsername = "YourBotUsername"; // TODO: Get from configuration
+    var inviteLink = $"https://t.me/{botUsername}?start=invite_{inviteCode}";
+
+    var roleText = role switch
+    {
+      FamilyTaskManager.Core.FamilyAggregate.FamilyRole.Admin => "Администратор",
+      FamilyTaskManager.Core.FamilyAggregate.FamilyRole.Adult => "Взрослый",
+      FamilyTaskManager.Core.FamilyAggregate.FamilyRole.Child => "Ребёнок",
+      _ => "Неизвестно"
+    };
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      $"✅ *Приглашение создано!*\n\n" +
+      $"🔗 Ссылка для приглашения:\n{inviteLink}\n\n" +
+      $"👤 Роль: {roleText}\n" +
+      $"🔑 Код: `{inviteCode}`\n" +
+      $"⏰ Действительно 7 дней\n\n" +
+      $"Отправьте эту ссылку человеку, которого хотите пригласить в семью.",
+      parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleTaskTypeSelectionAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string taskType,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    // Store task type in session
+    session.SetState(ConversationState.AwaitingTaskTitle, new Dictionary<string, object>
+    {
+      ["taskType"] = taskType,
+      ["familyId"] = session.CurrentFamilyId!
+    });
+
+    var taskTypeText = taskType == "onetime" ? "разовую" : "периодическую";
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      $"📝 Создание {taskTypeText} задачи\n\nВведите название задачи (от 3 до 100 символов):",
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleTaskPetSelectionAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] parts,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (parts.Length < 2)
+      return;
+
+    if (!Guid.TryParse(parts[1], out var petId))
+      return;
+
+    // Store pet ID in session
+    session.Data["petId"] = petId;
+
+    // Check task type to determine next step
+    if (!session.Data.TryGetValue("taskType", out var taskTypeObj) || taskTypeObj is not string taskType)
+    {
+      session.ClearState();
+      await botClient.SendTextMessageAsync(
+        chatId,
+        "❌ Ошибка. Попробуйте создать задачу заново.",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    if (taskType == "onetime")
+    {
+      // For one-time tasks, ask for due date
+      session.State = ConversationState.AwaitingTaskDueDate;
+      
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        "📅 Введите срок выполнения задачи в днях:\n\n" +
+        "0 - сегодня\n" +
+        "1 - завтра\n" +
+        "7 - через неделю\n" +
+        "30 - через месяц",
+        cancellationToken: cancellationToken);
+    }
+    else
+    {
+      // For recurring tasks, ask for schedule
+      session.State = ConversationState.AwaitingTaskSchedule;
+      
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        "🔄 Введите расписание задачи в формате Quartz Cron:\n\n" +
+        "Примеры:\n" +
+        "• `0 0 9 * * ?` - ежедневно в 9:00\n" +
+        "• `0 0 20 * * ?` - ежедневно в 20:00\n" +
+        "• `0 0 9 */5 * ?` - каждые 5 дней в 9:00\n" +
+        "• `0 0 9 * * MON` - каждый понедельник в 9:00",
+        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+        cancellationToken: cancellationToken);
+    }
   }
 
   private async Task HandleUnknownCallbackAsync(

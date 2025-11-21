@@ -36,8 +36,10 @@ public enum ConversationState
   AwaitingFamilyName,
   AwaitingPetType,
   AwaitingPetName,
+  AwaitingTaskType,
   AwaitingTaskTitle,
   AwaitingTaskPoints,
+  AwaitingTaskPetSelection,
   AwaitingTaskSchedule,
-  AwaitingTaskPetSelection
+  AwaitingTaskDueDate
 }

@@ -8,134 +8,8 @@
 4. **Документация** - полная документация и инструкции
 5. **Скрипты** - автоматизация запуска и тестирования
 6. **Telegram уведомления** - отправка уведомлений о задачах и настроении питомца
-
-
-**Архитектура уведомлений**:
-- ✅ Рефакторинг в Clean Architecture с Domain Events (ЗАВЕРШЕНО)
-- ✅ TelegramNotificationService перемещен в Infrastructure
-- ✅ Уведомления отправляются через Event Handlers
-- ✅ UseCases не зависят от деталей уведомлений
-- ⏳ Добавить unit тесты для notification service
-
-### 2. Система invite-кодов (2-3 дня)
-
-**Почему важно**: Без этого невозможно добавлять участников в семью
-
-**Что делать**:
-
-```csharp
-// 1. Создать таблицу Invitations
-public class Invitation : EntityBase<Invitation, Guid>
-{
-    public Guid FamilyId { get; private set; }
-    public FamilyRole Role { get; private set; }
-    public string Code { get; private set; } // Уникальный код
-    public DateTime CreatedAt { get; private set; }
-    public DateTime? ExpiresAt { get; private set; }
-    public bool IsActive { get; private set; }
-}
-
-// 2. Создать Use Cases
-public record CreateInviteCodeCommand(Guid FamilyId, FamilyRole Role) : ICommand<Result<string>>;
-public record JoinByInviteCodeCommand(Guid UserId, string Code) : ICommand<Result<Guid>>;
-
-// 3. Обновить /start команду
-if (message.Text.StartsWith("/start invite_"))
-{
-    var code = message.Text.Replace("/start invite_", "");
-    var result = await _mediator.Send(new JoinByInviteCodeCommand(user.Id, code));
-    // ...
-}
-
-// 4. Добавить UI в /family
-// Кнопка "Пригласить участника" → выбор роли → генерация ссылки
-```
-
-**Файлы для создания/изменения**:
-- `src/FamilyTaskManager.Core/FamilyAggregate/Invitation.cs` (создать)
-- `src/FamilyTaskManager.Infrastructure/Data/Config/InvitationConfiguration.cs` (создать)
-- `src/FamilyTaskManager.UseCases/Families/CreateInviteCode.cs` (создать)
-- `src/FamilyTaskManager.UseCases/Families/JoinByInviteCode.cs` (создать)
-- `src/FamilyTaskManager.Bot/Handlers/Commands/FamilyCommandHandler.cs` (обновить)
-- Миграция БД
-
-### 3. Создание задач через бота (3-4 дня)
-
-**Почему важно**: Админы должны создавать задачи без SQL
-
-**Что делать**:
-
-```csharp
-// 1. Добавить Conversation Flow для создания задачи
-public class CreateTaskConversation
-{
-    public enum State
-    {
-        SelectType,      // Разовая или периодическая
-        EnterTitle,      // Ввод названия
-        EnterPoints,     // Ввод очков
-        SelectPet,       // Выбор питомца
-        EnterSchedule,   // Для периодических: ввод cron
-        Confirm          // Подтверждение
-    }
-}
-
-// 2. Обновить CommandHandler
-case "create_task":
-    session.ConversationState = ConversationState.CreatingTask;
-    session.ConversationData["step"] = CreateTaskConversation.State.SelectType;
-    // Показать кнопки: "Разовая" / "Периодическая"
-    break;
-
-// 3. Добавить валидацию Cron
-private bool IsValidCronExpression(string cron)
-{
-    try
-    {
-        var expression = new CronExpression(cron);
-        return true;
-    }
-    catch
-    {
-        return false;
-    }
-}
-```
-
-**Файлы для изменения**:
-- `src/FamilyTaskManager.Bot/Models/UserSession.cs` (добавить CreateTaskConversation)
-- `src/FamilyTaskManager.Bot/Handlers/CommandHandler.cs` (обновить)
-- `src/FamilyTaskManager.Bot/Handlers/Commands/TasksCommandHandler.cs` (обновить)
-
-## 🎯 Приоритет 2: Важно для стабильности
-
-### 4. Domain Event Handlers (2 дня)
-
-**Что делать**:
-
-```csharp
-// 1. Создать обработчики
-public class TaskCompletedEventHandler : INotificationHandler<TaskCompletedEvent>
-{
-    public async Task Handle(TaskCompletedEvent notification, CancellationToken cancellationToken)
-    {
-        // 1. Начислить очки участнику
-        // 2. Обновить настроение питомца
-        // 3. Записать в историю
-        // 4. Отправить уведомления семье
-    }
-}
-
-// 2. Зарегистрировать в DI
-builder.Services.AddMediatR(cfg => {
-    cfg.RegisterServicesFromAssembly(typeof(TaskCompletedEventHandler).Assembly);
-});
-```
-
-**Файлы для создания**:
-- `src/FamilyTaskManager.Infrastructure/DomainEvents/TaskCompletedEventHandler.cs`
-- `src/FamilyTaskManager.Infrastructure/DomainEvents/PetMoodUpdatedEventHandler.cs`
-- `src/FamilyTaskManager.Infrastructure/DomainEvents/MemberAddedEventHandler.cs`
+7. **Система invite-кодов** - возможность приглашения участников в семью
+8. **Создание задач через бота**
 
 ### 5. Автоматическое создание TaskTemplate (1-2 дня)
 
@@ -350,8 +224,8 @@ var nextOccurrence = cronExpression.GetTimeAfter(DateTimeOffset.UtcNow);
 ### Неделя 1 (21-27 ноября)
 - ✅ День 1-2: Реализация Worker (завершено)
 - ✅ День 3-4: Telegram уведомления (завершено)
-- ⏳ День 5-6: Система invite-кодов
-- ⏳ День 7: Тестирование и багфиксы
+- ✅ День 5: Система invite-кодов (завершено)
+- ⏳ День 6-7: Создание задач через бота
 
 ### Неделя 2 (28 ноября - 4 декабря)
 - ⏳ День 1-3: Создание задач через бота
@@ -376,7 +250,7 @@ var nextOccurrence = cronExpression.GetTimeAfter(DateTimeOffset.UtcNow);
 - ✅ Worker создает задачи
 - ✅ Worker пересчитывает настроение
 - ✅ Уведомления работают
-- ⏳ Invite codes реализованы
+- ✅ Invite codes реализованы
 - ⏳ Можно создавать задачи через бота
 
 ### Should Have (желательно)
@@ -404,7 +278,8 @@ var nextOccurrence = cronExpression.GetTimeAfter(DateTimeOffset.UtcNow);
 - Telegram Bot API: https://core.telegram.org/bots/api
 - Cron Expression Generator: https://www.freeformatter.com/cron-expression-generator-quartz.html
 
-**Следующая задача**: Реализация системы invite-кодов для приглашения участников в семью
+**Следующая задача**: Создание задач через бота (Conversation Flow)
 
 **Документация**:
 - [Telegram Notifications](TELEGRAM_NOTIFICATIONS.md) - полная документация по уведомлениям
+- [Invite System](INVITE_SYSTEM.md) - полная документация по системе приглашений

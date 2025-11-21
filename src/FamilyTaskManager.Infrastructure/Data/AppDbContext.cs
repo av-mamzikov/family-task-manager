@@ -11,6 +11,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
   public DbSet<User> Users => Set<User>();
   public DbSet<Family> Families => Set<Family>();
   public DbSet<FamilyMember> FamilyMembers => Set<FamilyMember>();
+  public DbSet<Invitation> Invitations => Set<Invitation>();
   public DbSet<Pet> Pets => Set<Pet>();
   public DbSet<TaskTemplate> TaskTemplates => Set<TaskTemplate>();
   public DbSet<TaskInstance> TaskInstances => Set<TaskInstance>();
