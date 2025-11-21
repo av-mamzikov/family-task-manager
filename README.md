@@ -148,11 +148,20 @@ dotnet test /p:CollectCoverage=true
 
 См. [Bot Quick Start](src/FamilyTaskManager.Bot/QUICK_START.md) и [Implementation Status](src/FamilyTaskManager.Bot/IMPLEMENTATION_STATUS.md)
 
+### ✅ Quartz.NET Worker (Реализовано)
+- **TaskInstanceCreatorJob**: Создание TaskInstance из TaskTemplate по расписанию (каждую минуту)
+- **TaskReminderJob**: Отправка напоминаний о задачах (каждые 15 минут)
+- **PetMoodCalculatorJob**: Пересчет настроения питомцев (каждые 30 минут)
+- **PostgreSQL Persistence**: Хранение состояния Jobs в БД
+- **Graceful Shutdown**: Корректное завершение задач при остановке
+
+См. [Worker Quick Start](src/FamilyTaskManager.Worker/QUICK_START.md) и [Worker README](src/FamilyTaskManager.Worker/README.md)
+
 ### 🚧 В разработке
-- Quartz Worker для периодических задач и напоминаний
-- Система уведомлений в Telegram
+- Интеграция Telegram уведомлений в Worker
 - Управление приглашениями (invite codes)
 - Domain Event Handlers
+- Создание задач через Telegram Bot
 
 ### 📋 Запланировано
 - API endpoints (FastEndpoints)
