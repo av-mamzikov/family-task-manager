@@ -1,6 +1,5 @@
 ﻿using FamilyTaskManager.Infrastructure.Data;
 using FamilyTaskManager.Infrastructure.Notifications;
-using FamilyTaskManager.UseCases.Notifications;
 using Telegram.Bot;
 
 namespace FamilyTaskManager.Infrastructure;
@@ -49,7 +48,7 @@ public static class InfrastructureServiceExtensions
     if (!string.IsNullOrEmpty(botToken))
     {
       services.AddSingleton<ITelegramBotClient>(sp => new TelegramBotClient(botToken));
-      services.AddScoped<ITelegramNotificationService, TelegramNotificationService>();
+      services.AddScoped<TelegramNotificationService>();
       logger.LogInformation("Telegram notification service registered");
     }
     else

@@ -1,100 +1,50 @@
 using Mediator;
 using Quartz;
 using FamilyTaskManager.UseCases.Tasks;
-using FamilyTaskManager.UseCases.Users;
-using FamilyTaskManager.UseCases.Notifications;
 
 namespace FamilyTaskManager.Host.Modules.Worker.Jobs;
 
 /// <summary>
-/// Job that sends reminders for tasks due within the next hour.
+/// Job that triggers reminders for tasks due within the next hour.
 /// Runs every 15 minutes.
+/// Domain events handle the actual notification sending.
 /// </summary>
 [DisallowConcurrentExecution]
 public class TaskReminderJob : IJob
 {
   private readonly IMediator _mediator;
-  private readonly IServiceProvider _serviceProvider;
   private readonly ILogger<TaskReminderJob> _logger;
 
   public TaskReminderJob(
-    IMediator mediator, 
-    IServiceProvider serviceProvider,
+    IMediator mediator,
     ILogger<TaskReminderJob> logger)
   {
     _mediator = mediator;
-    _serviceProvider = serviceProvider;
     _logger = logger;
   }
 
   public async Task Execute(IJobExecutionContext context)
   {
-    _logger.LogInformation("TaskReminderJob started at {Time}", DateTimeOffset.UtcNow);
+    _logger.LogInformation("TaskReminderJob started at {Time}", DateTime.UtcNow);
 
     try
     {
-      var now = DateTime.UtcNow;
-      var reminderWindow = now.AddHours(1); // Send reminders for tasks due in the next hour
+      // Simply call the UseCase - it handles all the logic
+      var result = await _mediator.Send(new SendTaskRemindersCommand(), context.CancellationToken);
 
-      // Get tasks that need reminders
-      var tasksResult = await _mediator.Send(
-        new GetTasksDueForReminderQuery(now, reminderWindow));
-
-      if (!tasksResult.IsSuccess)
+      if (result.IsSuccess)
       {
-        _logger.LogWarning("Failed to get tasks for reminder: {Error}", tasksResult.Errors);
-        return;
+        _logger.LogInformation("TaskReminderJob completed successfully");
       }
-
-      var tasks = tasksResult.Value;
-      _logger.LogInformation("Found {Count} tasks requiring reminders", tasks.Count);
-
-      var sentCount = 0;
-
-      // Create a scope to resolve scoped services
-      using (var scope = _serviceProvider.CreateScope())
+      else
       {
-        var notificationService = scope.ServiceProvider.GetRequiredService<ITelegramNotificationService>();
-
-        foreach (var task in tasks)
-        {
-          try
-          {
-            // Get telegram IDs for all family members
-            foreach (var userId in task.FamilyMemberIds)
-            {
-              var userResult = await _mediator.Send(new GetUserByIdQuery(userId));
-              
-              if (!userResult.IsSuccess || userResult.Value == null)
-              {
-                _logger.LogWarning("User {UserId} not found for reminder", userId);
-                continue;
-              }
-
-              var user = userResult.Value;
-
-              // Send Telegram notification
-              await notificationService.SendTaskReminderAsync(user.TelegramId, task, context.CancellationToken);
-
-              sentCount++;
-            }
-          }
-          catch (Exception ex)
-          {
-            _logger.LogError(ex, 
-              "Error sending reminder for task {TaskId}", 
-              task.TaskId);
-          }
-        }
+        _logger.LogWarning("TaskReminderJob completed with errors: {Errors}", result.Errors);
       }
-
-      _logger.LogInformation(
-        "TaskReminderJob completed. Sent {SentCount} reminders", 
-        sentCount);
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "Error in TaskReminderJob");
+      _logger.LogError(ex, "TaskReminderJob failed");
+      throw;
     }
   }
 }

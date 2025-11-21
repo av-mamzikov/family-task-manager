@@ -61,5 +61,6 @@
     <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.13.1" />
     <PackageVersion Include="Quartz.Serialization.Json" Version="3.13.1" />
     <PackageVersion Include="Cronos" Version="0.8.4" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
   </ItemGroup>
 </Project>

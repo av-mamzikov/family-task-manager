@@ -28,6 +28,7 @@
     <PackageReference Include="Telegram.Bot" />
     <PackageReference Include="Quartz" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,6 +1,6 @@
 using FamilyTaskManager.Core.FamilyAggregate.Events;
 using FamilyTaskManager.Core.UserAggregate;
-using FamilyTaskManager.UseCases.Notifications;
+using FamilyTaskManager.Infrastructure.Notifications;
 using Ardalis.SharedKernel;
 using Mediator;
 
@@ -8,7 +8,7 @@ namespace FamilyTaskManager.Infrastructure.DomainEvents;
 
 public class MemberAddedEventHandler(
   ILogger<MemberAddedEventHandler> logger,
-  ITelegramNotificationService notificationService,
+  TelegramNotificationService notificationService,
   IRepository<User> userRepository) 
   : INotificationHandler<MemberAddedEvent>
 {

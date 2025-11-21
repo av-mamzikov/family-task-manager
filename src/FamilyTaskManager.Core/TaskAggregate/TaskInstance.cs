@@ -54,4 +54,16 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
 
     RegisterDomainEvent(new Events.TaskCompletedEvent(this));
   }
+
+  /// <summary>
+  /// Triggers a reminder for this task
+  /// </summary>
+  public void TriggerReminder()
+  {
+    // Only send reminders for active or in-progress tasks
+    if (Status != TaskStatus.Active && Status != TaskStatus.InProgress)
+      return;
+
+    RegisterDomainEvent(new Events.TaskReminderDueEvent(this));
+  }
 }
