@@ -72,8 +72,8 @@ public class CalculatePetMoodScoreTests
         var now = DateTime.UtcNow;
         var tasks = new List<TaskInstance>
         {
-            CreateCompletedTask(familyId, petId, 10, now.AddHours(-2), now.AddHours(-1)), // Completed on time
-            CreateCompletedTask(familyId, petId, 20, now.AddHours(-3), now.AddHours(-2)), // Completed on time
+            CreateCompletedTask(familyId, petId, 10, now.AddHours(-2), now.AddHours(-3)), // Completed on time
+            CreateCompletedTask(familyId, petId, 20, now.AddHours(-3), now.AddHours(-4)), // Completed on time
         };
 
         _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>()).Returns(pet);
@@ -98,7 +98,7 @@ public class CalculatePetMoodScoreTests
         var now = DateTime.UtcNow;
         var tasks = new List<TaskInstance>
         {
-            CreateCompletedTask(familyId, petId, 10, now.AddHours(-2), now.AddHours(-1)), // Completed
+            CreateCompletedTask(familyId, petId, 10, now.AddHours(-2), now.AddHours(-3)), // Completed on time
             CreateOverdueTask(familyId, petId, 10, now.AddHours(-2)), // Overdue, not completed
         };
 
@@ -111,9 +111,9 @@ public class CalculatePetMoodScoreTests
         // Assert
         result.IsSuccess.ShouldBeTrue();
         // 10 points completed on time = +10
-        // 10 points overdue (1 hour) = -10 * (1/24/7) ≈ -0.06
-        // effectiveSum ≈ 9.94, maxPoints = 20
-        // mood = 100 * (9.94 / 20) ≈ 50
+        // 10 points overdue (2 hours) = -10 * (2/24/7) ≈ -0.12
+        // effectiveSum ≈ 9.88, maxPoints = 20
+        // mood = 100 * (9.88 / 20) ≈ 49.4
         result.Value.NewMoodScore.ShouldBeGreaterThan(45);
         result.Value.NewMoodScore.ShouldBeLessThan(55);
     }

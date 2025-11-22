@@ -101,7 +101,12 @@ public class JoinByInviteCodeHandlerTests
     var userId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
     var user = new User(123456789, "John Doe");
-    var invitation = new Invitation(familyId, FamilyRole.Adult, Guid.NewGuid(), -1); // Expired
+    var invitation = new Invitation(familyId, FamilyRole.Adult, Guid.NewGuid(), 1);
+    
+    // Use reflection to set ExpiresAt to a past date to make it expired
+    var expiresAtProperty = typeof(Invitation).GetProperty("ExpiresAt", 
+        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+    expiresAtProperty!.SetValue(invitation, DateTime.UtcNow.AddDays(-1));
     
     var command = new JoinByInviteCodeCommand(userId, invitation.Code);
     
