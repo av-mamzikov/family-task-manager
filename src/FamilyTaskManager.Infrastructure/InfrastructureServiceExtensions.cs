@@ -1,6 +1,8 @@
-﻿using FamilyTaskManager.Infrastructure.Data;
+using FamilyTaskManager.Infrastructure.Data;
 using FamilyTaskManager.Infrastructure.Notifications;
 using FamilyTaskManager.Infrastructure.Behaviors;
+using FamilyTaskManager.Infrastructure.Services;
+using FamilyTaskManager.Core.Interfaces;
 using Telegram.Bot;
 using Mediator;
 
@@ -64,6 +66,9 @@ public static class InfrastructureServiceExtensions
     {
       logger.LogWarning("Bot:BotToken not configured - Telegram notifications will not be available");
     }
+
+    // Register Schedule Evaluator
+    services.AddScoped<IScheduleEvaluator, QuartzScheduleEvaluator>();
 
     logger.LogInformation("{Project} services registered", "Infrastructure");
 

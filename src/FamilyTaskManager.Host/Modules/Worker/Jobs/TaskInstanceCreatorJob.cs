@@ -7,6 +7,7 @@ namespace FamilyTaskManager.Host.Modules.Worker.Jobs;
 /// <summary>
 /// Job that creates TaskInstance from TaskTemplate based on schedule.
 /// Runs every minute to check for templates that need new instances.
+/// This is a thin orchestrator that delegates business logic to use cases.
 /// </summary>
 [DisallowConcurrentExecution]
 public class TaskInstanceCreatorJob : IJob
@@ -26,70 +27,27 @@ public class TaskInstanceCreatorJob : IJob
 
     try
     {
-      // Get all active task templates
-      var templatesResult = await _mediator.Send(new GetActiveTaskTemplatesQuery(), context.CancellationToken);
-      
-      if (!templatesResult.IsSuccess)
-      {
-        _logger.LogWarning("Failed to get active task templates: {Error}", templatesResult.Errors);
-        return;
-      }
-
-      var templates = templatesResult.Value;
-      _logger.LogInformation("Found {Count} active task templates", templates.Count);
-
       var now = DateTime.UtcNow;
-      var createdCount = 0;
+      
+      // Check the last 2 minutes to be safe (job runs every minute)
+      var checkFrom = now.AddMinutes(-2);
+      var checkTo = now;
 
-      foreach (var template in templates)
+      var result = await _mediator.Send(
+        new ProcessScheduledTaskCommand(checkFrom, checkTo), 
+        context.CancellationToken);
+
+      if (result.IsSuccess)
       {
-        try
-        {
-          // Parse Quartz Cron expression
-          var cronExpression = new CronExpression(template.Schedule);
-          
-          // Get the next occurrence after the last check (we check every minute, so look back 2 minutes to be safe)
-          var checkFrom = now.AddMinutes(-2);
-          var nextOccurrence = cronExpression.GetTimeAfter(new DateTimeOffset(checkFrom));
-
-          // If next occurrence is in the past minute, create a new instance
-          if (nextOccurrence.HasValue && nextOccurrence.Value.UtcDateTime <= now && nextOccurrence.Value.UtcDateTime > checkFrom)
-          {
-            _logger.LogInformation(
-              "Creating TaskInstance for template {TemplateId} ({Title}), due at {DueAt}",
-              template.Id, template.Title, nextOccurrence.Value);
-
-            var createResult = await _mediator.Send(
-              new CreateTaskInstanceFromTemplateCommand(template.Id, nextOccurrence.Value.UtcDateTime),
-              context.CancellationToken);
-
-            if (createResult.IsSuccess)
-            {
-              createdCount++;
-              _logger.LogInformation(
-                "Successfully created TaskInstance {InstanceId} from template {TemplateId}",
-                createResult.Value, template.Id);
-            }
-            else
-            {
-              // This is expected if there's already an active instance
-              _logger.LogDebug(
-                "Could not create TaskInstance for template {TemplateId}: {Error}",
-                template.Id, string.Join(", ", createResult.Errors));
-            }
-          }
-        }
-        catch (Exception ex)
-        {
-          _logger.LogError(ex, 
-            "Error processing template {TemplateId} with schedule {Schedule}", 
-            template.Id, template.Schedule);
-        }
+        _logger.LogInformation(
+          "TaskInstanceCreatorJob completed. Created {CreatedCount} new task instances", 
+          result.Value);
       }
-
-      _logger.LogInformation(
-        "TaskInstanceCreatorJob completed. Created {CreatedCount} new task instances", 
-        createdCount);
+      else
+      {
+        _logger.LogWarning("Failed to process scheduled tasks: {Error}", 
+          string.Join(", ", result.Errors));
+      }
     }
     catch (Exception ex)
     {

@@ -16,6 +16,7 @@
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <PackageReference Include="NimblePros.Metronome" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Quartz" />
     <PackageReference Include="SQLite" />
     <PackageReference Include="Telegram.Bot" />
     <PackageReference Include="Vogen" />
