@@ -8,6 +8,7 @@ using FamilyTaskManager.UseCases.Users.Specifications;
 using FamilyTaskManager.UseCases.Families;
 using FamilyTaskManager.UseCases.Pets;
 using FamilyTaskManager.UseCases.Tasks;
+using FamilyTaskManager.Core.Interfaces;
 using Mediator;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
@@ -17,15 +18,18 @@ public class CallbackQueryHandler : ICallbackQueryHandler
   private readonly ILogger<CallbackQueryHandler> _logger;
   private readonly ISessionManager _sessionManager;
   private readonly IMediator _mediator;
+  private readonly ITimeZoneService _timeZoneService;
 
   public CallbackQueryHandler(
     ILogger<CallbackQueryHandler> logger,
     ISessionManager sessionManager,
-    IMediator mediator)
+    IMediator mediator,
+    ITimeZoneService timeZoneService)
   {
     _logger = logger;
     _sessionManager = sessionManager;
     _mediator = mediator;
+    _timeZoneService = timeZoneService;
   }
 
   public async Task HandleCallbackAsync(
@@ -59,6 +63,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
         "pet" => HandlePetActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
         "family" => HandleFamilyActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
         "invite" => HandleInviteActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
+        "timezone" => HandleTimezoneSelectionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
         _ => HandleUnknownCallbackAsync(botClient, chatId, cancellationToken)
       });
     }
@@ -662,6 +667,101 @@ public class CallbackQueryHandler : ICallbackQueryHandler
         parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
         cancellationToken: cancellationToken);
     }
+  }
+
+  private async Task HandleTimezoneSelectionAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] parts,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (parts.Length < 2)
+      return;
+
+    var timezoneId = parts[1];
+
+    // Handle geolocation detection request
+    if (timezoneId == "detect")
+    {
+      session.State = ConversationState.AwaitingFamilyLocation;
+      
+      var locationKeyboard = new ReplyKeyboardMarkup(new[]
+      {
+        new KeyboardButton("📍 Отправить местоположение") { RequestLocation = true },
+        new KeyboardButton("⬅️ Назад")
+      })
+      {
+        ResizeKeyboard = true,
+        OneTimeKeyboard = true
+      };
+
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        "📍 Нажмите кнопку ниже, чтобы поделиться местоположением:",
+        cancellationToken: cancellationToken);
+
+      await botClient.SendTextMessageAsync(
+        chatId,
+        "🌍 Определение временной зоны по геолокации\n\n" +
+        "Нажмите \"📍 Отправить местоположение\" для автоматического определения, " +
+        "или \"⬅️ Назад\" для выбора вручную.",
+        replyMarkup: locationKeyboard,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Get required data from session
+    if (!session.Data.TryGetValue("userId", out var userIdObj) || userIdObj is not Guid userId ||
+        !session.Data.TryGetValue("familyName", out var familyNameObj) || familyNameObj is not string familyName)
+    {
+      session.ClearState();
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        "❌ Ошибка сессии. Попробуйте создать семью заново.",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Validate timezone
+    if (!_timeZoneService.IsValidTimeZone(timezoneId))
+    {
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        "❌ Неверная временная зона. Попробуйте снова.",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Create family with selected timezone
+    var createFamilyCommand = new CreateFamilyCommand(userId, familyName, timezoneId);
+    var result = await _mediator.Send(createFamilyCommand, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        $"❌ Ошибка создания семьи: {result.Errors.FirstOrDefault()}",
+        cancellationToken: cancellationToken);
+      session.ClearState();
+      return;
+    }
+
+    session.CurrentFamilyId = result.Value;
+    session.ClearState();
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      $"✅ Семья \"{familyName}\" успешно создана!\n\n" +
+      $"🌍 Временная зона: {timezoneId}\n\n" +
+      "Теперь вы можете добавить питомца и создать задачи.",
+      cancellationToken: cancellationToken);
   }
 
   private async Task HandleUnknownCallbackAsync(

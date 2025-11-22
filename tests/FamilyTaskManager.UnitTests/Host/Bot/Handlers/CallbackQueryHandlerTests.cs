@@ -11,6 +11,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Requests;
 using Ardalis.Result;
+using FamilyTaskManager.Core.Interfaces;
 
 namespace FamilyTaskManager.UnitTests.Host.Bot.Handlers;
 
@@ -19,6 +20,7 @@ public class CallbackQueryHandlerTests
   private readonly IMediator _mediator;
   private readonly ISessionManager _sessionManager;
   private readonly ILogger<CallbackQueryHandler> _logger;
+  private readonly ITimeZoneService _timeZoneService;
   private readonly CallbackQueryHandler _handler;
   private readonly ITelegramBotClient _botClient;
 
@@ -27,7 +29,8 @@ public class CallbackQueryHandlerTests
     _mediator = Substitute.For<IMediator>();
     _sessionManager = Substitute.For<ISessionManager>();
     _logger = Substitute.For<ILogger<CallbackQueryHandler>>();
-    _handler = new CallbackQueryHandler(_logger, _sessionManager, _mediator);
+    _timeZoneService = Substitute.For<ITimeZoneService>();
+    _handler = new CallbackQueryHandler(_logger, _sessionManager, _mediator, _timeZoneService);
     _botClient = Substitute.For<ITelegramBotClient>();
   }
 

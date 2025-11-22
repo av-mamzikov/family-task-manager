@@ -55,7 +55,7 @@ public class CreateFamilyHandlerTests
   {
     // Arrange
     var userId = Guid.NewGuid();
-    var command = new CreateFamilyCommand(userId, "Smith Family");
+    var command = new CreateFamilyCommand(userId, "Smith Family", "UTC");
     
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns((User?)null);
@@ -75,7 +75,7 @@ public class CreateFamilyHandlerTests
     // Arrange
     var userId = Guid.NewGuid();
     var user = new User(123456789, "John Doe");
-    var command = new CreateFamilyCommand(userId, "Smith Family"); // No timezone specified
+    var command = new CreateFamilyCommand(userId, "Smith Family", "UTC");
     
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);

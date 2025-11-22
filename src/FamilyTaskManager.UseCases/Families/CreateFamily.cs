@@ -2,7 +2,7 @@ using FamilyTaskManager.Core.Interfaces;
 
 namespace FamilyTaskManager.UseCases.Families;
 
-public record CreateFamilyCommand(Guid UserId, string Name, string Timezone = "UTC", bool LeaderboardEnabled = true) 
+public record CreateFamilyCommand(Guid UserId, string Name, string Timezone, bool LeaderboardEnabled = true) 
   : ICommand<Result<Guid>>;
 
 public class CreateFamilyHandler(

@@ -34,6 +34,8 @@ public enum ConversationState
 {
   None,
   AwaitingFamilyName,
+  AwaitingFamilyTimezone,
+  AwaitingFamilyLocation,
   AwaitingPetType,
   AwaitingPetName,
   AwaitingTaskType,
