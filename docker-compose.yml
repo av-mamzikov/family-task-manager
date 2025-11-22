@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # Family Task Manager Worker Service
+  family-task-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: family-task-manager
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=FamilyTaskManager;Username=postgres;Password=postgres123
+      - Bot__BotToken=${TELEGRAM_BOT_TOKEN}
+      - Bot__BotUsername=${TELEGRAM_BOT_USERNAME}
+      - TZ=UTC
+    networks:
+      - family-task-network
+    restart: unless-stopped
+    # Uncomment if you have health check endpoints
+    # ports:
+    #   - "8080:8080"
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: family-task-postgres
+    environment:
+      - POSTGRES_DB=FamilyTaskManager
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres123
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - family-task-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d FamilyTaskManager"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: family-task-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@familytask.com
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - family-task-network
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    profiles:
+      - admin  # Use with: docker-compose --profile admin up
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  family-task-network:
+    driver: bridge
