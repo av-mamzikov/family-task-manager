@@ -69,6 +69,9 @@ public static class InfrastructureServiceExtensions
 
     // Register Schedule Evaluator
     services.AddScoped<IScheduleEvaluator, QuartzScheduleEvaluator>();
+    
+    // Register TimeZone Service
+    services.AddScoped<ITimeZoneService, TimeZoneService>();
 
     logger.LogInformation("{Project} services registered", "Infrastructure");
 

@@ -18,6 +18,7 @@ public record ProcessScheduledTaskCommand(DateTime CheckFrom, DateTime CheckTo) 
 /// </summary>
 public class ProcessScheduledTasksHandler(
     IRepository<TaskTemplate> templateRepository,
+    IRepository<Family> familyRepository,
     IMediator mediator,
     IScheduleEvaluator scheduleEvaluator,
     ILogger<ProcessScheduledTasksHandler> logger) 
@@ -39,15 +40,23 @@ public class ProcessScheduledTasksHandler(
             {
                 try
                 {
-                    // Check if the template should trigger within our time window
+                    // Get the family to access timezone
+                    var family = await familyRepository.GetByIdAsync(template.FamilyId, cancellationToken);
+                    if (family == null)
+                    {
+                        logger.LogWarning("Family {FamilyId} not found for template {TemplateId}", template.FamilyId, template.Id);
+                        continue;
+                    }
+
+                    // Check if the template should trigger within our time window using family timezone
                     var (shouldTrigger, triggerTime) = scheduleEvaluator.ShouldTriggerInWindow(
-                        template.Schedule, request.CheckFrom, request.CheckTo);
+                        template.Schedule, request.CheckFrom, request.CheckTo, family.Timezone);
 
                     if (shouldTrigger && triggerTime.HasValue)
                     {
                         logger.LogInformation(
-                            "Creating TaskInstance for template {TemplateId} ({Title}), due at {DueAt}",
-                            template.Id, template.Title, triggerTime.Value);
+                            "Creating TaskInstance for template {TemplateId} ({Title}), due at {DueAt} (family timezone: {Timezone})",
+                            template.Id, template.Title, triggerTime.Value, family.Timezone);
 
                         // Delegate task instance creation to existing command
                         var createResult = await mediator.Send(

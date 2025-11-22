@@ -1,5 +1,12 @@
+using FamilyTaskManager.Core.Interfaces;
+
 namespace FamilyTaskManager.UseCases.Tasks;
 
+/// <summary>
+/// Command to create a one-time task.
+/// Note: DueAt parameter should be provided in the family's local timezone.
+/// It will be converted to UTC for storage in the database.
+/// </summary>
 public record CreateTaskCommand(
   Guid FamilyId, 
   Guid PetId, 
@@ -10,7 +17,9 @@ public record CreateTaskCommand(
 
 public class CreateTaskHandler(
   IRepository<TaskInstance> taskRepository,
-  IRepository<Pet> petRepository) : ICommandHandler<CreateTaskCommand, Result<Guid>>
+  IRepository<Pet> petRepository,
+  IRepository<Family> familyRepository,
+  ITimeZoneService timeZoneService) : ICommandHandler<CreateTaskCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreateTaskCommand command, CancellationToken cancellationToken)
   {
@@ -26,6 +35,13 @@ public class CreateTaskHandler(
       return Result<Guid>.Error("Pet does not belong to this family");
     }
 
+    // Get family for timezone conversion
+    var family = await familyRepository.GetByIdAsync(command.FamilyId, cancellationToken);
+    if (family == null)
+    {
+      return Result<Guid>.NotFound("Family not found");
+    }
+
     // Validate title length
     if (command.Title.Length < 3 || command.Title.Length > 100)
     {
@@ -38,6 +54,17 @@ public class CreateTaskHandler(
       return Result<Guid>.Invalid(new ValidationError("Points must be between 1 and 100"));
     }
 
+    // Convert DueAt from family timezone to UTC for storage
+    DateTime dueAtUtc;
+    try
+    {
+      dueAtUtc = timeZoneService.ConvertToUtc(command.DueAt, family.Timezone);
+    }
+    catch (ArgumentException ex)
+    {
+      return Result<Guid>.Invalid(new ValidationError($"Invalid timezone conversion: {ex.Message}"));
+    }
+
     // Create one-time task
     var task = new TaskInstance(
       command.FamilyId,
@@ -45,7 +72,7 @@ public class CreateTaskHandler(
       command.Title,
       command.Points,
       TaskType.OneTime,
-      command.DueAt);
+      dueAtUtc);
 
     await taskRepository.AddAsync(task, cancellationToken);
 

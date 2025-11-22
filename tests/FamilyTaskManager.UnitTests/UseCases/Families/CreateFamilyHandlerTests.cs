@@ -1,5 +1,6 @@
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.UserAggregate;
+using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.UseCases.Families;
 
 namespace FamilyTaskManager.UnitTests.UseCases.Families;
@@ -8,13 +9,15 @@ public class CreateFamilyHandlerTests
 {
   private readonly IRepository<Family> _familyRepository;
   private readonly IRepository<User> _userRepository;
+  private readonly ITimeZoneService _timeZoneService;
   private readonly CreateFamilyHandler _handler;
 
   public CreateFamilyHandlerTests()
   {
     _familyRepository = Substitute.For<IRepository<Family>>();
     _userRepository = Substitute.For<IRepository<User>>();
-    _handler = new CreateFamilyHandler(_familyRepository, _userRepository);
+    _timeZoneService = Substitute.For<ITimeZoneService>();
+    _handler = new CreateFamilyHandler(_familyRepository, _userRepository, _timeZoneService);
   }
 
   [Fact]
@@ -27,6 +30,7 @@ public class CreateFamilyHandlerTests
     
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
+    _timeZoneService.IsValidTimeZone("Europe/Moscow").Returns(true);
     
     Family? capturedFamily = null;
     await _familyRepository.AddAsync(Arg.Do<Family>(f => capturedFamily = f), Arg.Any<CancellationToken>());
@@ -75,6 +79,7 @@ public class CreateFamilyHandlerTests
     
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
+    _timeZoneService.IsValidTimeZone("UTC").Returns(true);
     
     Family? capturedFamily = null;
     await _familyRepository.AddAsync(Arg.Do<Family>(f => capturedFamily = f), Arg.Any<CancellationToken>());

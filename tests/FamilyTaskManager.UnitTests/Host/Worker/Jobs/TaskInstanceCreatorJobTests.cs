@@ -27,23 +27,15 @@ public class TaskInstanceCreatorJobTests
     public async Task Execute_CreatesTaskInstance_WhenTemplateExists()
     {
         // Arrange
-        var templateId = Guid.NewGuid();
-        var template = new TaskTemplate(
-            Guid.NewGuid(), Guid.NewGuid(),
-            "Test Task", 10, "0 * * * * ?", Guid.NewGuid());
-
-        _mediator.Send(Arg.Any<GetActiveTaskTemplatesQuery>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Success(new List<TaskTemplate> { template }));
-
-        _mediator.Send(Arg.Any<CreateTaskInstanceFromTemplateCommand>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Success(Guid.NewGuid()));
+        _mediator.Send(Arg.Any<ProcessScheduledTaskCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Success(1));
 
         // Act
         await _job.Execute(_context);
 
         // Assert
         await _mediator.Received(1).Send(
-            Arg.Any<GetActiveTaskTemplatesQuery>(),
+            Arg.Any<ProcessScheduledTaskCommand>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -51,8 +43,8 @@ public class TaskInstanceCreatorJobTests
     public async Task Execute_DoesNotThrow_WhenNoTemplatesExist()
     {
         // Arrange
-        _mediator.Send(Arg.Any<GetActiveTaskTemplatesQuery>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Success(new List<TaskTemplate>()));
+        _mediator.Send(Arg.Any<ProcessScheduledTaskCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Success(0));
 
         // Act & Assert
         await Should.NotThrowAsync(async () => await _job.Execute(_context));
@@ -62,7 +54,7 @@ public class TaskInstanceCreatorJobTests
     public async Task Execute_HandlesErrors_Gracefully()
     {
         // Arrange
-        _mediator.Send(Arg.Any<GetActiveTaskTemplatesQuery>(), Arg.Any<CancellationToken>())
+        _mediator.Send(Arg.Any<ProcessScheduledTaskCommand>(), Arg.Any<CancellationToken>())
             .Returns(Result.Error("Database error"));
 
         // Act & Assert
@@ -73,22 +65,15 @@ public class TaskInstanceCreatorJobTests
     public async Task Execute_DoesNotCreateInstance_WhenActiveInstanceExists()
     {
         // Arrange
-        var template = new TaskTemplate(
-            Guid.NewGuid(), Guid.NewGuid(),
-            "Test Task", 10, "* * * * * ?", Guid.NewGuid()); // Every second to ensure it triggers
-
-        _mediator.Send(Arg.Any<GetActiveTaskTemplatesQuery>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Success(new List<TaskTemplate> { template }));
-
-        _mediator.Send(Arg.Any<CreateTaskInstanceFromTemplateCommand>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Error("Active TaskInstance already exists"));
+        _mediator.Send(Arg.Any<ProcessScheduledTaskCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Success(0));
 
         // Act
         await _job.Execute(_context);
 
         // Assert - should not throw, just log
         await _mediator.Received(1).Send(
-            Arg.Any<CreateTaskInstanceFromTemplateCommand>(),
+            Arg.Any<ProcessScheduledTaskCommand>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -96,25 +81,15 @@ public class TaskInstanceCreatorJobTests
     public async Task Execute_ProcessesMultipleTemplates()
     {
         // Arrange
-        var templates = new List<TaskTemplate>
-        {
-            new TaskTemplate(Guid.NewGuid(), Guid.NewGuid(), "Task 1", 10, "0 * * * * ?", Guid.NewGuid()),
-            new TaskTemplate(Guid.NewGuid(), Guid.NewGuid(), "Task 2", 15, "0 * * * * ?", Guid.NewGuid()),
-            new TaskTemplate(Guid.NewGuid(), Guid.NewGuid(), "Task 3", 20, "0 * * * * ?", Guid.NewGuid()),
-        };
-
-        _mediator.Send(Arg.Any<GetActiveTaskTemplatesQuery>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Success(templates));
-
-        _mediator.Send(Arg.Any<CreateTaskInstanceFromTemplateCommand>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Success(Guid.NewGuid()));
+        _mediator.Send(Arg.Any<ProcessScheduledTaskCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Success(3));
 
         // Act
         await _job.Execute(_context);
 
         // Assert
         await _mediator.Received(1).Send(
-            Arg.Any<GetActiveTaskTemplatesQuery>(),
+            Arg.Any<ProcessScheduledTaskCommand>(),
             Arg.Any<CancellationToken>());
     }
 }

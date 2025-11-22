@@ -9,11 +9,18 @@ namespace FamilyTaskManager.Infrastructure.Services;
 /// </summary>
 public class QuartzScheduleEvaluator : IScheduleEvaluator
 {
-    public DateTime? GetNextOccurrence(string scheduleExpression, DateTime after)
+    public DateTime? GetNextOccurrence(string scheduleExpression, DateTime after, string? timezoneId = null)
     {
         try
         {
             var cronExpression = new CronExpression(scheduleExpression);
+            
+            // Set timezone if provided
+            if (!string.IsNullOrWhiteSpace(timezoneId))
+            {
+                cronExpression.TimeZone = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+            }
+            
             var nextOccurrence = cronExpression.GetTimeAfter(new DateTimeOffset(after));
             return nextOccurrence?.UtcDateTime;
         }
@@ -24,11 +31,17 @@ public class QuartzScheduleEvaluator : IScheduleEvaluator
         }
     }
 
-    public (bool shouldTrigger, DateTime? triggerTime) ShouldTriggerInWindow(string scheduleExpression, DateTime windowStart, DateTime windowEnd)
+    public (bool shouldTrigger, DateTime? triggerTime) ShouldTriggerInWindow(string scheduleExpression, DateTime windowStart, DateTime windowEnd, string? timezoneId = null)
     {
         try
         {
             var cronExpression = new CronExpression(scheduleExpression);
+            
+            // Set timezone if provided
+            if (!string.IsNullOrWhiteSpace(timezoneId))
+            {
+                cronExpression.TimeZone = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+            }
             
             // Get the next occurrence after the window start
             var nextOccurrence = cronExpression.GetTimeAfter(new DateTimeOffset(windowStart));

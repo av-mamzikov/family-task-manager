@@ -1,5 +1,7 @@
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.UseCases.Tasks;
 
 namespace FamilyTaskManager.UnitTests.UseCases.Tasks;
@@ -8,13 +10,17 @@ public class CreateTaskHandlerTests
 {
   private readonly IRepository<TaskInstance> _taskRepository;
   private readonly IRepository<Pet> _petRepository;
+  private readonly IRepository<Family> _familyRepository;
+  private readonly ITimeZoneService _timeZoneService;
   private readonly CreateTaskHandler _handler;
 
   public CreateTaskHandlerTests()
   {
     _taskRepository = Substitute.For<IRepository<TaskInstance>>();
     _petRepository = Substitute.For<IRepository<Pet>>();
-    _handler = new CreateTaskHandler(_taskRepository, _petRepository);
+    _familyRepository = Substitute.For<IRepository<Family>>();
+    _timeZoneService = Substitute.For<ITimeZoneService>();
+    _handler = new CreateTaskHandler(_taskRepository, _petRepository, _familyRepository, _timeZoneService);
   }
 
   [Fact]
@@ -24,11 +30,16 @@ public class CreateTaskHandlerTests
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
     var pet = new Pet(familyId, PetType.Cat, "Fluffy");
+    var family = new Family("Test Family", "UTC", false);
     var dueAt = DateTime.UtcNow.AddDays(1);
     var command = new CreateTaskCommand(familyId, petId, "Feed the cat", 10, dueAt, Guid.NewGuid());
     
     _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>())
       .Returns(pet);
+    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+      .Returns(family);
+    _timeZoneService.ConvertToUtc(Arg.Any<DateTime>(), "UTC")
+      .Returns(callInfo => callInfo.ArgAt<DateTime>(0));
     
     TaskInstance? capturedTask = null;
     await _taskRepository.AddAsync(Arg.Do<TaskInstance>(t => capturedTask = t), Arg.Any<CancellationToken>());
@@ -72,10 +83,13 @@ public class CreateTaskHandlerTests
     var differentFamilyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
     var pet = new Pet(differentFamilyId, PetType.Cat, "Fluffy");
+    var family = new Family("Test Family", "UTC", false);
     var command = new CreateTaskCommand(familyId, petId, "Feed the cat", 10, DateTime.UtcNow, Guid.NewGuid());
     
     _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>())
       .Returns(pet);
+    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+      .Returns(family);
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);
@@ -94,10 +108,13 @@ public class CreateTaskHandlerTests
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
     var pet = new Pet(familyId, PetType.Cat, "Fluffy");
+    var family = new Family("Test Family", "UTC", false);
     var command = new CreateTaskCommand(familyId, petId, title, points, DateTime.UtcNow, Guid.NewGuid());
     
     _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>())
       .Returns(pet);
+    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+      .Returns(family);
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);
@@ -117,10 +134,13 @@ public class CreateTaskHandlerTests
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
     var pet = new Pet(familyId, PetType.Cat, "Fluffy");
+    var family = new Family("Test Family", "UTC", false);
     var command = new CreateTaskCommand(familyId, petId, "Valid Title", points, DateTime.UtcNow, Guid.NewGuid());
     
     _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>())
       .Returns(pet);
+    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+      .Returns(family);
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);
