@@ -18,6 +18,9 @@ try
 
   var builder = Host.CreateApplicationBuilder(args);
 
+  // Add Aspire ServiceDefaults for monitoring, health checks, and service discovery
+  builder.AddServiceDefaults();
+
   // Add Serilog
   builder.Services.AddSerilog();
 

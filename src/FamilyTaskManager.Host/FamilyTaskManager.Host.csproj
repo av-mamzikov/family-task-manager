@@ -23,5 +23,6 @@
     <ProjectReference Include="..\FamilyTaskManager.Core\FamilyTaskManager.Core.csproj" />
     <ProjectReference Include="..\FamilyTaskManager.UseCases\FamilyTaskManager.UseCases.csproj" />
     <ProjectReference Include="..\FamilyTaskManager.Infrastructure\FamilyTaskManager.Infrastructure.csproj" />
+    <ProjectReference Include="..\FamilyTaskManager.ServiceDefaults\FamilyTaskManager.ServiceDefaults.csproj" />
   </ItemGroup>
 </Project>

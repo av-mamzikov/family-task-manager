@@ -18,10 +18,10 @@ public static class InfrastructureServiceExtensions
     logger ??= LoggerFactory.Create(builder => { })
       .CreateLogger(nameof(InfrastructureServiceExtensions));
     // Try to get connection strings in order of priority:
-    // 1. "cleanarchitecture" - provided by Aspire when using .WithReference(cleanArchDb)
-    // 2. "DefaultConnection" - traditional SQL Server connection
+    // 1. "FamilyTaskManager" - provided by Aspire when using .WithReference(cleanArchDb)
+    // 2. "DefaultConnection" - traditional PostgreSQL connection
     // 3. "SqliteConnection" - fallback to SQLite
-    string? connectionString = config.GetConnectionString("cleanarchitecture")
+    string? connectionString = config.GetConnectionString("FamilyTaskManager")
                                ?? config.GetConnectionString("DefaultConnection") 
                                ?? config.GetConnectionString("SqliteConnection");
     Guard.Against.Null(connectionString);
@@ -33,11 +33,11 @@ public static class InfrastructureServiceExtensions
     {
       var eventDispatchInterceptor = provider.GetRequiredService<EventDispatchInterceptor>();
       
-      // Use SQL Server if Aspire or DefaultConnection is available, otherwise use SQLite
-      if (config.GetConnectionString("cleanarchitecture") != null || 
+      // Use PostgreSQL if Aspire or DefaultConnection is available, otherwise use SQLite
+      if (config.GetConnectionString("FamilyTaskManager") != null || 
           config.GetConnectionString("DefaultConnection") != null)
       {
-        options.UseSqlServer(connectionString);
+        options.UseNpgsql(connectionString);
       }
       else
       {

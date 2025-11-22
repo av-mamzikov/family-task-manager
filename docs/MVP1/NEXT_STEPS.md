@@ -11,22 +11,6 @@
 7. **Система invite-кодов** - возможность приглашения участников в семью
 8. **Создание задач через бота**
 9. **Автоматическое создание TaskTemplate**
+10. **Timezone поддержка**
 
 ## Что осталось сделать
-
-### 1. Timezone поддержка (1 день)
-
-```csharp
-// Обновить TaskInstanceCreatorJob
-var familyTimezone = TimeZoneInfo.FindSystemTimeZoneById(family.Timezone);
-var cronExpression = new CronExpression(template.Schedule)
-{
-    TimeZone = familyTimezone
-};
-var nextOccurrence = cronExpression.GetTimeAfter(DateTimeOffset.UtcNow);
-```
-
-### 3. Преобразовать Host в Web приложение с health checks
-
-### 2. Docker compose
-
