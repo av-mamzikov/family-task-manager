@@ -40,13 +40,23 @@ public class UpdateHandler(
   private async Task HandleMessageAsync(ITelegramBotClient botClient, Message message,
     CancellationToken cancellationToken)
   {
-    if (message.Text is not { } messageText)
+    var chatId = message.Chat.Id;
+
+    // Handle location messages
+    if (message.Location is not null)
+    {
+      logger.LogInformation("Received location from {ChatId}: Lat={Latitude}, Lon={Longitude}",
+        chatId, message.Location.Latitude, message.Location.Longitude);
+    }
+    // Handle text messages
+    else if (message.Text is not { } messageText)
     {
       return;
     }
-
-    var chatId = message.Chat.Id;
-    logger.LogInformation("Received message from {ChatId}: {MessageText}", chatId, messageText);
+    else
+    {
+      logger.LogInformation("Received message from {ChatId}: {MessageText}", chatId, messageText);
+    }
 
     using var scope = serviceProvider.CreateScope();
     var commandHandler = scope.ServiceProvider.GetRequiredService<ICommandHandler>();
