@@ -1,10 +1,7 @@
+using FamilyTaskManager.Host.Modules.Bot.Handlers;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using FamilyTaskManager.Host.Modules.Bot.Handlers;
-using Microsoft.Extensions.Options;
-using FamilyTaskManager.Host.Modules.Bot.Configuration;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Services;
 
@@ -18,17 +15,17 @@ public interface ITelegramBotService
 public class TelegramBotService : ITelegramBotService
 {
   private readonly ITelegramBotClient _botClient;
-  private readonly IUpdateHandler _updateHandler;
   private readonly ILogger<TelegramBotService> _logger;
+  private readonly IServiceScopeFactory _scopeFactory;
   private CancellationTokenSource? _cts;
 
   public TelegramBotService(
-    IOptions<BotConfiguration> botConfig,
-    IUpdateHandler updateHandler,
+    ITelegramBotClient botClient,
+    IServiceScopeFactory scopeFactory,
     ILogger<TelegramBotService> logger)
   {
-    _botClient = new TelegramBotClient(botConfig.Value.BotToken);
-    _updateHandler = updateHandler;
+    _botClient = botClient;
+    _scopeFactory = scopeFactory;
     _logger = logger;
   }
 
@@ -38,19 +35,15 @@ public class TelegramBotService : ITelegramBotService
 
     var receiverOptions = new ReceiverOptions
     {
-      AllowedUpdates = new[] 
-      { 
-        UpdateType.Message, 
-        UpdateType.CallbackQuery 
-      },
-      ThrowPendingUpdates = true
+      AllowedUpdates = new[] { UpdateType.Message, UpdateType.CallbackQuery }, ThrowPendingUpdates = true
     };
 
     var me = await _botClient.GetMeAsync(cancellationToken);
     _logger.LogInformation("Bot started: @{BotUsername}", me.Username);
 
+    // Create a scope for each update to resolve scoped handlers
     _botClient.StartReceiving(
-      _updateHandler,
+      new ScopedUpdateHandler(_scopeFactory),
       receiverOptions,
       _cts.Token);
   }

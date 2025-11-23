@@ -1,4 +1,5 @@
 using FamilyTaskManager.Host.Modules.Worker.Jobs;
+using FamilyTaskManager.Infrastructure;
 using Quartz;
 
 namespace FamilyTaskManager.Host.Modules.Worker;
@@ -6,13 +7,14 @@ namespace FamilyTaskManager.Host.Modules.Worker;
 public static class WorkerModuleExtensions
 {
   public static IServiceCollection AddWorkerModule(
-    this IServiceCollection services, 
+    this IServiceCollection services,
     IConfiguration configuration,
     ILogger? logger = null)
   {
     logger?.LogInformation("Registering Worker Module...");
-    
-    var connectionString = configuration.GetConnectionString("DefaultConnection");
+
+    // Get database connection string using shared logic from Infrastructure
+    var connectionString = configuration.GetDatabaseConnectionString();
 
     // Add Quartz services
     services.AddQuartz(q =>
@@ -20,7 +22,7 @@ public static class WorkerModuleExtensions
       // Use PostgreSQL for job persistence
       q.UsePersistentStore(store =>
       {
-        store.UsePostgres(connectionString!);
+        store.UsePostgres(connectionString);
         store.UseNewtonsoftJsonSerializer();
       });
 
@@ -58,8 +60,9 @@ public static class WorkerModuleExtensions
       options.WaitForJobsToComplete = true;
     });
 
-    logger?.LogInformation("Worker Module registered: Quartz.NET Jobs (TaskInstanceCreator, TaskReminder, PetMoodCalculator)");
-    
+    logger?.LogInformation(
+      "Worker Module registered: Quartz.NET Jobs (TaskInstanceCreator, TaskReminder, PetMoodCalculator)");
+
     return services;
   }
 }

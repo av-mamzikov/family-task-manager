@@ -1,4 +1,4 @@
-using System.Net.Sockets;
+using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -10,9 +10,11 @@ var postgres = builder.AddPostgres("postgres")
 var cleanArchDb = postgres.AddDatabase("FamilyTaskManager");
 
 // Add the host project with the database connection
-builder.AddProject<Projects.FamilyTaskManager_Host>("host")
+builder.AddProject<FamilyTaskManager_Host>("host")
   .WithReference(cleanArchDb)
   .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
+  .WithEnvironment("Bot__BotToken", builder.Configuration["Bot:BotToken"] ?? "")
+  .WithEnvironment("Bot__BotUsername", builder.Configuration["Bot:BotUsername"] ?? "")
   .WaitFor(cleanArchDb);
 
 builder

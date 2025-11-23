@@ -10,17 +10,18 @@ namespace FamilyTaskManager.Host.Modules.Bot;
 public static class BotModuleExtensions
 {
   public static IServiceCollection AddBotModule(
-    this IServiceCollection services, 
+    this IServiceCollection services,
     IConfiguration configuration,
     ILogger? logger = null)
   {
     logger?.LogInformation("Registering Bot Module...");
-    
+
     // Bot Configuration
     var botConfig = configuration.GetSection("Bot").Get<BotConfiguration>();
     if (botConfig == null || string.IsNullOrEmpty(botConfig.BotToken))
     {
-      throw new InvalidOperationException("Bot configuration is missing. Please configure Bot:BotToken in appsettings.json or user secrets.");
+      throw new InvalidOperationException(
+        "Bot configuration is missing. Please configure Bot:BotToken in appsettings.json or user secrets.");
     }
 
     services.AddSingleton(botConfig);
@@ -33,23 +34,23 @@ public static class BotModuleExtensions
     });
 
     // Bot Services
-    services.AddSingleton<SessionManager>();
+    services.AddSingleton<ISessionManager, SessionManager>();
     services.AddSingleton<ITelegramBotService, TelegramBotService>();
-    
+
     // Hosted Service for Long Polling
     services.AddHostedService<TelegramBotHostedService>();
 
     // Handlers
     services.AddScoped<IUpdateHandler, UpdateHandler>();
-    services.AddScoped<CommandHandler>();
-    services.AddScoped<CallbackQueryHandler>();
+    services.AddScoped<ICommandHandler, CommandHandler>();
+    services.AddScoped<ICallbackQueryHandler, CallbackQueryHandler>();
     services.AddScoped<FamilyCommandHandler>();
     services.AddScoped<TasksCommandHandler>();
     services.AddScoped<PetCommandHandler>();
     services.AddScoped<StatsCommandHandler>();
 
     logger?.LogInformation("Bot Module registered: Telegram Bot with Long Polling");
-    
+
     return services;
   }
 }

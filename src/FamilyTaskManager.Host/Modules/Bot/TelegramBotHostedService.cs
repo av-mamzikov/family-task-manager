@@ -1,4 +1,4 @@
-using FamilyTaskManager.Host.Modules.Bot.Services;
+using FamilyTaskManager.Host.Modules.Bot.Handlers;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
@@ -11,16 +11,16 @@ namespace FamilyTaskManager.Host.Modules.Bot;
 public class TelegramBotHostedService : BackgroundService
 {
   private readonly ITelegramBotClient _botClient;
-  private readonly IUpdateHandler _updateHandler;
   private readonly ILogger<TelegramBotHostedService> _logger;
+  private readonly IServiceScopeFactory _scopeFactory;
 
   public TelegramBotHostedService(
     ITelegramBotClient botClient,
-    IUpdateHandler updateHandler,
+    IServiceScopeFactory scopeFactory,
     ILogger<TelegramBotHostedService> logger)
   {
     _botClient = botClient;
-    _updateHandler = updateHandler;
+    _scopeFactory = scopeFactory;
     _logger = logger;
   }
 
@@ -31,12 +31,11 @@ public class TelegramBotHostedService : BackgroundService
 
     var receiverOptions = new ReceiverOptions
     {
-      AllowedUpdates = Array.Empty<UpdateType>(),
-      ThrowPendingUpdates = true
+      AllowedUpdates = Array.Empty<UpdateType>(), ThrowPendingUpdates = true
     };
 
     await _botClient.ReceiveAsync(
-      _updateHandler,
+      new ScopedUpdateHandler(_scopeFactory),
       receiverOptions,
       stoppingToken);
   }

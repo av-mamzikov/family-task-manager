@@ -1,10 +1,12 @@
-using FamilyTaskManager.Infrastructure.Data;
-using FamilyTaskManager.Infrastructure.Notifications;
-using FamilyTaskManager.Infrastructure.Behaviors;
-using FamilyTaskManager.Infrastructure.Services;
 using FamilyTaskManager.Core.Interfaces;
-using Telegram.Bot;
+using FamilyTaskManager.Infrastructure.Behaviors;
+using FamilyTaskManager.Infrastructure.Data;
+using FamilyTaskManager.Infrastructure.Database;
+using FamilyTaskManager.Infrastructure.Interfaces;
+using FamilyTaskManager.Infrastructure.Notifications;
+using FamilyTaskManager.Infrastructure.Services;
 using Mediator;
+using Telegram.Bot;
 
 namespace FamilyTaskManager.Infrastructure;
 
@@ -17,14 +19,8 @@ public static class InfrastructureServiceExtensions
   {
     logger ??= LoggerFactory.Create(builder => { })
       .CreateLogger(nameof(InfrastructureServiceExtensions));
-    // Try to get connection strings in order of priority:
-    // 1. "FamilyTaskManager" - provided by Aspire when using .WithReference(cleanArchDb)
-    // 2. "DefaultConnection" - traditional PostgreSQL connection
-    // 3. "SqliteConnection" - fallback to SQLite
-    string? connectionString = config.GetConnectionString("FamilyTaskManager")
-                               ?? config.GetConnectionString("DefaultConnection") 
-                               ?? config.GetConnectionString("SqliteConnection");
-    Guard.Against.Null(connectionString);
+    // Get database connection string using shared logic
+    var connectionString = config.GetDatabaseConnectionString();
 
     services.AddScoped<EventDispatchInterceptor>();
     services.AddScoped<IDomainEventDispatcher, MediatorDomainEventDispatcher>();
@@ -32,9 +28,9 @@ public static class InfrastructureServiceExtensions
     services.AddDbContext<AppDbContext>((provider, options) =>
     {
       var eventDispatchInterceptor = provider.GetRequiredService<EventDispatchInterceptor>();
-      
+
       // Use PostgreSQL if Aspire or DefaultConnection is available, otherwise use SQLite
-      if (config.GetConnectionString("FamilyTaskManager") != null || 
+      if (config.GetConnectionString("FamilyTaskManager") != null ||
           config.GetConnectionString("DefaultConnection") != null)
       {
         options.UseNpgsql(connectionString);
@@ -43,12 +39,12 @@ public static class InfrastructureServiceExtensions
       {
         options.UseSqlite(connectionString);
       }
-      
+
       options.AddInterceptors(eventDispatchInterceptor);
     });
 
     services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>))
-           .AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
+      .AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
 
     // Register Mediator Pipeline Behaviors
     services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(MediatorLoggingBehavior<,>));
@@ -69,9 +65,12 @@ public static class InfrastructureServiceExtensions
 
     // Register Schedule Evaluator
     services.AddScoped<IScheduleEvaluator, QuartzScheduleEvaluator>();
-    
+
     // Register TimeZone Service
     services.AddScoped<ITimeZoneService, TimeZoneService>();
+
+    // Register Quartz Schema Initializer
+    services.AddScoped<IQuartzSchemaInitializer, QuartzSchemaInitializer>();
 
     logger.LogInformation("{Project} services registered", "Infrastructure");
 
