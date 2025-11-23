@@ -5,19 +5,11 @@ using Telegram.Bot.Types.Enums;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
-public class UpdateHandler : IUpdateHandler
+public class UpdateHandler(
+  ILogger<UpdateHandler> logger,
+  IServiceProvider serviceProvider)
+  : IUpdateHandler
 {
-  private readonly ILogger<UpdateHandler> _logger;
-  private readonly IServiceProvider _serviceProvider;
-
-  public UpdateHandler(
-    ILogger<UpdateHandler> logger,
-    IServiceProvider serviceProvider)
-  {
-    _logger = logger;
-    _serviceProvider = serviceProvider;
-  }
-
   public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
   {
     try
@@ -33,7 +25,7 @@ public class UpdateHandler : IUpdateHandler
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "Error handling update");
+      logger.LogError(ex, "Error handling update");
       await HandlePollingErrorAsync(botClient, ex, cancellationToken);
     }
   }
@@ -41,7 +33,7 @@ public class UpdateHandler : IUpdateHandler
   public Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception,
     CancellationToken cancellationToken)
   {
-    _logger.LogError(exception, "Telegram bot error");
+    logger.LogError(exception, "Telegram bot error");
     return Task.CompletedTask;
   }
 
@@ -54,9 +46,9 @@ public class UpdateHandler : IUpdateHandler
     }
 
     var chatId = message.Chat.Id;
-    _logger.LogInformation("Received message from {ChatId}: {MessageText}", chatId, messageText);
+    logger.LogInformation("Received message from {ChatId}: {MessageText}", chatId, messageText);
 
-    using var scope = _serviceProvider.CreateScope();
+    using var scope = serviceProvider.CreateScope();
     var commandHandler = scope.ServiceProvider.GetRequiredService<ICommandHandler>();
 
     await commandHandler.HandleCommandAsync(botClient, message, cancellationToken);
@@ -70,9 +62,9 @@ public class UpdateHandler : IUpdateHandler
       return;
     }
 
-    _logger.LogInformation("Received callback from {ChatId}: {Data}", callbackQuery.Message?.Chat.Id, data);
+    logger.LogInformation("Received callback from {ChatId}: {Data}", callbackQuery.Message?.Chat.Id, data);
 
-    using var scope = _serviceProvider.CreateScope();
+    using var scope = serviceProvider.CreateScope();
     var callbackHandler = scope.ServiceProvider.GetRequiredService<ICallbackQueryHandler>();
 
     await callbackHandler.HandleCallbackAsync(botClient, callbackQuery, cancellationToken);

@@ -5,12 +5,7 @@ namespace FamilyTaskManager.UnitTests.Host.Bot.Services;
 
 public class SessionManagerTests
 {
-  private readonly SessionManager _sessionManager;
-
-  public SessionManagerTests()
-  {
-    _sessionManager = new SessionManager();
-  }
+  private readonly SessionManager _sessionManager = new();
 
   [Fact]
   public void GetSession_ShouldCreateNewSession_WhenNotExists()

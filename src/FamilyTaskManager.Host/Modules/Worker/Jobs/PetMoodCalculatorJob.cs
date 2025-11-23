@@ -9,41 +9,32 @@ namespace FamilyTaskManager.Host.Modules.Worker.Jobs;
 ///   Domain events handle the actual notification sending.
 /// </summary>
 [DisallowConcurrentExecution]
-public class PetMoodCalculatorJob : IJob
+public class PetMoodCalculatorJob(
+  IMediator mediator,
+  ILogger<PetMoodCalculatorJob> logger) : IJob
 {
-  private readonly ILogger<PetMoodCalculatorJob> _logger;
-  private readonly IMediator _mediator;
-
-  public PetMoodCalculatorJob(
-    IMediator mediator,
-    ILogger<PetMoodCalculatorJob> logger)
-  {
-    _mediator = mediator;
-    _logger = logger;
-  }
-
   public async Task Execute(IJobExecutionContext context)
   {
-    _logger.LogInformation("PetMoodCalculatorJob started at {Time}", DateTime.UtcNow);
+    logger.LogInformation("PetMoodCalculatorJob started at {Time}", DateTime.UtcNow);
 
     try
     {
       // Simply call the UseCase - it handles all the logic
       // Domain events will handle notifications
-      var result = await _mediator.Send(new CalculateAllPetsMoodCommand(), context.CancellationToken);
+      var result = await mediator.Send(new CalculateAllPetsMoodCommand(), context.CancellationToken);
 
       if (result.IsSuccess)
       {
-        _logger.LogInformation("PetMoodCalculatorJob completed successfully");
+        logger.LogInformation("PetMoodCalculatorJob completed successfully");
       }
       else
       {
-        _logger.LogWarning("PetMoodCalculatorJob completed with errors: {Errors}", result.Errors);
+        logger.LogWarning("PetMoodCalculatorJob completed with errors: {Errors}", result.Errors);
       }
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "PetMoodCalculatorJob failed");
+      logger.LogError(ex, "PetMoodCalculatorJob failed");
       throw;
     }
   }

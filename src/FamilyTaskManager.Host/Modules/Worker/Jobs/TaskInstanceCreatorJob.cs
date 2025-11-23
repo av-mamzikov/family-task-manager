@@ -9,20 +9,11 @@ namespace FamilyTaskManager.Host.Modules.Worker.Jobs;
 ///   This is a thin orchestrator that delegates business logic to use cases.
 /// </summary>
 [DisallowConcurrentExecution]
-public class TaskInstanceCreatorJob : IJob
+public class TaskInstanceCreatorJob(IMediator mediator, ILogger<TaskInstanceCreatorJob> logger) : IJob
 {
-  private readonly ILogger<TaskInstanceCreatorJob> _logger;
-  private readonly IMediator _mediator;
-
-  public TaskInstanceCreatorJob(IMediator mediator, ILogger<TaskInstanceCreatorJob> logger)
-  {
-    _mediator = mediator;
-    _logger = logger;
-  }
-
   public async Task Execute(IJobExecutionContext context)
   {
-    _logger.LogInformation("TaskInstanceCreatorJob started at {Time}", DateTimeOffset.UtcNow);
+    logger.LogInformation("TaskInstanceCreatorJob started at {Time}", DateTimeOffset.UtcNow);
 
     try
     {
@@ -32,25 +23,25 @@ public class TaskInstanceCreatorJob : IJob
       var checkFrom = now.AddMinutes(-2);
       var checkTo = now;
 
-      var result = await _mediator.Send(
+      var result = await mediator.Send(
         new ProcessScheduledTaskCommand(checkFrom, checkTo),
         context.CancellationToken);
 
       if (result.IsSuccess)
       {
-        _logger.LogInformation(
+        logger.LogInformation(
           "TaskInstanceCreatorJob completed. Created {CreatedCount} new task instances",
           result.Value);
       }
       else
       {
-        _logger.LogWarning("Failed to process scheduled tasks: {Error}",
+        logger.LogWarning("Failed to process scheduled tasks: {Error}",
           string.Join(", ", result.Errors));
       }
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "Error in TaskInstanceCreatorJob");
+      logger.LogError(ex, "Error in TaskInstanceCreatorJob");
     }
   }
 }

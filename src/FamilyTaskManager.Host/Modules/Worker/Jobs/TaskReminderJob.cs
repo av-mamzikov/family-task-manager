@@ -9,22 +9,15 @@ namespace FamilyTaskManager.Host.Modules.Worker.Jobs;
 ///   Domain events handle the actual notification sending.
 /// </summary>
 [DisallowConcurrentExecution]
-public class TaskReminderJob : IJob
+public class TaskReminderJob(
+  IMediator mediator,
+  ILogger<TaskReminderJob> logger) : IJob
 {
-  private readonly ILogger<TaskReminderJob> _logger;
-  private readonly IMediator _mediator;
-
-  public TaskReminderJob(
-    IMediator mediator,
-    ILogger<TaskReminderJob> logger)
-  {
-    _mediator = mediator;
-    _logger = logger;
-  }
+  private readonly IMediator _mediator = mediator;
 
   public async Task Execute(IJobExecutionContext context)
   {
-    _logger.LogInformation("TaskReminderJob started at {Time}", DateTime.UtcNow);
+    logger.LogInformation("TaskReminderJob started at {Time}", DateTime.UtcNow);
 
     try
     {
@@ -33,16 +26,16 @@ public class TaskReminderJob : IJob
 
       if (result.IsSuccess)
       {
-        _logger.LogInformation("TaskReminderJob completed successfully");
+        logger.LogInformation("TaskReminderJob completed successfully");
       }
       else
       {
-        _logger.LogWarning("TaskReminderJob completed with errors: {Errors}", result.Errors);
+        logger.LogWarning("TaskReminderJob completed with errors: {Errors}", result.Errors);
       }
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "TaskReminderJob failed");
+      logger.LogError(ex, "TaskReminderJob failed");
       throw;
     }
   }

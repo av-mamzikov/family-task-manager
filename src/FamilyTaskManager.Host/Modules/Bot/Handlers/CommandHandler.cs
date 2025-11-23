@@ -16,42 +16,22 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
-public class CommandHandler : ICommandHandler
+public class CommandHandler(
+  ILogger<CommandHandler> logger,
+  ISessionManager sessionManager,
+  IMediator mediator,
+  FamilyCommandHandler familyCommandHandler,
+  TasksCommandHandler tasksCommandHandler,
+  PetCommandHandler petCommandHandler,
+  StatsCommandHandler statsCommandHandler,
+  ITimeZoneService timeZoneService)
+  : ICommandHandler
 {
-  private readonly FamilyCommandHandler _familyCommandHandler;
-  private readonly ILogger<CommandHandler> _logger;
-  private readonly IMediator _mediator;
-  private readonly PetCommandHandler _petCommandHandler;
-  private readonly ISessionManager _sessionManager;
-  private readonly StatsCommandHandler _statsCommandHandler;
-  private readonly TasksCommandHandler _tasksCommandHandler;
-  private readonly ITimeZoneService _timeZoneService;
-
-  public CommandHandler(
-    ILogger<CommandHandler> logger,
-    ISessionManager sessionManager,
-    IMediator mediator,
-    FamilyCommandHandler familyCommandHandler,
-    TasksCommandHandler tasksCommandHandler,
-    PetCommandHandler petCommandHandler,
-    StatsCommandHandler statsCommandHandler,
-    ITimeZoneService timeZoneService)
-  {
-    _logger = logger;
-    _sessionManager = sessionManager;
-    _mediator = mediator;
-    _familyCommandHandler = familyCommandHandler;
-    _tasksCommandHandler = tasksCommandHandler;
-    _petCommandHandler = petCommandHandler;
-    _statsCommandHandler = statsCommandHandler;
-    _timeZoneService = timeZoneService;
-  }
-
   public async Task HandleCommandAsync(ITelegramBotClient botClient, Message message,
     CancellationToken cancellationToken)
   {
     var telegramId = message.From!.Id;
-    var session = _sessionManager.GetSession(telegramId);
+    var session = sessionManager.GetSession(telegramId);
     session.UpdateActivity();
 
     // Handle conversation state
@@ -122,7 +102,7 @@ public class CommandHandler : ICommandHandler
 
     // Register or update user
     var registerCommand = new RegisterUserCommand(telegramId, userName);
-    var result = await _mediator.Send(registerCommand, cancellationToken);
+    var result = await mediator.Send(registerCommand, cancellationToken);
 
     if (!result.IsSuccess)
     {
@@ -144,7 +124,7 @@ public class CommandHandler : ICommandHandler
 
     // Get user families
     var getFamiliesQuery = new GetUserFamiliesQuery(userId);
-    var familiesResult = await _mediator.Send(getFamiliesQuery, cancellationToken);
+    var familiesResult = await mediator.Send(getFamiliesQuery, cancellationToken);
 
     if (familiesResult.IsSuccess && familiesResult.Value.Any())
     {
@@ -179,7 +159,7 @@ public class CommandHandler : ICommandHandler
 
     // Join family by invite code
     var joinCommand = new JoinByInviteCodeCommand(userId, code);
-    var result = await _mediator.Send(joinCommand, cancellationToken);
+    var result = await mediator.Send(joinCommand, cancellationToken);
 
     if (!result.IsSuccess)
     {
@@ -193,7 +173,7 @@ public class CommandHandler : ICommandHandler
 
     // Get updated family list
     var getFamiliesQuery = new GetUserFamiliesQuery(userId);
-    var familiesResult = await _mediator.Send(getFamiliesQuery, cancellationToken);
+    var familiesResult = await mediator.Send(getFamiliesQuery, cancellationToken);
 
     if (familiesResult.IsSuccess && familiesResult.Value.Any())
     {
@@ -238,7 +218,7 @@ public class CommandHandler : ICommandHandler
   {
     // Get user ID
     var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
-    var userResult = await _mediator.Send(registerCommand, cancellationToken);
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -249,7 +229,7 @@ public class CommandHandler : ICommandHandler
       return;
     }
 
-    await _familyCommandHandler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
+    await familyCommandHandler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
   }
 
   private async Task HandleTasksCommandAsync(
@@ -259,7 +239,7 @@ public class CommandHandler : ICommandHandler
     CancellationToken cancellationToken)
   {
     var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
-    var userResult = await _mediator.Send(registerCommand, cancellationToken);
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -270,7 +250,7 @@ public class CommandHandler : ICommandHandler
       return;
     }
 
-    await _tasksCommandHandler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
+    await tasksCommandHandler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
   }
 
   private async Task HandlePetCommandAsync(
@@ -280,7 +260,7 @@ public class CommandHandler : ICommandHandler
     CancellationToken cancellationToken)
   {
     var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
-    var userResult = await _mediator.Send(registerCommand, cancellationToken);
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -291,7 +271,7 @@ public class CommandHandler : ICommandHandler
       return;
     }
 
-    await _petCommandHandler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
+    await petCommandHandler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
   }
 
   private async Task HandleStatsCommandAsync(
@@ -301,7 +281,7 @@ public class CommandHandler : ICommandHandler
     CancellationToken cancellationToken)
   {
     var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
-    var userResult = await _mediator.Send(registerCommand, cancellationToken);
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -312,7 +292,7 @@ public class CommandHandler : ICommandHandler
       return;
     }
 
-    await _statsCommandHandler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
+    await statsCommandHandler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
   }
 
   private async Task HandleHelpCommandAsync(
@@ -544,7 +524,7 @@ public class CommandHandler : ICommandHandler
         return;
       }
 
-      _logger.LogInformation("Detected timezone for coordinates {Lat}, {Lng}: {Timezone}",
+      logger.LogInformation("Detected timezone for coordinates {Lat}, {Lng}: {Timezone}",
         location.Latitude, location.Longitude, detectedTimezone);
 
       // Get required data from session
@@ -560,7 +540,7 @@ public class CommandHandler : ICommandHandler
       }
 
       // Validate detected timezone
-      if (!_timeZoneService.IsValidTimeZone(detectedTimezone))
+      if (!timeZoneService.IsValidTimeZone(detectedTimezone))
       {
         await botClient.SendTextMessageAsync(
           message.Chat.Id,
@@ -575,7 +555,7 @@ public class CommandHandler : ICommandHandler
 
       // Create family with detected timezone
       var createFamilyCommand = new CreateFamilyCommand(userId, familyName, detectedTimezone);
-      var result = await _mediator.Send(createFamilyCommand, cancellationToken);
+      var result = await mediator.Send(createFamilyCommand, cancellationToken);
 
       if (!result.IsSuccess)
       {
@@ -601,7 +581,7 @@ public class CommandHandler : ICommandHandler
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "Error determining timezone from location");
+      logger.LogError(ex, "Error determining timezone from location");
 
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
@@ -674,7 +654,7 @@ public class CommandHandler : ICommandHandler
 
     // Create pet
     var createPetCommand = new CreatePetCommand(familyId, petType, petName);
-    var result = await _mediator.Send(createPetCommand, cancellationToken);
+    var result = await mediator.Send(createPetCommand, cancellationToken);
 
     if (!result.IsSuccess)
     {
@@ -761,7 +741,7 @@ public class CommandHandler : ICommandHandler
     }
 
     var getPetsQuery = new GetPetsQuery(familyId);
-    var petsResult = await _mediator.Send(getPetsQuery, cancellationToken);
+    var petsResult = await mediator.Send(getPetsQuery, cancellationToken);
 
     if (!petsResult.IsSuccess || !petsResult.Value.Any())
     {
@@ -829,7 +809,7 @@ public class CommandHandler : ICommandHandler
 
     // Get user ID
     var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
-    var userResult = await _mediator.Send(registerCommand, cancellationToken);
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -843,7 +823,7 @@ public class CommandHandler : ICommandHandler
 
     // Create one-time task
     var createTaskCommand = new CreateTaskCommand(familyId, petId, title, points, dueAt, userResult.Value);
-    var result = await _mediator.Send(createTaskCommand, cancellationToken);
+    var result = await mediator.Send(createTaskCommand, cancellationToken);
 
     if (!result.IsSuccess)
     {
@@ -899,7 +879,7 @@ public class CommandHandler : ICommandHandler
 
     // Get user ID
     var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
-    var userResult = await _mediator.Send(registerCommand, cancellationToken);
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -914,7 +894,7 @@ public class CommandHandler : ICommandHandler
     // Create periodic task template
     var createTemplateCommand =
       new CreateTaskTemplateCommand(familyId, petId, title, points, schedule, userResult.Value);
-    var result = await _mediator.Send(createTemplateCommand, cancellationToken);
+    var result = await mediator.Send(createTemplateCommand, cancellationToken);
 
     if (!result.IsSuccess)
     {

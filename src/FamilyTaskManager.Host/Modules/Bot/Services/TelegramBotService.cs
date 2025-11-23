@@ -12,22 +12,13 @@ public interface ITelegramBotService
   Task SendMessageAsync(long chatId, string text, CancellationToken cancellationToken = default);
 }
 
-public class TelegramBotService : ITelegramBotService
+public class TelegramBotService(
+  ITelegramBotClient botClient,
+  IServiceScopeFactory scopeFactory,
+  ILogger<TelegramBotService> logger)
+  : ITelegramBotService
 {
-  private readonly ITelegramBotClient _botClient;
-  private readonly ILogger<TelegramBotService> _logger;
-  private readonly IServiceScopeFactory _scopeFactory;
   private CancellationTokenSource? _cts;
-
-  public TelegramBotService(
-    ITelegramBotClient botClient,
-    IServiceScopeFactory scopeFactory,
-    ILogger<TelegramBotService> logger)
-  {
-    _botClient = botClient;
-    _scopeFactory = scopeFactory;
-    _logger = logger;
-  }
 
   public async Task StartAsync(CancellationToken cancellationToken)
   {
@@ -38,12 +29,12 @@ public class TelegramBotService : ITelegramBotService
       AllowedUpdates = new[] { UpdateType.Message, UpdateType.CallbackQuery }, ThrowPendingUpdates = true
     };
 
-    var me = await _botClient.GetMeAsync(cancellationToken);
-    _logger.LogInformation("Bot started: @{BotUsername}", me.Username);
+    var me = await botClient.GetMeAsync(cancellationToken);
+    logger.LogInformation("Bot started: @{BotUsername}", me.Username);
 
     // Create a scope for each update to resolve scoped handlers
-    _botClient.StartReceiving(
-      new ScopedUpdateHandler(_scopeFactory),
+    botClient.StartReceiving(
+      new ScopedUpdateHandler(scopeFactory),
       receiverOptions,
       _cts.Token);
   }
@@ -51,13 +42,13 @@ public class TelegramBotService : ITelegramBotService
   public Task StopAsync(CancellationToken cancellationToken)
   {
     _cts?.Cancel();
-    _logger.LogInformation("Bot stopped");
+    logger.LogInformation("Bot stopped");
     return Task.CompletedTask;
   }
 
   public async Task SendMessageAsync(long chatId, string text, CancellationToken cancellationToken = default)
   {
-    await _botClient.SendTextMessageAsync(
+    await botClient.SendTextMessageAsync(
       chatId,
       text,
       cancellationToken: cancellationToken);

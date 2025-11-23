@@ -12,32 +12,20 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
-public class CallbackQueryHandler : ICallbackQueryHandler
+public class CallbackQueryHandler(
+  ILogger<CallbackQueryHandler> logger,
+  ISessionManager sessionManager,
+  IMediator mediator,
+  ITimeZoneService timeZoneService)
+  : ICallbackQueryHandler
 {
-  private readonly ILogger<CallbackQueryHandler> _logger;
-  private readonly IMediator _mediator;
-  private readonly ISessionManager _sessionManager;
-  private readonly ITimeZoneService _timeZoneService;
-
-  public CallbackQueryHandler(
-    ILogger<CallbackQueryHandler> logger,
-    ISessionManager sessionManager,
-    IMediator mediator,
-    ITimeZoneService timeZoneService)
-  {
-    _logger = logger;
-    _sessionManager = sessionManager;
-    _mediator = mediator;
-    _timeZoneService = timeZoneService;
-  }
-
   public async Task HandleCallbackAsync(
     ITelegramBotClient botClient,
     CallbackQuery callbackQuery,
     CancellationToken cancellationToken)
   {
     var telegramId = callbackQuery.From.Id;
-    var session = _sessionManager.GetSession(telegramId);
+    var session = sessionManager.GetSession(telegramId);
     session.UpdateActivity();
 
     var data = callbackQuery.Data!;
@@ -68,7 +56,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "Error handling callback: {Data}", data);
+      logger.LogError(ex, "Error handling callback: {Data}", data);
       await botClient.SendTextMessageAsync(
         chatId,
         "❌ Произошла ошибка. Попробуйте снова.",
@@ -116,7 +104,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
   {
     // Get user by telegram ID
     var registerCommand = new RegisterUserCommand(chatId, "User");
-    var userResult = await _mediator.Send(registerCommand, cancellationToken);
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -323,7 +311,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
   {
     // Get user by telegram ID
     var registerCommand = new RegisterUserCommand(chatId, "User");
-    var userResult = await _mediator.Send(registerCommand, cancellationToken);
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -336,7 +324,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
 
     // Take task
     var takeTaskCommand = new TakeTaskCommand(taskId, userResult.Value);
-    var result = await _mediator.Send(takeTaskCommand, cancellationToken);
+    var result = await mediator.Send(takeTaskCommand, cancellationToken);
 
     if (!result.IsSuccess)
     {
@@ -364,7 +352,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
   {
     // Get user by telegram ID
     var registerCommand = new RegisterUserCommand(chatId, "User");
-    var userResult = await _mediator.Send(registerCommand, cancellationToken);
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -377,7 +365,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
 
     // Complete task
     var completeTaskCommand = new CompleteTaskCommand(taskId, userResult.Value);
-    var result = await _mediator.Send(completeTaskCommand, cancellationToken);
+    var result = await mediator.Send(completeTaskCommand, cancellationToken);
 
     if (!result.IsSuccess)
     {
@@ -465,7 +453,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
   {
     // Get user by telegram ID
     var registerCommand = new RegisterUserCommand(chatId, "User");
-    var userResult = await _mediator.Send(registerCommand, cancellationToken);
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -548,7 +536,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
 
     // Get user by telegram ID
     var registerCommand = new RegisterUserCommand(chatId, "User");
-    var userResult = await _mediator.Send(registerCommand, cancellationToken);
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -561,7 +549,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
 
     // Create invite code
     var createInviteCommand = new CreateInviteCodeCommand(familyId, role, userResult.Value);
-    var result = await _mediator.Send(createInviteCommand, cancellationToken);
+    var result = await mediator.Send(createInviteCommand, cancellationToken);
 
     if (!result.IsSuccess)
     {
@@ -739,7 +727,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     }
 
     // Validate timezone
-    if (!_timeZoneService.IsValidTimeZone(timezoneId))
+    if (!timeZoneService.IsValidTimeZone(timezoneId))
     {
       await botClient.EditMessageTextAsync(
         chatId,
@@ -751,7 +739,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
 
     // Create family with selected timezone
     var createFamilyCommand = new CreateFamilyCommand(userId, familyName, timezoneId);
-    var result = await _mediator.Send(createFamilyCommand, cancellationToken);
+    var result = await mediator.Send(createFamilyCommand, cancellationToken);
 
     if (!result.IsSuccess)
     {

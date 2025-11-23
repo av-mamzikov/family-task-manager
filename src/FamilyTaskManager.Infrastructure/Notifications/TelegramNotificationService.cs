@@ -10,25 +10,12 @@ namespace FamilyTaskManager.Infrastructure.Notifications;
 /// <summary>
 ///   Service for sending Telegram notifications to family members
 /// </summary>
-public class TelegramNotificationService
+public class TelegramNotificationService(
+  ITelegramBotClient botClient,
+  IRepository<Family> familyRepository,
+  IRepository<User> userRepository,
+  ILogger<TelegramNotificationService> logger)
 {
-  private readonly ITelegramBotClient _botClient;
-  private readonly IRepository<Family> _familyRepository;
-  private readonly ILogger<TelegramNotificationService> _logger;
-  private readonly IRepository<User> _userRepository;
-
-  public TelegramNotificationService(
-    ITelegramBotClient botClient,
-    IRepository<Family> familyRepository,
-    IRepository<User> userRepository,
-    ILogger<TelegramNotificationService> logger)
-  {
-    _botClient = botClient;
-    _familyRepository = familyRepository;
-    _userRepository = userRepository;
-    _logger = logger;
-  }
-
   public async Task SendTaskReminderAsync(long telegramId, TaskReminderDto task,
     CancellationToken cancellationToken = default)
   {
@@ -39,19 +26,19 @@ public class TelegramNotificationService
                     $"⏳ Срок: {task.DueAt:dd.MM.yyyy HH:mm}\n\n" +
                     $"Не забудьте выполнить задачу вовремя! 🎯";
 
-      await _botClient.SendTextMessageAsync(
+      await botClient.SendTextMessageAsync(
         telegramId,
         message,
         parseMode: ParseMode.Html,
         cancellationToken: cancellationToken);
 
-      _logger.LogInformation(
+      logger.LogInformation(
         "Task reminder sent to TelegramId {TelegramId} for task '{TaskTitle}'",
         telegramId, task.Title);
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex,
+      logger.LogError(ex,
         "Failed to send task reminder to TelegramId {TelegramId} for task '{TaskTitle}'",
         telegramId, task.Title);
       throw;
@@ -71,13 +58,13 @@ public class TelegramNotificationService
 
       await SendToFamilyMembersAsync(familyId, message, cancellationToken);
 
-      _logger.LogInformation(
+      logger.LogInformation(
         "Task completed notification sent to family {FamilyId}: user '{UserName}' completed '{TaskTitle}'",
         familyId, userName, taskTitle);
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex,
+      logger.LogError(ex,
         "Failed to send task completed notification to family {FamilyId}",
         familyId);
       throw;
@@ -132,13 +119,13 @@ public class TelegramNotificationService
 
       await SendToFamilyMembersAsync(familyId, message, cancellationToken);
 
-      _logger.LogInformation(
+      logger.LogInformation(
         "Pet mood changed notification sent to family {FamilyId}: pet '{PetName}' mood is {MoodScore}",
         familyId, petName, moodScore);
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex,
+      logger.LogError(ex,
         "Failed to send pet mood notification to family {FamilyId}",
         familyId);
       throw;
@@ -155,13 +142,13 @@ public class TelegramNotificationService
 
       await SendToFamilyMembersAsync(familyId, message, cancellationToken);
 
-      _logger.LogInformation(
+      logger.LogInformation(
         "Member joined notification sent to family {FamilyId}: user '{UserName}' joined",
         familyId, userName);
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex,
+      logger.LogError(ex,
         "Failed to send member joined notification to family {FamilyId}",
         familyId);
       throw;
@@ -175,11 +162,11 @@ public class TelegramNotificationService
   {
     // Get family with members
     var spec = new GetFamilyWithMembersSpec(familyId);
-    var family = await _familyRepository.FirstOrDefaultAsync(spec, cancellationToken);
+    var family = await familyRepository.FirstOrDefaultAsync(spec, cancellationToken);
 
     if (family == null)
     {
-      _logger.LogWarning("Family {FamilyId} not found for notification", familyId);
+      logger.LogWarning("Family {FamilyId} not found for notification", familyId);
       return;
     }
 
@@ -187,7 +174,7 @@ public class TelegramNotificationService
 
     if (activeMembers.Count == 0)
     {
-      _logger.LogWarning("No active members found in family {FamilyId}", familyId);
+      logger.LogWarning("No active members found in family {FamilyId}", familyId);
       return;
     }
 
@@ -208,24 +195,24 @@ public class TelegramNotificationService
   {
     try
     {
-      var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
+      var user = await userRepository.GetByIdAsync(userId, cancellationToken);
       if (user == null)
       {
-        _logger.LogWarning("User {UserId} not found for notification", userId);
+        logger.LogWarning("User {UserId} not found for notification", userId);
         return;
       }
 
-      await _botClient.SendTextMessageAsync(
+      await botClient.SendTextMessageAsync(
         user.TelegramId,
         message,
         parseMode: ParseMode.Html,
         cancellationToken: cancellationToken);
 
-      _logger.LogDebug("Notification sent to user {UserId} (TelegramId: {TelegramId})", userId, user.TelegramId);
+      logger.LogDebug("Notification sent to user {UserId} (TelegramId: {TelegramId})", userId, user.TelegramId);
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "Failed to send notification to user {UserId}", userId);
+      logger.LogError(ex, "Failed to send notification to user {UserId}", userId);
       // Don't throw - we want to continue sending to other users
     }
   }
