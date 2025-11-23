@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "FamilyTaskManager",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "FamilyTaskManager",
+      "Username": "postgres",
+      "SSLMode": "prefer"
+    }
+  }
+}
