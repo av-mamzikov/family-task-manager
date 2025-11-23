@@ -21,7 +21,7 @@ public class PetCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Сначала выберите активную семью через /family",
+        BotConstants.Errors.NoFamily,
         cancellationToken: cancellationToken);
       return;
     }

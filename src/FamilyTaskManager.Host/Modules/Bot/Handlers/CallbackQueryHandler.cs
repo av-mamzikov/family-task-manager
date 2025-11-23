@@ -120,7 +120,7 @@ public class CallbackQueryHandler(
     {
       await botClient.SendTextMessageAsync(
         chatId,
-        "❌ Ошибка. Попробуйте /start",
+        BotConstants.Errors.UnknownError,
         cancellationToken: cancellationToken);
       return;
     }
@@ -274,7 +274,7 @@ public class CallbackQueryHandler(
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      "✅ Семья выбрана!",
+      BotConstants.Success.FamilySelected + BotConstants.Success.NextStepsMessage,
       cancellationToken: cancellationToken);
   }
 
@@ -329,7 +329,7 @@ public class CallbackQueryHandler(
     {
       await botClient.SendTextMessageAsync(
         chatId,
-        "❌ Ошибка. Попробуйте /start",
+        BotConstants.Errors.UnknownError,
         cancellationToken: cancellationToken);
       return;
     }
@@ -371,7 +371,7 @@ public class CallbackQueryHandler(
     {
       await botClient.SendTextMessageAsync(
         chatId,
-        "❌ Ошибка. Попробуйте /start",
+        BotConstants.Errors.UnknownError,
         cancellationToken: cancellationToken);
       return;
     }
@@ -478,7 +478,7 @@ public class CallbackQueryHandler(
     {
       await botClient.SendTextMessageAsync(
         chatId,
-        "❌ Ошибка. Попробуйте /start",
+        BotConstants.Errors.UnknownError,
         cancellationToken: cancellationToken);
       return;
     }
@@ -543,7 +543,7 @@ public class CallbackQueryHandler(
     {
       await botClient.SendTextMessageAsync(
         chatId,
-        "❌ Ошибка. Попробуйте /start",
+        BotConstants.Errors.UnknownError,
         cancellationToken: cancellationToken);
       return;
     }
@@ -559,13 +559,13 @@ public class CallbackQueryHandler(
       chatId,
       messageId,
       "⚠️ *Удаление семьи*\n\n" +
-      "Вы уверены, что хотите удалить эту семью?\n\n" +
+      BotConstants.Messages.ConfirmFamilyDeletion +
       "🚨 *Внимание!* Это действие необратимо и приведет к:\n" +
       "• Удалению всех участников семьи\n" +
       "• Удалению всех питомцев\n" +
       "• Удалению всех задач и их истории\n" +
       "• Удалению всей статистики\n\n" +
-      "Подтвердите удаление:",
+      BotConstants.Messages.ConfirmDeletion,
       ParseMode.Markdown,
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
@@ -607,7 +607,7 @@ public class CallbackQueryHandler(
     {
       await botClient.SendTextMessageAsync(
         chatId,
-        "❌ Ошибка. Попробуйте /start",
+        BotConstants.Errors.UnknownError,
         cancellationToken: cancellationToken);
       return;
     }
@@ -629,13 +629,7 @@ public class CallbackQueryHandler(
     var botUsername = "YourBotUsername"; // TODO: Get from configuration
     var inviteLink = $"https://t.me/{botUsername}?start=invite_{inviteCode}";
 
-    var roleText = role switch
-    {
-      FamilyRole.Admin => "Администратор",
-      FamilyRole.Adult => "Взрослый",
-      FamilyRole.Child => "Ребёнок",
-      _ => "Неизвестно"
-    };
+    var roleText = BotConstants.Roles.GetRoleText(role);
 
     await botClient.EditMessageTextAsync(
       chatId,
@@ -645,7 +639,7 @@ public class CallbackQueryHandler(
       $"👤 Роль: {roleText}\n" +
       $"🔑 Код: `{inviteCode}`\n" +
       $"⏰ Действительно 7 дней\n\n" +
-      $"Отправьте эту ссылку человеку, которого хотите пригласить в семью.",
+      BotConstants.Messages.SendInviteLink,
       ParseMode.Markdown,
       cancellationToken: cancellationToken);
   }
@@ -727,11 +721,7 @@ public class CallbackQueryHandler(
         chatId,
         messageId,
         "🔄 Введите расписание задачи в формате Quartz Cron:\n\n" +
-        "Примеры:\n" +
-        "• `0 0 9 * * ?` - ежедневно в 9:00\n" +
-        "• `0 0 20 * * ?` - ежедневно в 20:00\n" +
-        "• `0 0 9 */5 * ?` - каждые 5 дней в 9:00\n" +
-        "• `0 0 9 * * MON` - каждый понедельник в 9:00",
+        BotConstants.Messages.CronExamples,
         ParseMode.Markdown,
         cancellationToken: cancellationToken);
     }
@@ -771,8 +761,8 @@ public class CallbackQueryHandler(
       await botClient.SendTextMessageAsync(
         chatId,
         "🌍 Определение временной зоны по геолокации\n\n" +
-        "Нажмите \"📍 Отправить местоположение\" для автоматического определения, " +
-        "или \"⬅️ Назад\" для выбора вручную.",
+        BotConstants.Messages.SendLocation +
+        BotConstants.Messages.OrBackToManual,
         replyMarkup: locationKeyboard,
         cancellationToken: cancellationToken);
       return;
@@ -823,9 +813,10 @@ public class CallbackQueryHandler(
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      $"✅ Семья \"{familyName}\" успешно создана!\n\n" +
+      BotConstants.Success.FamilyCreatedMessage(familyName) +
       $"🌍 Временная зона: {timezoneId}\n\n" +
-      "Теперь вы можете добавить питомца и создать задачи.",
+      BotConstants.Success.NextStepsMessage,
+      ParseMode.Markdown,
       cancellationToken: cancellationToken);
   }
 
@@ -906,7 +897,7 @@ public class CallbackQueryHandler(
     {
       await botClient.SendTextMessageAsync(
         chatId,
-        "❌ Ошибка. Попробуйте /start",
+        BotConstants.Errors.UnknownError,
         cancellationToken: cancellationToken);
       return;
     }
@@ -944,7 +935,7 @@ public class CallbackQueryHandler(
       chatId,
       messageId,
       "✅ Семья успешно удалена!\n\n" +
-      "Все данные семьи, включая участников, питомцев, задачи и статистику, были безвозвратно удалены.",
+      BotConstants.Messages.FamilyDeleted,
       cancellationToken: cancellationToken);
   }
 }

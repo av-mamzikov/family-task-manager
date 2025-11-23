@@ -21,7 +21,7 @@ public class TasksCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Сначала выберите активную семью через /family",
+        BotConstants.Errors.NoFamily,
         cancellationToken: cancellationToken);
       return;
     }
@@ -34,7 +34,7 @@ public class TasksCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Ошибка загрузки задач",
+        BotConstants.Errors.TasksLoadError,
         cancellationToken: cancellationToken);
       return;
     }
@@ -45,7 +45,7 @@ public class TasksCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "📋 Активных задач пока нет.\n\nАдминистратор может создать задачи через настройки.",
+        BotConstants.Messages.NoActiveTasks,
         cancellationToken: cancellationToken);
       return;
     }

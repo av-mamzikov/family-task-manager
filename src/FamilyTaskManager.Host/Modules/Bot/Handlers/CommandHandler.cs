@@ -135,7 +135,7 @@ public class CommandHandler(
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         "👋 Добро пожаловать в Семейный менеджер дел!\n\n" +
-        "У вас пока нет семей. Создайте свою первую семью или присоединитесь к существующей.",
+        BotConstants.Messages.NoFamiliesJoin,
         replyMarkup: new InlineKeyboardMarkup(new[]
         {
           InlineKeyboardButton.WithCallbackData("➕ Создать семью", "create_family")
@@ -160,7 +160,7 @@ public class CommandHandler(
 
     if (!result.IsSuccess)
     {
-      var errorMessage = result.Errors.FirstOrDefault() ?? "Неизвестная ошибка";
+      var errorMessage = result.Errors.FirstOrDefault() ?? BotConstants.Errors.UnknownError;
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         $"❌ Не удалось присоединиться к семье:\n{errorMessage}",
@@ -178,9 +178,7 @@ public class CommandHandler(
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         $"🎉 *Добро пожаловать в семью!*\n\n" +
-        $"Вы успешно присоединились к семье *{newFamily.Name}*\n" +
-        $"Ваша роль: {GetRoleText(newFamily.UserRole)}\n\n" +
-        $"Используйте /tasks чтобы посмотреть задачи",
+        BotConstants.Messages.FamilyJoined(newFamily.Name, BotConstants.Roles.GetRoleText(newFamily.UserRole)),
         parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
 
@@ -299,12 +297,7 @@ public class CommandHandler(
   {
     var helpText = @"📖 Справка по командам:
 
-/start - Начать работу с ботом
-/family - Управление семьями
-/tasks - Просмотр активных задач
-/pet - Просмотр питомцев
-/stats - Статистика и лидерборд
-/help - Эта справка
+" + BotConstants.Help.Commands + @"
 
 🔹 Используйте кнопки меню для быстрого доступа к функциям.";
 
@@ -321,7 +314,7 @@ public class CommandHandler(
   {
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      "❓ Неизвестная команда. Используйте /help для списка команд.",
+      BotConstants.Errors.UnknownCommand,
       cancellationToken: cancellationToken);
   }
 
@@ -493,7 +486,7 @@ public class CommandHandler(
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         "❌ Получены некорректные данные о местоположении.\n\n" +
-        "Пожалуйста, попробуйте снова.",
+        BotConstants.Errors.TryAgain,
         replyMarkup: new ReplyKeyboardRemove(),
         cancellationToken: cancellationToken);
 
@@ -542,7 +535,7 @@ public class CommandHandler(
         await botClient.SendTextMessageAsync(
           message.Chat.Id,
           $"❌ Не удалось определить временную зону для вашей локации.\n\n" +
-          $"Пожалуйста, выберите временную зону вручную.",
+          BotConstants.Errors.ChooseTimezoneManually,
           replyMarkup: new ReplyKeyboardRemove(),
           cancellationToken: cancellationToken);
 
@@ -570,9 +563,10 @@ public class CommandHandler(
 
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        $"✅ Семья \"{familyName}\" успешно создана!\n\n" +
+        BotConstants.Success.FamilyCreatedMessage(familyName) +
         $"🌍 Определенная временная зона: {detectedTimezone}\n\n" +
-        "Теперь вы можете добавить питомца и создать задачи.",
+        BotConstants.Success.NextStepsMessage,
+        parseMode: ParseMode.Markdown,
         replyMarkup: new ReplyKeyboardRemove(),
         cancellationToken: cancellationToken);
     }
@@ -582,8 +576,8 @@ public class CommandHandler(
 
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Ошибка определения временной зоны по геолокации.\n\n" +
-        "Пожалуйста, попробуйте снова или выберите временную зону вручную.",
+        BotConstants.Errors.LocationError +
+        BotConstants.Errors.TryAgainOrChooseTimezone,
         replyMarkup: new ReplyKeyboardRemove(),
         cancellationToken: cancellationToken);
 
@@ -676,7 +670,7 @@ public class CommandHandler(
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       $"✅ Питомец {petEmoji} \"{petName}\" успешно создан!\n\n" +
-      "Теперь вы можете создавать задачи для ухода за питомцем.",
+      BotConstants.Messages.PetTasksAvailable,
       cancellationToken: cancellationToken);
   }
 
@@ -745,7 +739,7 @@ public class CommandHandler(
       session.ClearState();
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ В семье нет питомцев. Сначала создайте питомца через /pet",
+        BotConstants.Errors.NoPets,
         cancellationToken: cancellationToken);
       return;
     }
@@ -839,7 +833,7 @@ public class CommandHandler(
       $"✅ Задача \"{title}\" успешно создана!\n\n" +
       $"💯 Очки: {points}\n" +
       $"📅 Срок: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
-      "Задача доступна всем участникам семьи.",
+      BotConstants.Messages.TaskAvailableToAll,
       cancellationToken: cancellationToken);
   }
 
@@ -898,7 +892,7 @@ public class CommandHandler(
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         $"❌ Ошибка создания задачи: {result.Errors.FirstOrDefault()}\n\n" +
-        "Проверьте правильность cron-выражения.",
+        BotConstants.Errors.InvalidCron,
         cancellationToken: cancellationToken);
       session.ClearState();
       return;
@@ -911,7 +905,7 @@ public class CommandHandler(
       $"✅ Периодическая задача \"{title}\" успешно создана!\n\n" +
       $"💯 Очки: {points}\n" +
       $"🔄 Расписание: {schedule}\n\n" +
-      "Задача будет автоматически создаваться по расписанию.",
+      BotConstants.Messages.ScheduledTask,
       cancellationToken: cancellationToken);
   }
 

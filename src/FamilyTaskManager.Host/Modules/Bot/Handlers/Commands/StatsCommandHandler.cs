@@ -21,7 +21,7 @@ public class StatsCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Сначала выберите активную семью через /family",
+        BotConstants.Errors.NoFamily,
         cancellationToken: cancellationToken);
       return;
     }
@@ -35,8 +35,7 @@ public class StatsCommandHandler(IMediator mediator)
     if (!leaderboardResult.IsSuccess)
     {
       // Leaderboard might be disabled
-      messageText += "Лидерборд отключён в настройках семьи.\n\n";
-      messageText += "Администратор может включить его в настройках.";
+      messageText += BotConstants.Messages.LeaderboardDisabled;
     }
     else
     {

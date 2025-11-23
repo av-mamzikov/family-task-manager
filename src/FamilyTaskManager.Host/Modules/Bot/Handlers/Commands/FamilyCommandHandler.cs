@@ -25,7 +25,7 @@ public class FamilyCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "У вас пока нет семей. Создайте свою первую семью!",
+        BotConstants.Messages.NoFamilies,
         replyMarkup: new InlineKeyboardMarkup(new[]
         {
           InlineKeyboardButton.WithCallbackData("➕ Создать семью", "create_family")
@@ -104,12 +104,6 @@ public class FamilyCommandHandler(IMediator mediator)
 
   private string GetRoleText(FamilyRole role)
   {
-    return role switch
-    {
-      FamilyRole.Admin => "Администратор",
-      FamilyRole.Adult => "Взрослый",
-      FamilyRole.Child => "Ребёнок",
-      _ => "Неизвестно"
-    };
+    return BotConstants.Roles.GetRoleText(role);
   }
 }
