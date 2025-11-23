@@ -78,7 +78,8 @@ public class FamilyCommandHandler(IMediator mediator)
       });
       buttons.Add(new[]
       {
-        InlineKeyboardButton.WithCallbackData("⚙️ Настройки семьи", $"family_settings_{currentFamilyId}")
+        InlineKeyboardButton.WithCallbackData("⚙️ Настройки семьи", $"family_settings_{currentFamilyId}"),
+        InlineKeyboardButton.WithCallbackData("🗑️ Удалить семью", $"family_delete_{currentFamilyId}")
       });
     }
 

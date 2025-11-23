@@ -56,6 +56,9 @@ public class CallbackQueryHandler(
         "invite" => HandleInviteActionAsync(botClient, chatId, messageId, parts, session, callbackQuery.From,
           cancellationToken),
         "timezone" => HandleTimezoneSelectionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
+        "confirm" => HandleConfirmActionAsync(botClient, chatId, messageId, parts, session, callbackQuery.From,
+          cancellationToken),
+        "cancel" => HandleCancelActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
         _ => HandleUnknownCallbackAsync(botClient, chatId, cancellationToken)
       });
     }
@@ -445,6 +448,10 @@ public class CallbackQueryHandler(
         await HandleFamilySettingsAsync(botClient, chatId, messageId, familyId, cancellationToken);
         break;
 
+      case "delete":
+        await HandleDeleteFamilyAsync(botClient, chatId, messageId, familyId, session, fromUser, cancellationToken);
+        break;
+
       default:
         await botClient.SendTextMessageAsync(
           chatId,
@@ -516,6 +523,51 @@ public class CallbackQueryHandler(
     await botClient.SendTextMessageAsync(
       chatId,
       "⚙️ Настройки семьи\n(В разработке)",
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleDeleteFamilyAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    Guid familyId,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken)
+  {
+    // Get user by telegram ID
+    var registerCommand = new RegisterUserCommand(fromUser.Id, fromUser.GetDisplayName());
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
+
+    if (!userResult.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        "❌ Ошибка. Попробуйте /start",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Show confirmation dialog
+    var keyboard = new InlineKeyboardMarkup(new[]
+    {
+      new[] { InlineKeyboardButton.WithCallbackData("✅ Да, удалить семью", $"confirm_delete_{familyId}") },
+      new[] { InlineKeyboardButton.WithCallbackData("❌ Отмена", "cancel_delete") }
+    });
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      "⚠️ *Удаление семьи*\n\n" +
+      "Вы уверены, что хотите удалить эту семью?\n\n" +
+      "🚨 *Внимание!* Это действие необратимо и приведет к:\n" +
+      "• Удалению всех участников семьи\n" +
+      "• Удалению всех питомцев\n" +
+      "• Удалению всех задач и их истории\n" +
+      "• Удалению всей статистики\n\n" +
+      "Подтвердите удаление:",
+      ParseMode.Markdown,
+      replyMarkup: keyboard,
       cancellationToken: cancellationToken);
   }
 
@@ -785,6 +837,114 @@ public class CallbackQueryHandler(
     await botClient.SendTextMessageAsync(
       chatId,
       "❓ Неизвестное действие",
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleConfirmActionAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] parts,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken)
+  {
+    if (parts.Length < 3)
+    {
+      return;
+    }
+
+    var confirmType = parts[1];
+    var familyIdStr = parts[2];
+
+    if (confirmType == "delete" && Guid.TryParse(familyIdStr, out var familyId))
+    {
+      await HandleConfirmDeleteFamilyAsync(botClient, chatId, messageId, familyId, session, fromUser,
+        cancellationToken);
+    }
+  }
+
+  private async Task HandleCancelActionAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] parts,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (parts.Length < 2)
+    {
+      return;
+    }
+
+    var cancelType = parts[1];
+
+    if (cancelType == "delete")
+    {
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        "❌ Удаление семьи отменено",
+        cancellationToken: cancellationToken);
+    }
+  }
+
+  private async Task HandleConfirmDeleteFamilyAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    Guid familyId,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken)
+  {
+    // Get user by telegram ID
+    var registerCommand = new RegisterUserCommand(fromUser.Id, fromUser.GetDisplayName());
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
+
+    if (!userResult.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        "❌ Ошибка. Попробуйте /start",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Delete the family
+    var deleteFamilyCommand = new DeleteFamilyCommand(familyId, userResult.Value);
+    var deleteResult = await mediator.Send(deleteFamilyCommand, cancellationToken);
+
+    if (!deleteResult.IsSuccess)
+    {
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        $"❌ Ошибка удаления семьи: {deleteResult.Errors.FirstOrDefault()}",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Clear current family if it was the deleted one
+    if (session.CurrentFamilyId == familyId)
+    {
+      session.CurrentFamilyId = null;
+
+      // Try to select another family if user has any remaining
+      var getFamiliesQuery = new GetUserFamiliesQuery(userResult.Value);
+      var familiesResult = await mediator.Send(getFamiliesQuery, cancellationToken);
+
+      if (familiesResult.IsSuccess && familiesResult.Value.Any())
+      {
+        session.CurrentFamilyId = familiesResult.Value.First().Id;
+      }
+    }
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      "✅ Семья успешно удалена!\n\n" +
+      "Все данные семьи, включая участников, питомцев, задачи и статистику, были безвозвратно удалены.",
       cancellationToken: cancellationToken);
   }
 }
