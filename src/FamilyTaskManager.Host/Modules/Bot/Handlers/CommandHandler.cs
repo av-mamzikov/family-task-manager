@@ -1228,10 +1228,11 @@ public class CommandHandler(
     CancellationToken cancellationToken)
   {
     var keyboard = new ReplyKeyboardMarkup(new[]
-    {
-      new KeyboardButton[] { "🏠 Семья", "✅ Мои задачи" }, new KeyboardButton[] { "🐾 Питомец", "⭐ Мои очки" },
-      new KeyboardButton[] { "📊 Статистика" }
-    }) { ResizeKeyboard = true, IsPersistent = true };
+      {
+        new KeyboardButton[] { "🏠 Семья", "✅ Мои задачи" }, new KeyboardButton[] { "🐾 Питомец", "⭐ Мои очки" },
+        new KeyboardButton[] { "📊 Статистика" }
+      })
+      { ResizeKeyboard = true, IsPersistent = true };
 
     await botClient.SendTextMessageAsync(
       chatId,

@@ -1,4 +1,4 @@
-﻿using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.Core.Interfaces;
 
 namespace FamilyTaskManager.Infrastructure.Email;
 

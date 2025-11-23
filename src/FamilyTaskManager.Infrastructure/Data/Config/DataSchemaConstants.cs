@@ -1,4 +1,4 @@
-﻿namespace FamilyTaskManager.Infrastructure.Data.Config;
+namespace FamilyTaskManager.Infrastructure.Data.Config;
 
 public static class DataSchemaConstants
 {

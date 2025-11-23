@@ -1,4 +1,4 @@
-﻿namespace FamilyTaskManager.Core.Interfaces;
+namespace FamilyTaskManager.Core.Interfaces;
 
 public interface IEmailSender
 {

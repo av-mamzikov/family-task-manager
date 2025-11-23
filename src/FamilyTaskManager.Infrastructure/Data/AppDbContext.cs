@@ -1,4 +1,4 @@
-﻿using FamilyTaskManager.Core.ActionHistoryAggregate;
+using FamilyTaskManager.Core.ActionHistoryAggregate;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.TaskAggregate;

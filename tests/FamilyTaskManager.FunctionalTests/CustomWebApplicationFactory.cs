@@ -1,4 +1,4 @@
-﻿using FamilyTaskManager.Infrastructure.Data;
+using FamilyTaskManager.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.MsSql;
 

@@ -1,4 +1,4 @@
-﻿namespace FamilyTaskManager.Infrastructure.Email;
+namespace FamilyTaskManager.Infrastructure.Email;
 
 public class MailserverConfiguration
 {

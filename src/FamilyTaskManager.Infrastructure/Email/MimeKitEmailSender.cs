@@ -1,4 +1,4 @@
-﻿using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.Core.Interfaces;
 using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
 namespace FamilyTaskManager.Infrastructure.Email;

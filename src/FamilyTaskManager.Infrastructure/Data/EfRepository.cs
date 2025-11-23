@@ -1,4 +1,4 @@
-﻿namespace FamilyTaskManager.Infrastructure.Data;
+namespace FamilyTaskManager.Infrastructure.Data;
 
 // inherit from Ardalis.Specification type
 public class EfRepository<T>(AppDbContext dbContext) :

@@ -26,7 +26,8 @@ public class TelegramBotService(
 
     var receiverOptions = new ReceiverOptions
     {
-      AllowedUpdates = new[] { UpdateType.Message, UpdateType.CallbackQuery }, ThrowPendingUpdates = true
+      AllowedUpdates = new[] { UpdateType.Message, UpdateType.CallbackQuery },
+      ThrowPendingUpdates = true
     };
 
     var me = await botClient.GetMeAsync(cancellationToken);

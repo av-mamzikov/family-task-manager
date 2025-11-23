@@ -1,4 +1,4 @@
-﻿namespace FamilyTaskManager.UseCases;
+namespace FamilyTaskManager.UseCases;
 
 public record PagedResult<T>(
   IReadOnlyList<T> Items,

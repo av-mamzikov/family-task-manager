@@ -21,7 +21,8 @@ public class TelegramBotHostedService(
 
     var receiverOptions = new ReceiverOptions
     {
-      AllowedUpdates = Array.Empty<UpdateType>(), ThrowPendingUpdates = true
+      AllowedUpdates = Array.Empty<UpdateType>(),
+      ThrowPendingUpdates = true
     };
 
     await botClient.ReceiveAsync(

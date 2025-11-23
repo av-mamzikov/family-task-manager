@@ -1,4 +1,4 @@
-﻿namespace FamilyTaskManager.UseCases;
+namespace FamilyTaskManager.UseCases;
 
 public class Constants
 {

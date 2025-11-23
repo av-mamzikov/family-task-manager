@@ -1,4 +1,4 @@
-﻿namespace FamilyTaskManager.UnitTests;
+namespace FamilyTaskManager.UnitTests;
 
 public class NoOpMediator : IMediator
 {

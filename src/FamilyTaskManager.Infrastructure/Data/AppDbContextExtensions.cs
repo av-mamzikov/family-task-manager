@@ -1,4 +1,4 @@
-﻿namespace FamilyTaskManager.Infrastructure.Data;
+namespace FamilyTaskManager.Infrastructure.Data;
 
 public static class AppDbContextExtensions
 {
