@@ -2,15 +2,6 @@ namespace FamilyTaskManager.Core.TaskAggregate;
 
 public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
 {
-  public Guid FamilyId { get; private set; }
-  public Guid PetId { get; private set; }
-  public string Title { get; private set; } = null!;
-  public int Points { get; private set; }
-  public string Schedule { get; private set; } = null!;
-  public Guid CreatedBy { get; private set; }
-  public DateTime CreatedAt { get; private set; }
-  public bool IsActive { get; private set; }
-
   private TaskTemplate() { }
 
   public TaskTemplate(Guid familyId, Guid petId, string title, int points, string schedule, Guid createdBy)
@@ -31,6 +22,15 @@ public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
     CreatedAt = DateTime.UtcNow;
     IsActive = true;
   }
+
+  public Guid FamilyId { get; private set; }
+  public Guid PetId { get; private set; }
+  public string Title { get; private set; } = null!;
+  public int Points { get; private set; }
+  public string Schedule { get; private set; } = null!;
+  public Guid CreatedBy { get; private set; }
+  public DateTime CreatedAt { get; private set; }
+  public bool IsActive { get; private set; }
 
   public void Update(string title, int points, string schedule)
   {

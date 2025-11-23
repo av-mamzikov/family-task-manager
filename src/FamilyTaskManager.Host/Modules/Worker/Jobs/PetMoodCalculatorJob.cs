@@ -1,19 +1,18 @@
-using Mediator;
-using Quartz;
 using FamilyTaskManager.UseCases.Pets;
+using Quartz;
 
 namespace FamilyTaskManager.Host.Modules.Worker.Jobs;
 
 /// <summary>
-/// Job that recalculates mood scores for all pets.
-/// Runs every 30 minutes.
-/// Domain events handle the actual notification sending.
+///   Job that recalculates mood scores for all pets.
+///   Runs every 30 minutes.
+///   Domain events handle the actual notification sending.
 /// </summary>
 [DisallowConcurrentExecution]
 public class PetMoodCalculatorJob : IJob
 {
-  private readonly IMediator _mediator;
   private readonly ILogger<PetMoodCalculatorJob> _logger;
+  private readonly IMediator _mediator;
 
   public PetMoodCalculatorJob(
     IMediator mediator,

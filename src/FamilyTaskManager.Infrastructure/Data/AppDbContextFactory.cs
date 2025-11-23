@@ -1,10 +1,9 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
 namespace FamilyTaskManager.Infrastructure.Data;
 
 /// <summary>
-/// Factory for creating DbContext at design time (for migrations)
+///   Factory for creating DbContext at design time (for migrations)
 /// </summary>
 public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {

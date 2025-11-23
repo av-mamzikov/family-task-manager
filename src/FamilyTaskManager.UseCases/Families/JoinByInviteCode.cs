@@ -19,7 +19,7 @@ public class JoinByInviteCodeHandler(
     // Find invitation by code
     var invitationSpec = new GetInvitationByCodeSpec(command.Code);
     var invitation = await invitationRepository.FirstOrDefaultAsync(invitationSpec, cancellationToken);
-    
+
     if (invitation == null)
     {
       return Result<Guid>.NotFound("Invitation not found");
@@ -32,13 +32,14 @@ public class JoinByInviteCodeHandler(
       {
         return Result<Guid>.Error("Invitation has expired");
       }
+
       return Result<Guid>.Error("Invitation is not active");
     }
 
     // Get family with members
     var familySpec = new GetFamilyWithMembersSpec(invitation.FamilyId);
     var family = await familyRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
-    
+
     if (family == null)
     {
       return Result<Guid>.NotFound("Family not found");
@@ -52,10 +53,10 @@ public class JoinByInviteCodeHandler(
 
     // Add member with the role specified in the invitation
     var member = family.AddMember(command.UserId, invitation.Role);
-    
+
     // Deactivate the invitation (one-time use)
     invitation.Deactivate();
-    
+
     // Update both entities
     await familyRepository.UpdateAsync(family, cancellationToken);
     await invitationRepository.UpdateAsync(invitation, cancellationToken);

@@ -40,11 +40,7 @@ public class UserSessionTests
   {
     // Arrange
     var session = new UserSession();
-    var data = new Dictionary<string, object>
-    {
-      ["userId"] = Guid.NewGuid(),
-      ["familyName"] = "Test Family"
-    };
+    var data = new Dictionary<string, object> { ["userId"] = Guid.NewGuid(), ["familyName"] = "Test Family" };
 
     // Act
     session.SetState(ConversationState.AwaitingFamilyName, data);
@@ -61,10 +57,7 @@ public class UserSessionTests
   {
     // Arrange
     var session = new UserSession();
-    session.SetState(ConversationState.AwaitingPetName, new Dictionary<string, object>
-    {
-      ["petType"] = "cat"
-    });
+    session.SetState(ConversationState.AwaitingPetName, new Dictionary<string, object> { ["petType"] = "cat" });
 
     // Act
     session.ClearState();

@@ -10,7 +10,7 @@ public class GetUserByIdHandler(IRepository<User> repository)
   public async ValueTask<Result<UserDto?>> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
   {
     var user = await repository.GetByIdAsync(request.UserId, cancellationToken);
-    
+
     if (user == null)
     {
       return Result<UserDto?>.Success(null);

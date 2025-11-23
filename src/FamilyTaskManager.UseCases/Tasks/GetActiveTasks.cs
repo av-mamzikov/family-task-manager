@@ -1,10 +1,10 @@
 namespace FamilyTaskManager.UseCases.Tasks;
 
 public record TaskDto(
-  Guid Id, 
-  string Title, 
-  int Points, 
-  TaskStatus Status, 
+  Guid Id,
+  string Title,
+  int Points,
+  TaskStatus Status,
   DateTime DueAt,
   Guid PetId,
   string PetName);

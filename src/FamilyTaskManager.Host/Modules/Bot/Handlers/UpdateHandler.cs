@@ -2,7 +2,6 @@ using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
@@ -39,16 +38,20 @@ public class UpdateHandler : IUpdateHandler
     }
   }
 
-  public Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+  public Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception,
+    CancellationToken cancellationToken)
   {
     _logger.LogError(exception, "Telegram bot error");
     return Task.CompletedTask;
   }
 
-  private async Task HandleMessageAsync(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+  private async Task HandleMessageAsync(ITelegramBotClient botClient, Message message,
+    CancellationToken cancellationToken)
   {
     if (message.Text is not { } messageText)
+    {
       return;
+    }
 
     var chatId = message.Chat.Id;
     _logger.LogInformation("Received message from {ChatId}: {MessageText}", chatId, messageText);
@@ -59,10 +62,13 @@ public class UpdateHandler : IUpdateHandler
     await commandHandler.HandleCommandAsync(botClient, message, cancellationToken);
   }
 
-  private async Task HandleCallbackQueryAsync(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken)
+  private async Task HandleCallbackQueryAsync(ITelegramBotClient botClient, CallbackQuery callbackQuery,
+    CancellationToken cancellationToken)
   {
     if (callbackQuery.Data is not { } data)
+    {
       return;
+    }
 
     _logger.LogInformation("Received callback from {ChatId}: {Data}", callbackQuery.Message?.Chat.Id, data);
 

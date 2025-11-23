@@ -1,8 +1,10 @@
 ﻿using FamilyTaskManager.Core.Interfaces;
+using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
 namespace FamilyTaskManager.Infrastructure.Email;
 
-public class MimeKitEmailSender(ILogger<MimeKitEmailSender> logger,
+public class MimeKitEmailSender(
+  ILogger<MimeKitEmailSender> logger,
   IOptions<MailserverConfiguration> mailserverOptions) : IEmailSender
 {
   private readonly ILogger<MimeKitEmailSender> _logger = logger;
@@ -10,10 +12,11 @@ public class MimeKitEmailSender(ILogger<MimeKitEmailSender> logger,
 
   public async Task SendEmailAsync(string to, string from, string subject, string body)
   {
-    _logger.LogWarning("Sending email to {to} from {from} with subject {subject} using {type}.", to, from, subject, this.ToString());
+    _logger.LogWarning("Sending email to {to} from {from} with subject {subject} using {type}.", to, from, subject,
+      ToString());
 
-    using var client = new MailKit.Net.Smtp.SmtpClient(); 
-    await client.ConnectAsync(_mailserverConfiguration.Hostname, 
+    using var client = new SmtpClient();
+    await client.ConnectAsync(_mailserverConfiguration.Hostname,
       _mailserverConfiguration.Port, false);
     var message = new MimeMessage();
     message.From.Add(new MailboxAddress(from, from));
@@ -23,7 +26,7 @@ public class MimeKitEmailSender(ILogger<MimeKitEmailSender> logger,
 
     await client.SendAsync(message);
 
-    await client.DisconnectAsync(true, 
-      new CancellationToken(canceled: true));
+    await client.DisconnectAsync(true,
+      new CancellationToken(true));
   }
 }

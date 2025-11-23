@@ -2,7 +2,7 @@ namespace FamilyTaskManager.UseCases.Pets;
 
 public record UpdatePetNameCommand(Guid PetId, string NewName) : ICommand<Result>;
 
-public class UpdatePetNameHandler(IRepository<Pet> petRepository) 
+public class UpdatePetNameHandler(IRepository<Pet> petRepository)
   : ICommandHandler<UpdatePetNameCommand, Result>
 {
   public async ValueTask<Result> Handle(UpdatePetNameCommand command, CancellationToken cancellationToken)

@@ -6,7 +6,7 @@ public record UpdateTaskTemplateCommand(
   int? Points,
   string? Schedule) : ICommand<Result>;
 
-public class UpdateTaskTemplateHandler(IRepository<TaskTemplate> templateRepository) 
+public class UpdateTaskTemplateHandler(IRepository<TaskTemplate> templateRepository)
   : ICommandHandler<UpdateTaskTemplateCommand, Result>
 {
   public async ValueTask<Result> Handle(UpdateTaskTemplateCommand command, CancellationToken cancellationToken)

@@ -18,6 +18,7 @@ public class RegisterUserHandler(IRepository<User> userRepository) : ICommandHan
         existingUser.UpdateName(command.Name);
         await userRepository.UpdateAsync(existingUser, cancellationToken);
       }
+
       return Result<Guid>.Success(existingUser.Id);
     }
 

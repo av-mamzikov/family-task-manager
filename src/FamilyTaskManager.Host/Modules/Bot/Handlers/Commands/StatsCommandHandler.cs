@@ -1,16 +1,15 @@
-using Telegram.Bot;
-using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
+using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Statistics;
-using FamilyTaskManager.Core.FamilyAggregate;
-using Mediator;
+using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 
 public class StatsCommandHandler(IMediator mediator)
 {
-
   public async Task HandleAsync(
     ITelegramBotClient botClient,
     Message message,
@@ -44,7 +43,7 @@ public class StatsCommandHandler(IMediator mediator)
       var entries = leaderboardResult.Value;
 
       messageText += "*🏆 Лидерборд:*\n\n";
-      
+
       var position = 1;
       foreach (var entry in entries)
       {
@@ -61,7 +60,7 @@ public class StatsCommandHandler(IMediator mediator)
 
         messageText += $"{marker}{medal} *{entry.UserName}* - ⭐ {entry.Points} очков\n";
         messageText += $"   Роль: {GetRoleText(entry.Role)}\n\n";
-        
+
         position++;
       }
     }
@@ -78,16 +77,19 @@ public class StatsCommandHandler(IMediator mediator)
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       messageText,
-      parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+      parseMode: ParseMode.Markdown,
       replyMarkup: new InlineKeyboardMarkup(buttons),
       cancellationToken: cancellationToken);
   }
 
-  private string GetRoleText(FamilyRole role) => role switch
+  private string GetRoleText(FamilyRole role)
   {
-    FamilyRole.Admin => "Администратор",
-    FamilyRole.Adult => "Взрослый",
-    FamilyRole.Child => "Ребёнок",
-    _ => "Неизвестно"
-  };
+    return role switch
+    {
+      FamilyRole.Admin => "Администратор",
+      FamilyRole.Adult => "Взрослый",
+      FamilyRole.Child => "Ребёнок",
+      _ => "Неизвестно"
+    };
+  }
 }

@@ -2,7 +2,7 @@ namespace FamilyTaskManager.UseCases.Tasks;
 
 public record DeactivateTaskTemplateCommand(Guid TemplateId) : ICommand<Result>;
 
-public class DeactivateTaskTemplateHandler(IRepository<TaskTemplate> templateRepository) 
+public class DeactivateTaskTemplateHandler(IRepository<TaskTemplate> templateRepository)
   : ICommandHandler<DeactivateTaskTemplateCommand, Result>
 {
   public async ValueTask<Result> Handle(DeactivateTaskTemplateCommand command, CancellationToken cancellationToken)

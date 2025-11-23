@@ -102,9 +102,9 @@ public class FamilyRepositoryTests : BaseRepositoryTestFixture
     var family = new Family("Family With Members", "UTC");
     await Repository.AddAsync(family);
     await DbContext.SaveChangesAsync();
-    
+
     var userId = Guid.NewGuid();
-    
+
     // Act
     var member = family.AddMember(userId, FamilyRole.Admin);
     await Repository.UpdateAsync(family);

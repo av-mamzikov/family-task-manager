@@ -1,6 +1,6 @@
 namespace FamilyTaskManager.UseCases.Families;
 
-public record CreateInviteCodeCommand(Guid FamilyId, FamilyRole Role, Guid CreatedBy, int ExpirationDays = 7) 
+public record CreateInviteCodeCommand(Guid FamilyId, FamilyRole Role, Guid CreatedBy, int ExpirationDays = 7)
   : ICommand<Result<string>>;
 
 public class CreateInviteCodeHandler(
@@ -31,7 +31,7 @@ public class CreateInviteCodeHandler(
 
     // Create invitation
     var invitation = new Invitation(command.FamilyId, command.Role, command.CreatedBy, command.ExpirationDays);
-    
+
     await invitationRepository.AddAsync(invitation, cancellationToken);
 
     return Result<string>.Success(invitation.Code);

@@ -4,7 +4,7 @@ public record PetDto(Guid Id, Guid FamilyId, string Name, PetType Type, int Mood
 
 public record GetPetsQuery(Guid FamilyId) : IQuery<Result<List<PetDto>>>;
 
-public class GetPetsHandler(IRepository<Pet> petRepository) 
+public class GetPetsHandler(IRepository<Pet> petRepository)
   : IQueryHandler<GetPetsQuery, Result<List<PetDto>>>
 {
   public async ValueTask<Result<List<PetDto>>> Handle(GetPetsQuery query, CancellationToken cancellationToken)

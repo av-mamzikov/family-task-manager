@@ -110,7 +110,7 @@ public class FamilyMemberTests
     // Arrange
     var member = new FamilyMember(Guid.NewGuid(), Guid.NewGuid(), FamilyRole.Child);
     member.AddPoints(5);
-    
+
     // Simulate scenario where internal logic might result in negative
     // This test verifies the clamping logic in AddPoints method
     // Note: Current implementation prevents negative input, but guards against negative result

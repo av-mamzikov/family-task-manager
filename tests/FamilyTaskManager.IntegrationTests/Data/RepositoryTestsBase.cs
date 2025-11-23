@@ -1,8 +1,8 @@
 namespace FamilyTaskManager.IntegrationTests.Data;
 
 /// <summary>
-/// Базовый класс с типовыми тестами для всех репозиториев.
-/// Наследники должны реализовать абстрактные методы для создания тестовых сущностей.
+///   Базовый класс с типовыми тестами для всех репозиториев.
+///   Наследники должны реализовать абстрактные методы для создания тестовых сущностей.
 /// </summary>
 public abstract class RepositoryTestsBase<TEntity> : BaseRepositoryTestFixture
   where TEntity : EntityBase<TEntity, Guid>, IAggregateRoot
@@ -10,22 +10,22 @@ public abstract class RepositoryTestsBase<TEntity> : BaseRepositoryTestFixture
   protected IRepository<TEntity> Repository => GetRepository<TEntity>();
 
   /// <summary>
-  /// Создает новую тестовую сущность для добавления
+  ///   Создает новую тестовую сущность для добавления
   /// </summary>
   protected abstract TEntity CreateTestEntity(string uniqueSuffix = "");
 
   /// <summary>
-  /// Создает вторую тестовую сущность (для тестов со множественными сущностями)
+  ///   Создает вторую тестовую сущность (для тестов со множественными сущностями)
   /// </summary>
   protected abstract TEntity CreateSecondTestEntity(string uniqueSuffix = "");
 
   /// <summary>
-  /// Модифицирует существующую сущность для теста обновления
+  ///   Модифицирует существующую сущность для теста обновления
   /// </summary>
   protected abstract void ModifyEntity(TEntity entity);
 
   /// <summary>
-  /// Проверяет, что сущность была корректно модифицирована
+  ///   Проверяет, что сущность была корректно модифицирована
   /// </summary>
   protected abstract void AssertEntityWasModified(TEntity entity);
 

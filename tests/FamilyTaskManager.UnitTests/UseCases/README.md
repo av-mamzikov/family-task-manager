@@ -2,17 +2,20 @@
 
 ## Обзор
 
-Unit тесты для всех Use Cases проекта FamilyTaskManager. Используют NSubstitute для мокирования зависимостей и Shouldly для assertions.
+Unit тесты для всех Use Cases проекта FamilyTaskManager. Используют NSubstitute для мокирования зависимостей и Shouldly
+для assertions.
 
 ## Покрытие тестами
 
 ### ✅ Users (3 теста)
+
 - `RegisterUserHandlerTests`
   - ✓ Handle_NewUser_CreatesUserAndReturnsId
   - ✓ Handle_ExistingUser_ReturnsExistingUserId
   - ✓ Handle_ExistingUserWithDifferentName_UpdatesNameAndReturnsId
 
 ### ✅ Families (8 тестов)
+
 - `CreateFamilyHandlerTests`
   - ✓ Handle_ValidCommand_CreatesFamilyWithAdminMember
   - ✓ Handle_NonExistentUser_ReturnsNotFound
@@ -25,6 +28,7 @@ Unit тесты для всех Use Cases проекта FamilyTaskManager. Ис
   - ✓ Handle_UserAlreadyMember_ReturnsError
 
 ### ✅ Tasks (11 тестов)
+
 - `CreateTaskHandlerTests`
   - ✓ Handle_ValidCommand_CreatesTask
   - ✓ Handle_NonExistentPet_ReturnsNotFound
@@ -39,6 +43,7 @@ Unit тесты для всех Use Cases проекта FamilyTaskManager. Ис
   - ✓ Handle_UserNotInFamily_ReturnsError
 
 ### ✅ Pets (8 тестов)
+
 - `CreatePetHandlerTests`
   - ✓ Handle_ValidCommand_CreatesPet
   - ✓ Handle_NonExistentFamily_ReturnsNotFound
@@ -46,6 +51,7 @@ Unit тесты для всех Use Cases проекта FamilyTaskManager. Ис
   - ✓ Handle_DifferentPetTypes_CreatesCorrectType (3 cases)
 
 ### ✅ Statistics (4 теста)
+
 - `GetLeaderboardHandlerTests`
   - ✓ Handle_ValidQuery_ReturnsLeaderboardSortedByPoints
   - ✓ Handle_NonExistentFamily_ReturnsNotFound
@@ -71,7 +77,9 @@ dotnet test --filter "FullyQualifiedName~UseCases.Statistics"
 ## Паттерны тестирования
 
 ### Arrange-Act-Assert
+
 Все тесты следуют паттерну AAA:
+
 ```csharp
 [Fact]
 public async Task Handle_ValidCommand_CreatesEntity()
@@ -90,14 +98,18 @@ public async Task Handle_ValidCommand_CreatesEntity()
 ```
 
 ### Мокирование репозиториев
+
 Используется NSubstitute для создания моков:
+
 ```csharp
 _repository.GetByIdAsync(id, Arg.Any<CancellationToken>())
     .Returns(entity);
 ```
 
 ### Захват созданных сущностей
+
 Для проверки ID созданных сущностей:
+
 ```csharp
 Entity? capturedEntity = null;
 await _repository.AddAsync(Arg.Do<Entity>(e => capturedEntity = e), Arg.Any<CancellationToken>());
@@ -111,7 +123,9 @@ result.Value.ShouldBe(capturedEntity.Id);
 ```
 
 ### Проверка результатов
+
 Используется Shouldly для читаемых assertions:
+
 ```csharp
 result.IsSuccess.ShouldBeTrue();
 result.Status.ShouldBe(ResultStatus.NotFound);
@@ -122,21 +136,25 @@ entity.Name.ShouldBe("Expected Name");
 ## Тестовые сценарии
 
 ### Happy Path
+
 - Валидные данные создают сущности
 - ID генерируются корректно
 - Связи между сущностями устанавливаются
 
 ### Валидация
+
 - Невалидные данные возвращают Invalid
 - Проверка длины строк
 - Проверка диапазонов чисел
 
 ### Бизнес-правила
+
 - Несуществующие сущности возвращают NotFound
 - Дублирование предотвращается
 - Права доступа проверяются
 
 ### Edge Cases
+
 - Пустые строки
 - Граничные значения
 - Неактивные сущности

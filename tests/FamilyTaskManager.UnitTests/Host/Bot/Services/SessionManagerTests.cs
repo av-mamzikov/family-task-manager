@@ -1,5 +1,5 @@
-using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.Host.Modules.Bot.Models;
+using FamilyTaskManager.Host.Modules.Bot.Services;
 
 namespace FamilyTaskManager.UnitTests.Host.Bot.Services;
 
@@ -37,7 +37,7 @@ public class SessionManagerTests
     // Act
     var session1 = _sessionManager.GetSession(telegramId);
     session1.CurrentFamilyId = Guid.NewGuid();
-    
+
     var session2 = _sessionManager.GetSession(telegramId);
 
     // Assert
@@ -66,7 +66,7 @@ public class SessionManagerTests
     // Arrange
     var telegramId = 12345L;
     var session = _sessionManager.GetSession(telegramId);
-    
+
     // Simulate old session (>24 hours)
     session.LastActivity = DateTime.UtcNow.AddHours(-25);
 

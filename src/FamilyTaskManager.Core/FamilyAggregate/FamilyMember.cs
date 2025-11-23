@@ -2,13 +2,6 @@ namespace FamilyTaskManager.Core.FamilyAggregate;
 
 public class FamilyMember : EntityBase<FamilyMember, Guid>
 {
-  public Guid UserId { get; private set; }
-  public Guid FamilyId { get; private set; }
-  public FamilyRole Role { get; private set; }
-  public int Points { get; private set; }
-  public DateTime JoinedAt { get; private set; }
-  public bool IsActive { get; private set; }
-
   private FamilyMember() { }
 
   public FamilyMember(Guid userId, Guid familyId, FamilyRole role)
@@ -23,6 +16,13 @@ public class FamilyMember : EntityBase<FamilyMember, Guid>
     JoinedAt = DateTime.UtcNow;
     IsActive = true;
   }
+
+  public Guid UserId { get; private set; }
+  public Guid FamilyId { get; private set; }
+  public FamilyRole Role { get; private set; }
+  public int Points { get; private set; }
+  public DateTime JoinedAt { get; private set; }
+  public bool IsActive { get; private set; }
 
   public void AddPoints(int value)
   {

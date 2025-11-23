@@ -8,12 +8,13 @@ public class GetLeaderboardHandler(
   IRepository<Family> familyRepository,
   IRepository<User> userRepository) : IQueryHandler<GetLeaderboardQuery, Result<List<LeaderboardEntryDto>>>
 {
-  public async ValueTask<Result<List<LeaderboardEntryDto>>> Handle(GetLeaderboardQuery query, CancellationToken cancellationToken)
+  public async ValueTask<Result<List<LeaderboardEntryDto>>> Handle(GetLeaderboardQuery query,
+    CancellationToken cancellationToken)
   {
     // Get family with members
     var spec = new GetFamilyWithMembersSpec(query.FamilyId);
     var family = await familyRepository.FirstOrDefaultAsync(spec, cancellationToken);
-    
+
     if (family == null)
     {
       return Result<List<LeaderboardEntryDto>>.NotFound("Family not found");

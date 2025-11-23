@@ -1,20 +1,19 @@
+using Ardalis.Result;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Tasks;
-using Mediator;
 using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Requests;
-using Ardalis.Result;
+using Telegram.Bot.Types;
 using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
 
 namespace FamilyTaskManager.UnitTests.Host.Bot.Handlers.Commands;
 
 public class TasksCommandHandlerTests
 {
-  private readonly IMediator _mediator;
-  private readonly TasksCommandHandler _handler;
   private readonly ITelegramBotClient _botClient;
+  private readonly TasksCommandHandler _handler;
+  private readonly IMediator _mediator;
 
   public TasksCommandHandlerTests()
   {
@@ -27,7 +26,7 @@ public class TasksCommandHandlerTests
   public async Task HandleAsync_ShouldPromptSelectFamily_WhenNoActiveFamilySelected()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var session = new UserSession(); // No CurrentFamilyId
     var userId = Guid.NewGuid();
 
@@ -44,7 +43,7 @@ public class TasksCommandHandlerTests
   public async Task HandleAsync_ShouldDisplayNoTasksMessage_WhenNoActiveTasks()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();
@@ -65,14 +64,14 @@ public class TasksCommandHandlerTests
   public async Task HandleAsync_ShouldDisplayTasks_WhenTasksExist()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();
 
     var tasks = new List<TaskDto>
     {
-      new TaskDto(
+      new(
         Guid.NewGuid(),
         "Feed the cat",
         10,
@@ -90,7 +89,8 @@ public class TasksCommandHandlerTests
 
     // Assert
     await _botClient.Received(1).MakeRequestAsync(
-      Arg.Is<SendMessageRequest>(req => req.Text.Contains("Feed the cat") && req.Text.Contains("Fluffy") && req.Text.Contains("10")),
+      Arg.Is<SendMessageRequest>(req =>
+        req.Text.Contains("Feed the cat") && req.Text.Contains("Fluffy") && req.Text.Contains("10")),
       Arg.Any<CancellationToken>());
   }
 
@@ -98,14 +98,14 @@ public class TasksCommandHandlerTests
   public async Task HandleAsync_ShouldShowOverdueMarker_ForOverdueTasks()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();
 
     var tasks = new List<TaskDto>
     {
-      new TaskDto(
+      new(
         Guid.NewGuid(),
         "Overdue task",
         10,
@@ -131,15 +131,16 @@ public class TasksCommandHandlerTests
   public async Task HandleAsync_ShouldGroupTasksByStatus()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();
 
     var tasks = new List<TaskDto>
     {
-      new TaskDto(Guid.NewGuid(), "Active task", 10, TaskStatus.Active, DateTime.UtcNow.AddHours(2), Guid.NewGuid(), "Pet1"),
-      new TaskDto(Guid.NewGuid(), "In progress task", 15, TaskStatus.InProgress, DateTime.UtcNow.AddHours(1), Guid.NewGuid(), "Pet2")
+      new(Guid.NewGuid(), "Active task", 10, TaskStatus.Active, DateTime.UtcNow.AddHours(2), Guid.NewGuid(), "Pet1"),
+      new(Guid.NewGuid(), "In progress task", 15, TaskStatus.InProgress, DateTime.UtcNow.AddHours(1), Guid.NewGuid(),
+        "Pet2")
     };
 
     _mediator.Send(Arg.Any<GetActiveTasksQuery>(), Arg.Any<CancellationToken>())

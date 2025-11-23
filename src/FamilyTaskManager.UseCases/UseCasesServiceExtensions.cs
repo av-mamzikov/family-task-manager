@@ -8,7 +8,7 @@ public static class UseCasesServiceExtensions
   {
     // UseCases layer contains command/query handlers
     // Mediator is registered in the Host layer where SourceGenerator can scan all assemblies
-    
+
     return services;
   }
 }

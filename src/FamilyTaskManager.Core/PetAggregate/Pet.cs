@@ -1,3 +1,5 @@
+using FamilyTaskManager.Core.PetAggregate.Events;
+
 namespace FamilyTaskManager.Core.PetAggregate;
 
 public enum PetType
@@ -9,12 +11,6 @@ public enum PetType
 
 public class Pet : EntityBase<Pet, Guid>, IAggregateRoot
 {
-  public Guid FamilyId { get; private set; }
-  public PetType Type { get; private set; }
-  public string Name { get; private set; } = null!;
-  public int MoodScore { get; private set; }
-  public DateTime CreatedAt { get; private set; }
-
   private Pet() { }
 
   public Pet(Guid familyId, PetType type, string name)
@@ -30,6 +26,12 @@ public class Pet : EntityBase<Pet, Guid>, IAggregateRoot
     CreatedAt = DateTime.UtcNow;
   }
 
+  public Guid FamilyId { get; private set; }
+  public PetType Type { get; private set; }
+  public string Name { get; private set; } = null!;
+  public int MoodScore { get; private set; }
+  public DateTime CreatedAt { get; private set; }
+
   public void UpdateName(string name)
   {
     Guard.Against.NullOrWhiteSpace(name);
@@ -40,19 +42,19 @@ public class Pet : EntityBase<Pet, Guid>, IAggregateRoot
   {
     var oldMood = MoodScore;
     var newMood = Math.Clamp(moodScore, 0, 100);
-    
+
     MoodScore = newMood;
 
     // Register event if mood change is significant
     if (ShouldNotifyMoodChange(oldMood, newMood))
     {
-      RegisterDomainEvent(new Events.PetMoodChangedEvent(this, oldMood, newMood));
+      RegisterDomainEvent(new PetMoodChangedEvent(this, oldMood, newMood));
     }
   }
 
   /// <summary>
-  /// Determines if a mood change is significant enough to send a notification.
-  /// Notifies when crossing critical thresholds: < 20, < 50, or >= 80
+  ///   Determines if a mood change is significant enough to send a notification.
+  ///   Notifies when crossing critical thresholds: < 20, < 50, or>= 80
   /// </summary>
   private static bool ShouldNotifyMoodChange(int oldMood, int newMood)
   {

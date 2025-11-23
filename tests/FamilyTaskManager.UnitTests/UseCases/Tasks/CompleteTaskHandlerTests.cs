@@ -1,16 +1,17 @@
-using FamilyTaskManager.Core.TaskAggregate;
+using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
-using FamilyTaskManager.UseCases.Tasks;
+using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.UseCases.Families.Specifications;
+using FamilyTaskManager.UseCases.Tasks;
 using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
 
 namespace FamilyTaskManager.UnitTests.UseCases.Tasks;
 
 public class CompleteTaskHandlerTests
 {
-  private readonly IRepository<TaskInstance> _taskRepository;
   private readonly IRepository<Family> _familyRepository;
   private readonly CompleteTaskHandler _handler;
+  private readonly IRepository<TaskInstance> _taskRepository;
 
   public CompleteTaskHandlerTests()
   {
@@ -27,13 +28,13 @@ public class CompleteTaskHandlerTests
     var familyId = Guid.NewGuid();
     var taskId = Guid.NewGuid();
     var petId = Guid.NewGuid();
-    
+
     var task = new TaskInstance(familyId, petId, "Feed the cat", 10, TaskType.OneTime, DateTime.UtcNow.AddDays(1));
-    var family = new Family("Smith Family", "UTC", true);
+    var family = new Family("Smith Family", "UTC");
     family.AddMember(userId, FamilyRole.Child);
-    
+
     var command = new CompleteTaskCommand(taskId, userId);
-    
+
     _taskRepository.GetByIdAsync(taskId, Arg.Any<CancellationToken>())
       .Returns(task);
     _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
@@ -47,10 +48,10 @@ public class CompleteTaskHandlerTests
     task.Status.ShouldBe(TaskStatus.Completed);
     task.CompletedBy.ShouldBe(userId);
     task.CompletedAt.ShouldNotBeNull();
-    
+
     var member = family.Members.First();
     member.Points.ShouldBe(10);
-    
+
     await _taskRepository.Received(1).UpdateAsync(task, Arg.Any<CancellationToken>());
     await _familyRepository.Received(1).UpdateAsync(family, Arg.Any<CancellationToken>());
   }
@@ -60,7 +61,7 @@ public class CompleteTaskHandlerTests
   {
     // Arrange
     var command = new CompleteTaskCommand(Guid.NewGuid(), Guid.NewGuid());
-    
+
     _taskRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
       .Returns((TaskInstance?)null);
 
@@ -69,7 +70,7 @@ public class CompleteTaskHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.NotFound);
+    result.Status.ShouldBe(ResultStatus.NotFound);
   }
 
   [Fact]
@@ -80,12 +81,12 @@ public class CompleteTaskHandlerTests
     var familyId = Guid.NewGuid();
     var taskId = Guid.NewGuid();
     var petId = Guid.NewGuid();
-    
+
     var task = new TaskInstance(familyId, petId, "Feed the cat", 10, TaskType.OneTime, DateTime.UtcNow.AddDays(1));
     task.Complete(userId, DateTime.UtcNow);
-    
+
     var command = new CompleteTaskCommand(taskId, userId);
-    
+
     _taskRepository.GetByIdAsync(taskId, Arg.Any<CancellationToken>())
       .Returns(task);
 
@@ -94,7 +95,7 @@ public class CompleteTaskHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.Error);
+    result.Status.ShouldBe(ResultStatus.Error);
   }
 
   [Fact]
@@ -106,13 +107,13 @@ public class CompleteTaskHandlerTests
     var familyId = Guid.NewGuid();
     var taskId = Guid.NewGuid();
     var petId = Guid.NewGuid();
-    
+
     var task = new TaskInstance(familyId, petId, "Feed the cat", 10, TaskType.OneTime, DateTime.UtcNow.AddDays(1));
-    var family = new Family("Smith Family", "UTC", true);
+    var family = new Family("Smith Family", "UTC");
     family.AddMember(differentUserId, FamilyRole.Child); // Different user
-    
+
     var command = new CompleteTaskCommand(taskId, userId);
-    
+
     _taskRepository.GetByIdAsync(taskId, Arg.Any<CancellationToken>())
       .Returns(task);
     _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
@@ -123,6 +124,6 @@ public class CompleteTaskHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.Error);
+    result.Status.ShouldBe(ResultStatus.Error);
   }
 }

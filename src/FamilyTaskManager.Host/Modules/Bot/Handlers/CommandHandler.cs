@@ -1,30 +1,30 @@
-using Telegram.Bot;
-using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
-using FamilyTaskManager.Host.Modules.Bot.Services;
-using FamilyTaskManager.Host.Modules.Bot.Models;
+using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
-using FamilyTaskManager.UseCases.Users;
+using FamilyTaskManager.Host.Modules.Bot.Models;
+using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Families;
 using FamilyTaskManager.UseCases.Pets;
 using FamilyTaskManager.UseCases.Tasks;
-using FamilyTaskManager.Core.PetAggregate;
-using FamilyTaskManager.Core.FamilyAggregate;
-using FamilyTaskManager.Core.Interfaces;
-using Mediator;
+using FamilyTaskManager.UseCases.Users;
 using GeoTimeZone;
+using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
 public class CommandHandler : ICommandHandler
 {
-  private readonly ILogger<CommandHandler> _logger;
-  private readonly ISessionManager _sessionManager;
-  private readonly IMediator _mediator;
   private readonly FamilyCommandHandler _familyCommandHandler;
-  private readonly TasksCommandHandler _tasksCommandHandler;
+  private readonly ILogger<CommandHandler> _logger;
+  private readonly IMediator _mediator;
   private readonly PetCommandHandler _petCommandHandler;
+  private readonly ISessionManager _sessionManager;
   private readonly StatsCommandHandler _statsCommandHandler;
+  private readonly TasksCommandHandler _tasksCommandHandler;
   private readonly ITimeZoneService _timeZoneService;
 
   public CommandHandler(
@@ -47,7 +47,8 @@ public class CommandHandler : ICommandHandler
     _timeZoneService = timeZoneService;
   }
 
-  public async Task HandleCommandAsync(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
+  public async Task HandleCommandAsync(ITelegramBotClient botClient, Message message,
+    CancellationToken cancellationToken)
   {
     var telegramId = message.From!.Id;
     var session = _sessionManager.GetSession(telegramId);
@@ -95,7 +96,9 @@ public class CommandHandler : ICommandHandler
     var telegramId = message.From!.Id;
     var userName = $"{message.From.FirstName} {message.From.LastName}".Trim();
     if (string.IsNullOrEmpty(userName))
+    {
       userName = message.From.Username ?? "User";
+    }
 
     // Register or update user
     var registerCommand = new RegisterUserCommand(telegramId, userName);
@@ -181,7 +184,7 @@ public class CommandHandler : ICommandHandler
         $"Вы успешно присоединились к семье *{newFamily.Name}*\n" +
         $"Ваша роль: {GetRoleText(newFamily.UserRole)}\n\n" +
         $"Используйте /tasks чтобы посмотреть задачи",
-        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+        parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
 
       // Show main menu
@@ -196,13 +199,16 @@ public class CommandHandler : ICommandHandler
     }
   }
 
-  private string GetRoleText(FamilyRole role) => role switch
+  private string GetRoleText(FamilyRole role)
   {
-    FamilyRole.Admin => "👑 Администратор",
-    FamilyRole.Adult => "👤 Взрослый",
-    FamilyRole.Child => "👶 Ребёнок",
-    _ => "❓ Неизвестно"
-  };
+    return role switch
+    {
+      FamilyRole.Admin => "👑 Администратор",
+      FamilyRole.Adult => "👤 Взрослый",
+      FamilyRole.Child => "👶 Ребёнок",
+      _ => "❓ Неизвестно"
+    };
+  }
 
   private async Task HandleFamilyCommandAsync(
     ITelegramBotClient botClient,
@@ -213,7 +219,7 @@ public class CommandHandler : ICommandHandler
     // Get user ID
     var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
     var userResult = await _mediator.Send(registerCommand, cancellationToken);
-    
+
     if (!userResult.IsSuccess)
     {
       await botClient.SendTextMessageAsync(
@@ -234,7 +240,7 @@ public class CommandHandler : ICommandHandler
   {
     var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
     var userResult = await _mediator.Send(registerCommand, cancellationToken);
-    
+
     if (!userResult.IsSuccess)
     {
       await botClient.SendTextMessageAsync(
@@ -255,7 +261,7 @@ public class CommandHandler : ICommandHandler
   {
     var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
     var userResult = await _mediator.Send(registerCommand, cancellationToken);
-    
+
     if (!userResult.IsSuccess)
     {
       await botClient.SendTextMessageAsync(
@@ -276,7 +282,7 @@ public class CommandHandler : ICommandHandler
   {
     var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
     var userResult = await _mediator.Send(registerCommand, cancellationToken);
-    
+
     if (!userResult.IsSuccess)
     {
       await botClient.SendTextMessageAsync(
@@ -329,7 +335,7 @@ public class CommandHandler : ICommandHandler
     CancellationToken cancellationToken)
   {
     var text = message.Text!;
-    
+
     await (text switch
     {
       "🏠 Семья" => HandleFamilyCommandAsync(botClient, message, session, cancellationToken),
@@ -382,7 +388,7 @@ public class CommandHandler : ICommandHandler
       case ConversationState.AwaitingFamilyName:
         await HandleFamilyNameInputAsync(botClient, message, session, text, cancellationToken);
         break;
-      
+
       case ConversationState.AwaitingFamilyTimezone:
         // Timezone selection is handled via callbacks, not text input
         await botClient.SendTextMessageAsync(
@@ -390,7 +396,7 @@ public class CommandHandler : ICommandHandler
           "❌ Пожалуйста, используйте кнопки для выбора временной зоны.",
           cancellationToken: cancellationToken);
         break;
-      
+
       case ConversationState.AwaitingFamilyLocation:
         // Handle "Back" button
         if (text == "⬅️ Назад")
@@ -398,29 +404,29 @@ public class CommandHandler : ICommandHandler
           await HandleBackToTimezoneSelectionAsync(botClient, message, session, cancellationToken);
           return;
         }
-        
+
         await botClient.SendTextMessageAsync(
           message.Chat.Id,
           "❌ Пожалуйста, используйте кнопку \"📍 Отправить местоположение\" для определения временной зоны.",
           cancellationToken: cancellationToken);
         break;
-      
+
       case ConversationState.AwaitingPetName:
         await HandlePetNameInputAsync(botClient, message, session, text, cancellationToken);
         break;
-      
+
       case ConversationState.AwaitingTaskTitle:
         await HandleTaskTitleInputAsync(botClient, message, session, text, cancellationToken);
         break;
-      
+
       case ConversationState.AwaitingTaskPoints:
         await HandleTaskPointsInputAsync(botClient, message, session, text, cancellationToken);
         break;
-      
+
       case ConversationState.AwaitingTaskDueDate:
         await HandleTaskDueDateInputAsync(botClient, message, session, text, cancellationToken);
         break;
-      
+
       case ConversationState.AwaitingTaskSchedule:
         await HandleTaskScheduleInputAsync(botClient, message, session, text, cancellationToken);
         break;
@@ -493,7 +499,7 @@ public class CommandHandler : ICommandHandler
     CancellationToken cancellationToken)
   {
     var location = message.Location;
-    
+
     // Defensive null check
     if (location?.Latitude == null || location?.Longitude == null)
     {
@@ -503,17 +509,17 @@ public class CommandHandler : ICommandHandler
         "Пожалуйста, попробуйте снова.",
         replyMarkup: new ReplyKeyboardRemove(),
         cancellationToken: cancellationToken);
-      
+
       await HandleBackToTimezoneSelectionAsync(botClient, message, session, cancellationToken);
       return;
     }
-    
+
     try
     {
       // Convert coordinates to timezone using GeoTimeZone
       var timeZoneResult = TimeZoneLookup.GetTimeZone(location.Latitude, location.Longitude);
       var detectedTimezone = timeZoneResult.Result;
-      
+
       // Add null check for ocean/invalid coordinates
       if (string.IsNullOrEmpty(detectedTimezone))
       {
@@ -523,14 +529,14 @@ public class CommandHandler : ICommandHandler
           "Пожалуйста, выберите временную зону вручную.",
           replyMarkup: new ReplyKeyboardRemove(),
           cancellationToken: cancellationToken);
-        
+
         await HandleBackToTimezoneSelectionAsync(botClient, message, session, cancellationToken);
         return;
       }
-      
-      _logger.LogInformation("Detected timezone for coordinates {Lat}, {Lng}: {Timezone}", 
+
+      _logger.LogInformation("Detected timezone for coordinates {Lat}, {Lng}: {Timezone}",
         location.Latitude, location.Longitude, detectedTimezone);
-      
+
       // Get required data from session
       if (!session.Data.TryGetValue("userId", out var userIdObj) || userIdObj is not Guid userId ||
           !session.Data.TryGetValue("familyName", out var familyNameObj) || familyNameObj is not string familyName)
@@ -552,7 +558,7 @@ public class CommandHandler : ICommandHandler
           $"Пожалуйста, выберите временную зону вручную.",
           replyMarkup: new ReplyKeyboardRemove(),
           cancellationToken: cancellationToken);
-        
+
         await HandleBackToTimezoneSelectionAsync(botClient, message, session, cancellationToken);
         return;
       }
@@ -586,14 +592,14 @@ public class CommandHandler : ICommandHandler
     catch (Exception ex)
     {
       _logger.LogError(ex, "Error determining timezone from location");
-      
+
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         "❌ Ошибка определения временной зоны по геолокации.\n\n" +
         "Пожалуйста, попробуйте снова или выберите временную зону вручную.",
         replyMarkup: new ReplyKeyboardRemove(),
         cancellationToken: cancellationToken);
-      
+
       await HandleBackToTimezoneSelectionAsync(botClient, message, session, cancellationToken);
     }
   }
@@ -605,7 +611,7 @@ public class CommandHandler : ICommandHandler
     CancellationToken cancellationToken)
   {
     session.State = ConversationState.AwaitingFamilyTimezone;
-    
+
     var keyboard = new InlineKeyboardMarkup(new[]
     {
       new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Москва", "timezone_Europe/Moscow") },
@@ -806,7 +812,7 @@ public class CommandHandler : ICommandHandler
     }
 
     var dueAt = DateTime.UtcNow.AddDays(days);
-    
+
     // Get all required data from session
     if (!session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId ||
         !session.Data.TryGetValue("petId", out var petIdObj) || petIdObj is not Guid petId ||
@@ -824,7 +830,7 @@ public class CommandHandler : ICommandHandler
     // Get user ID
     var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
     var userResult = await _mediator.Send(registerCommand, cancellationToken);
-    
+
     if (!userResult.IsSuccess)
     {
       session.ClearState();
@@ -894,7 +900,7 @@ public class CommandHandler : ICommandHandler
     // Get user ID
     var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
     var userResult = await _mediator.Send(registerCommand, cancellationToken);
-    
+
     if (!userResult.IsSuccess)
     {
       session.ClearState();
@@ -906,7 +912,8 @@ public class CommandHandler : ICommandHandler
     }
 
     // Create periodic task template
-    var createTemplateCommand = new CreateTaskTemplateCommand(familyId, petId, title, points, schedule, userResult.Value);
+    var createTemplateCommand =
+      new CreateTaskTemplateCommand(familyId, petId, title, points, schedule, userResult.Value);
     var result = await _mediator.Send(createTemplateCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -938,14 +945,9 @@ public class CommandHandler : ICommandHandler
   {
     var keyboard = new ReplyKeyboardMarkup(new[]
     {
-      new KeyboardButton[] { "🏠 Семья", "✅ Мои задачи" },
-      new KeyboardButton[] { "🐾 Питомец", "⭐ Мои очки" },
+      new KeyboardButton[] { "🏠 Семья", "✅ Мои задачи" }, new KeyboardButton[] { "🐾 Питомец", "⭐ Мои очки" },
       new KeyboardButton[] { "📊 Статистика" }
-    })
-    {
-      ResizeKeyboard = true,
-      IsPersistent = true
-    };
+    }) { ResizeKeyboard = true, IsPersistent = true };
 
     await botClient.SendTextMessageAsync(
       chatId,

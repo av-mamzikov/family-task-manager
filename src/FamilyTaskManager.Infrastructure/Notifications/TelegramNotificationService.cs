@@ -1,22 +1,21 @@
-using Telegram.Bot;
-using Telegram.Bot.Types.Enums;
-using FamilyTaskManager.UseCases.Tasks;
-using FamilyTaskManager.UseCases.Families.Specifications;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.UserAggregate;
-using Ardalis.SharedKernel;
+using FamilyTaskManager.UseCases.Families.Specifications;
+using FamilyTaskManager.UseCases.Tasks;
+using Telegram.Bot;
+using Telegram.Bot.Types.Enums;
 
 namespace FamilyTaskManager.Infrastructure.Notifications;
 
 /// <summary>
-/// Service for sending Telegram notifications to family members
+///   Service for sending Telegram notifications to family members
 /// </summary>
 public class TelegramNotificationService
 {
   private readonly ITelegramBotClient _botClient;
   private readonly IRepository<Family> _familyRepository;
-  private readonly IRepository<User> _userRepository;
   private readonly ILogger<TelegramNotificationService> _logger;
+  private readonly IRepository<User> _userRepository;
 
   public TelegramNotificationService(
     ITelegramBotClient botClient,
@@ -30,18 +29,19 @@ public class TelegramNotificationService
     _logger = logger;
   }
 
-  public async Task SendTaskReminderAsync(long telegramId, TaskReminderDto task, CancellationToken cancellationToken = default)
+  public async Task SendTaskReminderAsync(long telegramId, TaskReminderDto task,
+    CancellationToken cancellationToken = default)
   {
     try
     {
       var message = $"⏰ <b>Напоминание о задаче</b>\n\n" +
-                   $"📝 {EscapeHtml(task.Title)}\n" +
-                   $"⏳ Срок: {task.DueAt:dd.MM.yyyy HH:mm}\n\n" +
-                   $"Не забудьте выполнить задачу вовремя! 🎯";
+                    $"📝 {EscapeHtml(task.Title)}\n" +
+                    $"⏳ Срок: {task.DueAt:dd.MM.yyyy HH:mm}\n\n" +
+                    $"Не забудьте выполнить задачу вовремя! 🎯";
 
       await _botClient.SendTextMessageAsync(
-        chatId: telegramId,
-        text: message,
+        telegramId,
+        message,
         parseMode: ParseMode.Html,
         cancellationToken: cancellationToken);
 
@@ -58,15 +58,16 @@ public class TelegramNotificationService
     }
   }
 
-  public async Task SendTaskCompletedAsync(Guid familyId, string userName, string taskTitle, int points, CancellationToken cancellationToken = default)
+  public async Task SendTaskCompletedAsync(Guid familyId, string userName, string taskTitle, int points,
+    CancellationToken cancellationToken = default)
   {
     try
     {
       var message = $"✅ <b>Задача выполнена!</b>\n\n" +
-                   $"👤 {EscapeHtml(userName)}\n" +
-                   $"📝 {EscapeHtml(taskTitle)}\n" +
-                   $"⭐ +{points} очков\n\n" +
-                   $"Отличная работа! 🎉";
+                    $"👤 {EscapeHtml(userName)}\n" +
+                    $"📝 {EscapeHtml(taskTitle)}\n" +
+                    $"⭐ +{points} очков\n\n" +
+                    $"Отличная работа! 🎉";
 
       await SendToFamilyMembersAsync(familyId, message, cancellationToken);
 
@@ -83,7 +84,8 @@ public class TelegramNotificationService
     }
   }
 
-  public async Task SendPetMoodChangedAsync(Guid familyId, string petName, int moodScore, CancellationToken cancellationToken = default)
+  public async Task SendPetMoodChangedAsync(Guid familyId, string petName, int moodScore,
+    CancellationToken cancellationToken = default)
   {
     try
     {
@@ -112,8 +114,8 @@ public class TelegramNotificationService
       }
 
       var message = $"{emoji} <b>Настроение питомца изменилось</b>\n\n" +
-                   $"🐾 {EscapeHtml(petName)}\n" +
-                   $"💭 Настроение: {status} ({moodScore}/100)\n\n";
+                    $"🐾 {EscapeHtml(petName)}\n" +
+                    $"💭 Настроение: {status} ({moodScore}/100)\n\n";
 
       if (moodScore < 20)
       {
@@ -148,8 +150,8 @@ public class TelegramNotificationService
     try
     {
       var message = $"👋 <b>Новый участник присоединился к семье!</b>\n\n" +
-                   $"👤 {EscapeHtml(userName)}\n\n" +
-                   $"Добро пожаловать в семью! 🎉";
+                    $"👤 {EscapeHtml(userName)}\n\n" +
+                    $"Добро пожаловать в семью! 🎉";
 
       await SendToFamilyMembersAsync(familyId, message, cancellationToken);
 
@@ -167,7 +169,7 @@ public class TelegramNotificationService
   }
 
   /// <summary>
-  /// Send message to all active members of a family
+  ///   Send message to all active members of a family
   /// </summary>
   private async Task SendToFamilyMembersAsync(Guid familyId, string message, CancellationToken cancellationToken)
   {
@@ -200,7 +202,7 @@ public class TelegramNotificationService
   }
 
   /// <summary>
-  /// Send message to a specific user by userId
+  ///   Send message to a specific user by userId
   /// </summary>
   private async Task SendToUserAsync(Guid userId, string message, CancellationToken cancellationToken)
   {
@@ -214,8 +216,8 @@ public class TelegramNotificationService
       }
 
       await _botClient.SendTextMessageAsync(
-        chatId: user.TelegramId,
-        text: message,
+        user.TelegramId,
+        message,
         parseMode: ParseMode.Html,
         cancellationToken: cancellationToken);
 
@@ -229,7 +231,7 @@ public class TelegramNotificationService
   }
 
   /// <summary>
-  /// Escape HTML special characters for Telegram HTML parse mode
+  ///   Escape HTML special characters for Telegram HTML parse mode
   /// </summary>
   private static string EscapeHtml(string text)
   {

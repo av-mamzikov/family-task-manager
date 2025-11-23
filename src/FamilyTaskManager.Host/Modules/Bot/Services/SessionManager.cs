@@ -11,8 +11,8 @@ public interface ISessionManager
 
 public class SessionManager : ISessionManager
 {
-  private readonly ConcurrentDictionary<long, UserSession> _sessions = new();
   private readonly TimeSpan _inactivityTimeout = TimeSpan.FromHours(24);
+  private readonly ConcurrentDictionary<long, UserSession> _sessions = new();
 
   public UserSession GetSession(long telegramId)
   {

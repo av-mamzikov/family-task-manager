@@ -1,10 +1,10 @@
-using Telegram.Bot;
-using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
+using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Pets;
-using FamilyTaskManager.Core.PetAggregate;
-using Mediator;
+using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 
@@ -70,51 +70,60 @@ public class PetCommandHandler(IMediator mediator)
     // Build inline keyboard
     var buttons = new List<InlineKeyboardButton[]>
     {
-      new[]
-      {
-        InlineKeyboardButton.WithCallbackData("➕ Создать питомца", "create_pet")
-      }
+      new[] { InlineKeyboardButton.WithCallbackData("➕ Создать питомца", "create_pet") }
     };
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       messageText,
-      parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+      parseMode: ParseMode.Markdown,
       replyMarkup: new InlineKeyboardMarkup(buttons),
       cancellationToken: cancellationToken);
   }
 
-  private string GetPetEmoji(PetType type) => type switch
+  private string GetPetEmoji(PetType type)
   {
-    PetType.Cat => "🐱",
-    PetType.Dog => "🐶",
-    PetType.Hamster => "🐹",
-    _ => "🐾"
-  };
+    return type switch
+    {
+      PetType.Cat => "🐱",
+      PetType.Dog => "🐶",
+      PetType.Hamster => "🐹",
+      _ => "🐾"
+    };
+  }
 
-  private string GetPetTypeText(PetType type) => type switch
+  private string GetPetTypeText(PetType type)
   {
-    PetType.Cat => "Кот",
-    PetType.Dog => "Собака",
-    PetType.Hamster => "Хомяк",
-    _ => "Неизвестно"
-  };
+    return type switch
+    {
+      PetType.Cat => "Кот",
+      PetType.Dog => "Собака",
+      PetType.Hamster => "Хомяк",
+      _ => "Неизвестно"
+    };
+  }
 
-  private string GetMoodEmoji(int moodScore) => moodScore switch
+  private string GetMoodEmoji(int moodScore)
   {
-    >= 80 => "😊",
-    >= 60 => "🙂",
-    >= 40 => "😐",
-    >= 20 => "😟",
-    _ => "😢"
-  };
+    return moodScore switch
+    {
+      >= 80 => "😊",
+      >= 60 => "🙂",
+      >= 40 => "😐",
+      >= 20 => "😟",
+      _ => "😢"
+    };
+  }
 
-  private string GetMoodText(int moodScore) => moodScore switch
+  private string GetMoodText(int moodScore)
   {
-    >= 80 => "Отлично!",
-    >= 60 => "Хорошо",
-    >= 40 => "Нормально",
-    >= 20 => "Грустит",
-    _ => "Очень грустно"
-  };
+    return moodScore switch
+    {
+      >= 80 => "Отлично!",
+      >= 60 => "Хорошо",
+      >= 40 => "Нормально",
+      >= 20 => "Грустит",
+      _ => "Очень грустно"
+    };
+  }
 }

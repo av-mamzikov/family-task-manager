@@ -1,6 +1,4 @@
 using FamilyTaskManager.Core.TaskAggregate;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace FamilyTaskManager.Infrastructure.Data.Config;
 

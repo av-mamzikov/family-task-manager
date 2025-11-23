@@ -2,10 +2,13 @@ namespace FamilyTaskManager.UseCases.Tasks;
 
 public record CreateTaskInstanceFromTemplateCommand(Guid TemplateId, DateTime DueAt) : ICommand<Result<Guid>>;
 
-public class CreateTaskInstanceFromTemplateHandler(IRepository<TaskTemplate> templateRepository, IRepository<TaskInstance> taskRepository)
+public class CreateTaskInstanceFromTemplateHandler(
+  IRepository<TaskTemplate> templateRepository,
+  IRepository<TaskInstance> taskRepository)
   : ICommandHandler<CreateTaskInstanceFromTemplateCommand, Result<Guid>>
 {
-  public async ValueTask<Result<Guid>> Handle(CreateTaskInstanceFromTemplateCommand request, CancellationToken cancellationToken)
+  public async ValueTask<Result<Guid>> Handle(CreateTaskInstanceFromTemplateCommand request,
+    CancellationToken cancellationToken)
   {
     var template = await templateRepository.GetByIdAsync(request.TemplateId, cancellationToken);
     if (template == null)
@@ -21,7 +24,7 @@ public class CreateTaskInstanceFromTemplateHandler(IRepository<TaskTemplate> tem
     // Check if there's already an active TaskInstance for this template
     var spec = new TaskInstancesByTemplateSpec(request.TemplateId);
     var existingInstances = await taskRepository.ListAsync(spec, cancellationToken);
-    
+
     var activeInstance = existingInstances.FirstOrDefault(t => t.Status != TaskStatus.Completed);
     if (activeInstance != null)
     {

@@ -9,7 +9,7 @@ public class EventDispatchInterceptor(IDomainEventDispatcher domainEventDispatch
 
   // Called after SaveChangesAsync has completed successfully
   public override async ValueTask<int> SavedChangesAsync(SaveChangesCompletedEventData eventData, int result,
-    CancellationToken cancellationToken = new CancellationToken())
+    CancellationToken cancellationToken = new())
   {
     var context = eventData.Context;
     if (context is not AppDbContext appDbContext)
@@ -27,7 +27,5 @@ public class EventDispatchInterceptor(IDomainEventDispatcher domainEventDispatch
     await _domainEventDispatcher.DispatchAndClearEvents(entitiesWithEvents);
 
     return await base.SavedChangesAsync(eventData, result, cancellationToken);
-
   }
 }
-

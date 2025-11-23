@@ -3,7 +3,7 @@ using Mediator;
 namespace FamilyTaskManager.Infrastructure.Behaviors;
 
 /// <summary>
-/// Pipeline behavior that logs all commands and queries
+///   Pipeline behavior that logs all commands and queries
 /// </summary>
 public class MediatorLoggingBehavior<TMessage, TResponse>(
   ILogger<MediatorLoggingBehavior<TMessage, TResponse>> logger)
@@ -17,7 +17,7 @@ public class MediatorLoggingBehavior<TMessage, TResponse>(
   {
     var requestName = typeof(TMessage).Name;
     var requestNamespace = typeof(TMessage).Namespace;
-    
+
     logger.LogInformation(
       "Executing {RequestType}: {RequestName}",
       requestNamespace?.Contains("Commands") == true ? "Command" : "Query",
@@ -26,11 +26,11 @@ public class MediatorLoggingBehavior<TMessage, TResponse>(
     try
     {
       var response = await next(message, cancellationToken);
-      
+
       logger.LogInformation(
         "Executed {RequestName} successfully",
         requestName);
-      
+
       return response;
     }
     catch (Exception ex)

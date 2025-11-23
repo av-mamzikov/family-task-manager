@@ -1,7 +1,8 @@
+using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.UserAggregate;
-using FamilyTaskManager.UseCases.Statistics;
 using FamilyTaskManager.UseCases.Families.Specifications;
+using FamilyTaskManager.UseCases.Statistics;
 using FamilyTaskManager.UseCases.Users.Specifications;
 
 namespace FamilyTaskManager.UnitTests.UseCases.Statistics;
@@ -9,8 +10,8 @@ namespace FamilyTaskManager.UnitTests.UseCases.Statistics;
 public class GetLeaderboardHandlerTests
 {
   private readonly IRepository<Family> _familyRepository;
-  private readonly IRepository<User> _userRepository;
   private readonly GetLeaderboardHandler _handler;
+  private readonly IRepository<User> _userRepository;
 
   public GetLeaderboardHandlerTests()
   {
@@ -27,30 +28,25 @@ public class GetLeaderboardHandlerTests
     var user1Id = Guid.NewGuid();
     var user2Id = Guid.NewGuid();
     var user3Id = Guid.NewGuid();
-    
-    var family = new Family("Smith Family", "UTC", true);
+
+    var family = new Family("Smith Family", "UTC");
     var member1 = family.AddMember(user1Id, FamilyRole.Child);
     var member2 = family.AddMember(user2Id, FamilyRole.Adult);
     var member3 = family.AddMember(user3Id, FamilyRole.Child);
-    
+
     member1.AddPoints(50);
     member2.AddPoints(100);
     member3.AddPoints(25);
-    
-    var users = new List<User>
-    {
-      new User(111, "Alice"),
-      new User(222, "Bob"),
-      new User(333, "Charlie")
-    };
-    
+
+    var users = new List<User> { new(111, "Alice"), new(222, "Bob"), new(333, "Charlie") };
+
     // Set user IDs via reflection (since they're generated in constructor)
     typeof(User).GetProperty("Id")!.SetValue(users[0], user1Id);
     typeof(User).GetProperty("Id")!.SetValue(users[1], user2Id);
     typeof(User).GetProperty("Id")!.SetValue(users[2], user3Id);
-    
+
     var query = new GetLeaderboardQuery(familyId);
-    
+
     _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
     _userRepository.ListAsync(Arg.Any<GetUsersByIdsSpec>(), Arg.Any<CancellationToken>())
@@ -62,7 +58,7 @@ public class GetLeaderboardHandlerTests
     // Assert
     result.IsSuccess.ShouldBeTrue();
     result.Value.Count.ShouldBe(3);
-    
+
     // Should be sorted by points descending
     result.Value[0].Points.ShouldBe(100);
     result.Value[0].UserId.ShouldBe(user2Id);
@@ -77,7 +73,7 @@ public class GetLeaderboardHandlerTests
   {
     // Arrange
     var query = new GetLeaderboardQuery(Guid.NewGuid());
-    
+
     _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns((Family?)null);
 
@@ -86,7 +82,7 @@ public class GetLeaderboardHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.NotFound);
+    result.Status.ShouldBe(ResultStatus.NotFound);
   }
 
   [Fact]
@@ -96,7 +92,7 @@ public class GetLeaderboardHandlerTests
     var familyId = Guid.NewGuid();
     var family = new Family("Smith Family", "UTC", false); // Leaderboard disabled
     var query = new GetLeaderboardQuery(familyId);
-    
+
     _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
@@ -105,7 +101,7 @@ public class GetLeaderboardHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.Error);
+    result.Status.ShouldBe(ResultStatus.Error);
   }
 
   [Fact]
@@ -115,23 +111,20 @@ public class GetLeaderboardHandlerTests
     var familyId = Guid.NewGuid();
     var user1Id = Guid.NewGuid();
     var user2Id = Guid.NewGuid();
-    
-    var family = new Family("Smith Family", "UTC", true);
+
+    var family = new Family("Smith Family", "UTC");
     var member1 = family.AddMember(user1Id, FamilyRole.Child);
     var member2 = family.AddMember(user2Id, FamilyRole.Child);
-    
+
     member1.AddPoints(50);
     member2.AddPoints(100);
     member2.Deactivate(); // Deactivate second member
-    
-    var users = new List<User>
-    {
-      new User(111, "Alice")
-    };
+
+    var users = new List<User> { new(111, "Alice") };
     typeof(User).GetProperty("Id")!.SetValue(users[0], user1Id);
-    
+
     var query = new GetLeaderboardQuery(familyId);
-    
+
     _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
     _userRepository.ListAsync(Arg.Any<GetUsersByIdsSpec>(), Arg.Any<CancellationToken>())

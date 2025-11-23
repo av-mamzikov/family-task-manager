@@ -1,3 +1,4 @@
+using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.UserAggregate;
 using FamilyTaskManager.UseCases.Families;
@@ -8,8 +9,8 @@ namespace FamilyTaskManager.UnitTests.UseCases.Families;
 public class JoinFamilyHandlerTests
 {
   private readonly IRepository<Family> _familyRepository;
-  private readonly IRepository<User> _userRepository;
   private readonly JoinFamilyHandler _handler;
+  private readonly IRepository<User> _userRepository;
 
   public JoinFamilyHandlerTests()
   {
@@ -25,9 +26,9 @@ public class JoinFamilyHandlerTests
     var userId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
     var user = new User(123456789, "John Doe");
-    var family = new Family("Smith Family", "UTC", true);
+    var family = new Family("Smith Family", "UTC");
     var command = new JoinFamilyCommand(userId, familyId, FamilyRole.Child);
-    
+
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
     _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
@@ -53,7 +54,7 @@ public class JoinFamilyHandlerTests
     var userId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
     var command = new JoinFamilyCommand(userId, familyId, FamilyRole.Child);
-    
+
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns((User?)null);
 
@@ -62,7 +63,7 @@ public class JoinFamilyHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.NotFound);
+    result.Status.ShouldBe(ResultStatus.NotFound);
   }
 
   [Fact]
@@ -73,7 +74,7 @@ public class JoinFamilyHandlerTests
     var familyId = Guid.NewGuid();
     var user = new User(123456789, "John Doe");
     var command = new JoinFamilyCommand(userId, familyId, FamilyRole.Child);
-    
+
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
     _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
@@ -84,7 +85,7 @@ public class JoinFamilyHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.NotFound);
+    result.Status.ShouldBe(ResultStatus.NotFound);
   }
 
   [Fact]
@@ -94,10 +95,10 @@ public class JoinFamilyHandlerTests
     var userId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
     var user = new User(123456789, "John Doe");
-    var family = new Family("Smith Family", "UTC", true);
+    var family = new Family("Smith Family", "UTC");
     family.AddMember(userId, FamilyRole.Adult);
     var command = new JoinFamilyCommand(userId, familyId, FamilyRole.Child);
-    
+
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
     _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
@@ -108,7 +109,7 @@ public class JoinFamilyHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.Error);
+    result.Status.ShouldBe(ResultStatus.Error);
     family.Members.Count.ShouldBe(1); // Still only one member
   }
 }

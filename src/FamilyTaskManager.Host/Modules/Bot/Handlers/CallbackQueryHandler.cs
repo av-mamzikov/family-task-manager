@@ -1,23 +1,22 @@
+using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.Host.Modules.Bot.Models;
+using FamilyTaskManager.Host.Modules.Bot.Services;
+using FamilyTaskManager.UseCases.Families;
+using FamilyTaskManager.UseCases.Tasks;
+using FamilyTaskManager.UseCases.Users;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-using FamilyTaskManager.Host.Modules.Bot.Services;
-using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.UseCases.Users;
-using FamilyTaskManager.UseCases.Users.Specifications;
-using FamilyTaskManager.UseCases.Families;
-using FamilyTaskManager.UseCases.Pets;
-using FamilyTaskManager.UseCases.Tasks;
-using FamilyTaskManager.Core.Interfaces;
-using Mediator;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
 public class CallbackQueryHandler : ICallbackQueryHandler
 {
   private readonly ILogger<CallbackQueryHandler> _logger;
-  private readonly ISessionManager _sessionManager;
   private readonly IMediator _mediator;
+  private readonly ISessionManager _sessionManager;
   private readonly ITimeZoneService _timeZoneService;
 
   public CallbackQueryHandler(
@@ -86,7 +85,9 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     CancellationToken cancellationToken)
   {
     if (parts.Length < 2)
+    {
       return;
+    }
 
     var entityType = parts[1];
 
@@ -95,11 +96,11 @@ public class CallbackQueryHandler : ICallbackQueryHandler
       case "family":
         await StartCreateFamilyAsync(botClient, chatId, messageId, session, cancellationToken);
         break;
-      
+
       case "pet":
         await StartCreatePetAsync(botClient, chatId, messageId, session, cancellationToken);
         break;
-      
+
       case "task":
         await StartCreateTaskAsync(botClient, chatId, messageId, session, cancellationToken);
         break;
@@ -126,10 +127,8 @@ public class CallbackQueryHandler : ICallbackQueryHandler
       return;
     }
 
-    session.SetState(ConversationState.AwaitingFamilyName, new Dictionary<string, object>
-    {
-      ["userId"] = userResult.Value
-    });
+    session.SetState(ConversationState.AwaitingFamilyName,
+      new Dictionary<string, object> { ["userId"] = userResult.Value });
 
     await botClient.EditMessageTextAsync(
       chatId,
@@ -196,7 +195,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
       chatId,
       messageId,
       "📋 *Создание задачи*\n\nВыберите тип задачи:",
-      parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+      ParseMode.Markdown,
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
   }
@@ -210,7 +209,9 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     CancellationToken cancellationToken)
   {
     if (parts.Length < 3)
+    {
       return;
+    }
 
     var selectType = parts[1];
     var value = parts[2];
@@ -220,11 +221,11 @@ public class CallbackQueryHandler : ICallbackQueryHandler
       case "pettype":
         await HandlePetTypeSelectionAsync(botClient, chatId, messageId, value, session, cancellationToken);
         break;
-      
+
       case "family":
         await HandleFamilySelectionAsync(botClient, chatId, messageId, value, session, cancellationToken);
         break;
-      
+
       case "tasktype":
         await HandleTaskTypeSelectionAsync(botClient, chatId, messageId, value, session, cancellationToken);
         break;
@@ -239,11 +240,8 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     UserSession session,
     CancellationToken cancellationToken)
   {
-    session.SetState(ConversationState.AwaitingPetName, new Dictionary<string, object>
-    {
-      ["petType"] = petType,
-      ["familyId"] = session.CurrentFamilyId!
-    });
+    session.SetState(ConversationState.AwaitingPetName,
+      new Dictionary<string, object> { ["petType"] = petType, ["familyId"] = session.CurrentFamilyId! });
 
     var petTypeEmoji = petType switch
     {
@@ -269,7 +267,9 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     CancellationToken cancellationToken)
   {
     if (!Guid.TryParse(familyIdStr, out var familyId))
+    {
       return;
+    }
 
     session.CurrentFamilyId = familyId;
 
@@ -289,20 +289,24 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     CancellationToken cancellationToken)
   {
     if (parts.Length < 3)
+    {
       return;
+    }
 
     var taskAction = parts[1];
     var taskIdStr = parts[2];
 
     if (!Guid.TryParse(taskIdStr, out var taskId))
+    {
       return;
+    }
 
     switch (taskAction)
     {
       case "take":
         await HandleTakeTaskAsync(botClient, chatId, messageId, taskId, session, cancellationToken);
         break;
-      
+
       case "complete":
         await HandleCompleteTaskAsync(botClient, chatId, messageId, taskId, session, cancellationToken);
         break;
@@ -416,28 +420,32 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     CancellationToken cancellationToken)
   {
     if (parts.Length < 3)
+    {
       return;
+    }
 
     var familyAction = parts[1];
     var familyIdStr = parts[2];
 
     if (!Guid.TryParse(familyIdStr, out var familyId))
+    {
       return;
+    }
 
     switch (familyAction)
     {
       case "invite":
         await HandleCreateInviteAsync(botClient, chatId, messageId, familyId, session, cancellationToken);
         break;
-      
+
       case "members":
         await HandleFamilyMembersAsync(botClient, chatId, messageId, familyId, cancellationToken);
         break;
-      
+
       case "settings":
         await HandleFamilySettingsAsync(botClient, chatId, messageId, familyId, cancellationToken);
         break;
-      
+
       default:
         await botClient.SendTextMessageAsync(
           chatId,
@@ -480,7 +488,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
       chatId,
       messageId,
       "🔗 *Создание приглашения*\n\nВыберите роль для нового участника:",
-      parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+      ParseMode.Markdown,
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
   }
@@ -520,17 +528,23 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     CancellationToken cancellationToken)
   {
     if (parts.Length < 4)
+    {
       return;
+    }
 
     var inviteAction = parts[1];
     var familyIdStr = parts[2];
     var roleStr = parts[3];
 
     if (!Guid.TryParse(familyIdStr, out var familyId))
+    {
       return;
+    }
 
-    if (!Enum.TryParse<FamilyTaskManager.Core.FamilyAggregate.FamilyRole>(roleStr, out var role))
+    if (!Enum.TryParse<FamilyRole>(roleStr, out var role))
+    {
       return;
+    }
 
     // Get user by telegram ID
     var registerCommand = new RegisterUserCommand(chatId, "User");
@@ -546,7 +560,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     }
 
     // Create invite code
-    var createInviteCommand = new CreateInviteCodeCommand(familyId, role, userResult.Value, 7);
+    var createInviteCommand = new CreateInviteCodeCommand(familyId, role, userResult.Value);
     var result = await _mediator.Send(createInviteCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -564,9 +578,9 @@ public class CallbackQueryHandler : ICallbackQueryHandler
 
     var roleText = role switch
     {
-      FamilyTaskManager.Core.FamilyAggregate.FamilyRole.Admin => "Администратор",
-      FamilyTaskManager.Core.FamilyAggregate.FamilyRole.Adult => "Взрослый",
-      FamilyTaskManager.Core.FamilyAggregate.FamilyRole.Child => "Ребёнок",
+      FamilyRole.Admin => "Администратор",
+      FamilyRole.Adult => "Взрослый",
+      FamilyRole.Child => "Ребёнок",
       _ => "Неизвестно"
     };
 
@@ -579,7 +593,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
       $"🔑 Код: `{inviteCode}`\n" +
       $"⏰ Действительно 7 дней\n\n" +
       $"Отправьте эту ссылку человеку, которого хотите пригласить в семью.",
-      parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+      ParseMode.Markdown,
       cancellationToken: cancellationToken);
   }
 
@@ -592,11 +606,8 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     CancellationToken cancellationToken)
   {
     // Store task type in session
-    session.SetState(ConversationState.AwaitingTaskTitle, new Dictionary<string, object>
-    {
-      ["taskType"] = taskType,
-      ["familyId"] = session.CurrentFamilyId!
-    });
+    session.SetState(ConversationState.AwaitingTaskTitle,
+      new Dictionary<string, object> { ["taskType"] = taskType, ["familyId"] = session.CurrentFamilyId! });
 
     var taskTypeText = taskType == "onetime" ? "разовую" : "периодическую";
 
@@ -616,10 +627,14 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     CancellationToken cancellationToken)
   {
     if (parts.Length < 2)
+    {
       return;
+    }
 
     if (!Guid.TryParse(parts[1], out var petId))
+    {
       return;
+    }
 
     // Store pet ID in session
     session.Data["petId"] = petId;
@@ -639,7 +654,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     {
       // For one-time tasks, ask for due date
       session.State = ConversationState.AwaitingTaskDueDate;
-      
+
       await botClient.EditMessageTextAsync(
         chatId,
         messageId,
@@ -654,7 +669,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     {
       // For recurring tasks, ask for schedule
       session.State = ConversationState.AwaitingTaskSchedule;
-      
+
       await botClient.EditMessageTextAsync(
         chatId,
         messageId,
@@ -664,7 +679,7 @@ public class CallbackQueryHandler : ICallbackQueryHandler
         "• `0 0 20 * * ?` - ежедневно в 20:00\n" +
         "• `0 0 9 */5 * ?` - каждые 5 дней в 9:00\n" +
         "• `0 0 9 * * MON` - каждый понедельник в 9:00",
-        parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+        ParseMode.Markdown,
         cancellationToken: cancellationToken);
     }
   }
@@ -678,7 +693,9 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     CancellationToken cancellationToken)
   {
     if (parts.Length < 2)
+    {
       return;
+    }
 
     var timezoneId = parts[1];
 
@@ -686,16 +703,11 @@ public class CallbackQueryHandler : ICallbackQueryHandler
     if (timezoneId == "detect")
     {
       session.State = ConversationState.AwaitingFamilyLocation;
-      
+
       var locationKeyboard = new ReplyKeyboardMarkup(new[]
       {
-        new KeyboardButton("📍 Отправить местоположение") { RequestLocation = true },
-        new KeyboardButton("⬅️ Назад")
-      })
-      {
-        ResizeKeyboard = true,
-        OneTimeKeyboard = true
-      };
+        new KeyboardButton("📍 Отправить местоположение") { RequestLocation = true }, new KeyboardButton("⬅️ Назад")
+      }) { ResizeKeyboard = true, OneTimeKeyboard = true };
 
       await botClient.EditMessageTextAsync(
         chatId,

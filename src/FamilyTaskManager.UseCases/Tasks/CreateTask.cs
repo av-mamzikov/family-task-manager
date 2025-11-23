@@ -3,15 +3,15 @@ using FamilyTaskManager.Core.Interfaces;
 namespace FamilyTaskManager.UseCases.Tasks;
 
 /// <summary>
-/// Command to create a one-time task.
-/// Note: DueAt parameter should be provided in the family's local timezone.
-/// It will be converted to UTC for storage in the database.
+///   Command to create a one-time task.
+///   Note: DueAt parameter should be provided in the family's local timezone.
+///   It will be converted to UTC for storage in the database.
 /// </summary>
 public record CreateTaskCommand(
-  Guid FamilyId, 
-  Guid PetId, 
-  string Title, 
-  int Points, 
+  Guid FamilyId,
+  Guid PetId,
+  string Title,
+  int Points,
   DateTime DueAt,
   Guid CreatedBy) : ICommand<Result<Guid>>;
 

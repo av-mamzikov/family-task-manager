@@ -60,7 +60,7 @@ public class TaskTemplateTests
     var createdBy = Guid.NewGuid();
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => 
+    Should.Throw<ArgumentException>(() =>
       new TaskTemplate(familyId, petId, title, points, schedule, createdBy));
   }
 
@@ -76,7 +76,7 @@ public class TaskTemplateTests
     var createdBy = Guid.NewGuid();
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => 
+    Should.Throw<ArgumentException>(() =>
       new TaskTemplate(familyId, petId, title, points, schedule, createdBy));
   }
 
@@ -92,7 +92,7 @@ public class TaskTemplateTests
     var createdBy = Guid.Empty;
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => 
+    Should.Throw<ArgumentException>(() =>
       new TaskTemplate(familyId, petId, title, points, schedule, createdBy));
   }
 
@@ -110,7 +110,7 @@ public class TaskTemplateTests
     var createdBy = Guid.NewGuid();
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => 
+    Should.Throw<ArgumentException>(() =>
       new TaskTemplate(familyId, petId, invalidTitle!, points, schedule, createdBy));
   }
 
@@ -129,7 +129,7 @@ public class TaskTemplateTests
     var createdBy = Guid.NewGuid();
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => 
+    Should.Throw<ArgumentException>(() =>
       new TaskTemplate(familyId, petId, title, invalidPoints, schedule, createdBy));
   }
 
@@ -167,7 +167,7 @@ public class TaskTemplateTests
     var createdBy = Guid.NewGuid();
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => 
+    Should.Throw<ArgumentException>(() =>
       new TaskTemplate(familyId, petId, title, points, invalidSchedule!, createdBy));
   }
 

@@ -9,6 +9,7 @@
 ### ✅ Проходящие тесты (критичные)
 
 #### Use Cases
+
 - ✅ `CalculatePetMoodScore` - Returns100_WhenNoTasksDue
 - ✅ `CalculatePetMoodScore` - ReturnsNotFound_WhenPetDoesNotExist
 - ✅ `CalculatePetMoodScore` - Returns0_WhenAllTasksOverdue
@@ -22,12 +23,14 @@
 - ✅ `CreateTaskInstanceFromTemplate` - DoesNotCreateInstance_WhenPreviousInstanceIsInProgress
 
 #### Cron Expressions
+
 - ✅ `CronExpression_ValidatesCorrectly_ForValidExpressions` (все варианты)
 - ✅ `CronExpression_ThrowsException_ForInvalidExpressions` (все варианты)
 - ✅ `CronExpression_EveryMinute_WorksCorrectly`
 - ✅ `CronExpression_CommonPetTaskSchedules_AreValid` (все варианты)
 
 #### Jobs
+
 - ✅ `TaskInstanceCreatorJob` - CreatesTaskInstance_WhenTemplateExists
 - ✅ `TaskInstanceCreatorJob` - DoesNotThrow_WhenNoTemplatesExist
 - ✅ `TaskInstanceCreatorJob` - HandlesErrors_Gracefully
@@ -144,16 +147,19 @@ public void CronExpression_ValidatesCorrectly_ForValidExpressions(string cronExp
 ## Следующие шаги
 
 ### Приоритет 1 (исправить падающие тесты)
+
 1. Исправить timezone в Cron тестах
 2. Уточнить ожидаемые значения в тестах формулы
 3. Улучшить моки в Job тестах
 
 ### Приоритет 2 (расширить покрытие)
+
 4. Добавить тесты для TaskReminderJob
 5. Добавить edge cases для формулы настроения
 6. Добавить тесты для граничных значений
 
 ### Приоритет 3 (integration тесты)
+
 7. Integration тесты с Testcontainers
 8. E2E тесты с реальным Quartz
 9. Performance тесты
@@ -176,6 +182,7 @@ public void CronExpression_ValidatesCorrectly_ForValidExpressions(string cronExp
 **Минимальный набор тестов создан и работает!**
 
 32 проходящих теста покрывают:
+
 - ✅ Критичную бизнес-логику (формула настроения)
 - ✅ Важные инварианты (один активный TaskInstance)
 - ✅ Валидацию (Cron выражения)

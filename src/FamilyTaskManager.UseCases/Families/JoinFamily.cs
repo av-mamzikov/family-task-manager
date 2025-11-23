@@ -31,7 +31,7 @@ public class JoinFamilyHandler(
 
     // Add member (registers MemberAddedEvent)
     var member = family.AddMember(command.UserId, command.Role);
-    
+
     // Update family (domain events will be dispatched automatically)
     await familyRepository.UpdateAsync(family, cancellationToken);
 

@@ -34,6 +34,7 @@ dotnet run
 ### 3. Проверка
 
 Вы должны увидеть:
+
 ```
 [INF] Starting FamilyTaskManager Host (Modular Monolith)
 [INF] Database migration completed
@@ -47,6 +48,7 @@ dotnet run
 ## Что работает?
 
 ### ✅ Bot Module
+
 - Telegram Bot с Long Polling
 - Все команды: /start, /family, /tasks, /pet, /stats
 - Persistent Menu
@@ -54,6 +56,7 @@ dotnet run
 - Session Management
 
 ### ✅ Worker Module
+
 - TaskInstanceCreatorJob (каждую минуту)
 - TaskReminderJob (каждые 15 минут)
 - PetMoodCalculatorJob (каждые 30 минут)
@@ -65,6 +68,7 @@ dotnet run
 ## Troubleshooting
 
 ### Ошибка: Bot configuration is missing
+
 ```bash
 # Проверьте user secrets
 dotnet user-secrets list
@@ -75,6 +79,7 @@ dotnet user-secrets list
 ```
 
 ### Ошибка: Cannot connect to PostgreSQL
+
 ```bash
 # Проверьте PostgreSQL
 pg_isready
@@ -84,6 +89,7 @@ dotnet user-secrets list | grep ConnectionStrings
 ```
 
 ### Ошибка: Quartz tables not found
+
 ```bash
 # Quartz создаст таблицы автоматически при первом запуске
 # Проверьте логи на ошибки
@@ -99,15 +105,15 @@ dotnet user-secrets list | grep ConnectionStrings
 
 ## Сравнение с раздельными сервисами
 
-| Что | Раздельно (Bot + Worker) | Монолит (Host) |
-|-----|--------------------------|----------------|
-| Процессов | 2 | 1 |
-| Портов | 0 (оба не слушают) | 0 |
-| Конфигураций | 2 файла | 1 файл |
-| Запуск | 2 команды | 1 команда |
-| Остановка | 2x Ctrl+C | 1x Ctrl+C |
-| Логи | 2 потока | 1 поток |
-| Отладка | Сложнее | Проще |
+| Что          | Раздельно (Bot + Worker) | Монолит (Host) |
+|--------------|--------------------------|----------------|
+| Процессов    | 2                        | 1              |
+| Портов       | 0 (оба не слушают)       | 0              |
+| Конфигураций | 2 файла                  | 1 файл         |
+| Запуск       | 2 команды                | 1 команда      |
+| Остановка    | 2x Ctrl+C                | 1x Ctrl+C      |
+| Логи         | 2 потока                 | 1 поток        |
+| Отладка      | Сложнее                  | Проще          |
 
 ## Production
 
@@ -148,6 +154,7 @@ volumes:
 ```
 
 Запуск:
+
 ```bash
 docker-compose up -d
 ```

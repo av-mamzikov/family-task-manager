@@ -1,9 +1,9 @@
-using Telegram.Bot;
-using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Tasks;
-using Mediator;
+using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
@@ -80,7 +80,7 @@ public class TasksCommandHandler(IMediator mediator)
 
     // Build inline keyboard
     var buttons = new List<InlineKeyboardButton[]>();
-    
+
     foreach (var task in activeTasks.Take(10)) // Limit to 10 tasks
     {
       buttons.Add(new[]
@@ -104,7 +104,7 @@ public class TasksCommandHandler(IMediator mediator)
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       messageText,
-      parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+      parseMode: ParseMode.Markdown,
       replyMarkup: buttons.Any() ? new InlineKeyboardMarkup(buttons) : null,
       cancellationToken: cancellationToken);
   }

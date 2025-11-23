@@ -6,8 +6,8 @@ namespace FamilyTaskManager.UnitTests.UseCases.Users;
 
 public class RegisterUserHandlerTests
 {
-  private readonly IRepository<User> _userRepository;
   private readonly RegisterUserHandler _handler;
+  private readonly IRepository<User> _userRepository;
 
   public RegisterUserHandlerTests()
   {
@@ -19,10 +19,10 @@ public class RegisterUserHandlerTests
   public async Task Handle_NewUser_CreatesUserAndReturnsId()
   {
     // Arrange
-    var command = new RegisterUserCommand(TelegramId: 123456789, Name: "John Doe");
+    var command = new RegisterUserCommand(123456789, "John Doe");
     _userRepository.FirstOrDefaultAsync(Arg.Any<GetUserByTelegramIdSpec>(), Arg.Any<CancellationToken>())
       .Returns((User?)null);
-    
+
     // Capture the added user to get its ID
     User? capturedUser = null;
     await _userRepository.AddAsync(Arg.Do<User>(u => capturedUser = u), Arg.Any<CancellationToken>());
@@ -43,8 +43,8 @@ public class RegisterUserHandlerTests
   {
     // Arrange
     var existingUser = new User(123456789, "John Doe");
-    var command = new RegisterUserCommand(TelegramId: 123456789, Name: "John Doe");
-    
+    var command = new RegisterUserCommand(123456789, "John Doe");
+
     _userRepository.FirstOrDefaultAsync(Arg.Any<GetUserByTelegramIdSpec>(), Arg.Any<CancellationToken>())
       .Returns(existingUser);
 
@@ -62,8 +62,8 @@ public class RegisterUserHandlerTests
   {
     // Arrange
     var existingUser = new User(123456789, "Old Name");
-    var command = new RegisterUserCommand(TelegramId: 123456789, Name: "New Name");
-    
+    var command = new RegisterUserCommand(123456789, "New Name");
+
     _userRepository.FirstOrDefaultAsync(Arg.Any<GetUserByTelegramIdSpec>(), Arg.Any<CancellationToken>())
       .Returns(existingUser);
 

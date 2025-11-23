@@ -1,3 +1,4 @@
+using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.UseCases.Families;
 
@@ -6,8 +7,8 @@ namespace FamilyTaskManager.UnitTests.UseCases.Families;
 public class CreateInviteCodeHandlerTests
 {
   private readonly IRepository<Family> _familyRepository;
-  private readonly IRepository<Invitation> _invitationRepository;
   private readonly CreateInviteCodeHandler _handler;
+  private readonly IRepository<Invitation> _invitationRepository;
 
   public CreateInviteCodeHandlerTests()
   {
@@ -22,14 +23,14 @@ public class CreateInviteCodeHandlerTests
     // Arrange
     var familyId = Guid.NewGuid();
     var userId = Guid.NewGuid();
-    var family = new Family("Test Family", "UTC", true);
+    var family = new Family("Test Family", "UTC");
     family.AddMember(userId, FamilyRole.Admin);
-    
-    var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId, 7);
-    
+
+    var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId);
+
     _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
-    
+
     Invitation? capturedInvitation = null;
     await _invitationRepository.AddAsync(Arg.Do<Invitation>(i => capturedInvitation = i), Arg.Any<CancellationToken>());
 
@@ -53,8 +54,8 @@ public class CreateInviteCodeHandlerTests
     // Arrange
     var familyId = Guid.NewGuid();
     var userId = Guid.NewGuid();
-    var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId, 7);
-    
+    var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId);
+
     _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns((Family?)null);
 
@@ -63,7 +64,7 @@ public class CreateInviteCodeHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.NotFound);
+    result.Status.ShouldBe(ResultStatus.NotFound);
     await _invitationRepository.DidNotReceive().AddAsync(Arg.Any<Invitation>(), Arg.Any<CancellationToken>());
   }
 
@@ -74,11 +75,11 @@ public class CreateInviteCodeHandlerTests
     var familyId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     var otherUserId = Guid.NewGuid();
-    var family = new Family("Test Family", "UTC", true);
+    var family = new Family("Test Family", "UTC");
     family.AddMember(otherUserId, FamilyRole.Admin);
-    
-    var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId, 7);
-    
+
+    var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId);
+
     _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
@@ -87,7 +88,7 @@ public class CreateInviteCodeHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.Forbidden);
+    result.Status.ShouldBe(ResultStatus.Forbidden);
     await _invitationRepository.DidNotReceive().AddAsync(Arg.Any<Invitation>(), Arg.Any<CancellationToken>());
   }
 
@@ -97,11 +98,11 @@ public class CreateInviteCodeHandlerTests
     // Arrange
     var familyId = Guid.NewGuid();
     var userId = Guid.NewGuid();
-    var family = new Family("Test Family", "UTC", true);
+    var family = new Family("Test Family", "UTC");
     family.AddMember(userId, FamilyRole.Adult); // Not Admin
-    
-    var command = new CreateInviteCodeCommand(familyId, FamilyRole.Child, userId, 7);
-    
+
+    var command = new CreateInviteCodeCommand(familyId, FamilyRole.Child, userId);
+
     _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
@@ -110,7 +111,7 @@ public class CreateInviteCodeHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.Forbidden);
+    result.Status.ShouldBe(ResultStatus.Forbidden);
     await _invitationRepository.DidNotReceive().AddAsync(Arg.Any<Invitation>(), Arg.Any<CancellationToken>());
   }
 
@@ -120,14 +121,14 @@ public class CreateInviteCodeHandlerTests
     // Arrange
     var familyId = Guid.NewGuid();
     var userId = Guid.NewGuid();
-    var family = new Family("Test Family", "UTC", true);
+    var family = new Family("Test Family", "UTC");
     family.AddMember(userId, FamilyRole.Admin);
-    
+
     var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId, 14);
-    
+
     _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
-    
+
     Invitation? capturedInvitation = null;
     await _invitationRepository.AddAsync(Arg.Do<Invitation>(i => capturedInvitation = i), Arg.Any<CancellationToken>());
 

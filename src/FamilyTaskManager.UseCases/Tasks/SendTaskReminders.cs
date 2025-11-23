@@ -5,21 +5,21 @@ using Microsoft.Extensions.Logging;
 namespace FamilyTaskManager.UseCases.Tasks;
 
 /// <summary>
-/// Command to send reminders for all tasks that are due soon
+///   Command to send reminders for all tasks that are due soon
 /// </summary>
 public record SendTaskRemindersCommand : ICommand<Result>;
 
 public class SendTaskRemindersHandler(
   IMediator mediator,
   ITimeZoneService timeZoneService,
-  ILogger<SendTaskRemindersHandler> logger) 
+  ILogger<SendTaskRemindersHandler> logger)
   : ICommandHandler<SendTaskRemindersCommand, Result>
 {
   public async ValueTask<Result> Handle(SendTaskRemindersCommand command, CancellationToken cancellationToken)
   {
     // Get all active families to process reminders in their respective timezones
     var familiesResult = await mediator.Send(new GetActiveFamiliesQuery(), cancellationToken);
-    
+
     if (!familiesResult.IsSuccess)
     {
       return Result.Error("Failed to retrieve active families");
@@ -35,22 +35,22 @@ public class SendTaskRemindersHandler(
         // Get current time in family timezone
         var familyNow = timeZoneService.GetCurrentTimeInTimeZone(family.Timezone);
         var oneHourFromNow = familyNow.AddHours(1);
-        
+
         // Convert back to UTC for database query
         var utcFrom = timeZoneService.ConvertToUtc(familyNow, family.Timezone);
         var utcTo = timeZoneService.ConvertToUtc(oneHourFromNow, family.Timezone);
-        
+
         var tasksResult = await mediator.Send(
-          new GetTasksDueForReminderQuery(utcFrom, utcTo), 
+          new GetTasksDueForReminderQuery(utcFrom, utcTo),
           cancellationToken);
-        
+
         if (!tasksResult.IsSuccess)
         {
           continue; // Skip this family but continue with others
         }
 
         var tasks = tasksResult.Value.Where(t => t.FamilyId == family.Id).ToList();
-        
+
         // Trigger reminder for each task (will register domain events)
         foreach (var task in tasks)
         {
@@ -65,7 +65,8 @@ public class SendTaskRemindersHandler(
       }
     }
 
-    logger.LogInformation("Sent {Count} task reminders across {FamilyCount} families", totalRemindersSent, families.Count);
+    logger.LogInformation("Sent {Count} task reminders across {FamilyCount} families", totalRemindersSent,
+      families.Count);
     return Result.Success();
   }
 }

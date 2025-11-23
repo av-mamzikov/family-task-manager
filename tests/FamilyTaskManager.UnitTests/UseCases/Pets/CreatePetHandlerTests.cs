@@ -1,5 +1,6 @@
-using FamilyTaskManager.Core.PetAggregate;
+using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.UseCases.Pets;
 
@@ -7,10 +8,10 @@ namespace FamilyTaskManager.UnitTests.UseCases.Pets;
 
 public class CreatePetHandlerTests
 {
-  private readonly IRepository<Pet> _petRepository;
   private readonly IRepository<Family> _familyRepository;
-  private readonly IRepository<TaskTemplate> _taskTemplateRepository;
   private readonly CreatePetHandler _handler;
+  private readonly IRepository<Pet> _petRepository;
+  private readonly IRepository<TaskTemplate> _taskTemplateRepository;
 
   public CreatePetHandlerTests()
   {
@@ -25,12 +26,12 @@ public class CreatePetHandlerTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var family = new Family("Smith Family", "UTC", true);
+    var family = new Family("Smith Family", "UTC");
     var command = new CreatePetCommand(familyId, PetType.Cat, "Fluffy");
-    
+
     _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
-    
+
     Pet? capturedPet = null;
     await _petRepository.AddAsync(Arg.Do<Pet>(p => capturedPet = p), Arg.Any<CancellationToken>());
 
@@ -52,7 +53,7 @@ public class CreatePetHandlerTests
   {
     // Arrange
     var command = new CreatePetCommand(Guid.NewGuid(), PetType.Dog, "Buddy");
-    
+
     _familyRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
       .Returns((Family?)null);
 
@@ -61,7 +62,7 @@ public class CreatePetHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.NotFound);
+    result.Status.ShouldBe(ResultStatus.NotFound);
   }
 
   [Theory]
@@ -72,9 +73,9 @@ public class CreatePetHandlerTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var family = new Family("Smith Family", "UTC", true);
+    var family = new Family("Smith Family", "UTC");
     var command = new CreatePetCommand(familyId, PetType.Cat, name);
-    
+
     _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
@@ -83,7 +84,7 @@ public class CreatePetHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.Invalid);
+    result.Status.ShouldBe(ResultStatus.Invalid);
   }
 
   [Theory]
@@ -94,9 +95,9 @@ public class CreatePetHandlerTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var family = new Family("Smith Family", "UTC", true);
+    var family = new Family("Smith Family", "UTC");
     var command = new CreatePetCommand(familyId, petType, "Pet Name");
-    
+
     _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
@@ -118,9 +119,9 @@ public class CreatePetHandlerTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var family = new Family("Smith Family", "UTC", true);
+    var family = new Family("Smith Family", "UTC");
     var command = new CreatePetCommand(familyId, petType, "Pet Name");
-    
+
     _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
@@ -139,9 +140,9 @@ public class CreatePetHandlerTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var family = new Family("Smith Family", "UTC", true);
+    var family = new Family("Smith Family", "UTC");
     var command = new CreatePetCommand(familyId, PetType.Cat, "Fluffy");
-    
+
     _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
@@ -156,16 +157,17 @@ public class CreatePetHandlerTests
     // Assert
     result.IsSuccess.ShouldBeTrue();
     capturedTemplates.Count.ShouldBe(8);
-    
+
     // Verify some key templates
     capturedTemplates.ShouldContain(t => t.Title == "Убрать какахи из лотка кота" && t.Points == 4);
     capturedTemplates.ShouldContain(t => t.Title == "Налить свежую воду коту" && t.Points == 3);
     capturedTemplates.ShouldContain(t => t.Title == "Поиграть с котом" && t.Points == 2);
-    
+
     // All templates should belong to the same family and pet
     capturedTemplates.ShouldAllBe(t => t.FamilyId == familyId);
     capturedTemplates.ShouldAllBe(t => t.IsActive);
-    capturedTemplates.ShouldAllBe(t => t.CreatedBy == new Guid("00000000-0000-0000-0000-000000000001")); // System-created
+    capturedTemplates.ShouldAllBe(t =>
+      t.CreatedBy == new Guid("00000000-0000-0000-0000-000000000001")); // System-created
   }
 
   [Fact]
@@ -173,9 +175,9 @@ public class CreatePetHandlerTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var family = new Family("Smith Family", "UTC", true);
+    var family = new Family("Smith Family", "UTC");
     var command = new CreatePetCommand(familyId, PetType.Dog, "Buddy");
-    
+
     _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
@@ -190,7 +192,7 @@ public class CreatePetHandlerTests
     // Assert
     result.IsSuccess.ShouldBeTrue();
     capturedTemplates.Count.ShouldBe(6);
-    
+
     // Verify some key templates
     capturedTemplates.ShouldContain(t => t.Title == "Выгулять собаку утром" && t.Points == 5);
     capturedTemplates.ShouldContain(t => t.Title == "Выгулять собаку вечером" && t.Points == 5);
@@ -202,9 +204,9 @@ public class CreatePetHandlerTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var family = new Family("Smith Family", "UTC", true);
+    var family = new Family("Smith Family", "UTC");
     var command = new CreatePetCommand(familyId, PetType.Hamster, "Nibbles");
-    
+
     _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
@@ -219,7 +221,7 @@ public class CreatePetHandlerTests
     // Assert
     result.IsSuccess.ShouldBeTrue();
     capturedTemplates.Count.ShouldBe(5);
-    
+
     // Verify some key templates
     capturedTemplates.ShouldContain(t => t.Title == "Насыпать корм хомяку" && t.Points == 2);
     capturedTemplates.ShouldContain(t => t.Title == "Убрать клетку хомяка" && t.Points == 5);

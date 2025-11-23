@@ -36,11 +36,11 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
   {
     // Arrange
     var taskTemplate = new TaskTemplate(
-      Guid.NewGuid(), 
-      Guid.NewGuid(), 
-      "Original Title", 
-      5, 
-      "0 9 * * *", 
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      "Original Title",
+      5,
+      "0 9 * * *",
       Guid.NewGuid()
     );
     await Repository.AddAsync(taskTemplate);
@@ -64,11 +64,11 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
   {
     // Arrange
     var taskTemplate = new TaskTemplate(
-      Guid.NewGuid(), 
-      Guid.NewGuid(), 
-      "Task to Deactivate", 
-      10, 
-      "0 8 * * *", 
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      "Task to Deactivate",
+      10,
+      "0 8 * * *",
       Guid.NewGuid()
     );
     await Repository.AddAsync(taskTemplate);
@@ -90,11 +90,11 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
   {
     // Arrange
     var taskTemplate = new TaskTemplate(
-      Guid.NewGuid(), 
-      Guid.NewGuid(), 
-      "Task to Delete", 
-      10, 
-      "0 8 * * *", 
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      "Task to Delete",
+      10,
+      "0 8 * * *",
       Guid.NewGuid()
     );
     await Repository.AddAsync(taskTemplate);
@@ -173,11 +173,11 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
   {
     // Arrange
     var taskTemplate = new TaskTemplate(
-      Guid.NewGuid(), 
-      Guid.NewGuid(), 
-      "Test Task", 
-      10, 
-      "0 8 * * *", 
+      Guid.NewGuid(),
+      Guid.NewGuid(),
+      "Test Task",
+      10,
+      "0 8 * * *",
       Guid.NewGuid()
     );
     await Repository.AddAsync(taskTemplate);

@@ -102,7 +102,7 @@ public class TaskInstanceTests
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => 
+    Should.Throw<ArgumentException>(() =>
       new TaskInstance(familyId, petId, title, points, type, dueAt));
   }
 
@@ -118,7 +118,7 @@ public class TaskInstanceTests
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => 
+    Should.Throw<ArgumentException>(() =>
       new TaskInstance(familyId, petId, title, points, type, dueAt));
   }
 
@@ -136,7 +136,7 @@ public class TaskInstanceTests
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => 
+    Should.Throw<ArgumentException>(() =>
       new TaskInstance(familyId, petId, invalidTitle!, points, type, dueAt));
   }
 
@@ -155,7 +155,7 @@ public class TaskInstanceTests
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => 
+    Should.Throw<ArgumentException>(() =>
       new TaskInstance(familyId, petId, title, invalidPoints, type, dueAt));
   }
 

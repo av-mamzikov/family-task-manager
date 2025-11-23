@@ -18,7 +18,8 @@ public class GetActionHistoryHandler(
   IRepository<ActionHistory> historyRepository,
   IRepository<User> userRepository) : IQueryHandler<GetActionHistoryQuery, Result<List<ActionHistoryDto>>>
 {
-  public async ValueTask<Result<List<ActionHistoryDto>>> Handle(GetActionHistoryQuery query, CancellationToken cancellationToken)
+  public async ValueTask<Result<List<ActionHistoryDto>>> Handle(GetActionHistoryQuery query,
+    CancellationToken cancellationToken)
   {
     var spec = new GetActionHistorySpec(query.FamilyId, query.UserId, query.DaysBack, query.Limit);
     var history = await historyRepository.ListAsync(spec, cancellationToken);

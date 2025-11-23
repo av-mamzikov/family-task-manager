@@ -2,7 +2,7 @@ using FamilyTaskManager.Core.Interfaces;
 
 namespace FamilyTaskManager.UseCases.Families;
 
-public record CreateFamilyCommand(Guid UserId, string Name, string Timezone, bool LeaderboardEnabled = true) 
+public record CreateFamilyCommand(Guid UserId, string Name, string Timezone, bool LeaderboardEnabled = true)
   : ICommand<Result<Guid>>;
 
 public class CreateFamilyHandler(
@@ -27,10 +27,10 @@ public class CreateFamilyHandler(
 
     // Create family
     var family = new Family(command.Name, command.Timezone, command.LeaderboardEnabled);
-    
+
     // Add creator as Admin
     family.AddMember(command.UserId, FamilyRole.Admin);
-    
+
     await familyRepository.AddAsync(family, cancellationToken);
 
     return Result<Guid>.Success(family.Id);

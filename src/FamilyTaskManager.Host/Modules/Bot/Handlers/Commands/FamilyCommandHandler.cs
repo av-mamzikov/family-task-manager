@@ -1,12 +1,10 @@
-using Telegram.Bot;
-using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
-using FamilyTaskManager.Host.Modules.Bot.Services;
+using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Families;
-using FamilyTaskManager.UseCases.Users;
-using FamilyTaskManager.Core.FamilyAggregate;
-using Mediator;
+using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 
@@ -41,7 +39,7 @@ public class FamilyCommandHandler(IMediator mediator)
 
     // Build family list message
     var messageText = "🏠 *Ваши семьи:*\n\n";
-    
+
     foreach (var family in families)
     {
       var isActive = family.Id == currentFamilyId;
@@ -53,7 +51,7 @@ public class FamilyCommandHandler(IMediator mediator)
 
     // Build inline keyboard
     var buttons = new List<InlineKeyboardButton[]>();
-    
+
     foreach (var family in families)
     {
       if (family.Id != currentFamilyId)
@@ -67,10 +65,7 @@ public class FamilyCommandHandler(IMediator mediator)
       }
     }
 
-    buttons.Add(new[]
-    {
-      InlineKeyboardButton.WithCallbackData("➕ Создать новую семью", "create_family")
-    });
+    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать новую семью", "create_family") });
 
     // Add admin actions for current family
     var currentFamily = families.FirstOrDefault(f => f.Id == currentFamilyId);
@@ -90,24 +85,30 @@ public class FamilyCommandHandler(IMediator mediator)
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       messageText,
-      parseMode: Telegram.Bot.Types.Enums.ParseMode.Markdown,
+      parseMode: ParseMode.Markdown,
       replyMarkup: new InlineKeyboardMarkup(buttons),
       cancellationToken: cancellationToken);
   }
 
-  private string GetRoleEmoji(FamilyRole role) => role switch
+  private string GetRoleEmoji(FamilyRole role)
   {
-    FamilyRole.Admin => "👑",
-    FamilyRole.Adult => "👤",
-    FamilyRole.Child => "👶",
-    _ => "❓"
-  };
+    return role switch
+    {
+      FamilyRole.Admin => "👑",
+      FamilyRole.Adult => "👤",
+      FamilyRole.Child => "👶",
+      _ => "❓"
+    };
+  }
 
-  private string GetRoleText(FamilyRole role) => role switch
+  private string GetRoleText(FamilyRole role)
   {
-    FamilyRole.Admin => "Администратор",
-    FamilyRole.Adult => "Взрослый",
-    FamilyRole.Child => "Ребёнок",
-    _ => "Неизвестно"
-  };
+    return role switch
+    {
+      FamilyRole.Admin => "Администратор",
+      FamilyRole.Adult => "Взрослый",
+      FamilyRole.Child => "Ребёнок",
+      _ => "Неизвестно"
+    };
+  }
 }

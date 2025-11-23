@@ -1,20 +1,19 @@
+using Ardalis.Result;
+using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Families;
-using FamilyTaskManager.Core.FamilyAggregate;
-using Mediator;
 using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Requests;
-using Ardalis.Result;
+using Telegram.Bot.Types;
 
 namespace FamilyTaskManager.UnitTests.Host.Bot.Handlers.Commands;
 
 public class FamilyCommandHandlerTests
 {
-  private readonly IMediator _mediator;
-  private readonly FamilyCommandHandler _handler;
   private readonly ITelegramBotClient _botClient;
+  private readonly FamilyCommandHandler _handler;
+  private readonly IMediator _mediator;
 
   public FamilyCommandHandlerTests()
   {
@@ -27,7 +26,7 @@ public class FamilyCommandHandlerTests
   public async Task HandleAsync_ShouldSendCreateFamilyPrompt_WhenUserHasNoFamilies()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var session = new UserSession();
     var userId = Guid.NewGuid();
 
@@ -47,15 +46,12 @@ public class FamilyCommandHandlerTests
   public async Task HandleAsync_ShouldDisplayFamilies_WhenUserHasFamilies()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var session = new UserSession();
     var userId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
 
-    var families = new List<FamilyDto>
-    {
-      new FamilyDto(familyId, "Test Family", "UTC", true, FamilyRole.Admin, 100)
-    };
+    var families = new List<FamilyDto> { new(familyId, "Test Family", "UTC", true, FamilyRole.Admin, 100) };
 
     _mediator.Send(Arg.Any<GetUserFamiliesQuery>(), Arg.Any<CancellationToken>())
       .Returns(Result<List<FamilyDto>>.Success(families));
@@ -65,7 +61,8 @@ public class FamilyCommandHandlerTests
 
     // Assert
     await _botClient.Received(1).MakeRequestAsync(
-      Arg.Is<SendMessageRequest>(req => req.ChatId.Identifier == 123 && req.Text.Contains("Test Family") && req.Text.Contains("Администратор")),
+      Arg.Is<SendMessageRequest>(req =>
+        req.ChatId.Identifier == 123 && req.Text.Contains("Test Family") && req.Text.Contains("Администратор")),
       Arg.Any<CancellationToken>());
   }
 
@@ -73,15 +70,12 @@ public class FamilyCommandHandlerTests
   public async Task HandleAsync_ShouldShowAdminButtons_WhenUserIsAdmin()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();
 
-    var families = new List<FamilyDto>
-    {
-      new FamilyDto(familyId, "Test Family", "UTC", true, FamilyRole.Admin, 100)
-    };
+    var families = new List<FamilyDto> { new(familyId, "Test Family", "UTC", true, FamilyRole.Admin, 100) };
 
     _mediator.Send(Arg.Any<GetUserFamiliesQuery>(), Arg.Any<CancellationToken>())
       .Returns(Result<List<FamilyDto>>.Success(families));
@@ -99,15 +93,12 @@ public class FamilyCommandHandlerTests
   public async Task HandleAsync_ShouldNotShowAdminButtons_WhenUserIsNotAdmin()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();
 
-    var families = new List<FamilyDto>
-    {
-      new FamilyDto(familyId, "Test Family", "UTC", true, FamilyRole.Child, 50)
-    };
+    var families = new List<FamilyDto> { new(familyId, "Test Family", "UTC", true, FamilyRole.Child, 50) };
 
     _mediator.Send(Arg.Any<GetUserFamiliesQuery>(), Arg.Any<CancellationToken>())
       .Returns(Result<List<FamilyDto>>.Success(families));

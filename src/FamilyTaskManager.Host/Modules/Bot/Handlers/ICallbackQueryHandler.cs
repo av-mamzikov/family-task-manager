@@ -5,5 +5,6 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
 public interface ICallbackQueryHandler
 {
-  Task HandleCallbackAsync(ITelegramBotClient botClient, CallbackQuery callbackQuery, CancellationToken cancellationToken);
+  Task HandleCallbackAsync(ITelegramBotClient botClient, CallbackQuery callbackQuery,
+    CancellationToken cancellationToken);
 }

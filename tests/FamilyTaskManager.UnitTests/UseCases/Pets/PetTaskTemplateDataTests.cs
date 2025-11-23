@@ -74,7 +74,7 @@ public class PetTaskTemplateDataTests
     foreach (var petType in allPetTypes)
     {
       var templates = PetTaskTemplateData.GetDefaultTemplates(petType);
-      
+
       foreach (var template in templates)
       {
         template.Schedule.ShouldNotBeNullOrWhiteSpace();

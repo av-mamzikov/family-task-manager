@@ -1,20 +1,19 @@
+using Ardalis.Result;
+using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Statistics;
-using FamilyTaskManager.Core.FamilyAggregate;
-using Mediator;
 using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Requests;
-using Ardalis.Result;
+using Telegram.Bot.Types;
 
 namespace FamilyTaskManager.UnitTests.Host.Bot.Handlers.Commands;
 
 public class StatsCommandHandlerTests
 {
-  private readonly IMediator _mediator;
-  private readonly StatsCommandHandler _handler;
   private readonly ITelegramBotClient _botClient;
+  private readonly StatsCommandHandler _handler;
+  private readonly IMediator _mediator;
 
   public StatsCommandHandlerTests()
   {
@@ -27,7 +26,7 @@ public class StatsCommandHandlerTests
   public async Task HandleAsync_ShouldPromptSelectFamily_WhenNoActiveFamilySelected()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var session = new UserSession();
     var userId = Guid.NewGuid();
 
@@ -44,7 +43,7 @@ public class StatsCommandHandlerTests
   public async Task HandleAsync_ShouldDisplayDisabledMessage_WhenLeaderboardIsDisabled()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();
@@ -65,16 +64,16 @@ public class StatsCommandHandlerTests
   public async Task HandleAsync_ShouldDisplayLeaderboard_WhenEntriesExist()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();
 
     var entries = new List<LeaderboardEntryDto>
     {
-      new LeaderboardEntryDto(Guid.NewGuid(), "Alice", 100, FamilyRole.Admin),
-      new LeaderboardEntryDto(userId, "Bob", 80, FamilyRole.Adult),
-      new LeaderboardEntryDto(Guid.NewGuid(), "Charlie", 50, FamilyRole.Child)
+      new(Guid.NewGuid(), "Alice", 100, FamilyRole.Admin),
+      new(userId, "Bob", 80, FamilyRole.Adult),
+      new(Guid.NewGuid(), "Charlie", 50, FamilyRole.Child)
     };
 
     _mediator.Send(Arg.Any<GetLeaderboardQuery>(), Arg.Any<CancellationToken>())
@@ -85,7 +84,8 @@ public class StatsCommandHandlerTests
 
     // Assert
     await _botClient.Received(1).MakeRequestAsync(
-      Arg.Is<SendMessageRequest>(req => req.Text.Contains("Alice") && req.Text.Contains("Bob") && req.Text.Contains("Charlie")),
+      Arg.Is<SendMessageRequest>(req =>
+        req.Text.Contains("Alice") && req.Text.Contains("Bob") && req.Text.Contains("Charlie")),
       Arg.Any<CancellationToken>());
   }
 
@@ -93,16 +93,16 @@ public class StatsCommandHandlerTests
   public async Task HandleAsync_ShouldShowMedals_ForTopThreePlaces()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();
 
     var entries = new List<LeaderboardEntryDto>
     {
-      new LeaderboardEntryDto(Guid.NewGuid(), "First", 100, FamilyRole.Admin),
-      new LeaderboardEntryDto(Guid.NewGuid(), "Second", 80, FamilyRole.Adult),
-      new LeaderboardEntryDto(Guid.NewGuid(), "Third", 60, FamilyRole.Child)
+      new(Guid.NewGuid(), "First", 100, FamilyRole.Admin),
+      new(Guid.NewGuid(), "Second", 80, FamilyRole.Adult),
+      new(Guid.NewGuid(), "Third", 60, FamilyRole.Child)
     };
 
     _mediator.Send(Arg.Any<GetLeaderboardQuery>(), Arg.Any<CancellationToken>())
@@ -121,15 +121,14 @@ public class StatsCommandHandlerTests
   public async Task HandleAsync_ShouldHighlightCurrentUser_InLeaderboard()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();
 
     var entries = new List<LeaderboardEntryDto>
     {
-      new LeaderboardEntryDto(Guid.NewGuid(), "Alice", 100, FamilyRole.Admin),
-      new LeaderboardEntryDto(userId, "CurrentUser", 80, FamilyRole.Adult)
+      new(Guid.NewGuid(), "Alice", 100, FamilyRole.Admin), new(userId, "CurrentUser", 80, FamilyRole.Adult)
     };
 
     _mediator.Send(Arg.Any<GetLeaderboardQuery>(), Arg.Any<CancellationToken>())

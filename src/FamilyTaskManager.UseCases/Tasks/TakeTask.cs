@@ -2,7 +2,7 @@ namespace FamilyTaskManager.UseCases.Tasks;
 
 public record TakeTaskCommand(Guid TaskId, Guid UserId) : ICommand<Result>;
 
-public class TakeTaskHandler(IRepository<TaskInstance> taskRepository) 
+public class TakeTaskHandler(IRepository<TaskInstance> taskRepository)
   : ICommandHandler<TakeTaskCommand, Result>
 {
   public async ValueTask<Result> Handle(TakeTaskCommand command, CancellationToken cancellationToken)

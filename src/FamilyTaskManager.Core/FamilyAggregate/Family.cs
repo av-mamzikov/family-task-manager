@@ -1,14 +1,10 @@
+using FamilyTaskManager.Core.FamilyAggregate.Events;
+
 namespace FamilyTaskManager.Core.FamilyAggregate;
 
 public class Family : EntityBase<Family, Guid>, IAggregateRoot
 {
-  public string Name { get; private set; } = null!;
-  public DateTime CreatedAt { get; private set; }
-  public string Timezone { get; private set; } = null!;
-  public bool LeaderboardEnabled { get; private set; }
-
   private readonly List<FamilyMember> _members = [];
-  public IReadOnlyCollection<FamilyMember> Members => _members.AsReadOnly();
 
   private Family() { }
 
@@ -23,15 +19,21 @@ public class Family : EntityBase<Family, Guid>, IAggregateRoot
     LeaderboardEnabled = leaderboardEnabled;
     CreatedAt = DateTime.UtcNow;
 
-    RegisterDomainEvent(new Events.FamilyCreatedEvent(this));
+    RegisterDomainEvent(new FamilyCreatedEvent(this));
   }
+
+  public string Name { get; private set; } = null!;
+  public DateTime CreatedAt { get; private set; }
+  public string Timezone { get; private set; } = null!;
+  public bool LeaderboardEnabled { get; private set; }
+  public IReadOnlyCollection<FamilyMember> Members => _members.AsReadOnly();
 
   public FamilyMember AddMember(Guid userId, FamilyRole role)
   {
-    var member = new FamilyMember(userId, this.Id, role);
+    var member = new FamilyMember(userId, Id, role);
     _members.Add(member);
 
-    RegisterDomainEvent(new Events.MemberAddedEvent(this, member));
+    RegisterDomainEvent(new MemberAddedEvent(this, member));
 
     return member;
   }

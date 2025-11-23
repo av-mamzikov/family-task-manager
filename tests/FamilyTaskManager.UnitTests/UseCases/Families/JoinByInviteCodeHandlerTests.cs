@@ -1,3 +1,5 @@
+using System.Reflection;
+using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.UserAggregate;
 using FamilyTaskManager.UseCases.Families;
@@ -8,9 +10,9 @@ namespace FamilyTaskManager.UnitTests.UseCases.Families;
 public class JoinByInviteCodeHandlerTests
 {
   private readonly IRepository<Family> _familyRepository;
-  private readonly IRepository<User> _userRepository;
-  private readonly IRepository<Invitation> _invitationRepository;
   private readonly JoinByInviteCodeHandler _handler;
+  private readonly IRepository<Invitation> _invitationRepository;
+  private readonly IRepository<User> _userRepository;
 
   public JoinByInviteCodeHandlerTests()
   {
@@ -27,17 +29,17 @@ public class JoinByInviteCodeHandlerTests
     var userId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
     var user = new User(123456789, "John Doe");
-    var family = new Family("Test Family", "UTC", true);
-    var invitation = new Invitation(familyId, FamilyRole.Adult, Guid.NewGuid(), 7);
-    
+    var family = new Family("Test Family", "UTC");
+    var invitation = new Invitation(familyId, FamilyRole.Adult, Guid.NewGuid());
+
     var command = new JoinByInviteCodeCommand(userId, invitation.Code);
-    
+
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
-    
+
     _invitationRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
       .Returns(invitation);
-    
+
     _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
@@ -60,7 +62,7 @@ public class JoinByInviteCodeHandlerTests
     // Arrange
     var userId = Guid.NewGuid();
     var command = new JoinByInviteCodeCommand(userId, "TESTCODE");
-    
+
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns((User?)null);
 
@@ -69,7 +71,7 @@ public class JoinByInviteCodeHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.NotFound);
+    result.Status.ShouldBe(ResultStatus.NotFound);
   }
 
   [Fact]
@@ -79,10 +81,10 @@ public class JoinByInviteCodeHandlerTests
     var userId = Guid.NewGuid();
     var user = new User(123456789, "John Doe");
     var command = new JoinByInviteCodeCommand(userId, "INVALID");
-    
+
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
-    
+
     _invitationRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
       .Returns((Invitation?)null);
 
@@ -91,7 +93,7 @@ public class JoinByInviteCodeHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.NotFound);
+    result.Status.ShouldBe(ResultStatus.NotFound);
   }
 
   [Fact]
@@ -102,17 +104,17 @@ public class JoinByInviteCodeHandlerTests
     var familyId = Guid.NewGuid();
     var user = new User(123456789, "John Doe");
     var invitation = new Invitation(familyId, FamilyRole.Adult, Guid.NewGuid(), 1);
-    
+
     // Use reflection to set ExpiresAt to a past date to make it expired
-    var expiresAtProperty = typeof(Invitation).GetProperty("ExpiresAt", 
-        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+    var expiresAtProperty = typeof(Invitation).GetProperty("ExpiresAt",
+      BindingFlags.Public | BindingFlags.Instance);
     expiresAtProperty!.SetValue(invitation, DateTime.UtcNow.AddDays(-1));
-    
+
     var command = new JoinByInviteCodeCommand(userId, invitation.Code);
-    
+
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
-    
+
     _invitationRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
       .Returns(invitation);
 
@@ -131,14 +133,14 @@ public class JoinByInviteCodeHandlerTests
     var userId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
     var user = new User(123456789, "John Doe");
-    var invitation = new Invitation(familyId, FamilyRole.Adult, Guid.NewGuid(), 7);
+    var invitation = new Invitation(familyId, FamilyRole.Adult, Guid.NewGuid());
     invitation.Deactivate();
-    
+
     var command = new JoinByInviteCodeCommand(userId, invitation.Code);
-    
+
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
-    
+
     _invitationRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
       .Returns(invitation);
 
@@ -157,18 +159,18 @@ public class JoinByInviteCodeHandlerTests
     var userId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
     var user = new User(123456789, "John Doe");
-    var family = new Family("Test Family", "UTC", true);
+    var family = new Family("Test Family", "UTC");
     family.AddMember(userId, FamilyRole.Child); // User already in family
-    var invitation = new Invitation(familyId, FamilyRole.Adult, Guid.NewGuid(), 7);
-    
+    var invitation = new Invitation(familyId, FamilyRole.Adult, Guid.NewGuid());
+
     var command = new JoinByInviteCodeCommand(userId, invitation.Code);
-    
+
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
-    
+
     _invitationRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
       .Returns(invitation);
-    
+
     _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
@@ -187,16 +189,16 @@ public class JoinByInviteCodeHandlerTests
     var userId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
     var user = new User(123456789, "John Doe");
-    var invitation = new Invitation(familyId, FamilyRole.Adult, Guid.NewGuid(), 7);
-    
+    var invitation = new Invitation(familyId, FamilyRole.Adult, Guid.NewGuid());
+
     var command = new JoinByInviteCodeCommand(userId, invitation.Code);
-    
+
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
-    
+
     _invitationRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
       .Returns(invitation);
-    
+
     _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns((Family?)null);
 
@@ -205,6 +207,6 @@ public class JoinByInviteCodeHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(Ardalis.Result.ResultStatus.NotFound);
+    result.Status.ShouldBe(ResultStatus.NotFound);
   }
 }

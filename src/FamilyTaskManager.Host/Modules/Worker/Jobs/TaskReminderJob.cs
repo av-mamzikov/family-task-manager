@@ -1,19 +1,18 @@
-using Mediator;
-using Quartz;
 using FamilyTaskManager.UseCases.Tasks;
+using Quartz;
 
 namespace FamilyTaskManager.Host.Modules.Worker.Jobs;
 
 /// <summary>
-/// Job that triggers reminders for tasks due within the next hour.
-/// Runs every 15 minutes.
-/// Domain events handle the actual notification sending.
+///   Job that triggers reminders for tasks due within the next hour.
+///   Runs every 15 minutes.
+///   Domain events handle the actual notification sending.
 /// </summary>
 [DisallowConcurrentExecution]
 public class TaskReminderJob : IJob
 {
-  private readonly IMediator _mediator;
   private readonly ILogger<TaskReminderJob> _logger;
+  private readonly IMediator _mediator;
 
   public TaskReminderJob(
     IMediator mediator,

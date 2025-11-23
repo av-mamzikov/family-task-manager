@@ -30,20 +30,20 @@ public class CreatePetHandler(
     var defaultTemplates = PetTaskTemplateData.GetDefaultTemplates(command.Type);
     // Use a well-known GUID for system-created templates (not Guid.Empty to pass validation)
     var systemUserId = new Guid("00000000-0000-0000-0000-000000000001");
-    
+
     foreach (var templateData in defaultTemplates)
     {
       var taskTemplate = new TaskTemplate(
-        familyId: command.FamilyId,
-        petId: pet.Id,
-        title: templateData.Title,
-        points: templateData.Points,
-        schedule: templateData.Schedule,
-        createdBy: systemUserId);
-      
+        command.FamilyId,
+        pet.Id,
+        templateData.Title,
+        templateData.Points,
+        templateData.Schedule,
+        systemUserId);
+
       await taskTemplateRepository.AddAsync(taskTemplate, cancellationToken);
     }
-    
+
     await taskTemplateRepository.SaveChangesAsync(cancellationToken);
 
     return Result<Guid>.Success(pet.Id);

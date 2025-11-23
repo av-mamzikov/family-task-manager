@@ -23,6 +23,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
   }
 
-  public override int SaveChanges() =>
-        SaveChangesAsync().GetAwaiter().GetResult();
+  public override int SaveChanges()
+  {
+    return SaveChangesAsync().GetAwaiter().GetResult();
+  }
 }

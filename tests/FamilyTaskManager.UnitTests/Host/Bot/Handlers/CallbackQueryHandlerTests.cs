@@ -1,28 +1,24 @@
-using FamilyTaskManager.Host.Modules.Bot.Handlers;
-using FamilyTaskManager.Host.Modules.Bot.Services;
-using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.UseCases.Users;
-using FamilyTaskManager.UseCases.Families;
-using FamilyTaskManager.UseCases.Pets;
-using FamilyTaskManager.UseCases.Tasks;
-using FamilyTaskManager.Core.PetAggregate;
-using Mediator;
-using Telegram.Bot;
-using Telegram.Bot.Types;
-using Telegram.Bot.Requests;
 using Ardalis.Result;
 using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.Host.Modules.Bot.Handlers;
+using FamilyTaskManager.Host.Modules.Bot.Models;
+using FamilyTaskManager.Host.Modules.Bot.Services;
+using FamilyTaskManager.UseCases.Tasks;
+using FamilyTaskManager.UseCases.Users;
+using Telegram.Bot;
+using Telegram.Bot.Requests;
+using Telegram.Bot.Types;
 
 namespace FamilyTaskManager.UnitTests.Host.Bot.Handlers;
 
 public class CallbackQueryHandlerTests
 {
+  private readonly ITelegramBotClient _botClient;
+  private readonly CallbackQueryHandler _handler;
+  private readonly ILogger<CallbackQueryHandler> _logger;
   private readonly IMediator _mediator;
   private readonly ISessionManager _sessionManager;
-  private readonly ILogger<CallbackQueryHandler> _logger;
   private readonly ITimeZoneService _timeZoneService;
-  private readonly CallbackQueryHandler _handler;
-  private readonly ITelegramBotClient _botClient;
 
   public CallbackQueryHandlerTests()
   {
@@ -262,12 +258,7 @@ public class CallbackQueryHandlerTests
       Id = "callback_id",
       Data = data,
       From = new User { Id = chatId, FirstName = "Test" },
-      Message = new Message
-      {
-        MessageId = 1,
-        Chat = new Chat { Id = chatId },
-        Date = DateTime.UtcNow
-      }
+      Message = new Message { MessageId = 1, Chat = new Chat { Id = chatId }, Date = DateTime.UtcNow }
     };
   }
 }

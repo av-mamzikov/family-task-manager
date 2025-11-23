@@ -7,14 +7,17 @@ Application Layer проекта, содержащий бизнес-логику
 ## Реализованные Use Cases
 
 ### 👤 Users (Пользователи)
+
 - **RegisterUserCommand** - Регистрация/обновление пользователя по TelegramId
 
 ### 👨‍👩‍👧‍👦 Families (Семьи)
+
 - **CreateFamilyCommand** - Создание новой семьи
 - **JoinFamilyCommand** - Присоединение к семье
 - **GetUserFamiliesQuery** - Получение списка семей пользователя
 
 ### ✅ Tasks (Задачи)
+
 - **CreateTaskCommand** - Создание разовой задачи
 - **TakeTaskCommand** - Взятие задачи в работу
 - **CompleteTaskCommand** - Выполнение задачи с начислением очков
@@ -24,25 +27,31 @@ Application Layer проекта, содержащий бизнес-логику
 - **DeactivateTaskTemplateCommand** - Деактивация шаблона
 
 ### 🐾 Pets (Питомцы)
+
 - **CreatePetCommand** - Создание питомца
 - **GetPetsQuery** - Получение списка питомцев
 - **UpdatePetNameCommand** - Изменение имени питомца
 
 ### 📊 Statistics (Статистика)
+
 - **GetLeaderboardQuery** - Получение лидерборда семьи
 - **GetActionHistoryQuery** - Получение истории действий
 
 ## Архитектура
 
 ### CQRS Pattern
+
 - **Commands** - изменяют состояние, возвращают `Result` или `Result<T>`
 - **Queries** - только читают данные, не изменяют состояние
 
 ### Specification Pattern
+
 Используется для инкапсуляции логики запросов к БД.
 
 ### Result Pattern
+
 Все Use Cases возвращают типизированные результаты:
+
 - `Result.Success()` / `Result<T>.Success(value)`
 - `Result.Error(message)`
 - `Result.NotFound(message)`
@@ -75,7 +84,7 @@ if (result.IsSuccess)
 ## Зависимости
 
 - `Ardalis.Result` - Result pattern
-- `Ardalis.Specification` - Specification pattern  
+- `Ardalis.Specification` - Specification pattern
 - `Mediator.Abstractions` - CQRS pattern
 - `FamilyTaskManager.Core` - Domain model
 

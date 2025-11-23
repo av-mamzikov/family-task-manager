@@ -1,20 +1,19 @@
+using Ardalis.Result;
+using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Pets;
-using FamilyTaskManager.Core.PetAggregate;
-using Mediator;
 using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Requests;
-using Ardalis.Result;
+using Telegram.Bot.Types;
 
 namespace FamilyTaskManager.UnitTests.Host.Bot.Handlers.Commands;
 
 public class PetCommandHandlerTests
 {
-  private readonly IMediator _mediator;
-  private readonly PetCommandHandler _handler;
   private readonly ITelegramBotClient _botClient;
+  private readonly PetCommandHandler _handler;
+  private readonly IMediator _mediator;
 
   public PetCommandHandlerTests()
   {
@@ -27,7 +26,7 @@ public class PetCommandHandlerTests
   public async Task HandleAsync_ShouldPromptSelectFamily_WhenNoActiveFamilySelected()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var session = new UserSession(); // No CurrentFamilyId
     var userId = Guid.NewGuid();
 
@@ -44,7 +43,7 @@ public class PetCommandHandlerTests
   public async Task HandleAsync_ShouldDisplayNoPetsMessage_WhenNoPetsExist()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();
@@ -65,15 +64,14 @@ public class PetCommandHandlerTests
   public async Task HandleAsync_ShouldDisplayPets_WhenPetsExist()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();
 
     var pets = new List<PetDto>
     {
-      new PetDto(Guid.NewGuid(), familyId, "Fluffy", PetType.Cat, 85),
-      new PetDto(Guid.NewGuid(), familyId, "Rex", PetType.Dog, 60)
+      new(Guid.NewGuid(), familyId, "Fluffy", PetType.Cat, 85), new(Guid.NewGuid(), familyId, "Rex", PetType.Dog, 60)
     };
 
     _mediator.Send(Arg.Any<GetPetsQuery>(), Arg.Any<CancellationToken>())
@@ -84,8 +82,8 @@ public class PetCommandHandlerTests
 
     // Assert
     await _botClient.Received(1).MakeRequestAsync(
-      Arg.Is<SendMessageRequest>(req => 
-        req.Text.Contains("Fluffy") && 
+      Arg.Is<SendMessageRequest>(req =>
+        req.Text.Contains("Fluffy") &&
         req.Text.Contains("Rex") &&
         req.Text.Contains("🐱") &&
         req.Text.Contains("🐶")),
@@ -96,14 +94,14 @@ public class PetCommandHandlerTests
   public async Task HandleAsync_ShouldShowHappyMoodEmoji_WhenMoodScoreIsHigh()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();
 
     var pets = new List<PetDto>
     {
-      new PetDto(Guid.NewGuid(), familyId, "Happy Cat", PetType.Cat, 90) // High mood
+      new(Guid.NewGuid(), familyId, "Happy Cat", PetType.Cat, 90) // High mood
     };
 
     _mediator.Send(Arg.Any<GetPetsQuery>(), Arg.Any<CancellationToken>())
@@ -122,14 +120,14 @@ public class PetCommandHandlerTests
   public async Task HandleAsync_ShouldShowSadMoodEmoji_WhenMoodScoreIsLow()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();
 
     var pets = new List<PetDto>
     {
-      new PetDto(Guid.NewGuid(), familyId, "Sad Cat", PetType.Cat, 15) // Low mood
+      new(Guid.NewGuid(), familyId, "Sad Cat", PetType.Cat, 15) // Low mood
     };
 
     _mediator.Send(Arg.Any<GetPetsQuery>(), Arg.Any<CancellationToken>())
@@ -148,16 +146,16 @@ public class PetCommandHandlerTests
   public async Task HandleAsync_ShouldDisplayCorrectPetTypeText_ForAllPetTypes()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();
 
     var pets = new List<PetDto>
     {
-      new PetDto(Guid.NewGuid(), familyId, "Cat", PetType.Cat, 50),
-      new PetDto(Guid.NewGuid(), familyId, "Dog", PetType.Dog, 50),
-      new PetDto(Guid.NewGuid(), familyId, "Hamster", PetType.Hamster, 50)
+      new(Guid.NewGuid(), familyId, "Cat", PetType.Cat, 50),
+      new(Guid.NewGuid(), familyId, "Dog", PetType.Dog, 50),
+      new(Guid.NewGuid(), familyId, "Hamster", PetType.Hamster, 50)
     };
 
     _mediator.Send(Arg.Any<GetPetsQuery>(), Arg.Any<CancellationToken>())
@@ -168,9 +166,9 @@ public class PetCommandHandlerTests
 
     // Assert
     await _botClient.Received(1).MakeRequestAsync(
-      Arg.Is<SendMessageRequest>(req => 
-        req.Text.Contains("Кот") && 
-        req.Text.Contains("Собака") && 
+      Arg.Is<SendMessageRequest>(req =>
+        req.Text.Contains("Кот") &&
+        req.Text.Contains("Собака") &&
         req.Text.Contains("Хомяк")),
       Arg.Any<CancellationToken>());
   }
@@ -179,7 +177,7 @@ public class PetCommandHandlerTests
   public async Task HandleAsync_ShouldHandleError_WhenGetPetsFails()
   {
     // Arrange
-    var message = CreateMessage(chatId: 123);
+    var message = CreateMessage(123);
     var familyId = Guid.NewGuid();
     var session = new UserSession { CurrentFamilyId = familyId };
     var userId = Guid.NewGuid();

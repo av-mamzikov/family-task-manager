@@ -151,7 +151,7 @@ public class FamilyTests
   public void UpdateSettings_WithValidParameters_UpdatesSettings()
   {
     // Arrange
-    var family = new Family("Smith Family", "UTC", true);
+    var family = new Family("Smith Family", "UTC");
     var newLeaderboardEnabled = false;
     var newTimezone = "Europe/Moscow";
 

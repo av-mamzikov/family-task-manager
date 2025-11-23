@@ -2,14 +2,6 @@ namespace FamilyTaskManager.Core.FamilyAggregate;
 
 public class Invitation : EntityBase<Invitation, Guid>, IAggregateRoot
 {
-  public Guid FamilyId { get; private set; }
-  public FamilyRole Role { get; private set; }
-  public string Code { get; private set; } = null!;
-  public DateTime CreatedAt { get; private set; }
-  public DateTime? ExpiresAt { get; private set; }
-  public bool IsActive { get; private set; }
-  public Guid CreatedBy { get; private set; }
-
   private Invitation() { }
 
   public Invitation(Guid familyId, FamilyRole role, Guid createdBy, int expirationDays = 7)
@@ -26,6 +18,14 @@ public class Invitation : EntityBase<Invitation, Guid>, IAggregateRoot
     ExpiresAt = expirationDays > 0 ? DateTime.UtcNow.AddDays(expirationDays) : null;
     IsActive = true;
   }
+
+  public Guid FamilyId { get; private set; }
+  public FamilyRole Role { get; private set; }
+  public string Code { get; private set; } = null!;
+  public DateTime CreatedAt { get; private set; }
+  public DateTime? ExpiresAt { get; }
+  public bool IsActive { get; private set; }
+  public Guid CreatedBy { get; private set; }
 
   public void Deactivate()
   {

@@ -1,12 +1,11 @@
 using FamilyTaskManager.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
 
 namespace FamilyTaskManager.IntegrationTests.Data;
 
 /// <summary>
-/// Базовый класс для тестирования репозиториев с использованием Testcontainers PostgreSQL.
-/// Каждый тестовый класс получает свой изолированный контейнер с БД.
+///   Базовый класс для тестирования репозиториев с использованием Testcontainers PostgreSQL.
+///   Каждый тестовый класс получает свой изолированный контейнер с БД.
 /// </summary>
 public abstract class BaseRepositoryTestFixture : IAsyncLifetime
 {
@@ -28,7 +27,7 @@ public abstract class BaseRepositoryTestFixture : IAsyncLifetime
       .Options;
 
     DbContext = new AppDbContext(options);
-    
+
     // Применяем миграции
     await DbContext.Database.MigrateAsync();
   }
@@ -40,7 +39,7 @@ public abstract class BaseRepositoryTestFixture : IAsyncLifetime
   }
 
   /// <summary>
-  /// Создает репозиторий для указанного типа агрегата
+  ///   Создает репозиторий для указанного типа агрегата
   /// </summary>
   protected IRepository<T> GetRepository<T>() where T : class, IAggregateRoot
   {
@@ -48,7 +47,7 @@ public abstract class BaseRepositoryTestFixture : IAsyncLifetime
   }
 
   /// <summary>
-  /// Создает read-only репозиторий для указанного типа агрегата
+  ///   Создает read-only репозиторий для указанного типа агрегата
   /// </summary>
   protected IReadRepository<T> GetReadRepository<T>() where T : class, IAggregateRoot
   {
@@ -56,10 +55,11 @@ public abstract class BaseRepositoryTestFixture : IAsyncLifetime
   }
 
   /// <summary>
-  /// Очищает все данные из БД между тестами (опционально)
+  ///   Очищает все данные из БД между тестами (опционально)
   /// </summary>
   protected async Task ClearDatabaseAsync()
   {
-    await DbContext.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"Families\", \"FamilyMembers\", \"Users\", \"Pets\", \"TaskTemplates\", \"TaskInstances\", \"ActionHistory\" CASCADE");
+    await DbContext.Database.ExecuteSqlRawAsync(
+      "TRUNCATE TABLE \"Families\", \"FamilyMembers\", \"Users\", \"Pets\", \"TaskTemplates\", \"TaskInstances\", \"ActionHistory\" CASCADE");
   }
 }

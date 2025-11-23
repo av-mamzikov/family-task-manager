@@ -6,10 +6,11 @@ public record CalculatePetMoodScoreCommand(Guid PetId) : ICommand<Result<PetMood
 
 public class CalculatePetMoodScoreHandler(
   IRepository<Pet> petRepository,
-  IRepository<TaskInstance> taskRepository) 
+  IRepository<TaskInstance> taskRepository)
   : ICommandHandler<CalculatePetMoodScoreCommand, Result<PetMoodScoreResult>>
 {
-  public async ValueTask<Result<PetMoodScoreResult>> Handle(CalculatePetMoodScoreCommand request, CancellationToken cancellationToken)
+  public async ValueTask<Result<PetMoodScoreResult>> Handle(CalculatePetMoodScoreCommand request,
+    CancellationToken cancellationToken)
   {
     var pet = await petRepository.GetByIdAsync(request.PetId, cancellationToken);
     if (pet == null)
@@ -22,7 +23,7 @@ public class CalculatePetMoodScoreHandler(
     // Get all tasks for this pet where dueAt <= now
     var spec = new TasksByPetSpec(request.PetId);
     var allTasks = await taskRepository.ListAsync(spec, cancellationToken);
-    
+
     var now = DateTime.UtcNow;
     var dueTasks = allTasks.Where(t => t.DueAt <= now).ToList();
 
@@ -35,7 +36,7 @@ public class CalculatePetMoodScoreHandler(
     }
 
     // Calculate mood based on formula from TЗ section 2.2
-    int maxPoints = dueTasks.Sum(t => t.Points);
+    var maxPoints = dueTasks.Sum(t => t.Points);
     double effectiveSum = 0;
 
     const double kLate = 0.5; // Coefficient for late completion (50% of points)
@@ -60,18 +61,18 @@ public class CalculatePetMoodScoreHandler(
         // Not completed and overdue - negative contribution
         var overdueTime = now - task.DueAt;
         var overdueDays = overdueTime.TotalDays;
-        
+
         // f(overdueTime) grows from 0 to 1 as overdue increases
         // Using formula: min(1, overdueDays / 7) - reaches 1 after 7 days
         var f = Math.Min(1.0, overdueDays / 7.0);
-        
+
         effectiveSum -= task.Points * f;
       }
     }
 
     // Calculate mood score
-    double baseMood = maxPoints > 0 ? 100.0 * (effectiveSum / maxPoints) : 100.0;
-    int newMoodScore = Math.Clamp((int)Math.Round(baseMood), 0, 100);
+    var baseMood = maxPoints > 0 ? 100.0 * (effectiveSum / maxPoints) : 100.0;
+    var newMoodScore = Math.Clamp((int)Math.Round(baseMood), 0, 100);
 
     pet.UpdateMoodScore(newMoodScore);
     await petRepository.SaveChangesAsync(cancellationToken);

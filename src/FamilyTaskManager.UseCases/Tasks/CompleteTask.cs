@@ -37,7 +37,7 @@ public class CompleteTaskHandler(
 
     // Complete task (registers TaskCompletedEvent)
     task.Complete(command.UserId, DateTime.UtcNow);
-    
+
     // Add points to member
     member.AddPoints(task.Points);
 

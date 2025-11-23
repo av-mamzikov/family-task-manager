@@ -19,6 +19,7 @@ public class UserSession
     {
       Data = data;
     }
+
     UpdateActivity();
   }
 

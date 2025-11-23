@@ -6,7 +6,7 @@ using Telegram.Bot.Types.Enums;
 namespace FamilyTaskManager.Host.Modules.Bot;
 
 /// <summary>
-/// Hosted service wrapper for Telegram Bot with Long Polling
+///   Hosted service wrapper for Telegram Bot with Long Polling
 /// </summary>
 public class TelegramBotHostedService : BackgroundService
 {
