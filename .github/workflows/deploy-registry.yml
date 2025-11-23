@@ -1,0 +1,396 @@
+name: Deploy to VPS via Private Registry
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - production
+          - pr-preview
+        default: 'production'
+      pr_number:
+        description: 'PR number (only for pr-preview)'
+        required: false
+        type: string
+
+jobs:
+  # Определяем параметры окружения
+  setup:
+    name: Setup Environment
+    runs-on: ubuntu-latest
+    outputs:
+      is_production: ${{ steps.env.outputs.is_production }}
+      is_pr_preview: ${{ steps.env.outputs.is_pr_preview }}
+      pr_number: ${{ steps.env.outputs.pr_number }}
+      image_tag: ${{ steps.env.outputs.image_tag }}
+      deploy_dir: ${{ steps.env.outputs.deploy_dir }}
+      bot_token_secret: ${{ steps.env.outputs.bot_token_secret }}
+      bot_username_secret: ${{ steps.env.outputs.bot_username_secret }}
+      postgres_user_secret: ${{ steps.env.outputs.postgres_user_secret }}
+      postgres_password_secret: ${{ steps.env.outputs.postgres_password_secret }}
+    
+    steps:
+      - name: Determine environment
+        id: env
+        run: |
+          # Определяем окружение
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            ENV_TYPE="${{ inputs.environment }}"
+            PR_NUM="${{ inputs.pr_number }}"
+          elif [ "${{ github.event_name }}" == "push" ]; then
+            ENV_TYPE="production"
+            PR_NUM=""
+          else
+            ENV_TYPE="production"
+            PR_NUM=""
+          fi
+          
+          echo "Environment type: $ENV_TYPE"
+          echo "PR number: $PR_NUM"
+          
+          # Устанавливаем флаги
+          if [ "$ENV_TYPE" == "production" ]; then
+            echo "is_production=true" >> $GITHUB_OUTPUT
+            echo "is_pr_preview=false" >> $GITHUB_OUTPUT
+            echo "pr_number=" >> $GITHUB_OUTPUT
+            echo "image_tag=latest" >> $GITHUB_OUTPUT
+            echo "deploy_dir=/opt/family-task-manager" >> $GITHUB_OUTPUT
+            echo "bot_token_secret=TELEGRAM_BOT_TOKEN" >> $GITHUB_OUTPUT
+            echo "bot_username_secret=TELEGRAM_BOT_USERNAME" >> $GITHUB_OUTPUT
+            echo "postgres_user_secret=POSTGRES_USER" >> $GITHUB_OUTPUT
+            echo "postgres_password_secret=POSTGRES_PASSWORD" >> $GITHUB_OUTPUT
+          else
+            # PR Preview
+            if [ -z "$PR_NUM" ]; then
+              echo "Error: PR number required for pr-preview environment"
+              exit 1
+            fi
+            echo "is_production=false" >> $GITHUB_OUTPUT
+            echo "is_pr_preview=true" >> $GITHUB_OUTPUT
+            echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
+            echo "image_tag=pr-$PR_NUM" >> $GITHUB_OUTPUT
+            echo "deploy_dir=/opt/family-task-manager-pr-$PR_NUM" >> $GITHUB_OUTPUT
+            echo "bot_token_secret=PR_BOT_TOKEN" >> $GITHUB_OUTPUT
+            echo "bot_username_secret=PR_BOT_USERNAME" >> $GITHUB_OUTPUT
+            echo "postgres_user_secret=PR_POSTGRES_USER" >> $GITHUB_OUTPUT
+            echo "postgres_password_secret=PR_POSTGRES_PASSWORD" >> $GITHUB_OUTPUT
+          fi
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: setup
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: FamilyTaskManager_Test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore FamilyTaskManager.sln
+
+      - name: Build
+        run: dotnet build FamilyTaskManager.sln --no-restore --configuration Release
+
+      - name: Run tests
+        env:
+          ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=FamilyTaskManager_Test;Username=postgres;Password=postgres_test_password"
+        run: dotnet test FamilyTaskManager.sln --no-build --configuration Release --verbosity normal
+
+  build-and-push:
+    name: Build and Push to Registry
+    runs-on: ubuntu-latest
+    needs: [ setup, test ]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Setup SSH tunnel to Private Registry
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          
+          # Запуск SSH туннеля в фоне для доступа к registry
+          ssh -f -N -L 5000:localhost:5000 ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}
+          
+          # Ждем установки туннеля
+          sleep 5
+          
+          # Проверка доступности registry
+          curl -f http://localhost:5000/v2/_catalog || (echo "Registry unavailable" && exit 1)
+
+      - name: Login to Private Registry
+        run: |
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login localhost:5000 -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
+
+      - name: Extract metadata
+        id: meta
+        run: |
+          echo "commit_hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "branch=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_OUTPUT
+          echo "build_date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "pr_number=${{ needs.setup.outputs.pr_number }}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        env:
+          IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
+          IS_PR_PREVIEW: ${{ needs.setup.outputs.is_pr_preview }}
+        run: |
+          REGISTRY_HOST="localhost:5000"
+          IMAGE_NAME="family-task-manager"
+          COMMIT_HASH="${{ steps.meta.outputs.commit_hash }}"
+          BRANCH="${{ steps.meta.outputs.branch }}"
+          BUILD_DATE="${{ steps.meta.outputs.build_date }}"
+          PR_NUMBER="${{ steps.meta.outputs.pr_number }}"
+          
+          # Базовые теги
+          TAGS="--tag $REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG"
+          TAGS="$TAGS --tag $REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG-$COMMIT_HASH"
+          
+          # Дополнительные теги для production
+          if [ "$IS_PR_PREVIEW" == "false" ]; then
+            TAGS="$TAGS --tag $REGISTRY_HOST/$IMAGE_NAME:$BRANCH"
+          fi
+          
+          # Сборка
+          docker build \
+            --build-arg BUILD_CONFIGURATION=Release \
+            --label "git.commit=$COMMIT_HASH" \
+            --label "git.branch=$BRANCH" \
+            --label "git.pr=$PR_NUMBER" \
+            --label "build.date=$BUILD_DATE" \
+            --label "environment=${{ needs.setup.outputs.is_production == 'true' && 'production' || 'pr-preview' }}" \
+            $TAGS \
+            -f ./Dockerfile .
+          
+          # Push всех тегов
+          docker push "$REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG"
+          docker push "$REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG-$COMMIT_HASH"
+          
+          if [ "$IS_PR_PREVIEW" == "false" ]; then
+            docker push "$REGISTRY_HOST/$IMAGE_NAME:$BRANCH"
+          fi
+          
+          echo "✓ Pushed images:"
+          echo "  - $REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG"
+          echo "  - $REGISTRY_HOST/$IMAGE_NAME:$IMAGE_TAG-$COMMIT_HASH"
+          if [ "$IS_PR_PREVIEW" == "false" ]; then
+            echo "  - $REGISTRY_HOST/$IMAGE_NAME:$BRANCH"
+          fi
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: [ setup, build-and-push ]
+    
+    steps:
+      - name: Deploy application
+        uses: appleboy/ssh-action@v1.0.0
+        env:
+          DEPLOY_DIR: ${{ needs.setup.outputs.deploy_dir }}
+          IMAGE_TAG: ${{ needs.setup.outputs.image_tag }}
+          IS_PRODUCTION: ${{ needs.setup.outputs.is_production }}
+          IS_PR_PREVIEW: ${{ needs.setup.outputs.is_pr_preview }}
+          PR_NUMBER: ${{ needs.setup.outputs.pr_number }}
+          BOT_TOKEN: ${{ secrets[needs.setup.outputs.bot_token_secret] }}
+          BOT_USERNAME: ${{ secrets[needs.setup.outputs.bot_username_secret] }}
+          POSTGRES_USER: ${{ secrets[needs.setup.outputs.postgres_user_secret] }}
+          POSTGRES_PASSWORD: ${{ secrets[needs.setup.outputs.postgres_password_secret] }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: DEPLOY_DIR,IMAGE_TAG,IS_PRODUCTION,IS_PR_PREVIEW,PR_NUMBER,BOT_TOKEN,BOT_USERNAME,POSTGRES_USER,POSTGRES_PASSWORD
+          script: |
+            echo "=== Starting deployment ==="
+            echo "Environment: $([ "$IS_PRODUCTION" == "true" ] && echo "Production" || echo "PR Preview #$PR_NUMBER")"
+            echo "Deploy directory: $DEPLOY_DIR"
+            echo "Image tag: $IMAGE_TAG"
+            
+            # Проверка доступности registry
+            if ! curl -sf http://localhost:5000/v2/_catalog > /dev/null; then
+              echo "✗ Error: Registry is not available"
+              exit 1
+            fi
+            echo "✓ Registry is available"
+            
+            # Создание директории если не существует
+            mkdir -p "$DEPLOY_DIR"
+            cd "$DEPLOY_DIR"
+            
+            # Копирование конфигурации из production если это PR preview
+            if [ "$IS_PR_PREVIEW" == "true" ]; then
+              if [ ! -f "docker-compose.prod.yml" ]; then
+                echo "Copying configuration from production..."
+                cp /opt/family-task-manager/docker-compose.prod.yml ./
+                cp /opt/family-task-manager/scripts/init-db.sql ./init-db.sql 2>/dev/null || true
+              fi
+            fi
+            
+            # Создание/обновление .env файла
+            echo "Creating .env file..."
+            cat > .env << EOF
+            # Environment: $([ "$IS_PRODUCTION" == "true" ] && echo "Production" || echo "PR Preview #$PR_NUMBER")
+            REGISTRY_HOST=localhost:5000
+            REGISTRY_TAG=$IMAGE_TAG
+            
+            # PostgreSQL
+            POSTGRES_USER=$POSTGRES_USER
+            POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+            POSTGRES_DB=$([ "$IS_PRODUCTION" == "true" ] && echo "FamilyTaskManager" || echo "FamilyTaskManager_PR_$PR_NUMBER")
+            
+            # Telegram Bot
+            TELEGRAM_BOT_TOKEN=$BOT_TOKEN
+            TELEGRAM_BOT_USERNAME=$BOT_USERNAME
+            
+            # Application
+            ASPNETCORE_ENVIRONMENT=$([ "$IS_PRODUCTION" == "true" ] && echo "Production" || echo "Staging")
+            TZ=Europe/Moscow
+            EOF
+            
+            # Для PR preview: обновляем имена контейнеров и сетей
+            if [ "$IS_PR_PREVIEW" == "true" ]; then
+              echo "Configuring PR preview environment..."
+            
+              # Создаем кастомный docker-compose файл
+              sed "s/family-task-manager/family-task-manager-pr-$PR_NUMBER/g" docker-compose.prod.yml | \
+              sed "s/family-task-postgres/family-task-postgres-pr-$PR_NUMBER/g" | \
+              sed "s/family-task-network/family-task-network-pr-$PR_NUMBER/g" | \
+              sed "s/postgres_data/postgres_data_pr_$PR_NUMBER/g" > docker-compose.pr.yml
+            
+              COMPOSE_FILE="docker-compose.pr.yml"
+              CONTAINER_NAME="family-task-manager-pr-$PR_NUMBER"
+            else
+              COMPOSE_FILE="docker-compose.prod.yml"
+              CONTAINER_NAME="family-task-manager"
+            fi
+            
+            # Создание бэкапа БД (только для production)
+            if [ "$IS_PRODUCTION" == "true" ]; then
+              BACKUP_DIR="/opt/backups/family-task-manager"
+              mkdir -p "$BACKUP_DIR"
+              BACKUP_FILE="$BACKUP_DIR/db_backup_$(date +%Y%m%d_%H%M%S).sql"
+              docker exec family-task-postgres pg_dump -U "$POSTGRES_USER" FamilyTaskManager > "$BACKUP_FILE" 2>/dev/null || echo "Warning: Could not create backup"
+            fi
+            
+            # Загрузка нового образа
+            echo "Pulling image: localhost:5000/family-task-manager:$IMAGE_TAG"
+            docker pull "localhost:5000/family-task-manager:$IMAGE_TAG"
+            
+            # Остановка старого контейнера
+            echo "Stopping old container..."
+            docker compose -f "$COMPOSE_FILE" stop "$CONTAINER_NAME" 2>/dev/null || true
+            docker compose -f "$COMPOSE_FILE" rm -f "$CONTAINER_NAME" 2>/dev/null || true
+            
+            # Запуск нового контейнера
+            echo "Starting new container..."
+            docker compose -f "$COMPOSE_FILE" up -d
+            
+            # Ожидание запуска
+            sleep 10
+            
+            # Проверка статуса
+            echo ""
+            echo "Container status:"
+            docker compose -f "$COMPOSE_FILE" ps
+            
+            # Проверка логов
+            echo ""
+            echo "Recent logs:"
+            docker compose -f "$COMPOSE_FILE" logs --tail=30 "$CONTAINER_NAME"
+            
+            # Очистка старых образов
+            echo ""
+            echo "Cleaning up old images..."
+            docker image prune -f
+            
+            # Финальная проверка
+            if docker compose -f "$COMPOSE_FILE" ps | grep -q "$CONTAINER_NAME.*Up"; then
+              echo ""
+              echo "✓ Deployment successful!"
+              if [ "$IS_PR_PREVIEW" == "true" ]; then
+                echo "  PR Preview #$PR_NUMBER is running"
+                echo "  Bot: @$BOT_USERNAME"
+                echo "  Container: $CONTAINER_NAME"
+              fi
+            else
+              echo ""
+              echo "✗ Deployment failed!"
+              exit 1
+            fi
+
+      - name: Comment on PR (if PR preview)
+        if: needs.setup.outputs.is_pr_preview == 'true' && needs.setup.outputs.pr_number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ needs.setup.outputs.pr_number }};
+            const imageTag = '${{ needs.setup.outputs.image_tag }}';
+            const botUsername = '${{ secrets[needs.setup.outputs.bot_username_secret] }}';
+            
+            const comment = `## 🚀 PR Preview Environment Deployed
+            
+            Your changes have been deployed to a preview environment!
+            
+            **Environment Details:**
+            - 🤖 **Telegram Bot:** \`@${botUsername}\`
+            - 🐳 **Container:** \`family-task-manager-pr-${prNumber}\`
+            - 🗄️ **Database:** \`FamilyTaskManager_PR_${prNumber}\`
+            - 🏷️ **Image Tag:** \`${imageTag}\`
+            - 📦 **Registry:** \`localhost:5000/family-task-manager:${imageTag}\`
+            
+            **How to test:**
+            1. Open Telegram
+            2. Find bot \`@${botUsername}\`
+            3. Send \`/start\`
+            4. Test your changes
+            
+            **View logs:**
+            \`\`\`bash
+            ssh ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}
+            docker logs family-task-manager-pr-${prNumber} -f
+            \`\`\`
+            
+            **To update:** Push new commits to this PR
+            
+            **To cleanup:** Close this PR or run cleanup workflow manually
+            `;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: comment
+            });

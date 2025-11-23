@@ -1,4 +1,27 @@
-# Database Scripts
+# Scripts Directory
+
+Скрипты для развертывания, тестирования и мониторинга системы.
+
+## Deployment Scripts
+
+### Private Registry Setup (Рекомендуется для production)
+
+- **`setup-registry.sh`** - Настройка Private Docker Registry на VPS
+- **`build-and-push.sh`** - Сборка и отправка образа в registry (Linux/Mac)
+- **`build-and-push.ps1`** - Сборка и отправка образа в registry (Windows)
+- **`deploy-from-registry.sh`** - Деплой из Private Registry на VPS
+
+📖 **Полная документация:** [docs/PRIVATE_REGISTRY_SETUP.md](../docs/PRIVATE_REGISTRY_SETUP.md)
+
+### Alternative Deployment
+
+- **`deploy-build-on-vps.sh`** - Деплой со сборкой на VPS (без registry)
+- **`deploy.sh`** - Базовый скрипт деплоя
+- **`server-setup.sh`** - Первоначальная настройка VPS
+
+---
+
+## Database Scripts
 
 Полезные SQL скрипты для тестирования и мониторинга системы.
 

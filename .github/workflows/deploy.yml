@@ -1,10 +1,17 @@
-name: Deploy to VPS
+name: Deploy to VPS (Legacy - Docker Save/Load)
+
+# ⚠️ УСТАРЕВШИЙ МЕТОД: Использует docker save/load
+# 📌 РЕКОМЕНДУЕТСЯ: Используйте deploy-registry.yml для Private Registry
+# 
+# Этот workflow оставлен для обратной совместимости.
+# Для production используйте deploy-registry.yml
 
 on:
-  push:
-    branches:
-      - main
-      - master
+  # Отключен автоматический запуск, используйте workflow_dispatch для ручного запуска
+  # push:
+  #   branches:
+  #     - main
+  #     - master
   workflow_dispatch:
 
 jobs:

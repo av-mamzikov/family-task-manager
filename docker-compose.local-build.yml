@@ -1,10 +1,18 @@
 version: '3.8'
 
+# Docker Compose для деплоя без Docker Hub
+# Использует локально собранные образы
+
 services:
   # Family Task Manager Worker Service
   family-task-manager:
-    image: ${REGISTRY_HOST:-localhost:5000}/family-task-manager:latest
+    image: family-task-manager:latest  # Локальный образ
     container_name: family-task-manager
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
     depends_on:
       postgres:
         condition: service_healthy

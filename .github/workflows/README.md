@@ -62,9 +62,9 @@
 
 ## 📚 Документация
 
-- **[Руководство по Workflows](WORKFLOWS_GUIDE.md)** - как использовать
-- **[CI/CD Pipeline](CI_CD.md)** - полная документация
-- **[Шпаргалка](DEPLOYMENT_CHEATSHEET.md)** - команды для деплоя
+- **[CI/CD Pipeline](../CI_CD.md)** - полная документация по всем workflows
+- **[GitHub Actions Setup](../GITHUB_ACTIONS_SETUP.md)** - настройка CI/CD
+- **[Registry Commands Cheatsheet](../../docs/REGISTRY_COMMANDS_CHEATSHEET.md)** - шпаргалка команд
 
 ## 🔧 Локальная проверка
 
@@ -119,4 +119,4 @@ dotnet test
 
 ---
 
-Подробнее: [WORKFLOWS_GUIDE.md](WORKFLOWS_GUIDE.md)
+**Подробнее:** См. [CI/CD.md](../CI_CD.md) для полной документации по всем workflows
