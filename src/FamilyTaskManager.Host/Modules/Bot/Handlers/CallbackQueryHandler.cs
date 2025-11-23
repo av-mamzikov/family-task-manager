@@ -1,10 +1,12 @@
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Families;
+using FamilyTaskManager.UseCases.Pets;
 using FamilyTaskManager.UseCases.Tasks;
 using FamilyTaskManager.UseCases.Users;
 using Telegram.Bot;
