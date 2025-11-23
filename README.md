@@ -215,6 +215,127 @@ bash scripts/test-local.sh
 
 Подробнее: [LOCAL_TESTING.md](LOCAL_TESTING.md)
 
+---
+
+## 🖥️ Настройка VPS для деплоя
+
+### Шаг 1: Подключитесь к VPS
+
+```bash
+ssh root@ваш_ip_адрес
+```
+
+### Шаг 2: Автоматическая настройка
+
+Скопируйте скрипт на VPS и запустите:
+
+```bash
+# На вашем компьютере
+scp scripts/server-setup.sh root@ваш_ip:/tmp/
+
+# На VPS
+ssh root@ваш_ip
+bash /tmp/server-setup.sh
+```
+
+Скрипт установит Docker, Docker Compose, настроит firewall и создаст пользователя.
+
+### Шаг 3: Настройка Private Registry
+
+```bash
+# На VPS
+mkdir -p /opt/docker-registry
+cd /opt/docker-registry
+
+# Скопируйте файлы (на вашем компьютере)
+scp docker-compose.registry.yml root@ваш_ip:/opt/docker-registry/
+scp scripts/setup-registry.sh root@ваш_ip:/opt/docker-registry/
+
+# На VPS запустите настройку
+cd /opt/docker-registry
+bash setup-registry.sh
+```
+
+Введите username и пароль для registry (запомните их!).
+
+### Шаг 4: Создайте SSH ключ для GitHub Actions
+
+```powershell
+# Windows
+ssh-keygen -t ed25519 -f $HOME\.ssh\github_actions_key -C "github-actions"
+
+# Скопируйте публичный ключ на VPS
+Get-Content $HOME\.ssh\github_actions_key.pub | ssh root@ваш_ip "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+
+# Скопируйте приватный ключ (понадобится для GitHub)
+Get-Content $HOME\.ssh\github_actions_key
+```
+
+### Шаг 5: Настройте GitHub Secrets
+
+`Settings` → `Secrets and variables` → `Actions` → `New repository secret`
+
+**Обязательные:**
+
+- `VPS_HOST` - IP адрес VPS
+- `VPS_USERNAME` - SSH username (обычно `root`)
+- `VPS_SSH_KEY` - приватный SSH ключ (из шага 4)
+- `REGISTRY_USERNAME` - username registry (из шага 3)
+- `REGISTRY_PASSWORD` - пароль registry (из шага 3)
+
+**Для PR Preview (опционально):**
+
+- `PR_BOT_TOKEN` - токен тестового Telegram бота
+- `PR_BOT_USERNAME` - username тестового бота
+- `PR_POSTGRES_USER` - `familytask_pr`
+- `PR_POSTGRES_PASSWORD` - придумайте пароль
+
+### Шаг 6: Подготовьте директорию приложения
+
+```bash
+# На VPS
+mkdir -p /opt/family-task-manager/scripts
+cd /opt/family-task-manager
+
+# Скопируйте файлы (на вашем компьютере)
+scp docker-compose.prod.yml root@ваш_ip:/opt/family-task-manager/
+scp scripts/deploy-from-registry.sh root@ваш_ip:/opt/family-task-manager/
+scp scripts/init-db.sql root@ваш_ip:/opt/family-task-manager/scripts/
+
+# Создайте .env на VPS
+ssh root@ваш_ip
+cd /opt/family-task-manager
+nano .env
+```
+
+Содержимое `.env`:
+
+```env
+REGISTRY_HOST=localhost:5000
+POSTGRES_USER=familytask
+POSTGRES_PASSWORD=ваш_сильный_пароль
+POSTGRES_DB=FamilyTaskManager
+TELEGRAM_BOT_TOKEN=ваш_токен_бота
+TELEGRAM_BOT_USERNAME=ваш_бот_username
+ASPNETCORE_ENVIRONMENT=Production
+```
+
+### Шаг 7: Первый деплой
+
+```bash
+# Локально
+git add .
+git commit -m "Setup deployment"
+git push origin main
+```
+
+GitHub Actions автоматически задеплоит приложение!
+
+**Подробнее:
+** [DEPLOYMENT_SUMMARY.md](DEPLOYMENT_SUMMARY.md) | [docs/PRIVATE_REGISTRY_SETUP.md](docs/PRIVATE_REGISTRY_SETUP.md)
+
+---
+
 ## 🚀 Деплой на production
 
 ### Автоматический деплой с GitHub Actions
