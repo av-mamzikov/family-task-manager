@@ -26,13 +26,13 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore FamilyTaskManager.sln
 
       - name: Check code formatting
-        run: dotnet format --verify-no-changes --verbosity diagnostic
+        run: dotnet format FamilyTaskManager.sln --verify-no-changes --verbosity diagnostic
 
       - name: Build with warnings as errors
-        run: dotnet build --no-restore --configuration Release /p:TreatWarningsAsErrors=true
+        run: dotnet build FamilyTaskManager.sln --no-restore --configuration Release /p:TreatWarningsAsErrors=true
 
       - name: Run security analysis
-        run: dotnet build --no-restore --configuration Release /p:RunAnalyzers=true /p:EnableNETAnalyzers=true
+        run: dotnet build FamilyTaskManager.sln --no-restore --configuration Release /p:RunAnalyzers=true /p:EnableNETAnalyzers=true

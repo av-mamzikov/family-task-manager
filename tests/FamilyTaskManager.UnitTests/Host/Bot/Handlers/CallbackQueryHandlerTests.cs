@@ -28,7 +28,8 @@ public class CallbackQueryHandlerTests
     _sessionManager = Substitute.For<ISessionManager>();
     _logger = Substitute.For<ILogger<CallbackQueryHandler>>();
     _timeZoneService = Substitute.For<ITimeZoneService>();
-    _templateCommandHandler = Substitute.For<TemplateCommandHandler>();
+    var mediatorForTemplate = Substitute.For<IMediator>();
+    _templateCommandHandler = Substitute.ForPartsOf<TemplateCommandHandler>(mediatorForTemplate);
     _handler = new CallbackQueryHandler(_logger, _sessionManager, _mediator, _timeZoneService, _templateCommandHandler);
     _botClient = Substitute.For<ITelegramBotClient>();
   }

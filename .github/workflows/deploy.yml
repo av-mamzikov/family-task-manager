@@ -37,15 +37,15 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore FamilyTaskManager.sln
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build FamilyTaskManager.sln --no-restore --configuration Release
 
       - name: Run tests
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=FamilyTaskManager_Test;Username=postgres;Password=postgres_test_password"
-        run: dotnet test --no-build --configuration Release --verbosity normal
+        run: dotnet test FamilyTaskManager.sln --no-build --configuration Release --verbosity normal
 
   build-and-deploy:
     name: Build and Deploy

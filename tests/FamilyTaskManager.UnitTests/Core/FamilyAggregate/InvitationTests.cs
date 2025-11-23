@@ -86,13 +86,13 @@ public class InvitationTests
   [Fact]
   public void IsExpired_Expired_ReturnsTrue()
   {
-    // Arrange
-    var invitation = new Invitation(Guid.NewGuid(), FamilyRole.Adult, Guid.NewGuid(), 1);
+    // Arrange - Create invitation with very short expiration
+    var invitation = new Invitation(Guid.NewGuid(), FamilyRole.Adult, Guid.NewGuid(), 0);
 
-    // Use reflection to set ExpiresAt to a past date
-    var expiresAtProperty = typeof(Invitation).GetProperty("ExpiresAt",
-      BindingFlags.Public | BindingFlags.Instance);
-    expiresAtProperty!.SetValue(invitation, DateTime.UtcNow.AddDays(-1));
+    // Manually set ExpiresAt to a past date using the private setter via reflection on the backing field
+    var expiresAtField = typeof(Invitation).GetField("<ExpiresAt>k__BackingField",
+      BindingFlags.NonPublic | BindingFlags.Instance);
+    expiresAtField!.SetValue(invitation, DateTime.UtcNow.AddDays(-1));
 
     // Act
     var result = invitation.IsExpired();
@@ -144,13 +144,13 @@ public class InvitationTests
   [Fact]
   public void IsValid_Expired_ReturnsFalse()
   {
-    // Arrange
-    var invitation = new Invitation(Guid.NewGuid(), FamilyRole.Adult, Guid.NewGuid(), 1);
+    // Arrange - Create invitation and set expired date via backing field
+    var invitation = new Invitation(Guid.NewGuid(), FamilyRole.Adult, Guid.NewGuid(), 0);
 
-    // Use reflection to set ExpiresAt to a past date to make it expired
-    var expiresAtProperty = typeof(Invitation).GetProperty("ExpiresAt",
-      BindingFlags.Public | BindingFlags.Instance);
-    expiresAtProperty!.SetValue(invitation, DateTime.UtcNow.AddDays(-1));
+    // Manually set ExpiresAt to a past date using the private setter via reflection on the backing field
+    var expiresAtField = typeof(Invitation).GetField("<ExpiresAt>k__BackingField",
+      BindingFlags.NonPublic | BindingFlags.Instance);
+    expiresAtField!.SetValue(invitation, DateTime.UtcNow.AddDays(-1));
 
     // Act
     var result = invitation.IsValid();

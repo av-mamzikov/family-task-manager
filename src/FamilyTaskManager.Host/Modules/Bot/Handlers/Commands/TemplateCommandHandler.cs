@@ -11,7 +11,7 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 
 public class TemplateCommandHandler(IMediator mediator)
 {
-  public async Task HandleAsync(
+  public virtual async Task HandleAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -60,7 +60,7 @@ public class TemplateCommandHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
-  public async Task HandleViewPetTemplatesAsync(
+  public virtual async Task HandleViewPetTemplatesAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
@@ -139,7 +139,7 @@ public class TemplateCommandHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
-  public async Task HandleViewTemplateAsync(
+  public virtual async Task HandleViewTemplateAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
@@ -196,7 +196,7 @@ public class TemplateCommandHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
-  public async Task HandleDeleteTemplateAsync(
+  public virtual async Task HandleDeleteTemplateAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
@@ -231,7 +231,7 @@ public class TemplateCommandHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
-  public async Task HandleConfirmDeleteTemplateAsync(
+  public virtual async Task HandleConfirmDeleteTemplateAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
@@ -270,7 +270,7 @@ public class TemplateCommandHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
-  public async Task HandleEditTemplateAsync(
+  public virtual async Task HandleEditTemplateAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
