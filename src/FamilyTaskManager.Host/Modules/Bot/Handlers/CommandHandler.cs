@@ -86,6 +86,26 @@ public class CommandHandler : ICommandHandler
     }
   }
 
+  private static InlineKeyboardMarkup GetRussianTimeZoneKeyboard()
+  {
+    return new InlineKeyboardMarkup(new[]
+    {
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Калининград", "timezone_Europe/Kaliningrad") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Москва", "timezone_Europe/Moscow") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Самара", "timezone_Europe/Samara") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Екатеринбург", "timezone_Asia/Yekaterinburg") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Омск", "timezone_Asia/Omsk") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Красноярск", "timezone_Asia/Krasnoyarsk") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Иркутск", "timezone_Asia/Irkutsk") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Якутск", "timezone_Asia/Yakutsk") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Владивосток", "timezone_Asia/Vladivostok") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Магадан", "timezone_Asia/Magadan") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Камчатка", "timezone_Asia/Kamchatka") },
+      new[] { InlineKeyboardButton.WithCallbackData("📍 Определить по геолокации", "timezone_detect") },
+      new[] { InlineKeyboardButton.WithCallbackData("⏭️ Пропустить (UTC)", "timezone_UTC") }
+    });
+  }
+
   private async Task HandleStartCommandAsync(
     ITelegramBotClient botClient,
     Message message,
@@ -473,17 +493,7 @@ public class CommandHandler : ICommandHandler
     session.Data["familyName"] = familyName;
     session.State = ConversationState.AwaitingFamilyTimezone;
 
-    var keyboard = new InlineKeyboardMarkup(new[]
-    {
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Москва", "timezone_Europe/Moscow") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇺🇸 Нью-Йорк", "timezone_America/New_York") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇬🇧 Лондон", "timezone_Europe/London") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇪🇺 Берлин", "timezone_Europe/Berlin") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇯🇵 Токио", "timezone_Asia/Tokyo") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇦🇺 Сидней", "timezone_Australia/Sydney") },
-      new[] { InlineKeyboardButton.WithCallbackData("📍 Определить по геолокации", "timezone_detect") },
-      new[] { InlineKeyboardButton.WithCallbackData("⏭️ Пропустить (UTC)", "timezone_UTC") }
-    });
+    var keyboard = GetRussianTimeZoneKeyboard();
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
@@ -612,17 +622,7 @@ public class CommandHandler : ICommandHandler
   {
     session.State = ConversationState.AwaitingFamilyTimezone;
 
-    var keyboard = new InlineKeyboardMarkup(new[]
-    {
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Москва", "timezone_Europe/Moscow") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇺🇸 Нью-Йорк", "timezone_America/New_York") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇬🇧 Лондон", "timezone_Europe/London") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇪🇺 Берлин", "timezone_Europe/Berlin") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇯🇵 Токио", "timezone_Asia/Tokyo") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇦🇺 Сидней", "timezone_Australia/Sydney") },
-      new[] { InlineKeyboardButton.WithCallbackData("📍 Определить по геолокации", "timezone_detect") },
-      new[] { InlineKeyboardButton.WithCallbackData("⏭️ Пропустить (UTC)", "timezone_UTC") }
-    });
+    var keyboard = GetRussianTimeZoneKeyboard();
 
     var familyName = session.Data["familyName"] as string ?? "ваша семья";
 
