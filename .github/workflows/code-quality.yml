@@ -29,7 +29,7 @@ jobs:
         run: dotnet restore FamilyTaskManager.sln
 
       - name: Check code formatting
-        run: dotnet format FamilyTaskManager.sln --verify-no-changes --verbosity diagnostic
+        run: dotnet format FamilyTaskManager.sln --verify-no-changes --verbosity diagnostic --exclude '**/Migrations/**'
 
       - name: Build with warnings as errors
         run: dotnet build FamilyTaskManager.sln --no-restore --configuration Release /p:TreatWarningsAsErrors=true
