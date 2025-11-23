@@ -1,7 +1,8 @@
-namespace FamilyTaskManager.UseCases.Tasks;
+namespace FamilyTaskManager.UseCases.TaskTemplates;
 
 public record UpdateTaskTemplateCommand(
   Guid TemplateId,
+  Guid FamilyId,
   string? Title,
   int? Points,
   string? Schedule) : ICommand<Result>;
@@ -13,6 +14,12 @@ public class UpdateTaskTemplateHandler(IRepository<TaskTemplate> templateReposit
   {
     var template = await templateRepository.GetByIdAsync(command.TemplateId, cancellationToken);
     if (template == null)
+    {
+      return Result.NotFound("Task template not found");
+    }
+
+    // Authorization check - ensure template belongs to the requested family
+    if (template.FamilyId != command.FamilyId)
     {
       return Result.NotFound("Task template not found");
     }

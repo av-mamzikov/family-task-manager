@@ -1,4 +1,6 @@
-namespace FamilyTaskManager.UseCases.Tasks;
+using FamilyTaskManager.UseCases.TaskTemplates.Specifications;
+
+namespace FamilyTaskManager.UseCases.TaskTemplates;
 
 public record GetActiveTaskTemplatesQuery : IQuery<Result<List<TaskTemplate>>>;
 

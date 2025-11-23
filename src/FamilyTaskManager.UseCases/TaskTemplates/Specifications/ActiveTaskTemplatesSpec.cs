@@ -1,4 +1,4 @@
-namespace FamilyTaskManager.UseCases.Tasks.Specifications;
+namespace FamilyTaskManager.UseCases.TaskTemplates.Specifications;
 
 public class ActiveTaskTemplatesSpec : Specification<TaskTemplate>
 {

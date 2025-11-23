@@ -8,6 +8,7 @@ using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Families;
 using FamilyTaskManager.UseCases.Pets;
 using FamilyTaskManager.UseCases.Tasks;
+using FamilyTaskManager.UseCases.TaskTemplates;
 using FamilyTaskManager.UseCases.Users;
 using GeoTimeZone;
 using Telegram.Bot;

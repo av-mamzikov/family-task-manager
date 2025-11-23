@@ -1,4 +1,4 @@
-namespace FamilyTaskManager.UseCases.Tasks;
+namespace FamilyTaskManager.UseCases.TaskTemplates;
 
 public record CreateTaskTemplateCommand(
   Guid FamilyId,
