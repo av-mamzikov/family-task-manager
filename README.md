@@ -3,8 +3,8 @@
 [![Tests](https://github.com/av-mamzikov/family-task-manager/actions/workflows/tests.yml/badge.svg)](https://github.com/av-mamzikov/family-task-manager/actions/workflows/tests.yml)
 [![Deploy](https://github.com/av-mamzikov/family-task-manager/actions/workflows/deploy-registry.yml/badge.svg)](https://github.com/av-mamzikov/family-task-manager/actions/workflows/deploy-registry.yml)
 
-**Запуск вручную:
-** [▶️ Run Tests](https://github.com/av-mamzikov/family-task-manager/actions/workflows/tests.yml) | [▶️ Run Deploy](https://github.com/av-mamzikov/family-task-manager/actions/workflows/deploy-registry.yml)
+**Запуск вручную:**
+[▶️ Run Tests](https://github.com/av-mamzikov/family-task-manager/actions/workflows/tests.yml) | [▶️ Run Deploy](https://github.com/av-mamzikov/family-task-manager/actions/workflows/deploy-registry.yml)
 
 **Семейный менеджер дел** — Telegram-бот для управления домашними задачами с элементами геймификации.
 
