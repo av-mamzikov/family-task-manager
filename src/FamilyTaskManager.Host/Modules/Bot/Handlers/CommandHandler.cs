@@ -26,6 +26,7 @@ public class CommandHandler(
   TasksCommandHandler tasksCommandHandler,
   PetCommandHandler petCommandHandler,
   StatsCommandHandler statsCommandHandler,
+  TemplateCommandHandler templateCommandHandler,
   ITimeZoneService timeZoneService)
   : ICommandHandler
 {
@@ -56,6 +57,7 @@ public class CommandHandler(
         "/family" => HandleFamilyCommandAsync(botClient, message, session, cancellationToken),
         "/tasks" => HandleTasksCommandAsync(botClient, message, session, cancellationToken),
         "/pet" => HandlePetCommandAsync(botClient, message, session, cancellationToken),
+        "/templates" => HandleTemplatesCommandAsync(botClient, message, session, cancellationToken),
         "/stats" => HandleStatsCommandAsync(botClient, message, session, cancellationToken),
         "/help" => HandleHelpCommandAsync(botClient, message, cancellationToken),
         _ => HandleUnknownCommandAsync(botClient, message, cancellationToken)
@@ -291,6 +293,27 @@ public class CommandHandler(
     await statsCommandHandler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
   }
 
+  private async Task HandleTemplatesCommandAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
+
+    if (!userResult.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Ошибка. Попробуйте /start",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    await templateCommandHandler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
+  }
+
   private async Task HandleHelpCommandAsync(
     ITelegramBotClient botClient,
     Message message,
@@ -420,6 +443,30 @@ public class CommandHandler(
 
       case ConversationState.AwaitingTaskSchedule:
         await HandleTaskScheduleInputAsync(botClient, message, session, text, cancellationToken);
+        break;
+
+      case ConversationState.AwaitingTemplateTitle:
+        await HandleTemplateTitleInputAsync(botClient, message, session, text, cancellationToken);
+        break;
+
+      case ConversationState.AwaitingTemplatePoints:
+        await HandleTemplatePointsInputAsync(botClient, message, session, text, cancellationToken);
+        break;
+
+      case ConversationState.AwaitingTemplateSchedule:
+        await HandleTemplateScheduleInputAsync(botClient, message, session, text, cancellationToken);
+        break;
+
+      case ConversationState.AwaitingTemplateEditTitle:
+        await HandleTemplateEditTitleInputAsync(botClient, message, session, text, cancellationToken);
+        break;
+
+      case ConversationState.AwaitingTemplateEditPoints:
+        await HandleTemplateEditPointsInputAsync(botClient, message, session, text, cancellationToken);
+        break;
+
+      case ConversationState.AwaitingTemplateEditSchedule:
+        await HandleTemplateEditScheduleInputAsync(botClient, message, session, text, cancellationToken);
         break;
 
       // Add more conversation handlers as needed
@@ -907,6 +954,271 @@ public class CommandHandler(
       $"💯 Очки: {points}\n" +
       $"🔄 Расписание: {schedule}\n\n" +
       BotConstants.Messages.ScheduledTask,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleTemplateTitleInputAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    string title,
+    CancellationToken cancellationToken)
+  {
+    if (string.IsNullOrWhiteSpace(title) || title.Length < 3 || title.Length > 100)
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Название шаблона должно содержать от 3 до 100 символов. Попробуйте снова:",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    session.Data["title"] = title;
+    session.State = ConversationState.AwaitingTemplatePoints;
+
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      BotConstants.Templates.EnterTemplatePoints,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleTemplatePointsInputAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    string pointsText,
+    CancellationToken cancellationToken)
+  {
+    if (!int.TryParse(pointsText, out var points) || points < 1 || points > 100)
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Количество очков должно быть числом от 1 до 100. Попробуйте снова:",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    session.Data["points"] = points;
+    session.State = ConversationState.AwaitingTemplateSchedule;
+
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      BotConstants.Templates.EnterTemplateSchedule,
+      parseMode: ParseMode.Markdown,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleTemplateScheduleInputAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    string schedule,
+    CancellationToken cancellationToken)
+  {
+    if (string.IsNullOrWhiteSpace(schedule))
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Расписание не может быть пустым. Попробуйте снова:",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Get all required data from session
+    if (!session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId ||
+        !session.Data.TryGetValue("petId", out var petIdObj) || petIdObj is not Guid petId ||
+        !session.Data.TryGetValue("title", out var titleObj) || titleObj is not string title ||
+        !session.Data.TryGetValue("points", out var pointsObj) || pointsObj is not int points)
+    {
+      session.ClearState();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Ошибка. Попробуйте создать шаблон заново.",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Get user ID
+    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
+
+    if (!userResult.IsSuccess)
+    {
+      session.ClearState();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Ошибка. Попробуйте /start",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Create template
+    var createTemplateCommand =
+      new CreateTaskTemplateCommand(familyId, petId, title, points, schedule, userResult.Value);
+    var result = await mediator.Send(createTemplateCommand, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        $"❌ Ошибка создания шаблона: {result.Errors.FirstOrDefault()}\n\n" +
+        BotConstants.Errors.InvalidCron,
+        cancellationToken: cancellationToken);
+      session.ClearState();
+      return;
+    }
+
+    session.ClearState();
+
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      $"{BotConstants.Templates.TemplateCreated}\n\n" +
+      $"📝 Название: {title}\n" +
+      $"💯 Очки: {points}\n" +
+      $"🔄 Расписание: {schedule}\n\n" +
+      BotConstants.Messages.ScheduledTask,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleTemplateEditTitleInputAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    string title,
+    CancellationToken cancellationToken)
+  {
+    if (string.IsNullOrWhiteSpace(title) || title.Length < 3 || title.Length > 100)
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Название шаблона должно содержать от 3 до 100 символов. Попробуйте снова:",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    if (!session.Data.TryGetValue("templateId", out var templateIdObj) || templateIdObj is not Guid templateId ||
+        !session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId)
+    {
+      session.ClearState();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Ошибка. Попробуйте снова.",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, title, null, null);
+    var result = await mediator.Send(updateCommand, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        $"❌ Ошибка обновления: {result.Errors.FirstOrDefault()}",
+        cancellationToken: cancellationToken);
+      session.ClearState();
+      return;
+    }
+
+    session.ClearState();
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      BotConstants.Templates.TemplateUpdated,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleTemplateEditPointsInputAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    string pointsText,
+    CancellationToken cancellationToken)
+  {
+    if (!int.TryParse(pointsText, out var points) || points < 1 || points > 100)
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Количество очков должно быть числом от 1 до 100. Попробуйте снова:",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    if (!session.Data.TryGetValue("templateId", out var templateIdObj) || templateIdObj is not Guid templateId ||
+        !session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId)
+    {
+      session.ClearState();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Ошибка. Попробуйте снова.",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, points, null);
+    var result = await mediator.Send(updateCommand, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        $"❌ Ошибка обновления: {result.Errors.FirstOrDefault()}",
+        cancellationToken: cancellationToken);
+      session.ClearState();
+      return;
+    }
+
+    session.ClearState();
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      BotConstants.Templates.TemplateUpdated,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleTemplateEditScheduleInputAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    string schedule,
+    CancellationToken cancellationToken)
+  {
+    if (string.IsNullOrWhiteSpace(schedule))
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Расписание не может быть пустым. Попробуйте снова:",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    if (!session.Data.TryGetValue("templateId", out var templateIdObj) || templateIdObj is not Guid templateId ||
+        !session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId)
+    {
+      session.ClearState();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "❌ Ошибка. Попробуйте снова.",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, null, schedule);
+    var result = await mediator.Send(updateCommand, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        $"❌ Ошибка обновления: {result.Errors.FirstOrDefault()}\n\n" +
+        BotConstants.Errors.InvalidCron,
+        cancellationToken: cancellationToken);
+      session.ClearState();
+      return;
+    }
+
+    session.ClearState();
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      BotConstants.Templates.TemplateUpdated,
       cancellationToken: cancellationToken);
   }
 

@@ -48,6 +48,7 @@ public static class BotModuleExtensions
     services.AddScoped<TasksCommandHandler>();
     services.AddScoped<PetCommandHandler>();
     services.AddScoped<StatsCommandHandler>();
+    services.AddScoped<TemplateCommandHandler>();
 
     logger?.LogInformation("Bot Module registered: Telegram Bot with Long Polling");
 

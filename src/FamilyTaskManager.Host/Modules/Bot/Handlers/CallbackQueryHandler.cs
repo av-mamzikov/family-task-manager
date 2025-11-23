@@ -1,9 +1,12 @@
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Families;
+using FamilyTaskManager.UseCases.Pets;
 using FamilyTaskManager.UseCases.Tasks;
 using FamilyTaskManager.UseCases.Users;
 using Telegram.Bot;
@@ -17,7 +20,8 @@ public class CallbackQueryHandler(
   ILogger<CallbackQueryHandler> logger,
   ISessionManager sessionManager,
   IMediator mediator,
-  ITimeZoneService timeZoneService)
+  ITimeZoneService timeZoneService,
+  TemplateCommandHandler templateCommandHandler)
   : ICallbackQueryHandler
 {
   public async Task HandleCallbackAsync(
@@ -56,6 +60,8 @@ public class CallbackQueryHandler(
         "invite" => HandleInviteActionAsync(botClient, chatId, messageId, parts, session, callbackQuery.From,
           cancellationToken),
         "timezone" => HandleTimezoneSelectionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
+        "template" => HandleTemplateActionAsync(botClient, chatId, messageId, parts, session, callbackQuery.From,
+          cancellationToken),
         "confirm" => HandleConfirmActionAsync(botClient, chatId, messageId, parts, session, callbackQuery.From,
           cancellationToken),
         "cancel" => HandleCancelActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
@@ -936,6 +942,229 @@ public class CallbackQueryHandler(
       messageId,
       "✅ Семья успешно удалена!\n\n" +
       BotConstants.Messages.FamilyDeleted,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleTemplateActionAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] parts,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken)
+  {
+    if (parts.Length < 2)
+    {
+      return;
+    }
+
+    var templateAction = parts[1];
+
+    switch (templateAction)
+    {
+      case "viewpet" when parts.Length >= 3 && Guid.TryParse(parts[2], out var petId):
+        await templateCommandHandler.HandleViewPetTemplatesAsync(botClient, chatId, messageId, petId, session,
+          cancellationToken);
+        break;
+
+      case "view" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
+        await templateCommandHandler.HandleViewTemplateAsync(botClient, chatId, messageId, templateId, session,
+          cancellationToken);
+        break;
+
+      case "delete" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
+        await templateCommandHandler.HandleDeleteTemplateAsync(botClient, chatId, messageId, templateId, session,
+          cancellationToken);
+        break;
+
+      case "confirmdelete" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
+        await templateCommandHandler.HandleConfirmDeleteTemplateAsync(botClient, chatId, messageId, templateId,
+          session, cancellationToken);
+        break;
+
+      case "edit" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
+        await templateCommandHandler.HandleEditTemplateAsync(botClient, chatId, messageId, templateId, session,
+          cancellationToken);
+        break;
+
+      case "editfield" when parts.Length >= 4 && Guid.TryParse(parts[2], out var templateId):
+        await HandleTemplateEditFieldAsync(botClient, chatId, messageId, templateId, parts[3], session,
+          cancellationToken);
+        break;
+
+      case "create":
+        await HandleTemplateCreateAsync(botClient, chatId, messageId, session, fromUser, cancellationToken);
+        break;
+
+      case "createfor" when parts.Length >= 3 && Guid.TryParse(parts[2], out var petId):
+        await HandleTemplateCreateForPetAsync(botClient, chatId, messageId, petId, session, fromUser,
+          cancellationToken);
+        break;
+
+      case "back":
+        // Re-show templates menu
+        var registerCommand = new RegisterUserCommand(fromUser.Id, fromUser.GetDisplayName());
+        var userResult = await mediator.Send(registerCommand, cancellationToken);
+        if (userResult.IsSuccess)
+        {
+          var message = new Message { Chat = new Chat { Id = chatId } };
+          await templateCommandHandler.HandleAsync(botClient, message, session, userResult.Value,
+            cancellationToken);
+        }
+
+        break;
+
+      default:
+        await botClient.SendTextMessageAsync(
+          chatId,
+          "❌ Неизвестное действие",
+          cancellationToken: cancellationToken);
+        break;
+    }
+  }
+
+  private async Task HandleTemplateEditFieldAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    Guid templateId,
+    string field,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (session.CurrentFamilyId == null)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        BotConstants.Errors.NoFamily,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Store template ID and family ID in session
+    session.Data["templateId"] = templateId;
+    session.Data["familyId"] = session.CurrentFamilyId.Value;
+
+    switch (field)
+    {
+      case "title":
+        session.State = ConversationState.AwaitingTemplateEditTitle;
+        await botClient.EditMessageTextAsync(
+          chatId,
+          messageId,
+          "✏️ Введите новое название шаблона (от 3 до 100 символов):",
+          cancellationToken: cancellationToken);
+        break;
+
+      case "points":
+        session.State = ConversationState.AwaitingTemplateEditPoints;
+        await botClient.EditMessageTextAsync(
+          chatId,
+          messageId,
+          "💯 Введите новое количество очков (от 1 до 100):",
+          cancellationToken: cancellationToken);
+        break;
+
+      case "schedule":
+        session.State = ConversationState.AwaitingTemplateEditSchedule;
+        await botClient.EditMessageTextAsync(
+          chatId,
+          messageId,
+          BotConstants.Templates.EnterTemplateSchedule,
+          ParseMode.Markdown,
+          cancellationToken: cancellationToken);
+        break;
+
+      default:
+        await botClient.SendTextMessageAsync(
+          chatId,
+          "❌ Неизвестное поле",
+          cancellationToken: cancellationToken);
+        break;
+    }
+  }
+
+  private async Task HandleTemplateCreateAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken)
+  {
+    if (session.CurrentFamilyId == null)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        BotConstants.Errors.NoFamily,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Get pets for the family
+    var getPetsQuery = new GetPetsQuery(session.CurrentFamilyId.Value);
+    var petsResult = await mediator.Send(getPetsQuery, cancellationToken);
+
+    if (!petsResult.IsSuccess || !petsResult.Value.Any())
+    {
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        BotConstants.Errors.NoPets,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Build pet selection keyboard
+    var buttons = petsResult.Value.Select(p =>
+    {
+      var petEmoji = p.Type switch
+      {
+        PetType.Cat => "🐱",
+        PetType.Dog => "🐶",
+        PetType.Hamster => "🐹",
+        _ => "🐾"
+      };
+      return new[] { InlineKeyboardButton.WithCallbackData($"{petEmoji} {p.Name}", $"template_createfor_{p.Id}") };
+    }).ToArray();
+
+    var keyboard = new InlineKeyboardMarkup(buttons);
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      "🐾 Выберите питомца для создания шаблона:",
+      replyMarkup: keyboard,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleTemplateCreateForPetAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    Guid petId,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken)
+  {
+    if (session.CurrentFamilyId == null)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        BotConstants.Errors.NoFamily,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Store pet ID and family ID in session
+    session.SetState(ConversationState.AwaitingTemplateTitle,
+      new Dictionary<string, object> { ["petId"] = petId, ["familyId"] = session.CurrentFamilyId.Value });
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      BotConstants.Templates.EnterTemplateTitle,
       cancellationToken: cancellationToken);
   }
 }

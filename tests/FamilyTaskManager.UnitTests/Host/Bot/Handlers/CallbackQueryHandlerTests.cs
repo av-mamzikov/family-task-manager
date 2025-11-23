@@ -1,6 +1,7 @@
 using Ardalis.Result;
 using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.Host.Modules.Bot.Handlers;
+using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Tasks;
@@ -18,6 +19,7 @@ public class CallbackQueryHandlerTests
   private readonly ILogger<CallbackQueryHandler> _logger;
   private readonly IMediator _mediator;
   private readonly ISessionManager _sessionManager;
+  private readonly TemplateCommandHandler _templateCommandHandler;
   private readonly ITimeZoneService _timeZoneService;
 
   public CallbackQueryHandlerTests()
@@ -26,7 +28,8 @@ public class CallbackQueryHandlerTests
     _sessionManager = Substitute.For<ISessionManager>();
     _logger = Substitute.For<ILogger<CallbackQueryHandler>>();
     _timeZoneService = Substitute.For<ITimeZoneService>();
-    _handler = new CallbackQueryHandler(_logger, _sessionManager, _mediator, _timeZoneService);
+    _templateCommandHandler = Substitute.For<TemplateCommandHandler>();
+    _handler = new CallbackQueryHandler(_logger, _sessionManager, _mediator, _timeZoneService, _templateCommandHandler);
     _botClient = Substitute.For<ITelegramBotClient>();
   }
 

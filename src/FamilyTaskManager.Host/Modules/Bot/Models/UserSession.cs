@@ -44,5 +44,12 @@ public enum ConversationState
   AwaitingTaskPoints,
   AwaitingTaskPetSelection,
   AwaitingTaskSchedule,
-  AwaitingTaskDueDate
+  AwaitingTaskDueDate,
+  AwaitingTemplateTitle,
+  AwaitingTemplatePoints,
+  AwaitingTemplateSchedule,
+  AwaitingTemplatePetSelection,
+  AwaitingTemplateEditTitle,
+  AwaitingTemplateEditPoints,
+  AwaitingTemplateEditSchedule
 }
