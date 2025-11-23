@@ -2,6 +2,7 @@ using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
+using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Families;
@@ -94,11 +95,7 @@ public class CommandHandler(
     CancellationToken cancellationToken)
   {
     var telegramId = message.From!.Id;
-    var userName = $"{message.From.FirstName} {message.From.LastName}".Trim();
-    if (string.IsNullOrEmpty(userName))
-    {
-      userName = message.From.Username ?? "User";
-    }
+    var userName = message.From.GetDisplayName();
 
     // Register or update user
     var registerCommand = new RegisterUserCommand(telegramId, userName);
@@ -217,7 +214,7 @@ public class CommandHandler(
     CancellationToken cancellationToken)
   {
     // Get user ID
-    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
+    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
     var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
@@ -238,7 +235,7 @@ public class CommandHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
+    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
     var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
@@ -259,7 +256,7 @@ public class CommandHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
+    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
     var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
@@ -280,7 +277,7 @@ public class CommandHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
+    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
     var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
@@ -808,7 +805,7 @@ public class CommandHandler(
     }
 
     // Get user ID
-    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
+    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
     var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
@@ -878,7 +875,7 @@ public class CommandHandler(
     }
 
     // Get user ID
-    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.FirstName ?? "User");
+    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
     var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)

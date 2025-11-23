@@ -1,5 +1,6 @@
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Families;
@@ -43,13 +44,17 @@ public class CallbackQueryHandler(
 
       await (action switch
       {
-        "create" => HandleCreateActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
+        "create" => HandleCreateActionAsync(botClient, chatId, messageId, parts, session, callbackQuery.From,
+          cancellationToken),
         "select" => HandleSelectActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
-        "task" => HandleTaskActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
+        "task" => HandleTaskActionAsync(botClient, chatId, messageId, parts, session, callbackQuery.From,
+          cancellationToken),
         "taskpet" => HandleTaskPetSelectionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
         "pet" => HandlePetActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
-        "family" => HandleFamilyActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
-        "invite" => HandleInviteActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
+        "family" => HandleFamilyActionAsync(botClient, chatId, messageId, parts, session, callbackQuery.From,
+          cancellationToken),
+        "invite" => HandleInviteActionAsync(botClient, chatId, messageId, parts, session, callbackQuery.From,
+          cancellationToken),
         "timezone" => HandleTimezoneSelectionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
         _ => HandleUnknownCallbackAsync(botClient, chatId, cancellationToken)
       });
@@ -70,6 +75,7 @@ public class CallbackQueryHandler(
     int messageId,
     string[] parts,
     UserSession session,
+    User fromUser,
     CancellationToken cancellationToken)
   {
     if (parts.Length < 2)
@@ -82,7 +88,7 @@ public class CallbackQueryHandler(
     switch (entityType)
     {
       case "family":
-        await StartCreateFamilyAsync(botClient, chatId, messageId, session, cancellationToken);
+        await StartCreateFamilyAsync(botClient, chatId, messageId, session, fromUser, cancellationToken);
         break;
 
       case "pet":
@@ -100,10 +106,11 @@ public class CallbackQueryHandler(
     long chatId,
     int messageId,
     UserSession session,
+    User fromUser,
     CancellationToken cancellationToken)
   {
     // Get user by telegram ID
-    var registerCommand = new RegisterUserCommand(chatId, "User");
+    var registerCommand = new RegisterUserCommand(fromUser.Id, fromUser.GetDisplayName());
     var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
@@ -274,6 +281,7 @@ public class CallbackQueryHandler(
     int messageId,
     string[] parts,
     UserSession session,
+    User fromUser,
     CancellationToken cancellationToken)
   {
     if (parts.Length < 3)
@@ -292,11 +300,11 @@ public class CallbackQueryHandler(
     switch (taskAction)
     {
       case "take":
-        await HandleTakeTaskAsync(botClient, chatId, messageId, taskId, session, cancellationToken);
+        await HandleTakeTaskAsync(botClient, chatId, messageId, taskId, session, fromUser, cancellationToken);
         break;
 
       case "complete":
-        await HandleCompleteTaskAsync(botClient, chatId, messageId, taskId, session, cancellationToken);
+        await HandleCompleteTaskAsync(botClient, chatId, messageId, taskId, session, fromUser, cancellationToken);
         break;
     }
   }
@@ -307,10 +315,11 @@ public class CallbackQueryHandler(
     int messageId,
     Guid taskId,
     UserSession session,
+    User fromUser,
     CancellationToken cancellationToken)
   {
     // Get user by telegram ID
-    var registerCommand = new RegisterUserCommand(chatId, "User");
+    var registerCommand = new RegisterUserCommand(fromUser.Id, fromUser.GetDisplayName());
     var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
@@ -348,10 +357,11 @@ public class CallbackQueryHandler(
     int messageId,
     Guid taskId,
     UserSession session,
+    User fromUser,
     CancellationToken cancellationToken)
   {
     // Get user by telegram ID
-    var registerCommand = new RegisterUserCommand(chatId, "User");
+    var registerCommand = new RegisterUserCommand(fromUser.Id, fromUser.GetDisplayName());
     var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
@@ -405,6 +415,7 @@ public class CallbackQueryHandler(
     int messageId,
     string[] parts,
     UserSession session,
+    User fromUser,
     CancellationToken cancellationToken)
   {
     if (parts.Length < 3)
@@ -423,7 +434,7 @@ public class CallbackQueryHandler(
     switch (familyAction)
     {
       case "invite":
-        await HandleCreateInviteAsync(botClient, chatId, messageId, familyId, session, cancellationToken);
+        await HandleCreateInviteAsync(botClient, chatId, messageId, familyId, session, fromUser, cancellationToken);
         break;
 
       case "members":
@@ -449,10 +460,11 @@ public class CallbackQueryHandler(
     int messageId,
     Guid familyId,
     UserSession session,
+    User fromUser,
     CancellationToken cancellationToken)
   {
     // Get user by telegram ID
-    var registerCommand = new RegisterUserCommand(chatId, "User");
+    var registerCommand = new RegisterUserCommand(fromUser.Id, fromUser.GetDisplayName());
     var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
@@ -513,6 +525,7 @@ public class CallbackQueryHandler(
     int messageId,
     string[] parts,
     UserSession session,
+    User fromUser,
     CancellationToken cancellationToken)
   {
     if (parts.Length < 4)
@@ -535,7 +548,7 @@ public class CallbackQueryHandler(
     }
 
     // Get user by telegram ID
-    var registerCommand = new RegisterUserCommand(chatId, "User");
+    var registerCommand = new RegisterUserCommand(fromUser.Id, fromUser.GetDisplayName());
     var userResult = await mediator.Send(registerCommand, cancellationToken);
 
     if (!userResult.IsSuccess)
