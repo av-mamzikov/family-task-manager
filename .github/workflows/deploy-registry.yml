@@ -9,10 +9,9 @@ on:
     branches:
       - main
       - master
-  # Временно для тестирования - удалить после проверки
+  # PR с лейблом deploy-preview
   pull_request:
-    paths:
-      - '.github/workflows/deploy-registry.yml'
+    types: [ labeled, synchronize, opened, reopened ]
   # Ручной запуск
   workflow_dispatch:
     inputs:
@@ -37,9 +36,11 @@ jobs:
     # Запускаем если:
     # - workflow_dispatch (ручной запуск) - всегда
     # - workflow_run (после тестов) - только если тесты успешны
+    # - pull_request с лейблом deploy-preview - всегда
     if: |
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-preview'))
     outputs:
       is_production: ${{ steps.env.outputs.is_production }}
       is_pr_preview: ${{ steps.env.outputs.is_pr_preview }}
@@ -59,6 +60,10 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             ENV_TYPE="${{ inputs.environment }}"
             PR_NUM="${{ inputs.pr_number }}"
+          elif [ "${{ github.event_name }}" == "pull_request" ]; then
+            # PR с лейблом deploy-preview
+            ENV_TYPE="pr-preview"
+            PR_NUM="${{ github.event.pull_request.number }}"
           else
             # workflow_run - всегда production
             ENV_TYPE="production"
