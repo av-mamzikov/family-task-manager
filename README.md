@@ -3,9 +3,6 @@
 [![Tests](https://github.com/av-mamzikov/family-task-manager/actions/workflows/tests.yml/badge.svg)](https://github.com/av-mamzikov/family-task-manager/actions/workflows/tests.yml)
 [![Deploy](https://github.com/av-mamzikov/family-task-manager/actions/workflows/deploy-registry.yml/badge.svg)](https://github.com/av-mamzikov/family-task-manager/actions/workflows/deploy-registry.yml)
 
-**Запуск вручную:**
-[▶️ Run Tests](https://github.com/av-mamzikov/family-task-manager/actions/workflows/tests.yml) | [▶️ Run Deploy](https://github.com/av-mamzikov/family-task-manager/actions/workflows/deploy-registry.yml)
-
 **Семейный менеджер дел** — Telegram-бот для управления домашними задачами с элементами геймификации.
 
 ## 📋 Описание
@@ -80,7 +77,7 @@ Family Task Manager помогает семьям организовать вы�
 ### Требования
 
 - .NET 9.0+ SDK
-- PostgreSQL 15+
+- Docker Desktop (для запуска PostgreSQL через Aspire)
 - Telegram Bot Token (получить у [@BotFather](https://t.me/BotFather))
 
 ### Локальный запуск
@@ -95,23 +92,28 @@ Family Task Manager помогает семьям организовать вы�
 
 3. **Настройте конфигурацию:**
    ```bash
-   cd src/FamilyTaskManager.Host
+   cd src/FamilyTaskManager.AspireHost
    dotnet user-secrets set "Bot:BotToken" "YOUR_BOT_TOKEN"
    dotnet user-secrets set "Bot:BotUsername" "your_bot_username"
-   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=FamilyTaskManager;Username=postgres;Password=YOUR_PASSWORD"
    ```
 
-4. **Запустите приложение:**
+4. **Запустите приложение через .NET Aspire:**
    ```bash
    dotnet run
    ```
 
-5. **Откройте бота в Telegram** и отправьте `/start`
+5. **Откройте Aspire Dashboard** в браузере (URL отобразится в консоли, обычно `http://localhost:15000`)
+
+6. **Откройте бота в Telegram** и отправьте `/start`
 
 **Что запустилось:**
+
+- ✅ PostgreSQL контейнер (автоматически)
+- ✅ pgAdmin (доступен на `http://localhost:5050`, логин: `admin@familytask.com`, пароль: `admin123`)
 - ✅ Telegram Bot (Long Polling)
 - ✅ Quartz Worker (3 Jobs)
 - ✅ Автоматические миграции БД
+- ✅ Aspire Dashboard для мониторинга
 
 **Подробнее:** [Host Quick Start Guide](src/FamilyTaskManager.Host/QUICK_START.md)
 

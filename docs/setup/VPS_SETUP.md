@@ -1,6 +1,6 @@
 # 🖥️ Настройка VPS для деплоя
 
-Пошаговая инструкция по настройке VPS для развертывания Family Task Manager.
+Единый скрипт для полной настройки VPS за 5 минут.
 
 ## Требования
 
@@ -8,102 +8,162 @@
 - SSH доступ с правами root
 - Открытые порты: 22 (SSH), 80 (HTTP), 443 (HTTPS), 5000 (Registry)
 
-## Шаг 1: Подключитесь к VPS
+## Подготовка (на вашем компьютере)
 
-```bash
-ssh root@ваш_ip_адрес
-```
+### 1. Сгенерируйте SSH ключи
 
-## Шаг 2: Автоматическая настройка сервера
-
-Скопируйте и запустите скрипт настройки:
-
-```bash
-# На вашем компьютере
-scp scripts/server-setup.sh root@ваш_ip:/tmp/
-
-# На VPS
-ssh root@ваш_ip
-bash /tmp/server-setup.sh
-```
-
-**Что установит скрипт:**
-
-- ✅ Docker и Docker Compose
-- ✅ Базовые утилиты (curl, git, etc.)
-- ✅ Настройка firewall (ufw)
-- ✅ Создание пользователя для деплоя
-
-## Шаг 3: Настройка Private Registry
-
-```bash
-# Скопируйте файлы на VPS (на вашем компьютере)
-scp docker-compose.registry.yml root@ваш_ip:/tmp/
-scp scripts/setup-registry.sh root@ваш_ip:/tmp/
-
-# На VPS
-ssh root@ваш_ip
-mkdir -p /opt/docker-registry
-cd /opt/docker-registry
-mv /tmp/docker-compose.registry.yml ./
-mv /tmp/setup-registry.sh ./
-bash setup-registry.sh
-```
-
-**Важно:** Запомните username и пароль для registry - они понадобятся для GitHub Secrets!
-
-**Что настроит скрипт:**
-
-- ✅ Docker Registry контейнер
-- ✅ Базовая аутентификация
-- ✅ Persistent storage для образов
-- ✅ Автозапуск при перезагрузке
-
-## Шаг 4: Создайте SSH ключ для GitHub Actions
-
-### Windows
+#### Ключ для вашего доступа (администратор)
 
 ```powershell
-# Генерация ключа
-ssh-keygen -t ed25519 -f $HOME\.ssh\github_actions_key -C "github-actions"
+# Windows
+ssh-keygen -t ed25519 -f $HOME\.ssh\deploy_key -C "admin"
 
-# Скопируйте публичный ключ на VPS
-Get-Content $HOME\.ssh\github_actions_key.pub | ssh root@ваш_ip "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
-
-# Скопируйте приватный ключ (понадобится для GitHub Secrets)
-Get-Content $HOME\.ssh\github_actions_key
+# Linux/macOS
+ssh-keygen -t ed25519 -f ~/.ssh/deploy_key -C "admin"
 ```
 
-### Linux/macOS
+#### Ключ для GitHub Actions
+
+```powershell
+# Windows
+ssh-keygen -t ed25519 -f $HOME\.ssh\github_actions_key -C "github-actions"
+
+# Linux/macOS
+ssh-keygen -t ed25519 -f ~/.ssh/github_actions_key -C "github-actions"
+```
+
+### 2. Скопируйте публичные ключи
+
+```powershell
+# Windows - скопируйте содержимое файлов
+Get-Content $HOME\.ssh\deploy_key.pub
+Get-Content $HOME\.ssh\github_actions_key.pub
+
+# Linux/macOS
+cat ~/.ssh/deploy_key.pub
+cat ~/.ssh/github_actions_key.pub
+```
+
+Сохраните эти ключи - они понадобятся при запуске скрипта.
+
+## Настройка VPS (один скрипт)
+
+### 1. Скачайте и запустите скрипт инициализации
 
 ```bash
-# Генерация ключа
-ssh-keygen -t ed25519 -f ~/.ssh/github_actions_key -C "github-actions"
+# Скачайте скрипт
+curl -o init-vps.sh https://raw.githubusercontent.com/ваш_username/family-task-manager/main/scripts/init-vps.sh
 
-# Скопируйте публичный ключ на VPS
-ssh-copy-id -i ~/.ssh/github_actions_key.pub root@ваш_ip
+# Или скопируйте с локальной машины
+scp scripts/init-vps.sh root@ваш_ip:/root/
 
-# Скопируйте приватный ключ (понадобится для GitHub Secrets)
+# Запустите скрипт
+bash init-vps.sh
+```
+
+### 2. Запустить скрипт
+
+```bash
+# Подключитесь к ssh
+ssh root@ваш_ip_адрес
+
+# Запустите скрипт
+bash init-vps.sh
+```
+
+### 3. Следуйте инструкциям скрипта
+
+Скрипт запросит:
+
+1. **SSH ключ администратора** - вставьте содержимое `deploy_key.pub`
+2. **SSH ключ GitHub Actions** - вставьте содержимое `github_actions_key.pub`
+3. **Имя пользователя для Docker Registry** - например, `admin`
+4. **Пароль для Docker Registry** - придумайте сильный пароль
+5. **Имя пользователя БД** - по умолчанию `familytask`
+6. **Пароль для БД** - придумайте сильный пароль
+7. **Telegram Bot Token** (опционально) - можно оставить пустым
+8. **Telegram Bot Username** (опционально) - можно оставить пустым
+
+### Что установит скрипт:
+
+- ✅ Docker и Docker Compose
+- ✅ Базовые утилиты (curl, git, apache2-utils)
+- ✅ Пользователь `deploy` с sudo-правами и доступом к Docker
+- ✅ SSH ключи для администратора и GitHub Actions
+- ✅ Директории `/opt/family-task-manager` и `/opt/docker-registry`
+- ✅ Private Docker Registry с аутентификацией
+- ✅ Registry UI для просмотра образов
+- ✅ Файл `.env` с настройками
+- ✅ UFW Firewall (опционально)
+
+## После завершения скрипта
+
+### 1. Проверьте подключение
+
+```bash
+# Windows
+ssh -i $HOME\.ssh\deploy_key deploy@ваш_ip
+
+# Linux/macOS
+ssh -i ~/.ssh/deploy_key deploy@ваш_ip
+```
+
+> 🎉 Теперь работайте от пользователя `deploy`, а не от root!
+
+### 2. (Опционально) Настройте SSH config для удобства
+
+Создайте/отредактируйте `~/.ssh/config`:
+
+```
+Host myvps
+    HostName ваш_ip
+    User deploy
+    IdentityFile ~/.ssh/deploy_key
+
+Host myvps-root
+    HostName ваш_ip
+    User root
+    IdentityFile ~/.ssh/id_ed25519
+```
+
+Теперь можно подключаться просто:
+```bash
+ssh myvps
+```
+
+## Настройка GitHub Secrets
+
+После завершения скрипта вы получите все необходимые данные. Скопируйте их и добавьте в GitHub.
+
+### Получение приватного ключа GitHub Actions
+
+```powershell
+# Windows
+Get-Content $HOME\.ssh\github_actions_key
+
+# Linux/macOS
 cat ~/.ssh/github_actions_key
 ```
 
-## Шаг 5: Настройте GitHub Secrets
+Скопируйте **весь вывод** (включая `-----BEGIN` и `-----END`).
+
+### Добавление секретов в GitHub
 
 Перейдите в репозиторий: `Settings` → `Secrets and variables` → `Actions` → `New repository secret`
 
-### Обязательные секреты
+| Секрет                  | Откуда взять                                   |
+|-------------------------|------------------------------------------------|
+| `VPS_HOST`              | IP адрес VPS (показан в конце скрипта)         |
+| `VPS_USERNAME`          | `deploy`                                       |
+| `VPS_SSH_KEY`           | Приватный ключ `github_actions_key` (см. выше) |
+| `REGISTRY_USERNAME`     | Имя пользователя registry (вводили в скрипте)  |
+| `REGISTRY_PASSWORD`     | Пароль registry (вводили в скрипте)            |
+| `POSTGRES_USER`         | Имя пользователя БД (вводили в скрипте)        |
+| `POSTGRES_PASSWORD`     | Пароль БД (вводили в скрипте)                  |
+| `TELEGRAM_BOT_TOKEN`    | Токен от @BotFather (если вводили в скрипте)   |
+| `TELEGRAM_BOT_USERNAME` | Username бота (если вводили в скрипте)         |
 
-| Секрет                  | Описание              | Пример         |
-|-------------------------|-----------------------|----------------|
-| `VPS_HOST`              | IP адрес VPS          | `123.45.67.89` |
-| `VPS_USERNAME`          | SSH username          | `root`         |
-| `VPS_SSH_KEY`           | Приватный SSH ключ    | Из шага 4      |
-| `REGISTRY_USERNAME`     | Username registry     | Из шага 3      |
-| `REGISTRY_PASSWORD`     | Пароль registry       | Из шага 3      |
-| `TELEGRAM_BOT_TOKEN`    | Токен production бота | От @BotFather  |
-| `TELEGRAM_BOT_USERNAME` | Username бота         | `your_bot`     |
-| `POSTGRES_USER`         | PostgreSQL user       | `familytask`   |
-| `POSTGRES_PASSWORD`     | PostgreSQL пароль     | Сильный пароль |
+> 💡 **Совет:** Скрипт выводит все данные в конце работы - сохраните их!
 
 ### Для PR Preview (опционально)
 
@@ -114,7 +174,7 @@ cat ~/.ssh/github_actions_key
 | `PR_POSTGRES_USER`     | `familytask_pr`         |
 | `PR_POSTGRES_PASSWORD` | Пароль для PR БД        |
 
-## Шаг 6: Первый деплой
+## Первый деплой
 
 Всё готово! Теперь просто запушьте код:
 
@@ -136,106 +196,219 @@ git push origin main
 ### Проверка деплоя
 
 ```bash
-# На VPS проверьте статус
-ssh root@ваш_ip
+# Подключитесь к VPS
+ssh deploy@ваш_ip
+
+# Проверьте статус контейнеров
 cd /opt/family-task-manager
 docker compose -f docker-compose.prod.yml ps
+
+# Просмотр логов
 docker compose -f docker-compose.prod.yml logs -f
 ```
 
-## Шаг 7 (опционально): Установите Portainer
+### Доступ к Registry UI
+
+После настройки Registry UI доступен по адресу:
+
+```
+http://ваш_ip:5001
+```
+
+Здесь вы можете просматривать загруженные Docker образы.
+
+## Дополнительно: Установка Portainer (опционально)
 
 Portainer - удобный Web интерфейс для управления Docker контейнерами.
 
 ```bash
-# Скопируйте конфиг (на вашем компьютере)
-scp docker-compose.portainer.yml root@ваш_ip:/opt/portainer/docker-compose.yml
+# Подключитесь к VPS
+ssh deploy@ваш_ip
 
-# На VPS запустите Portainer
-ssh root@ваш_ip
-mkdir -p /opt/portainer
+# Создайте директорию
+sudo mkdir -p /opt/portainer
+sudo chown deploy:deploy /opt/portainer
 cd /opt/portainer
+
+# Создайте docker-compose.yml
+cat > docker-compose.yml <<'EOF'
+version: '3.8'
+
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+
+volumes:
+  portainer_data:
+EOF
+
+# Запустите Portainer
 docker compose up -d
 ```
 
-**Доступ:** `http://ваш_ip:9000` или `https://ваш_ip:9443`
+**Доступ:**
 
-**Подробнее:** [Portainer Setup](../PORTAINER_SETUP.md)
+- HTTP: `http://ваш_ip:9000`
+- HTTPS: `https://ваш_ip:9443`
+
+При первом входе создайте администратора.
 
 ## Troubleshooting
 
 ### Registry недоступен
 
 ```bash
+ssh deploy@ваш_ip
+
 # Проверьте статус registry
-docker ps | grep registry
+cd /opt/docker-registry
+docker compose ps
 
 # Проверьте логи
-docker logs registry
+docker compose logs registry
+
+# Перезапустите registry
+docker compose restart
+```
+
+### Контейнеры приложения не запускаются
+
+```bash
+ssh deploy@ваш_ip
+
+# Проверьте логи
+cd /opt/family-task-manager
+docker compose -f docker-compose.prod.yml logs
+
+# Проверьте .env файл
+cat .env
+
+# Проверьте доступность БД
+docker compose -f docker-compose.prod.yml exec postgres pg_isready
+```
+
+### GitHub Actions не может подключиться к VPS
+
+```bash
+ssh deploy@ваш_ip
+
+# Проверьте SSH ключи
+cat ~/.ssh/authorized_keys
+
+# Должны быть 2 ключа: ваш и GitHub Actions
+
+# Проверьте права
+ls -la ~/.ssh/
+# Должно быть:
+# drwx------ .ssh
+# -rw------- authorized_keys
+
+# Если права неправильные:
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+```
+
+### Не могу подключиться от пользователя deploy
+
+```bash
+# Подключитесь как root
+ssh root@ваш_ip
+
+# Проверьте, что пользователь создан
+id deploy
+
+# Проверьте SSH ключи
+cat /home/deploy/.ssh/authorized_keys
+
+# Если ключей нет, добавьте вручную:
+echo "ваш_публичный_ключ" >> /home/deploy/.ssh/authorized_keys
+chown deploy:deploy /home/deploy/.ssh/authorized_keys
+chmod 600 /home/deploy/.ssh/authorized_keys
+```
+
+### Забыли пароль от Registry
+
+```bash
+ssh deploy@ваш_ip
+cd /opt/docker-registry/registry-auth
+
+# Создайте нового пользователя
+htpasswd -Bc htpasswd новый_пользователь
+
+# Или перезапишите файл
+htpasswd -Bc htpasswd admin
 
 # Перезапустите registry
 cd /opt/docker-registry
 docker compose restart
 ```
 
-### Контейнеры не запускаются
+## Полезные команды
+
+### Управление контейнерами
 
 ```bash
-# Проверьте логи
-docker compose -f docker-compose.prod.yml logs
+ssh deploy@ваш_ip
 
-# Проверьте .env файл
-cat /opt/family-task-manager/.env
+# Статус всех контейнеров
+docker ps -a
 
-# Проверьте доступность БД
-docker exec family-task-postgres pg_isready
+# Логи приложения
+cd /opt/family-task-manager
+docker compose -f docker-compose.prod.yml logs -f app
+
+# Логи БД
+docker compose -f docker-compose.prod.yml logs -f postgres
+
+# Перезапуск приложения
+docker compose -f docker-compose.prod.yml restart app
+
+# Остановка всех контейнеров
+docker compose -f docker-compose.prod.yml down
+
+# Запуск всех контейнеров
+docker compose -f docker-compose.prod.yml up -d
 ```
 
-### GitHub Actions не может подключиться
+### Управление Registry
 
 ```bash
-# Проверьте SSH ключи на VPS
-cat ~/.ssh/authorized_keys
+# Просмотр образов в registry
+curl -u username:password http://localhost:5000/v2/_catalog
 
-# Проверьте права
-chmod 600 ~/.ssh/authorized_keys
-chmod 700 ~/.ssh
+# Удаление образа (через Registry UI)
+# Откройте http://ваш_ip:5001
+
+# Очистка неиспользуемых образов
+docker system prune -a
 ```
 
-## Дополнительная настройка
-
-### Firewall (ufw)
+### Резервное копирование БД
 
 ```bash
-# Проверьте статус
-sudo ufw status
+# Создание бэкапа
+docker compose -f docker-compose.prod.yml exec postgres \
+  pg_dump -U familytask familytask > backup_$(date +%Y%m%d).sql
 
-# Разрешите нужные порты
-sudo ufw allow 22/tcp   # SSH
-sudo ufw allow 80/tcp   # HTTP
-sudo ufw allow 443/tcp  # HTTPS
-sudo ufw enable
+# Восстановление из бэкапа
+cat backup_20241124.sql | docker compose -f docker-compose.prod.yml exec -T postgres \
+  psql -U familytask familytask
 ```
-
-### Автоматические обновления
-
-```bash
-# Установите unattended-upgrades
-sudo apt install unattended-upgrades
-sudo dpkg-reconfigure -plow unattended-upgrades
-```
-
-### Мониторинг
-
-Рекомендуется установить:
-
-- **Portainer** - для управления контейнерами
-- **Prometheus + Grafana** - для метрик
-- **Loki** - для централизованных логов
 
 ## Следующие шаги
 
-- 📖 [GitHub Actions Setup](GITHUB_ACTIONS_SETUP.md)
-- 🐳 [Portainer Setup](../PORTAINER_SETUP.md)
-- 🔒 [Private Registry Setup](../PRIVATE_REGISTRY_SETUP.md)
-- 🚀 [Deployment Summary](../../DEPLOYMENT_SUMMARY.md)
+- 📖 [GitHub Actions Setup](GITHUB_ACTIONS_SETUP.md) - настройка CI/CD
+- 🚀 [Deployment Summary](../../DEPLOYMENT_SUMMARY.md) - обзор процесса деплоя
+- 🐳 [Docker Registry Setup](../PRIVATE_REGISTRY_SETUP.md) - подробнее о registry
+
+---
+
+**Готово!** Ваш VPS настроен и готов к автоматическому деплою. 🎉

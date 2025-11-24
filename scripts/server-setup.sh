@@ -45,9 +45,43 @@ else
     echo "Docker Compose уже установлен"
 fi
 
-# Создание директории для проекта
-echo "Создание директории проекта..."
+# Создание пользователя для деплоя
+echo "Создание пользователя deploy..."
+DEPLOY_USER="deploy"
+
+if id "$DEPLOY_USER" &>/dev/null; then
+    echo "Пользователь $DEPLOY_USER уже существует"
+else
+    # Создаём пользователя без пароля (будет использоваться SSH ключ)
+    useradd -m -s /bin/bash "$DEPLOY_USER"
+    
+    # Добавляем в группу sudo
+    usermod -aG sudo "$DEPLOY_USER"
+    
+    # Добавляем в группу docker
+    usermod -aG docker "$DEPLOY_USER"
+    
+    # Настраиваем sudo без пароля для deploy
+    echo "$DEPLOY_USER ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$DEPLOY_USER
+    chmod 0440 /etc/sudoers.d/$DEPLOY_USER
+    
+    # Создаём директорию для SSH ключей
+    mkdir -p /home/$DEPLOY_USER/.ssh
+    chmod 700 /home/$DEPLOY_USER/.ssh
+    touch /home/$DEPLOY_USER/.ssh/authorized_keys
+    chmod 600 /home/$DEPLOY_USER/.ssh/authorized_keys
+    chown -R $DEPLOY_USER:$DEPLOY_USER /home/$DEPLOY_USER/.ssh
+    
+    echo "Пользователь $DEPLOY_USER создан успешно"
+    echo "⚠️  Добавьте SSH ключ в /home/$DEPLOY_USER/.ssh/authorized_keys"
+fi
+
+# Создание директорий для проекта
+echo "Создание директорий проекта..."
 mkdir -p /opt/family-task-manager
+mkdir -p /opt/docker-registry
+chown -R $DEPLOY_USER:$DEPLOY_USER /opt/family-task-manager
+chown -R $DEPLOY_USER:$DEPLOY_USER /opt/docker-registry
 cd /opt/family-task-manager
 
 # Создание .env файла
