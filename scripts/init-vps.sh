@@ -215,8 +215,6 @@ echo "✓ Создан пользователь registry: $REGISTRY_USER"
 # Создание docker-compose.yml
 echo "Создание docker-compose.yml..."
 cat > "$REGISTRY_DIR/docker-compose.yml" <<'COMPOSE_EOF'
-version: '3.8'
-
 services:
   registry:
     image: registry:2
@@ -315,10 +313,11 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     mkdir -p "$PORTAINER_DIR"
     chown -R $DEPLOY_USER:$DEPLOY_USER "$PORTAINER_DIR"
     
+    # Получаем GID группы docker для правильного доступа к socket
+    DOCKER_GID=$(getent group docker | cut -d: -f3)
+    
     echo "Создание docker-compose.yml для Portainer..."
-    cat > "$PORTAINER_DIR/docker-compose.yml" <<'PORTAINER_EOF'
-version: '3.8'
-
+    cat > "$PORTAINER_DIR/docker-compose.yml" <<PORTAINER_EOF
 services:
   portainer:
     image: portainer/portainer-ce:latest
@@ -330,6 +329,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
+    group_add:
+      - "${DOCKER_GID}"
     networks:
       - portainer-network
     logging:
@@ -348,6 +349,7 @@ networks:
 PORTAINER_EOF
     
     chown $DEPLOY_USER:$DEPLOY_USER "$PORTAINER_DIR/docker-compose.yml"
+    echo "✓ Добавлен GID группы docker ($DOCKER_GID) для доступа к socket"
     
     echo "Запуск Portainer..."
     cd "$PORTAINER_DIR"

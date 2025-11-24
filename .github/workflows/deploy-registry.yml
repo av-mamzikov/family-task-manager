@@ -305,9 +305,11 @@ jobs:
               sed "s/postgres_data:/postgres_data_pr_$PR_NUMBER:/g" > docker-compose.pr.yml
             
               COMPOSE_FILE="docker-compose.pr.yml"
+              SERVICE_NAME="family-task-manager"
               CONTAINER_NAME="family-task-manager-pr-$PR_NUMBER"
             else
               COMPOSE_FILE="docker-compose.prod.yml"
+              SERVICE_NAME="family-task-manager"
               CONTAINER_NAME="family-task-manager"
             fi
             
@@ -326,8 +328,8 @@ jobs:
             
             # Остановка старого контейнера
             echo "Stopping old container..."
-            docker compose -f "$COMPOSE_FILE" stop "$CONTAINER_NAME" 2>/dev/null || true
-            docker compose -f "$COMPOSE_FILE" rm -f "$CONTAINER_NAME" 2>/dev/null || true
+            docker compose -f "$COMPOSE_FILE" stop "$SERVICE_NAME" 2>/dev/null || true
+            docker compose -f "$COMPOSE_FILE" rm -f "$SERVICE_NAME" 2>/dev/null || true
             
             # Запуск нового контейнера
             echo "Starting new container..."
@@ -344,7 +346,7 @@ jobs:
             # Проверка логов
             echo ""
             echo "Recent logs:"
-            docker compose -f "$COMPOSE_FILE" logs --tail=30 "$CONTAINER_NAME"
+            docker compose -f "$COMPOSE_FILE" logs --tail=50 "$SERVICE_NAME"
             
             # Очистка старых образов
             echo ""
@@ -362,7 +364,13 @@ jobs:
               fi
             else
               echo ""
-              echo "✗ Deployment failed!"
+              echo "✗ Deployment failed! Container is not running."
+              echo ""
+              echo "=== Full container logs ==="
+              docker logs "$CONTAINER_NAME" 2>&1 || docker compose -f "$COMPOSE_FILE" logs "$SERVICE_NAME"
+              echo ""
+              echo "=== Container inspect ==="
+              docker inspect "$CONTAINER_NAME" --format='{{.State.Status}}: {{.State.Error}}' 2>/dev/null || echo "Container not found"
               exit 1
             fi
 

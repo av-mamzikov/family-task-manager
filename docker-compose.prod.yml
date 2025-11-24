@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Family Task Manager Worker Service
   family-task-manager:
