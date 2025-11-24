@@ -175,17 +175,6 @@ git push origin main
 
 - [VPS Setup](docs/setup/VPS_SETUP.md) — настройка сервера
 - [🔐 Secrets Setup](docs/setup/SECRETS_SETUP.md) — установка секретов в GitHub
-- [GitHub Actions Setup](docs/setup/GITHUB_ACTIONS_SETUP.md) — автоматический CI/CD
-- [Private Registry Setup](docs/PRIVATE_REGISTRY_SETUP.md) — собственный Docker Registry
-- [Portainer Setup](docs/PORTAINER_SETUP.md) — Web UI для управления контейнерами
-- [Deployment Options](docs/DEPLOYMENT_OPTIONS.md) — сравнение вариантов деплоя
-
-### 🏗️ Разработка
-
-- [Host Quick Start](src/FamilyTaskManager.Host/QUICK_START.md) — запуск модульного монолита
-- [Host README](src/FamilyTaskManager.Host/README.md) — архитектура Bot + Worker
-- [Infrastructure Setup](docs/INFRASTRUCTURE_SETUP.md) — работа с БД и миграциями
-- [Use Cases](docs/USE_CASES.md) — бизнес-логика приложения
 
 ### 📖 Проектная документация
 

@@ -7,7 +7,8 @@
 - VPS с Ubuntu 20.04+ (минимум 1GB RAM, 1 CPU)
 - SSH доступ с правами root
 - Открытые порты: 22 (SSH), 80 (HTTP), 443 (HTTPS)
-    - Порт 5000 (Docker Registry) НЕ нужно открывать - используется только локально на VPS
+    - Порты 5000 (Registry), 5001 (Registry UI), 5002 (Dockge) привязаны к localhost
+    - Доступ к Registry UI и Dockge только через SSH туннель
 
 ## Подготовка (на вашем компьютере)
 
@@ -95,7 +96,7 @@ bash init-vps.sh
 - ✅ Private Docker Registry с аутентификацией (подробнее: [Registry Setup](../PRIVATE_REGISTRY_SETUP.md))
 - ✅ Registry UI для просмотра образов
 - ✅ Файл `.env` с настройками
-- ✅ Portainer для управления Docker (опционально, подробнее: [Portainer Setup](../PORTAINER_SETUP.md))
+- ✅ Dockge для управления Docker Compose (опционально, подробнее: [Dockge Setup](../DOCKGE_SETUP.md))
 - ✅ UFW Firewall (опционально)
 
 ## После завершения скрипта
@@ -264,25 +265,41 @@ docker compose logs -f
 
 ### Доступ к Registry UI
 
-После настройки Registry UI доступен по адресу: `http://ваш_ip:5001`
+Registry UI доступен только через SSH туннель (порт привязан к localhost):
+
+```bash
+# Создайте SSH туннель
+ssh -L 5001:localhost:5001 deploy@ваш_ip
+
+# Откройте в браузере
+http://localhost:5001
+```
 
 > 📖 Подробнее о работе с Registry: [Private Registry Setup](../PRIVATE_REGISTRY_SETUP.md)
 
-## Portainer - Web UI для управления Docker
+## Dockge - Web UI для управления Docker Compose
 
-Portainer устанавливается автоматически скриптом `init-vps.sh` (опционально).
+Dockge устанавливается автоматически скриптом `init-vps.sh` (опционально).
 
-**Доступ:** `http://ваш_ip:9000` или `https://ваш_ip:9443`
+Dockge доступен только через SSH туннель (порт привязан к localhost):
 
-> ⚠️ **Важно:** У вас есть **5 минут** после первого запуска для создания администратора!
+```bash
+# Создайте SSH туннель
+ssh -L 5002:localhost:5002 deploy@ваш_ip
 
-> 📖 **Подробная инструкция:** [Portainer Setup](../PORTAINER_SETUP.md)
+# Откройте в браузере
+http://localhost:5002
+```
+
+> ⚠️ **При первом входе:** Создайте аккаунт администратора
+
+> 📖 **Подробная инструкция:** [Dockge Setup](../DOCKGE_SETUP.md)
 
 ## Troubleshooting
 
 > 📖 **Подробное руководство:** См. соответствующие разделы в:
 > - [Private Registry Setup](../PRIVATE_REGISTRY_SETUP.md#troubleshooting) - проблемы с Registry
-> - [Portainer Setup](../PORTAINER_SETUP.md#troubleshooting) - проблемы с Portainer
+> - [Dockge Setup](../DOCKGE_SETUP.md#troubleshooting) - проблемы с Dockge
 > - [Secrets Setup](SECRETS_SETUP.md#troubleshooting) - проблемы с GitHub Actions
 
 ### Быстрые решения
@@ -345,6 +362,35 @@ chmod 600 /home/deploy/.ssh/authorized_keys
 
 ## Полезные команды
 
+### SSH туннели для доступа к UI
+
+Registry UI и Dockge доступны только через SSH туннели для безопасности:
+
+```bash
+# Registry UI (просмотр Docker образов)
+ssh -L 5001:localhost:5001 deploy@ваш_ip
+# Откройте: http://localhost:5001
+
+# Dockge (управление Docker Compose)
+ssh -L 5002:localhost:5002 deploy@ваш_ip
+# Откройте: http://localhost:5002
+
+# Можно создать оба туннеля одновременно
+ssh -L 5001:localhost:5001 -L 5002:localhost:5002 deploy@ваш_ip
+# Откройте: http://localhost:5001 и http://localhost:5002
+```
+
+> 💡 **Совет:** Добавьте в `~/.ssh/config` для удобства:
+> ```
+> Host myvps
+>     HostName ваш_ip
+>     User deploy
+>     IdentityFile ~/.ssh/deploy_key
+>     LocalForward 5001 localhost:5001
+>     LocalForward 5002 localhost:5002
+> ```
+> Теперь просто: `ssh myvps` и туннели создадутся автоматически!
+
 ### Управление контейнерами
 
 ```bash
@@ -403,7 +449,7 @@ docker ps
 - ✅ `family-task-postgres` - база данных
 - ✅ `docker-registry` - приватный registry
 - ✅ `docker-registry-ui` - UI для registry
-- ✅ `portainer` - управление Docker (если установлен)
+- ✅ `dockge` - управление Docker Compose (если установлен)
 
 **Политики перезапуска Docker:**
 
@@ -417,11 +463,11 @@ docker ps
 > 💡 **Совет:** `unless-stopped` - лучший выбор для production, т.к. контейнеры не запустятся после
 `docker compose down`, что удобно при обслуживании.
 
-### Управление Registry и Portainer
+### Управление Registry и Dockge
 
 > 📖 Подробные команды см. в:
 > - [Registry Commands Cheatsheet](../REGISTRY_COMMANDS_CHEATSHEET.md)
-> - [Portainer Setup](../PORTAINER_SETUP.md#полезные-команды)
+> - [Dockge Setup](../DOCKGE_SETUP.md#полезные-команды)
 
 ### Резервное копирование БД
 
@@ -441,7 +487,7 @@ cat backup_20241124.sql | docker compose exec -T postgres \
 - 📖 [GitHub Actions Setup](GITHUB_ACTIONS_SETUP.md) - настройка CI/CD
 - 🚀 [Deployment Summary](../../DEPLOYMENT_SUMMARY.md) - обзор процесса деплоя
 - 🐳 [Docker Registry Setup](../PRIVATE_REGISTRY_SETUP.md) - подробнее о registry
-- 🎛️ [Portainer Setup](../PORTAINER_SETUP.md) - подробное руководство по Portainer
+- 🎛️ [Dockge Setup](../DOCKGE_SETUP.md) - подробное руководство по Dockge
 
 ---
 
