@@ -125,13 +125,14 @@ jobs:
           
           # Ждем установки туннеля
           sleep 5
-          
-          # Проверка доступности registry
-          curl -f http://localhost:5000/v2/_catalog || (echo "Registry unavailable" && exit 1)
 
       - name: Login to Private Registry
         run: |
           echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login localhost:5000 -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
+          
+          # Проверка доступности registry после логина
+          curl -u ${{ secrets.REGISTRY_USERNAME }}:${{ secrets.REGISTRY_PASSWORD }} -f http://localhost:5000/v2/_catalog || (echo "Registry unavailable" && exit 1)
+          echo "✓ Registry is available and authenticated"
 
       - name: Extract metadata
         id: meta
@@ -219,23 +220,29 @@ jobs:
           BOT_USERNAME: ${{ secrets[needs.setup.outputs.bot_username_secret] }}
           POSTGRES_USER: ${{ secrets[needs.setup.outputs.postgres_user_secret] }}
           POSTGRES_PASSWORD: ${{ secrets[needs.setup.outputs.postgres_password_secret] }}
+          REGISTRY_USER: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASS: ${{ secrets.REGISTRY_PASSWORD }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: DEPLOY_DIR,IMAGE_TAG,IS_PRODUCTION,IS_PR_PREVIEW,PR_NUMBER,BOT_TOKEN,BOT_USERNAME,POSTGRES_USER,POSTGRES_PASSWORD
+          envs: DEPLOY_DIR,IMAGE_TAG,IS_PRODUCTION,IS_PR_PREVIEW,PR_NUMBER,BOT_TOKEN,BOT_USERNAME,POSTGRES_USER,POSTGRES_PASSWORD,REGISTRY_USER,REGISTRY_PASS
           script: |
             echo "=== Starting deployment ==="
             echo "Environment: $([ "$IS_PRODUCTION" == "true" ] && echo "Production" || echo "PR Preview #$PR_NUMBER")"
             echo "Deploy directory: $DEPLOY_DIR"
             echo "Image tag: $IMAGE_TAG"
             
-            # Проверка доступности registry
-            if ! curl -sf http://localhost:5000/v2/_catalog > /dev/null; then
+            # Проверка доступности registry с аутентификацией
+            if ! curl -u "$REGISTRY_USER:$REGISTRY_PASS" -sf http://localhost:5000/v2/_catalog > /dev/null; then
               echo "✗ Error: Registry is not available"
               exit 1
             fi
             echo "✓ Registry is available"
+            
+            # Логин в registry для docker pull
+            echo "$REGISTRY_PASS" | docker login localhost:5000 -u "$REGISTRY_USER" --password-stdin
+            echo "✓ Logged in to registry"
             
             # Создание директории если не существует
             mkdir -p "$DEPLOY_DIR"

@@ -24,6 +24,7 @@ PROJECT_DIR="/opt/family-task-manager"
 REGISTRY_DIR="/opt/docker-registry"
 AUTH_DIR="$REGISTRY_DIR/registry-auth"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VPS_IP=$(hostname -I | awk '{print $1}')
 
 echo "📋 Конфигурация:"
 echo "  - Пользователь для деплоя: $DEPLOY_USER"
@@ -211,9 +212,9 @@ echo "$REGISTRY_PASSWORD" | htpasswd -Bci "$AUTH_DIR/htpasswd" "$REGISTRY_USER"
 chown -R $DEPLOY_USER:$DEPLOY_USER $AUTH_DIR
 echo "✓ Создан пользователь registry: $REGISTRY_USER"
 
-# Создание docker-compose.registry.yml
-echo "Создание docker-compose.registry.yml..."
-cat > "$REGISTRY_DIR/docker-compose.registry.yml" <<'COMPOSE_EOF'
+# Создание docker-compose.yml
+echo "Создание docker-compose.yml..."
+cat > "$REGISTRY_DIR/docker-compose.yml" <<'COMPOSE_EOF'
 version: '3.8'
 
 services:
@@ -271,8 +272,8 @@ networks:
     driver: bridge
 COMPOSE_EOF
 
-chown $DEPLOY_USER:$DEPLOY_USER "$REGISTRY_DIR/docker-compose.registry.yml"
-echo "✓ Создан docker-compose.registry.yml"
+chown $DEPLOY_USER:$DEPLOY_USER "$REGISTRY_DIR/docker-compose.yml"
+echo "✓ Создан docker-compose.yml"
 
 # Настройка Docker daemon для работы с insecure registry
 DAEMON_JSON="/etc/docker/daemon.json"
@@ -292,7 +293,7 @@ fi
 # Запуск registry
 echo "Запуск Docker Registry..."
 cd "$REGISTRY_DIR"
-sudo -u $DEPLOY_USER docker compose -f docker-compose.registry.yml up -d
+sudo -u $DEPLOY_USER docker compose up -d
 sleep 3
 
 # Проверка
@@ -303,10 +304,71 @@ else
 fi
 
 # ============================================
-# 7. Настройка firewall (опционально)
+# 7. Настройка Portainer (опционально)
 # ============================================
 echo ""
-echo "🔥 Шаг 7/7: Настройка firewall (опционально)..."
+echo "🎛️  Шаг 7/8: Установка Portainer (опционально)..."
+read -p "Установить Portainer для управления Docker? (y/n): " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    PORTAINER_DIR="/opt/portainer"
+    mkdir -p "$PORTAINER_DIR"
+    chown -R $DEPLOY_USER:$DEPLOY_USER "$PORTAINER_DIR"
+    
+    echo "Создание docker-compose.yml для Portainer..."
+    cat > "$PORTAINER_DIR/docker-compose.yml" <<'PORTAINER_EOF'
+version: '3.8'
+
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - portainer-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  portainer_data:
+    driver: local
+
+networks:
+  portainer-network:
+    driver: bridge
+PORTAINER_EOF
+    
+    chown $DEPLOY_USER:$DEPLOY_USER "$PORTAINER_DIR/docker-compose.yml"
+    
+    echo "Запуск Portainer..."
+    cd "$PORTAINER_DIR"
+    sudo -u $DEPLOY_USER docker compose up -d
+    sleep 3
+    
+    if docker ps | grep -q portainer; then
+        echo "✓ Portainer успешно запущен!"
+        echo "  Доступ: http://$VPS_IP:9000 или https://$VPS_IP:9443"
+    else
+        echo "⚠️  Portainer не запустился. Проверьте логи: docker logs portainer"
+    fi
+else
+    echo "⏭️  Пропущено"
+fi
+
+# ============================================
+# 8. Настройка firewall (опционально)
+# ============================================
+echo ""
+echo "🔥 Шаг 8/8: Настройка firewall (опционально)..."
 read -p "Настроить UFW firewall? (y/n): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -316,8 +378,9 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     ufw allow 80/tcp    # HTTP
     ufw allow 443/tcp   # HTTPS
     ufw allow 5000/tcp  # Docker Registry
-    ufw allow 9000/tcp  # Portainer (опционально)
-    ufw allow 9443/tcp  # Portainer HTTPS (опционально)
+    ufw allow 5001/tcp  # Registry UI
+    ufw allow 9000/tcp  # Portainer HTTP
+    ufw allow 9443/tcp  # Portainer HTTPS
     echo "✓ Firewall настроен"
 else
     echo "⏭️  Пропущено"
@@ -331,8 +394,6 @@ echo "=========================================="
 echo "  ✅ Настройка VPS завершена!"
 echo "=========================================="
 echo ""
-VPS_IP=$(hostname -I | awk '{print $1}')
-
 echo "📝 Сохраните эти данные для GitHub Secrets:"
 echo ""
 echo "┌─────────────────────────────────────────────────────────"
@@ -364,7 +425,16 @@ echo ""
 echo "4. Registry UI доступен по адресу:"
 echo "   http://$VPS_IP:5001"
 echo ""
+if docker ps | grep -q portainer; then
+echo "5. Portainer доступен по адресу:"
+echo "   HTTP:  http://$VPS_IP:9000"
+echo "   HTTPS: https://$VPS_IP:9443"
+echo "   (При первом входе создайте администратора)"
+echo ""
+echo "6. Запушьте код в GitHub - деплой запустится автоматически!"
+else
 echo "5. Запушьте код в GitHub - деплой запустится автоматически!"
+fi
 echo ""
 echo "📚 Документация: docs/setup/VPS_SETUP.md"
 echo ""

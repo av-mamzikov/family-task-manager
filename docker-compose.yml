@@ -1,27 +1,35 @@
 version: '3.8'
 
+# Docker Compose для деплоя без Docker Hub
+# Использует локально собранные образы
+
 services:
   # Family Task Manager Worker Service
   family-task-manager:
+    image: family-task-manager:latest  # Локальный образ
+    container_name: family-task-manager
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: family-task-manager
+      args:
+        BUILD_CONFIGURATION: Release
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=FamilyTaskManager;Username=postgres;Password=postgres123
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=FamilyTaskManager;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - Bot__BotToken=${TELEGRAM_BOT_TOKEN}
       - Bot__BotUsername=${TELEGRAM_BOT_USERNAME}
-      - TZ=UTC
+      - TZ=Europe/Moscow
     networks:
       - family-task-network
     restart: unless-stopped
-    # Uncomment if you have health check endpoints
-    # ports:
-    #   - "8080:8080"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # PostgreSQL Database
   postgres:
@@ -29,11 +37,9 @@ services:
     container_name: family-task-postgres
     environment:
       - POSTGRES_DB=FamilyTaskManager
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres123
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
@@ -41,33 +47,19 @@ services:
       - family-task-network
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d FamilyTaskManager" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d FamilyTaskManager" ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
-
-  # pgAdmin for database management
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: family-task-pgadmin
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@familytask.com
-      - PGADMIN_DEFAULT_PASSWORD=admin123
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    networks:
-      - family-task-network
-    restart: unless-stopped
-    depends_on:
-      - postgres
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_data:
-    driver: local
-  pgadmin_data:
     driver: local
 
 networks:
