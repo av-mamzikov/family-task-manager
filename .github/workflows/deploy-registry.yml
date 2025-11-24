@@ -196,6 +196,19 @@ jobs:
     needs: [ setup, build-and-push ]
     
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy docker-compose.prod.yml to VPS
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          
+          # Копируем docker-compose.prod.yml на VPS
+          scp -i ~/.ssh/id_rsa docker-compose.prod.yml ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}:/tmp/docker-compose.prod.yml
+
       - name: Deploy application
         uses: appleboy/ssh-action@v1.0.0
         env:
@@ -230,14 +243,9 @@ jobs:
             mkdir -p "$DEPLOY_DIR"
             cd "$DEPLOY_DIR"
             
-            # Копирование конфигурации из production если это PR preview
-            if [ "$IS_PR_PREVIEW" == "true" ]; then
-              if [ ! -f "docker-compose.prod.yml" ]; then
-                echo "Copying configuration from production..."
-                cp /opt/family-task-manager/docker-compose.prod.yml ./
-                cp /opt/family-task-manager/scripts/init-db.sql ./init-db.sql 2>/dev/null || true
-              fi
-            fi
+            # Копирование docker-compose.prod.yml из /tmp
+            echo "Copying docker-compose.prod.yml..."
+            cp /tmp/docker-compose.prod.yml ./docker-compose.prod.yml
             
             # Создание/обновление .env файла
             echo "Creating .env file..."

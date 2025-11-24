@@ -203,14 +203,14 @@ dotnet test
 dotnet test /p:CollectCoverage=true
 ```
 
-### Локальное тестирование деплоя
+### Локальное тестирование с Docker
 
 ```bash
-# Windows
-.\scripts\test-local.ps1
+# Запуск через docker-compose
+docker-compose up -d
 
-# Linux/macOS
-bash scripts/test-local.sh
+# Проверка логов
+docker-compose logs -f
 ```
 
 Подробнее: [LOCAL_TESTING.md](LOCAL_TESTING.md)
@@ -225,9 +225,9 @@ bash scripts/test-local.sh
 ssh root@ваш_ip_адрес
 ```
 
-### Шаг 2: Автоматическая настройка
+### Шаг 2: Автоматическая настройка сервера
 
-Скопируйте скрипт на VPS и запустите:
+Скопируйте и запустите скрипт настройки:
 
 ```bash
 # На вашем компьютере
@@ -243,20 +243,20 @@ bash /tmp/server-setup.sh
 ### Шаг 3: Настройка Private Registry
 
 ```bash
+# Скопируйте файлы на VPS (на вашем компьютере)
+scp docker-compose.registry.yml root@ваш_ip:/tmp/
+scp scripts/setup-registry.sh root@ваш_ip:/tmp/
+
 # На VPS
+ssh root@ваш_ip
 mkdir -p /opt/docker-registry
 cd /opt/docker-registry
-
-# Скопируйте файлы (на вашем компьютере)
-scp docker-compose.registry.yml root@ваш_ip:/opt/docker-registry/
-scp scripts/setup-registry.sh root@ваш_ip:/opt/docker-registry/
-
-# На VPS запустите настройку
-cd /opt/docker-registry
+mv /tmp/docker-compose.registry.yml ./
+mv /tmp/setup-registry.sh ./
 bash setup-registry.sh
 ```
 
-Введите username и пароль для registry (запомните их!).
+Введите username и пароль для registry (запомните их - понадобятся для GitHub Secrets!).
 
 ### Шаг 4: Создайте SSH ключ для GitHub Actions
 
@@ -267,69 +267,76 @@ ssh-keygen -t ed25519 -f $HOME\.ssh\github_actions_key -C "github-actions"
 # Скопируйте публичный ключ на VPS
 Get-Content $HOME\.ssh\github_actions_key.pub | ssh root@ваш_ip "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
 
-# Скопируйте приватный ключ (понадобится для GitHub)
+# Скопируйте приватный ключ (понадобится для GitHub Secrets)
 Get-Content $HOME\.ssh\github_actions_key
+```
+
+```bash
+# Linux/macOS
+ssh-keygen -t ed25519 -f ~/.ssh/github_actions_key -C "github-actions"
+
+# Скопируйте публичный ключ на VPS
+ssh-copy-id -i ~/.ssh/github_actions_key.pub root@ваш_ip
+
+# Скопируйте приватный ключ (понадобится для GitHub Secrets)
+cat ~/.ssh/github_actions_key
 ```
 
 ### Шаг 5: Настройте GitHub Secrets
 
 `Settings` → `Secrets and variables` → `Actions` → `New repository secret`
 
-**Обязательные:**
+**Обязательные секреты:**
 
-- `VPS_HOST` - IP адрес VPS
-- `VPS_USERNAME` - SSH username (обычно `root`)
-- `VPS_SSH_KEY` - приватный SSH ключ (из шага 4)
-- `REGISTRY_USERNAME` - username registry (из шага 3)
-- `REGISTRY_PASSWORD` - пароль registry (из шага 3)
+| Секрет                  | Описание              | Пример         |
+|-------------------------|-----------------------|----------------|
+| `VPS_HOST`              | IP адрес VPS          | `123.45.67.89` |
+| `VPS_USERNAME`          | SSH username          | `root`         |
+| `VPS_SSH_KEY`           | Приватный SSH ключ    | Из шага 4      |
+| `REGISTRY_USERNAME`     | Username registry     | Из шага 3      |
+| `REGISTRY_PASSWORD`     | Пароль registry       | Из шага 3      |
+| `TELEGRAM_BOT_TOKEN`    | Токен production бота | От @BotFather  |
+| `TELEGRAM_BOT_USERNAME` | Username бота         | `your_bot`     |
+| `POSTGRES_USER`         | PostgreSQL user       | `familytask`   |
+| `POSTGRES_PASSWORD`     | PostgreSQL пароль     | Сильный пароль |
 
 **Для PR Preview (опционально):**
 
-- `PR_BOT_TOKEN` - токен тестового Telegram бота
-- `PR_BOT_USERNAME` - username тестового бота
-- `PR_POSTGRES_USER` - `familytask_pr`
-- `PR_POSTGRES_PASSWORD` - придумайте пароль
+| Секрет                 | Описание                |
+|------------------------|-------------------------|
+| `PR_BOT_TOKEN`         | Токен тестового бота    |
+| `PR_BOT_USERNAME`      | Username тестового бота |
+| `PR_POSTGRES_USER`     | `familytask_pr`         |
+| `PR_POSTGRES_PASSWORD` | Пароль для PR БД        |
 
-### Шаг 6: Подготовьте директорию приложения
+### Шаг 6: Первый деплой
 
-```bash
-# На VPS
-mkdir -p /opt/family-task-manager/scripts
-cd /opt/family-task-manager
-
-# Скопируйте файлы (на вашем компьютере)
-scp docker-compose.prod.yml root@ваш_ip:/opt/family-task-manager/
-scp scripts/deploy-from-registry.sh root@ваш_ip:/opt/family-task-manager/
-scp scripts/init-db.sql root@ваш_ip:/opt/family-task-manager/scripts/
-
-# Создайте .env на VPS
-ssh root@ваш_ip
-cd /opt/family-task-manager
-nano .env
-```
-
-Содержимое `.env`:
-
-```env
-REGISTRY_HOST=localhost:5000
-POSTGRES_USER=familytask
-POSTGRES_PASSWORD=ваш_сильный_пароль
-POSTGRES_DB=FamilyTaskManager
-TELEGRAM_BOT_TOKEN=ваш_токен_бота
-TELEGRAM_BOT_USERNAME=ваш_бот_username
-ASPNETCORE_ENVIRONMENT=Production
-```
-
-### Шаг 7: Первый деплой
+Всё готово! Теперь просто запушьте код:
 
 ```bash
-# Локально
 git add .
 git commit -m "Setup deployment"
 git push origin main
 ```
 
-GitHub Actions автоматически задеплоит приложение!
+**Что произойдёт автоматически:**
+
+1. ✅ Запустятся тесты
+2. ✅ Соберётся Docker образ
+3. ✅ Образ загрузится в registry на VPS
+4. ✅ `docker-compose.prod.yml` скопируется на VPS
+5. ✅ Приложение задеплоится и запустится
+6. ✅ EF Core создаст схему БД автоматически
+
+**Проверка деплоя:**
+
+```bash
+# На VPS проверьте статус
+ssh root@ваш_ip
+cd /opt/family-task-manager
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs -f
+```
 
 **Подробнее:
 ** [DEPLOYMENT_SUMMARY.md](DEPLOYMENT_SUMMARY.md) | [docs/PRIVATE_REGISTRY_SETUP.md](docs/PRIVATE_REGISTRY_SETUP.md)
@@ -361,8 +368,11 @@ GitHub Actions автоматически задеплоит приложени�
    # Создайте PR на GitHub
    ```
 
-2. **Запустите деплой вручную:**
-    - Перейдите в **Actions** → **Deploy to VPS via Private Registry**
+2. **Добавьте label `deploy-preview`** к PR
+    - Автоматически запустится деплой в изолированное окружение
+
+   **Или запустите вручную:**
+    - Перейдите в **Actions** → **Deploy to VPS**
     - Нажмите **"Run workflow"**
     - Выберите:
         - **Branch:** вашу PR ветку
@@ -371,11 +381,12 @@ GitHub Actions автоматически задеплоит приложени�
     - Нажмите **"Run workflow"**
 
 3. **Тестируйте** в изолированном окружении:
-    - Отдельный Telegram бот
-    - Отдельная база данных
-    - Не влияет на production
+    - ✅ Отдельный Telegram бот
+    - ✅ Отдельная база данных
+    - ✅ Не влияет на production
+    - ✅ Независимые контейнеры
 
-4. **Очистка** происходит автоматически при закрытии PR
+4. **Очистка:** удалите контейнеры вручную или при закрытии PR
 
 **Подробнее:** [DEPLOYMENT_SUMMARY.md](DEPLOYMENT_SUMMARY.md)
 
