@@ -29,9 +29,8 @@ public static class InfrastructureServiceExtensions
     {
       var eventDispatchInterceptor = provider.GetRequiredService<EventDispatchInterceptor>();
 
-      // Use PostgreSQL if Aspire or DefaultConnection is available, otherwise use SQLite
-      if (config.GetConnectionString("FamilyTaskManager") != null ||
-          config.GetConnectionString("DefaultConnection") != null)
+      // Use PostgreSQL if DefaultConnection is available, otherwise use SQLite
+      if (config.GetConnectionString("DefaultConnection") != null)
       {
         options.UseNpgsql(connectionString);
       }
