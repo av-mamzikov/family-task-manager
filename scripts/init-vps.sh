@@ -228,6 +228,11 @@ services:
       REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
       REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /var/lib/registry
       REGISTRY_STORAGE_DELETE_ENABLED: "true"
+      REGISTRY_HTTP_HEADERS_Access__Control__Allow__Origin: "[*]"
+      REGISTRY_HTTP_HEADERS_Access__Control__Allow__Methods: "[HEAD,GET,OPTIONS,DELETE]"
+      REGISTRY_HTTP_HEADERS_Access__Control__Allow__Credentials: "[true]"
+      REGISTRY_HTTP_HEADERS_Access__Control__Allow__Headers: "[Authorization,Accept,Cache-Control]"
+      REGISTRY_HTTP_HEADERS_Access__Control__Expose__Headers: "[Docker-Content-Digest]"
     volumes:
       - registry_data:/var/lib/registry
       - ./registry-auth:/auth:ro

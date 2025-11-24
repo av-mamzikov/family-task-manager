@@ -199,14 +199,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Copy docker-compose.prod.yml to VPS
+        env:
+          DEPLOY_DIR: ${{ needs.setup.outputs.deploy_dir }}
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
           
-          # Копируем docker-compose.prod.yml на VPS
-          scp -i ~/.ssh/id_rsa docker-compose.prod.yml ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}:/tmp/docker-compose.prod.yml
+          # Создаем директорию на VPS если не существует
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} "sudo mkdir -p $DEPLOY_DIR && sudo chown \$USER:\$USER $DEPLOY_DIR"
+          
+          # Копируем docker-compose.prod.yml сразу как docker-compose.yml
+          scp -i ~/.ssh/id_rsa docker-compose.prod.yml ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}:$DEPLOY_DIR/docker-compose.yml
 
       - name: Deploy application
         uses: appleboy/ssh-action@v1.0.0
@@ -263,14 +268,11 @@ jobs:
               echo "✓ Old PR preview cleaned up"
             fi
             
-            # Создание директории если не существует
-            sudo mkdir -p "$DEPLOY_DIR"
-            sudo chown $USER:$USER "$DEPLOY_DIR"
+            # Переход в директорию деплоя
             cd "$DEPLOY_DIR"
             
-            # Копирование docker-compose.prod.yml из /tmp
-            echo "Copying docker-compose.prod.yml..."
-            cp /tmp/docker-compose.prod.yml ./docker-compose.prod.yml
+            # docker-compose.yml уже скопирован на предыдущем шаге
+            echo "✓ docker-compose.yml is ready"
             
             # Создание/обновление .env файла
             echo "Creating .env file..."
@@ -297,20 +299,20 @@ jobs:
             if [ "$IS_PR_PREVIEW" == "true" ]; then
               echo "Configuring PR preview environment..."
             
-              # Создаем кастомный docker-compose файл
+              # Обновляем docker-compose.yml для preview
               # НЕ меняем имя образа, только имена контейнеров и сетей
-              sed "s/container_name: family-task-manager/container_name: family-task-manager-pr-$PR_NUMBER/g" docker-compose.prod.yml | \
-              sed "s/container_name: family-task-postgres/container_name: family-task-postgres-pr-$PR_NUMBER/g" | \
-              sed "s/family-task-network/family-task-network-pr-$PR_NUMBER/g" | \
-              sed "s/postgres_data:/postgres_data_pr_$PR_NUMBER:/g" > docker-compose.pr.yml
+              sed -i "s/container_name: family-task-manager/container_name: family-task-manager-pr-$PR_NUMBER/g" docker-compose.yml
+              sed -i "s/container_name: family-task-postgres/container_name: family-task-postgres-pr-$PR_NUMBER/g" docker-compose.yml
+              sed -i "s/family-task-network/family-task-network-pr-$PR_NUMBER/g" docker-compose.yml
+              sed -i "s/postgres_data:/postgres_data_pr_$PR_NUMBER:/g" docker-compose.yml
             
-              COMPOSE_FILE="docker-compose.pr.yml"
               SERVICE_NAME="family-task-manager"
               CONTAINER_NAME="family-task-manager-pr-$PR_NUMBER"
+              echo "✓ Configured for PR #$PR_NUMBER"
             else
-              COMPOSE_FILE="docker-compose.prod.yml"
               SERVICE_NAME="family-task-manager"
               CONTAINER_NAME="family-task-manager"
+              echo "✓ Configured for production"
             fi
             
             # Создание бэкапа БД (только для production)
@@ -328,12 +330,12 @@ jobs:
             
             # Остановка старого контейнера
             echo "Stopping old container..."
-            docker compose -f "$COMPOSE_FILE" stop "$SERVICE_NAME" 2>/dev/null || true
-            docker compose -f "$COMPOSE_FILE" rm -f "$SERVICE_NAME" 2>/dev/null || true
+            docker compose stop "$SERVICE_NAME" 2>/dev/null || true
+            docker compose rm -f "$SERVICE_NAME" 2>/dev/null || true
             
             # Запуск нового контейнера
             echo "Starting new container..."
-            docker compose -f "$COMPOSE_FILE" up -d
+            docker compose up -d
             
             # Ожидание запуска
             sleep 10
@@ -341,12 +343,12 @@ jobs:
             # Проверка статуса
             echo ""
             echo "Container status:"
-            docker compose -f "$COMPOSE_FILE" ps
+            docker compose ps
             
             # Проверка логов
             echo ""
             echo "Recent logs:"
-            docker compose -f "$COMPOSE_FILE" logs --tail=50 "$SERVICE_NAME"
+            docker compose logs --tail=50 "$SERVICE_NAME"
             
             # Очистка старых образов
             echo ""
@@ -354,7 +356,7 @@ jobs:
             docker image prune -f
             
             # Финальная проверка
-            if docker compose -f "$COMPOSE_FILE" ps | grep -q "$CONTAINER_NAME.*Up"; then
+            if docker compose ps | grep -q "$CONTAINER_NAME.*Up"; then
               echo ""
               echo "✓ Deployment successful!"
               if [ "$IS_PR_PREVIEW" == "true" ]; then
@@ -367,7 +369,7 @@ jobs:
               echo "✗ Deployment failed! Container is not running."
               echo ""
               echo "=== Full container logs ==="
-              docker logs "$CONTAINER_NAME" 2>&1 || docker compose -f "$COMPOSE_FILE" logs "$SERVICE_NAME"
+              docker logs "$CONTAINER_NAME" 2>&1 || docker compose logs "$SERVICE_NAME"
               echo ""
               echo "=== Container inspect ==="
               docker inspect "$CONTAINER_NAME" --format='{{.State.Status}}: {{.State.Error}}' 2>/dev/null || echo "Container not found"

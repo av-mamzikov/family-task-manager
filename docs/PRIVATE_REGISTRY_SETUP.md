@@ -452,6 +452,124 @@ docker pull localhost:5000/family-task-manager:latest --no-cache
 docker compose -f docker-compose.prod.yml up -d --force-recreate family-task-manager
 ```
 
+### Registry UI: CORS ошибка "Access-Control-Allow-Origin"
+
+**Проблема:** При открытии Registry UI (http://ваш_ip:5001) появляется ошибка:
+
+```
+An error occured: Check your connection and your registry must have 
+`Access-Control-Allow-Origin` header set to `http://ваш_ip:5001`
+```
+
+**Причина:** Registry не настроен на разрешение CORS запросов от UI.
+
+**Решение:**
+
+```bash
+ssh deploy@ваш_ip
+cd /opt/docker-registry
+
+# Остановите registry
+docker compose down
+
+# Отредактируйте docker-compose.yml
+nano docker-compose.yml
+
+# Добавьте в секцию registry -> environment:
+#   REGISTRY_HTTP_HEADERS_Access__Control__Allow__Origin: "[*]"
+#   REGISTRY_HTTP_HEADERS_Access__Control__Allow__Methods: "[HEAD,GET,OPTIONS,DELETE]"
+#   REGISTRY_HTTP_HEADERS_Access__Control__Allow__Credentials: "[true]"
+#   REGISTRY_HTTP_HEADERS_Access__Control__Allow__Headers: "[Authorization,Accept,Cache-Control]"
+#   REGISTRY_HTTP_HEADERS_Access__Control__Expose__Headers: "[Docker-Content-Digest]"
+#
+# ВАЖНО: Используйте двойное подчеркивание (__) вместо дефиса (-) в именах!
+
+# Или замените всю секцию registry:
+cat > docker-compose.yml << 'EOF'
+services:
+  registry:
+    image: registry:2
+    container_name: docker-registry
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: "Registry Realm"
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /var/lib/registry
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+      REGISTRY_HTTP_HEADERS_Access__Control__Allow__Origin: "[*]"
+      REGISTRY_HTTP_HEADERS_Access__Control__Allow__Methods: "[HEAD,GET,OPTIONS,DELETE]"
+      REGISTRY_HTTP_HEADERS_Access__Control__Allow__Credentials: "[true]"
+      REGISTRY_HTTP_HEADERS_Access__Control__Allow__Headers: "[Authorization,Accept,Cache-Control]"
+      REGISTRY_HTTP_HEADERS_Access__Control__Expose__Headers: "[Docker-Content-Digest]"
+    volumes:
+      - registry_data:/var/lib/registry
+      - ./registry-auth:/auth:ro
+    networks:
+      - registry-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  registry-ui:
+    image: joxit/docker-registry-ui:latest
+    container_name: docker-registry-ui
+    restart: unless-stopped
+    ports:
+      - "5001:80"
+    environment:
+      - REGISTRY_TITLE=Family Task Manager Registry
+      - REGISTRY_URL=http://registry:5000
+      - DELETE_IMAGES=true
+      - SHOW_CONTENT_DIGEST=true
+      - SINGLE_REGISTRY=true
+    depends_on:
+      - registry
+    networks:
+      - registry-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+volumes:
+  registry_data:
+    driver: local
+
+networks:
+  registry-network:
+    driver: bridge
+EOF
+
+# Запустите заново
+docker compose up -d
+
+# Проверьте логи
+docker logs docker-registry
+docker logs docker-registry-ui
+
+# Откройте Registry UI в браузере
+# http://ваш_ip:5001
+```
+
+**Проверка CORS заголовков:**
+
+```bash
+# Проверьте, что registry возвращает CORS заголовки
+curl -I http://localhost:5000/v2/_catalog
+
+# Должны быть заголовки:
+# Access-Control-Allow-Origin: *
+# Access-Control-Allow-Methods: HEAD,GET,OPTIONS,DELETE
+```
+
+> 💡 **Примечание:** Новые установки через `init-vps.sh` уже включают эти настройки CORS автоматически.
+
 ---
 
 ## Сравнение с другими вариантами

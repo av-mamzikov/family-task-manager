@@ -190,9 +190,12 @@ git push origin main
 1. ✅ Запустятся тесты
 2. ✅ Соберётся Docker образ
 3. ✅ Образ загрузится в registry на VPS
-4. ✅ `docker-compose.prod.yml` скопируется на VPS
+4. ✅ `docker-compose.prod.yml` скопируется на VPS и переименуется в `docker-compose.yml`
 5. ✅ Приложение задеплоится и запустится
 6. ✅ EF Core создаст схему БД автоматически
+
+> 💡 **Примечание:** На VPS файл называется `docker-compose.yml` для упрощения работы. Вам не нужно указывать
+`-f docker-compose.prod.yml` при запуске команд.
 
 ### Проверка деплоя
 
@@ -202,10 +205,10 @@ ssh deploy@ваш_ip
 
 # Проверьте статус контейнеров
 cd /opt/family-task-manager
-docker compose -f docker-compose.prod.yml ps
+docker compose ps
 
 # Просмотр логов
-docker compose -f docker-compose.prod.yml logs -f
+docker compose logs -f
 ```
 
 ### Доступ к Registry UI
@@ -274,6 +277,41 @@ docker compose logs registry
 docker compose restart
 ```
 
+### Registry UI: CORS ошибка
+
+**Проблема:** Registry UI показывает ошибку "Access-Control-Allow-Origin"
+
+**Быстрое решение:**
+
+```bash
+ssh deploy@ваш_ip
+cd /opt/docker-registry
+
+# Остановите registry
+docker compose down
+
+# Добавьте CORS заголовки в docker-compose.yml
+nano docker-compose.yml
+
+# В секции registry -> environment добавьте:
+#   REGISTRY_HTTP_HEADERS_Access__Control__Allow__Origin: "[*]"
+#   REGISTRY_HTTP_HEADERS_Access__Control__Allow__Methods: "[HEAD,GET,OPTIONS,DELETE]"
+#   REGISTRY_HTTP_HEADERS_Access__Control__Allow__Credentials: "[true]"
+#   REGISTRY_HTTP_HEADERS_Access__Control__Allow__Headers: "[Authorization,Accept,Cache-Control]"
+#   REGISTRY_HTTP_HEADERS_Access__Control__Expose__Headers: "[Docker-Content-Digest]"
+#
+# ВАЖНО: Используйте __ (двойное подчеркивание) вместо дефиса!
+
+# Запустите
+docker compose up -d
+
+# Проверьте
+curl -I http://localhost:5000/v2/_catalog | grep Access-Control
+```
+
+Подробнее
+см. [PRIVATE_REGISTRY_SETUP.md](../PRIVATE_REGISTRY_SETUP.md#registry-ui-cors-ошибка-access-control-allow-origin)
+
 ### Контейнеры приложения не запускаются
 
 ```bash
@@ -281,13 +319,13 @@ ssh deploy@ваш_ip
 
 # Проверьте логи
 cd /opt/family-task-manager
-docker compose -f docker-compose.prod.yml logs
+docker compose logs
 
 # Проверьте .env файл
 cat .env
 
 # Проверьте доступность БД
-docker compose -f docker-compose.prod.yml exec postgres pg_isready
+docker compose exec postgres pg_isready
 ```
 
 ### GitHub Actions не может подключиться к VPS
@@ -459,19 +497,19 @@ docker ps -a
 
 # Логи приложения
 cd /opt/family-task-manager
-docker compose -f docker-compose.prod.yml logs -f app
+docker compose logs -f family-task-manager
 
 # Логи БД
-docker compose -f docker-compose.prod.yml logs -f postgres
+docker compose logs -f postgres
 
 # Перезапуск приложения
-docker compose -f docker-compose.prod.yml restart app
+docker compose restart family-task-manager
 
 # Остановка всех контейнеров
-docker compose -f docker-compose.prod.yml down
+docker compose down
 
 # Запуск всех контейнеров
-docker compose -f docker-compose.prod.yml up -d
+docker compose up -d
 ```
 
 ### Автозапуск при перезагрузке системы
@@ -564,11 +602,12 @@ docker volume rm portainer_portainer_data
 
 ```bash
 # Создание бэкапа
-docker compose -f docker-compose.prod.yml exec postgres \
+cd /opt/family-task-manager
+docker compose exec postgres \
   pg_dump -U familytask familytask > backup_$(date +%Y%m%d).sql
 
 # Восстановление из бэкапа
-cat backup_20241124.sql | docker compose -f docker-compose.prod.yml exec -T postgres \
+cat backup_20241124.sql | docker compose exec -T postgres \
   psql -U familytask familytask
 ```
 
