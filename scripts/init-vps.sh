@@ -220,8 +220,9 @@ services:
     image: registry:2
     container_name: docker-registry
     restart: unless-stopped
-    ports:
-      - "5000:5000"
+    # Порт НЕ публикуется наружу - registry доступен только локально через localhost:5000
+    expose:
+      - "5000"
     environment:
       REGISTRY_AUTH: htpasswd
       REGISTRY_AUTH_HTPASSWD_REALM: "Registry Realm"
@@ -384,7 +385,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     ufw allow 22/tcp    # SSH
     ufw allow 80/tcp    # HTTP
     ufw allow 443/tcp   # HTTPS
-    ufw allow 5000/tcp  # Docker Registry
+    # Docker Registry (5000) НЕ открываем - используется только локально
     ufw allow 5001/tcp  # Registry UI
     ufw allow 9000/tcp  # Portainer HTTP
     ufw allow 9443/tcp  # Portainer HTTPS

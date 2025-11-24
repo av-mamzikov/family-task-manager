@@ -6,7 +6,8 @@
 
 - VPS с Ubuntu 20.04+ (минимум 1GB RAM, 1 CPU)
 - SSH доступ с правами root
-- Открытые порты: 22 (SSH), 80 (HTTP), 443 (HTTPS), 5000 (Registry)
+- Открытые порты: 22 (SSH), 80 (HTTP), 443 (HTTPS)
+    - Порт 5000 (Docker Registry) НЕ нужно открывать - используется только локально на VPS
 
 ## Подготовка (на вашем компьютере)
 
@@ -91,10 +92,10 @@ bash init-vps.sh
 - ✅ Пользователь `deploy` с sudo-правами и доступом к Docker
 - ✅ SSH ключи для администратора и GitHub Actions
 - ✅ Директории `/opt/family-task-manager` и `/opt/docker-registry`
-- ✅ Private Docker Registry с аутентификацией
+- ✅ Private Docker Registry с аутентификацией (подробнее: [Registry Setup](../PRIVATE_REGISTRY_SETUP.md))
 - ✅ Registry UI для просмотра образов
 - ✅ Файл `.env` с настройками
-- ✅ Portainer для управления Docker (опционально)
+- ✅ Portainer для управления Docker (опционально, подробнее: [Portainer Setup](../PORTAINER_SETUP.md))
 - ✅ UFW Firewall (опционально)
 
 ## После завершения скрипта
@@ -150,21 +151,14 @@ cat ~/.ssh/github_actions_key
 
 ### Добавление секретов в GitHub
 
+> 📖 **Подробная инструкция:** [Secrets Setup Guide](SECRETS_SETUP.md)
+
 Перейдите в репозиторий: `Settings` → `Secrets and variables` → `Actions` → `New repository secret`
 
-| Секрет                  | Откуда взять                                   |
-|-------------------------|------------------------------------------------|
-| `VPS_HOST`              | IP адрес VPS (показан в конце скрипта)         |
-| `VPS_USERNAME`          | `deploy`                                       |
-| `VPS_SSH_KEY`           | Приватный ключ `github_actions_key` (см. выше) |
-| `REGISTRY_USERNAME`     | Имя пользователя registry (вводили в скрипте)  |
-| `REGISTRY_PASSWORD`     | Пароль registry (вводили в скрипте)            |
-| `POSTGRES_USER`         | Имя пользователя БД (вводили в скрипте)        |
-| `POSTGRES_PASSWORD`     | Пароль БД (вводили в скрипте)                  |
-| `TELEGRAM_BOT_TOKEN`    | Токен от @BotFather (если вводили в скрипте)   |
-| `TELEGRAM_BOT_USERNAME` | Username бота (если вводили в скрипте)         |
+Вам потребуется добавить **9 обязательных секретов**. Все необходимые данные скрипт `init-vps.sh` выводит в конце
+работы.
 
-> 💡 **Совет:** Скрипт выводит все данные в конце работы - сохраните их!
+Список секретов и подробные инструкции см. в [Secrets Setup Guide](SECRETS_SETUP.md).
 
 ### Docker Hub (опционально, но рекомендуется)
 
@@ -228,12 +222,9 @@ curl -s --head -H "Authorization: Bearer $TOKEN" https://registry-1.docker.io/v2
 
 ### Для PR Preview (опционально)
 
-| Секрет                 | Описание                |
-|------------------------|-------------------------|
-| `PR_BOT_TOKEN`         | Токен тестового бота    |
-| `PR_BOT_USERNAME`      | Username тестового бота |
-| `PR_POSTGRES_USER`     | `familytask_pr`         |
-| `PR_POSTGRES_PASSWORD` | Пароль для PR БД        |
+Если планируете использовать PR Preview окружения, добавьте еще 4 секрета.
+
+Подробнее см. в [Secrets Setup Guide](SECRETS_SETUP.md#опциональные-для-pr-preview-4-штуки).
 
 ## Первый деплой
 
@@ -273,104 +264,28 @@ docker compose logs -f
 
 ### Доступ к Registry UI
 
-После настройки Registry UI доступен по адресу:
+После настройки Registry UI доступен по адресу: `http://ваш_ip:5001`
 
-```
-http://ваш_ip:5001
-```
-
-Здесь вы можете просматривать загруженные Docker образы.
+> 📖 Подробнее о работе с Registry: [Private Registry Setup](../PRIVATE_REGISTRY_SETUP.md)
 
 ## Portainer - Web UI для управления Docker
 
-Portainer устанавливается автоматически скриптом `init-vps.sh` (шаг 7/8).
+Portainer устанавливается автоматически скриптом `init-vps.sh` (опционально).
 
-Во время выполнения скрипта вам будет предложено установить Portainer. Если вы согласитесь (нажмёте `y`), скрипт
-автоматически:
+**Доступ:** `http://ваш_ip:9000` или `https://ваш_ip:9443`
 
-- Создаст директорию `/opt/portainer`
-- Настроит docker-compose.yml
-- Запустит Portainer
+> ⚠️ **Важно:** У вас есть **5 минут** после первого запуска для создания администратора!
 
-### Как зайти в Portainer
-
-1. **Откройте браузер** и перейдите по одному из адресов:
-    - HTTP: `http://ваш_ip:9000`
-    - HTTPS: `https://ваш_ip:9443` (рекомендуется)
-
-2. **Первый вход** (только при первом запуске):
-    - Создайте учетную запись администратора
-    - Придумайте надежный пароль (минимум 12 символов)
-    - Нажмите "Create user"
-
-3. **Подключение к Docker**:
-    - Выберите "Get Started" или "Local"
-    - Portainer автоматически подключится к локальному Docker
-
-4. **Готово!** Теперь вы можете:
-    - Просматривать контейнеры, образы, volumes
-    - Управлять контейнерами (start/stop/restart)
-    - Смотреть логи в реальном времени
-    - Выполнять команды внутри контейнеров
-
-> ⚠️ **Важно:** У вас есть **5 минут** после первого запуска Portainer, чтобы создать администратора. После этого
-> Portainer заблокируется и потребуется перезапуск контейнера.
-
-> 💡 **Совет:** Если вы пропустили установку Portainer при запуске скрипта, можете установить его вручную позже -
-> см. [PORTAINER_SETUP.md](../PORTAINER_SETUP.md)
+> 📖 **Подробная инструкция:** [Portainer Setup](../PORTAINER_SETUP.md)
 
 ## Troubleshooting
 
-### Registry недоступен
+> 📖 **Подробное руководство:** См. соответствующие разделы в:
+> - [Private Registry Setup](../PRIVATE_REGISTRY_SETUP.md#troubleshooting) - проблемы с Registry
+> - [Portainer Setup](../PORTAINER_SETUP.md#troubleshooting) - проблемы с Portainer
+> - [Secrets Setup](SECRETS_SETUP.md#troubleshooting) - проблемы с GitHub Actions
 
-```bash
-ssh deploy@ваш_ip
-
-# Проверьте статус registry
-cd /opt/docker-registry
-docker compose ps
-
-# Проверьте логи
-docker compose logs registry
-
-# Перезапустите registry
-docker compose restart
-```
-
-### Registry UI: CORS ошибка
-
-**Проблема:** Registry UI показывает ошибку "Access-Control-Allow-Origin"
-
-**Быстрое решение:**
-
-```bash
-ssh deploy@ваш_ip
-cd /opt/docker-registry
-
-# Остановите registry
-docker compose down
-
-# Добавьте CORS заголовки в docker-compose.yml
-nano docker-compose.yml
-
-# В секции registry -> environment добавьте:
-#   REGISTRY_HTTP_HEADERS_Access__Control__Allow__Origin: "[*]"
-#   REGISTRY_HTTP_HEADERS_Access__Control__Allow__Methods: "[HEAD,GET,OPTIONS,DELETE]"
-#   REGISTRY_HTTP_HEADERS_Access__Control__Allow__Credentials: "[true]"
-#   REGISTRY_HTTP_HEADERS_Access__Control__Allow__Headers: "[Authorization,Accept,Cache-Control]"
-#   REGISTRY_HTTP_HEADERS_Access__Control__Expose__Headers: "[Docker-Content-Digest]"
-#
-# ВАЖНО: Используйте __ (двойное подчеркивание) вместо дефиса!
-
-# Запустите
-docker compose up -d
-
-# Проверьте
-curl -I http://localhost:5000/v2/_catalog | grep Access-Control
-```
-
-Подробнее
-см. [PRIVATE_REGISTRY_SETUP.md](../PRIVATE_REGISTRY_SETUP.md#registry-ui-cors-ошибка-access-control-allow-origin)
+### Быстрые решения
 
 ### Контейнеры приложения не запускаются
 
@@ -427,123 +342,6 @@ chown deploy:deploy /home/deploy/.ssh/authorized_keys
 chmod 600 /home/deploy/.ssh/authorized_keys
 ```
 
-### Забыли пароль от Registry
-
-```bash
-ssh deploy@ваш_ip
-cd /opt/docker-registry/registry-auth
-
-# Создайте нового пользователя
-htpasswd -Bc htpasswd новый_пользователь
-
-# Или перезапишите файл
-htpasswd -Bc htpasswd admin
-
-# Перезапустите registry
-cd /opt/docker-registry
-docker compose restart
-```
-
-### Portainer не открывается или заблокирован
-
-```bash
-ssh deploy@ваш_ip
-
-# Проверьте статус Portainer
-docker ps | grep portainer
-
-# Если контейнер не запущен
-cd /opt/portainer
-docker compose up -d
-
-# Если прошло больше 5 минут и Portainer заблокирован
-# Перезапустите контейнер
-docker compose restart
-
-# Или пересоздайте контейнер (сбросит таймер)
-docker compose down
-docker compose up -d
-
-# Проверьте логи
-docker logs portainer -f
-```
-
-### Забыли пароль от Portainer
-
-```bash
-ssh deploy@ваш_ip
-
-# Сбросить пароль администратора
-cd /opt/portainer
-docker compose down
-docker volume rm portainer_portainer_data
-docker compose up -d
-
-# Теперь можно создать нового администратора
-```
-
-### Portainer: "The environment named local is unreachable"
-
-**Симптомы:**
-
-- Portainer показывает Docker доступным
-- При клике статус меняется на "Down"
-- Ошибка: "Failed loading environment"
-- Через терминал Docker работает нормально
-
-**Причина:** Контейнер Portainer не имеет прав на Docker socket
-
-**Решение 1: Добавить пользователя в группу docker**
-
-```bash
-ssh deploy@ваш_ip
-
-# 1. Проверьте, что вы в группе docker
-groups
-# Должна быть группа "docker" в списке
-
-# 2. Если группы docker нет, добавьте себя
-sudo usermod -aG docker $USER
-
-# 3. ВАЖНО: Выйдите и зайдите заново!
-exit
-ssh deploy@ваш_ip
-
-# 4. Пересоздайте Portainer
-cd /opt/portainer
-docker compose down
-docker compose up -d
-```
-
-**Решение 2: Добавить GID группы docker в конфигурацию (РЕКОМЕНДУЕТСЯ)**
-
-```bash
-ssh deploy@ваш_ip
-
-# 1. Узнайте GID группы docker
-getent group docker
-# Вывод: docker:x:999:deploy (999 - это GID)
-
-# 2. Остановите Portainer
-cd /opt/portainer
-docker compose down
-
-# 3. Отредактируйте docker-compose.yml
-nano docker-compose.yml
-
-# 4. Добавьте в секцию portainer (после volumes):
-#    group_add:
-#      - "999"  # Замените на ваш GID
-
-# 5. Запустите заново
-docker compose up -d
-
-# 6. Проверьте
-docker logs portainer --tail 20
-docker exec portainer docker ps
-```
-
-Подробнее см. [PORTAINER_SETUP.md](../PORTAINER_SETUP.md#the-environment-named-local-is-unreachable)
 
 ## Полезные команды
 
@@ -619,44 +417,11 @@ docker ps
 > 💡 **Совет:** `unless-stopped` - лучший выбор для production, т.к. контейнеры не запустятся после
 `docker compose down`, что удобно при обслуживании.
 
-### Управление Registry
+### Управление Registry и Portainer
 
-```bash
-# Просмотр образов в registry
-curl -u username:password http://localhost:5000/v2/_catalog
-
-# Удаление образа (через Registry UI)
-# Откройте http://ваш_ip:5001
-
-# Очистка неиспользуемых образов
-docker system prune -a
-```
-
-### Управление Portainer
-
-```bash
-# Проверить статус Portainer
-docker ps | grep portainer
-
-# Просмотр логов
-docker logs portainer -f
-
-# Перезапуск Portainer
-cd /opt/portainer
-docker compose restart
-
-# Обновление Portainer до последней версии
-cd /opt/portainer
-docker compose pull
-docker compose up -d
-
-# Остановка Portainer
-docker compose down
-
-# Полное удаление Portainer с данными
-docker compose down
-docker volume rm portainer_portainer_data
-```
+> 📖 Подробные команды см. в:
+> - [Registry Commands Cheatsheet](../REGISTRY_COMMANDS_CHEATSHEET.md)
+> - [Portainer Setup](../PORTAINER_SETUP.md#полезные-команды)
 
 ### Резервное копирование БД
 

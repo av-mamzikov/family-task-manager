@@ -409,7 +409,7 @@ jobs:
             Your changes have been deployed to a preview environment!
             
             **Environment Details:**
-            - 🤖 **Telegram Bot:** \`@${botUsername}\`
+            - 🤖 **Telegram Bot:** \`${botUsername}\`
             - 🐳 **Container:** \`family-task-manager-pr-${prNumber}\`
             - 🗄️ **Database:** \`FamilyTaskManager_PR_${prNumber}\`
             - 🏷️ **Image Tag:** \`${imageTag}\`
@@ -417,7 +417,7 @@ jobs:
             
             **How to test:**
             1. Open Telegram
-            2. Find bot \`@${botUsername}\`
+            2. Find bot \`${botUsername}\`
             3. Send \`/start\`
             4. Test your changes
             

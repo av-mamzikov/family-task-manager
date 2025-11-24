@@ -138,7 +138,7 @@ docker-compose logs -f
 ### Быстрый старт (3 шага)
 
 1. **Настройте VPS** - [VPS Setup Guide](docs/setup/VPS_SETUP.md)
-2. **Настройте GitHub Secrets** - [🔐 GitHub Secrets Setup](docs/setup/GITHUB_SECRETS_SETUP.md)
+2. **Настройте GitHub Secrets** - [🔐 Secrets Setup](docs/setup/SECRETS_SETUP.md)
 3. **Запушьте код** - деплой произойдёт автоматически!
 
 ```bash
@@ -174,11 +174,11 @@ git push origin main
 ### 🖥️ Настройка production
 
 - [VPS Setup](docs/setup/VPS_SETUP.md) — настройка сервера
-- [🔐 GitHub Secrets Setup](docs/setup/GITHUB_SECRETS_SETUP.md) — установка секретов в GitHub
+- [🔐 Secrets Setup](docs/setup/SECRETS_SETUP.md) — установка секретов в GitHub
 - [GitHub Actions Setup](docs/setup/GITHUB_ACTIONS_SETUP.md) — автоматический CI/CD
-- [Portainer Setup](docs/PORTAINER_SETUP.md) — Web UI для управления контейнерами
 - [Private Registry Setup](docs/PRIVATE_REGISTRY_SETUP.md) — собственный Docker Registry
-- [Deployment Summary](DEPLOYMENT_SUMMARY.md) — обзор всех вариантов деплоя
+- [Portainer Setup](docs/PORTAINER_SETUP.md) — Web UI для управления контейнерами
+- [Deployment Options](docs/DEPLOYMENT_OPTIONS.md) — сравнение вариантов деплоя
 
 ### 🏗️ Разработка
 
