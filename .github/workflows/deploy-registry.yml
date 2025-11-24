@@ -85,7 +85,7 @@ jobs:
             echo "postgres_user_secret=POSTGRES_USER" >> $GITHUB_OUTPUT
             echo "postgres_password_secret=POSTGRES_PASSWORD" >> $GITHUB_OUTPUT
           else
-            # PR Preview
+            # PR Preview - все PR в одну директорию
             if [ -z "$PR_NUM" ]; then
               echo "Error: PR number required for pr-preview environment"
               exit 1
@@ -94,7 +94,7 @@ jobs:
             echo "is_pr_preview=true" >> $GITHUB_OUTPUT
             echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
             echo "image_tag=pr-$PR_NUM" >> $GITHUB_OUTPUT
-            echo "deploy_dir=/opt/family-task-manager-pr-$PR_NUM" >> $GITHUB_OUTPUT
+            echo "deploy_dir=/opt/family-task-manager-preview" >> $GITHUB_OUTPUT
             echo "bot_token_secret=PR_BOT_TOKEN" >> $GITHUB_OUTPUT
             echo "bot_username_secret=PR_BOT_USERNAME" >> $GITHUB_OUTPUT
             echo "postgres_user_secret=PR_POSTGRES_USER" >> $GITHUB_OUTPUT
@@ -244,8 +244,28 @@ jobs:
             echo "$REGISTRY_PASS" | docker login localhost:5000 -u "$REGISTRY_USER" --password-stdin
             echo "✓ Logged in to registry"
             
+            # Для PR preview: остановить и очистить старое окружение
+            if [ "$IS_PR_PREVIEW" == "true" ]; then
+              echo "Cleaning up old PR preview environment..."
+            
+              # Остановить и удалить старые контейнеры preview
+              docker ps -a --filter "name=family-task-manager-pr-" --format "{{.Names}}" | xargs -r docker stop
+              docker ps -a --filter "name=family-task-manager-pr-" --format "{{.Names}}" | xargs -r docker rm
+              docker ps -a --filter "name=family-task-postgres-pr-" --format "{{.Names}}" | xargs -r docker stop
+              docker ps -a --filter "name=family-task-postgres-pr-" --format "{{.Names}}" | xargs -r docker rm
+            
+              # Удалить старые volumes preview
+              docker volume ls --filter "name=postgres_data_pr_" --format "{{.Name}}" | xargs -r docker volume rm || true
+            
+              # Удалить старые сети preview
+              docker network ls --filter "name=family-task-network-pr-" --format "{{.Name}}" | xargs -r docker network rm || true
+            
+              echo "✓ Old PR preview cleaned up"
+            fi
+            
             # Создание директории если не существует
-            mkdir -p "$DEPLOY_DIR"
+            sudo mkdir -p "$DEPLOY_DIR"
+            sudo chown $USER:$USER "$DEPLOY_DIR"
             cd "$DEPLOY_DIR"
             
             # Копирование docker-compose.prod.yml из /tmp
@@ -278,10 +298,11 @@ jobs:
               echo "Configuring PR preview environment..."
             
               # Создаем кастомный docker-compose файл
-              sed "s/family-task-manager/family-task-manager-pr-$PR_NUMBER/g" docker-compose.prod.yml | \
-              sed "s/family-task-postgres/family-task-postgres-pr-$PR_NUMBER/g" | \
+              # НЕ меняем имя образа, только имена контейнеров и сетей
+              sed "s/container_name: family-task-manager/container_name: family-task-manager-pr-$PR_NUMBER/g" docker-compose.prod.yml | \
+              sed "s/container_name: family-task-postgres/container_name: family-task-postgres-pr-$PR_NUMBER/g" | \
               sed "s/family-task-network/family-task-network-pr-$PR_NUMBER/g" | \
-              sed "s/postgres_data/postgres_data_pr_$PR_NUMBER/g" > docker-compose.pr.yml
+              sed "s/postgres_data:/postgres_data_pr_$PR_NUMBER:/g" > docker-compose.pr.yml
             
               COMPOSE_FILE="docker-compose.pr.yml"
               CONTAINER_NAME="family-task-manager-pr-$PR_NUMBER"
@@ -293,7 +314,8 @@ jobs:
             # Создание бэкапа БД (только для production)
             if [ "$IS_PRODUCTION" == "true" ]; then
               BACKUP_DIR="/opt/backups/family-task-manager"
-              mkdir -p "$BACKUP_DIR"
+              sudo mkdir -p "$BACKUP_DIR"
+              sudo chown $USER:$USER "$BACKUP_DIR"
               BACKUP_FILE="$BACKUP_DIR/db_backup_$(date +%Y%m%d_%H%M%S).sql"
               docker exec family-task-postgres pg_dump -U "$POSTGRES_USER" FamilyTaskManager > "$BACKUP_FILE" 2>/dev/null || echo "Warning: Could not create backup"
             fi
