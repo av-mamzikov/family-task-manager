@@ -328,6 +328,10 @@ jobs:
             echo "Pulling image: localhost:5000/family-task-manager:$IMAGE_TAG"
             docker pull "localhost:5000/family-task-manager:$IMAGE_TAG"
             
+            # Предварительная загрузка postgres образа (избегаем Docker Hub rate limit)
+            echo "Pre-pulling postgres image..."
+            docker pull postgres:16-alpine || echo "Warning: Could not pre-pull postgres image"
+            
             # Остановка старого контейнера
             echo "Stopping old container..."
             docker compose stop "$SERVICE_NAME" 2>/dev/null || true
