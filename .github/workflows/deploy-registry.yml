@@ -9,6 +9,10 @@ on:
     branches:
       - main
       - master
+  # Временно для тестирования - удалить после проверки
+  pull_request:
+    paths:
+      - '.github/workflows/deploy-registry.yml'
   # Ручной запуск
   workflow_dispatch:
     inputs:
