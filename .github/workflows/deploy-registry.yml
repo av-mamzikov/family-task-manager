@@ -1,12 +1,7 @@
 name: Deploy to VPS
 
 on:
-  push:
-    branches:
-      - main
-      - master
-  pull_request:
-    types: [ labeled, synchronize, opened, reopened ]
+  # Запуск после успешных тестов на main/master
   workflow_run:
     workflows: [ "Tests" ]
     types:
@@ -14,6 +9,7 @@ on:
     branches:
       - main
       - master
+  # Ручной запуск
   workflow_dispatch:
     inputs:
       environment:
@@ -36,11 +32,9 @@ jobs:
     runs-on: ubuntu-latest
     # Запускаем если:
     # - workflow_dispatch (ручной запуск) - всегда
-    # - PR с label 'deploy-preview' - всегда
     # - workflow_run (после тестов) - только если тесты успешны
     if: |
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-preview')) ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     outputs:
       is_production: ${{ steps.env.outputs.is_production }}
@@ -61,13 +55,8 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             ENV_TYPE="${{ inputs.environment }}"
             PR_NUM="${{ inputs.pr_number }}"
-          elif [ "${{ github.event_name }}" == "push" ]; then
-            ENV_TYPE="production"
-            PR_NUM=""
-          elif [ "${{ github.event_name }}" == "pull_request" ]; then
-            ENV_TYPE="pr-preview"
-            PR_NUM="${{ github.event.pull_request.number }}"
           else
+            # workflow_run - всегда production
             ENV_TYPE="production"
             PR_NUM=""
           fi
