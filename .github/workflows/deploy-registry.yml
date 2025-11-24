@@ -227,11 +227,13 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets[needs.setup.outputs.postgres_password_secret] }}
           REGISTRY_USER: ${{ secrets.REGISTRY_USERNAME }}
           REGISTRY_PASS: ${{ secrets.REGISTRY_PASSWORD }}
+          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASS: ${{ secrets.DOCKERHUB_PASSWORD }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: DEPLOY_DIR,IMAGE_TAG,IS_PRODUCTION,IS_PR_PREVIEW,PR_NUMBER,BOT_TOKEN,BOT_USERNAME,POSTGRES_USER,POSTGRES_PASSWORD,REGISTRY_USER,REGISTRY_PASS
+          envs: DEPLOY_DIR,IMAGE_TAG,IS_PRODUCTION,IS_PR_PREVIEW,PR_NUMBER,BOT_TOKEN,BOT_USERNAME,POSTGRES_USER,POSTGRES_PASSWORD,REGISTRY_USER,REGISTRY_PASS,DOCKERHUB_USER,DOCKERHUB_PASS
           script: |
             echo "=== Starting deployment ==="
             echo "Environment: $([ "$IS_PRODUCTION" == "true" ] && echo "Production" || echo "PR Preview #$PR_NUMBER")"
@@ -244,6 +246,15 @@ jobs:
               exit 1
             fi
             echo "✓ Registry is available"
+            
+            # Логин в Docker Hub (если credentials предоставлены)
+            if [ -n "$DOCKERHUB_USER" ] && [ -n "$DOCKERHUB_PASS" ]; then
+              echo "Logging in to Docker Hub..."
+              echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
+              echo "✓ Logged in to Docker Hub"
+            else
+              echo "⚠ Docker Hub credentials not provided, using anonymous pulls"
+            fi
             
             # Логин в registry для docker pull
             echo "$REGISTRY_PASS" | docker login localhost:5000 -u "$REGISTRY_USER" --password-stdin
