@@ -1,4 +1,4 @@
-name: Deploy to VPS via Private Registry
+name: Deploy to VPS
 
 on:
   push:
@@ -7,6 +7,13 @@ on:
       - master
   pull_request:
     types: [ labeled, synchronize, opened, reopened ]
+  workflow_run:
+    workflows: [ "Tests" ]
+    types:
+      - completed
+    branches:
+      - main
+      - master
   workflow_dispatch:
     inputs:
       environment:
@@ -18,7 +25,7 @@ on:
           - pr-preview
         default: 'production'
       pr_number:
-        description: 'PR number (only for pr-preview)'
+        description: 'PR number (required only for pr-preview)'
         required: false
         type: string
 
@@ -27,11 +34,14 @@ jobs:
   setup:
     name: Setup Environment
     runs-on: ubuntu-latest
-    # Запускаем только если это push в main/master, workflow_dispatch, или PR с label 'deploy-preview'
+    # Запускаем если:
+    # - workflow_dispatch (ручной запуск) - всегда
+    # - PR с label 'deploy-preview' - всегда
+    # - workflow_run (после тестов) - только если тесты успешны
     if: |
-      github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-preview'))
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-preview')) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     outputs:
       is_production: ${{ steps.env.outputs.is_production }}
       is_pr_preview: ${{ steps.env.outputs.is_pr_preview }}
@@ -93,50 +103,10 @@ jobs:
             echo "postgres_password_secret=PR_POSTGRES_PASSWORD" >> $GITHUB_OUTPUT
           fi
 
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    needs: setup
-    
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: FamilyTaskManager_Test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres_test_password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Restore dependencies
-        run: dotnet restore FamilyTaskManager.sln
-
-      - name: Build
-        run: dotnet build FamilyTaskManager.sln --no-restore --configuration Release
-
-      - name: Run tests
-        env:
-          ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=FamilyTaskManager_Test;Username=postgres;Password=postgres_test_password"
-        run: dotnet test FamilyTaskManager.sln --no-build --configuration Release --verbosity normal
-
   build-and-push:
     name: Build and Push to Registry
     runs-on: ubuntu-latest
-    needs: [ setup, test ]
+    needs: setup
     
     steps:
       - name: Checkout code
