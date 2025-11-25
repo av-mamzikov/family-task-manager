@@ -276,6 +276,6 @@ docker compose -f docker-compose.prod.yml logs family-task-manager -f
 
 **Следующие шаги:**
 
-- 🚀 [Быстрый старт](../QUICK_START.md)
-- 🖥️ [VPS Setup](setup/VPS_SETUP.md)
-- 🤖 [GitHub Actions Setup](setup/GITHUB_ACTIONS_SETUP.md)
+- 🖥️ [Локальная разработка](setup/LOCAL_DEVELOPMENT.md) — запуск проекта через AspireHost
+- 🖥️ [VPS Setup](setup/VPS_SETUP.md) — настройка production сервера
+- 🔐 [Secrets Setup](setup/SECRETS_SETUP.md) — установка секретов в GitHub

@@ -6,9 +6,6 @@
 
 - VPS с Ubuntu 20.04+ (минимум 1GB RAM, 1 CPU)
 - SSH доступ с правами root
-- Открытые порты: 22 (SSH), 80 (HTTP), 443 (HTTPS)
-    - Порты 5000 (Registry), 5001 (Registry UI), 5002 (Dockge) привязаны к localhost
-    - Доступ к Registry UI и Dockge только через SSH туннель
 
 ## Подготовка (на вашем компьютере)
 
