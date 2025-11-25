@@ -93,7 +93,6 @@ bash init-vps.sh
 - ✅ Private Docker Registry с аутентификацией (подробнее: [Registry Setup](../PRIVATE_REGISTRY_SETUP.md))
 - ✅ Registry UI для просмотра образов
 - ✅ Файл `.env` с настройками
-- ✅ Dockge для управления Docker Compose (опционально, подробнее: [Dockge Setup](../DOCKGE_SETUP.md))
 - ✅ UFW Firewall (опционально)
 
 ## После завершения скрипта
@@ -274,29 +273,10 @@ http://localhost:5001
 
 > 📖 Подробнее о работе с Registry: [Private Registry Setup](../PRIVATE_REGISTRY_SETUP.md)
 
-## Dockge - Web UI для управления Docker Compose
-
-Dockge устанавливается автоматически скриптом `init-vps.sh` (опционально).
-
-Dockge доступен только через SSH туннель (порт привязан к localhost):
-
-```bash
-# Создайте SSH туннель
-ssh -L 5002:localhost:5002 deploy@ваш_ip
-
-# Откройте в браузере
-http://localhost:5002
-```
-
-> ⚠️ **При первом входе:** Создайте аккаунт администратора
-
-> 📖 **Подробная инструкция:** [Dockge Setup](../DOCKGE_SETUP.md)
-
 ## Troubleshooting
 
 > 📖 **Подробное руководство:** См. соответствующие разделы в:
 > - [Private Registry Setup](../PRIVATE_REGISTRY_SETUP.md#troubleshooting) - проблемы с Registry
-> - [Dockge Setup](../DOCKGE_SETUP.md#troubleshooting) - проблемы с Dockge
 > - [Secrets Setup](SECRETS_SETUP.md#troubleshooting) - проблемы с GitHub Actions
 
 ### Быстрые решения
@@ -361,20 +341,12 @@ chmod 600 /home/deploy/.ssh/authorized_keys
 
 ### SSH туннели для доступа к UI
 
-Registry UI и Dockge доступны только через SSH туннели для безопасности:
+Registry UI доступен только через SSH туннели для безопасности:
 
 ```bash
 # Registry UI (просмотр Docker образов)
 ssh -L 5001:localhost:5001 deploy@ваш_ip
 # Откройте: http://localhost:5001
-
-# Dockge (управление Docker Compose)
-ssh -L 5002:localhost:5002 deploy@ваш_ip
-# Откройте: http://localhost:5002
-
-# Можно создать оба туннеля одновременно
-ssh -L 5001:localhost:5001 -L 5002:localhost:5002 deploy@ваш_ip
-# Откройте: http://localhost:5001 и http://localhost:5002
 ```
 
 > 💡 **Совет:** Добавьте в `~/.ssh/config` для удобства:
@@ -446,7 +418,6 @@ docker ps
 - ✅ `family-task-postgres` - база данных
 - ✅ `docker-registry` - приватный registry
 - ✅ `docker-registry-ui` - UI для registry
-- ✅ `dockge` - управление Docker Compose (если установлен)
 
 **Политики перезапуска Docker:**
 
@@ -460,11 +431,10 @@ docker ps
 > 💡 **Совет:** `unless-stopped` - лучший выбор для production, т.к. контейнеры не запустятся после
 `docker compose down`, что удобно при обслуживании.
 
-### Управление Registry и Dockge
+### Управление Registry
 
 > 📖 Подробные команды см. в:
 > - [Registry Commands Cheatsheet](../REGISTRY_COMMANDS_CHEATSHEET.md)
-> - [Dockge Setup](../DOCKGE_SETUP.md#полезные-команды)
 
 ### Резервное копирование БД
 
@@ -484,7 +454,6 @@ cat backup_20241124.sql | docker compose exec -T postgres \
 - 📖 [GitHub Actions Setup](GITHUB_ACTIONS_SETUP.md) - настройка CI/CD
 - 🚀 [Deployment Summary](../../DEPLOYMENT_SUMMARY.md) - обзор процесса деплоя
 - 🐳 [Docker Registry Setup](../PRIVATE_REGISTRY_SETUP.md) - подробнее о registry
-- 🎛️ [Dockge Setup](../DOCKGE_SETUP.md) - подробное руководство по Dockge
 
 ---
 

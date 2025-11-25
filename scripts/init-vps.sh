@@ -309,69 +309,6 @@ else
 fi
 
 # ============================================
-# 7. Настройка Dockge (опционально)
-# ============================================
-echo ""
-echo "🎛️  Шаг 7/8: Установка Dockge (опционально)..."
-read -p "Установить Dockge для управления Docker Compose? (y/n): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    DOCKGE_DIR="/opt/dockge"
-    DOCKGE_STACKS_DIR="$DOCKGE_DIR/stacks"
-    mkdir -p "$DOCKGE_DIR"
-    mkdir -p "$DOCKGE_STACKS_DIR"
-    chown -R $DEPLOY_USER:$DEPLOY_USER "$DOCKGE_DIR"
-    
-    echo "Создание docker-compose.yml для Dockge..."
-    cat > "$DOCKGE_DIR/docker-compose.yml" <<DOCKGE_EOF
-services:
-  dockge:
-    image: louislam/dockge:1
-    container_name: dockge
-    restart: unless-stopped
-    # Порт привязан к localhost - доступен только локально на VPS через SSH туннель
-    ports:
-      - "127.0.0.1:5002:5001"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./data:/app/data
-      - ./stacks:/opt/stacks
-    environment:
-      - DOCKGE_STACKS_DIR=/opt/stacks
-    networks:
-      - dockge-network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-networks:
-  dockge-network:
-    driver: bridge
-DOCKGE_EOF
-    
-    chown $DEPLOY_USER:$DEPLOY_USER "$DOCKGE_DIR/docker-compose.yml"
-    
-    echo "Запуск Dockge..."
-    cd "$DOCKGE_DIR"
-    sudo -u $DEPLOY_USER docker compose up -d
-    sleep 3
-    
-    if docker ps | grep -q dockge; then
-        echo "✓ Dockge успешно запущен!"
-        echo "  Доступ только через SSH туннель (порт привязан к localhost)"
-        echo "  Используйте: ssh -L 5002:localhost:5002 $DEPLOY_USER@$VPS_IP"
-        echo "  Затем откройте: http://localhost:5002"
-        echo "  При первом входе создайте администратора"
-    else
-        echo "⚠️  Dockge не запустился. Проверьте логи: docker logs dockge"
-    fi
-else
-    echo "⏭️  Пропущено"
-fi
-
-# ============================================
 # Завершение
 # ============================================
 echo ""
@@ -407,22 +344,13 @@ echo "3. Проверьте статус registry:"
 echo "   ssh $DEPLOY_USER@$VPS_IP"
 echo "   cd $REGISTRY_DIR && docker compose ps"
 echo ""
-echo "4. Registry UI и Dockge доступны только через SSH туннель:"
+echo "4. Registry UI доступен только через SSH туннель:"
 echo ""
 echo "   # Для Registry UI:"
 echo "   ssh -L 5001:localhost:5001 $DEPLOY_USER@$VPS_IP"
 echo "   Откройте: http://localhost:5001"
 echo ""
-if docker ps | grep -q dockge; then
-echo "   # Для Dockge:"
-echo "   ssh -L 5002:localhost:5002 $DEPLOY_USER@$VPS_IP"
-echo "   Откройте: http://localhost:5002"
-echo "   (При первом входе создайте администратора)"
-echo ""
 echo "5. Запушьте код в GitHub - деплой запустится автоматически!"
-else
-echo "5. Запушьте код в GitHub - деплой запустится автоматически!"
-fi
 echo ""
 echo "📚 Документация: docs/setup/VPS_SETUP.md"
 echo ""
