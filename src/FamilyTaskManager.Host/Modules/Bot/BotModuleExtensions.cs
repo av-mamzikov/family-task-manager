@@ -1,5 +1,6 @@
 using FamilyTaskManager.Host.Modules.Bot.Configuration;
 using FamilyTaskManager.Host.Modules.Bot.Handlers;
+using FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Services;
@@ -61,6 +62,14 @@ public static class BotModuleExtensions
     services.AddScoped<TaskCreationHandler>();
     services.AddScoped<TemplateCreationHandler>();
     services.AddScoped<TemplateEditHandler>();
+
+    // Callback Handlers
+    services.AddScoped<ICallbackRouter, CallbackRouter>();
+    services.AddScoped<FamilyCallbackHandler>();
+    services.AddScoped<PetCallbackHandler>();
+    services.AddScoped<TaskCallbackHandler>();
+    services.AddScoped<TemplateCallbackHandler>();
+    services.AddScoped<TimezoneCallbackHandler>();
 
     logger?.LogInformation("Bot Module registered: Telegram Bot with Long Polling");
 
