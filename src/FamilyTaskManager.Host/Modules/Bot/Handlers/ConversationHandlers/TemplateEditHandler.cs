@@ -3,7 +3,6 @@ using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.TaskTemplates;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
@@ -61,7 +60,7 @@ public class TemplateEditHandler(
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       BotConstants.Templates.TemplateUpdated,
-      replyMarkup: new ReplyKeyboardRemove(),
+      replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
   }
 
@@ -115,7 +114,7 @@ public class TemplateEditHandler(
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       BotConstants.Templates.TemplateUpdated,
-      replyMarkup: new ReplyKeyboardRemove(),
+      replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
   }
 
@@ -170,7 +169,7 @@ public class TemplateEditHandler(
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       BotConstants.Templates.TemplateUpdated,
-      replyMarkup: new ReplyKeyboardRemove(),
+      replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
   }
 }

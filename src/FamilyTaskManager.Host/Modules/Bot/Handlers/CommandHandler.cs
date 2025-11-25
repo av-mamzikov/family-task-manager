@@ -360,19 +360,10 @@ public class CommandHandler(
   private async Task SendMainMenuAsync(
     ITelegramBotClient botClient,
     long chatId,
-    CancellationToken cancellationToken)
-  {
-    var keyboard = new ReplyKeyboardMarkup(new[]
-      {
-        new KeyboardButton[] { "🏠 Семья", "✅ Мои задачи" }, new KeyboardButton[] { "🐾 Питомец", "⭐ Мои очки" },
-        new KeyboardButton[] { "📊 Статистика" }
-      })
-      { ResizeKeyboard = true, IsPersistent = true };
-
+    CancellationToken cancellationToken) =>
     await botClient.SendTextMessageAsync(
       chatId,
       "🏠 Главное меню",
-      replyMarkup: keyboard,
+      replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
-  }
 }

@@ -4,7 +4,6 @@ using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Pets;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
@@ -86,7 +85,7 @@ public class PetCreationHandler(
       message.Chat.Id,
       $"✅ Питомец {petEmoji} \"{petName}\" успешно создан!\n\n" +
       BotConstants.Messages.PetTasksAvailable,
-      replyMarkup: new ReplyKeyboardRemove(),
+      replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
   }
 }

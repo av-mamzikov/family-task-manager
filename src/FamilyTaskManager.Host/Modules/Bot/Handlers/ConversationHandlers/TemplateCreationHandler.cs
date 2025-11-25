@@ -5,7 +5,6 @@ using FamilyTaskManager.UseCases.TaskTemplates;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
@@ -151,11 +150,11 @@ public class TemplateCreationHandler(
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       $"{BotConstants.Templates.TemplateCreated}\n\n" +
-      $"📝 Название: {title}\n" +
+      $"✅ Шаблон \"{title}\" успешно создан!\n\n" +
       $"💯 Очки: {points}\n" +
       $"🔄 Расписание: {schedule}\n\n" +
       BotConstants.Messages.ScheduledTask,
-      replyMarkup: new ReplyKeyboardRemove(),
+      replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
   }
 }

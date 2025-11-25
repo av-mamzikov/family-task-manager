@@ -1,3 +1,4 @@
+using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -20,7 +21,7 @@ public abstract class BaseConversationHandler(ILogger logger, IMediator mediator
     await botClient.SendTextMessageAsync(
       chatId,
       errorMessage,
-      replyMarkup: new ReplyKeyboardRemove(),
+      replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
   }
 

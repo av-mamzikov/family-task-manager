@@ -196,7 +196,7 @@ public class TaskCreationHandler(
       $"💯 Очки: {points}\n" +
       $"📅 Срок: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
       BotConstants.Messages.TaskAvailableToAll,
-      replyMarkup: new ReplyKeyboardRemove(),
+      replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
   }
 
