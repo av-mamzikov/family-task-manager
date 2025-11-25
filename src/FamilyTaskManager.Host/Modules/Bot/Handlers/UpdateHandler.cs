@@ -59,7 +59,7 @@ public class UpdateHandler(
     }
 
     using var scope = serviceProvider.CreateScope();
-    var commandHandler = scope.ServiceProvider.GetRequiredService<ICommandHandler>();
+    var commandHandler = scope.ServiceProvider.GetRequiredService<IMessageHandler>();
 
     await commandHandler.HandleCommandAsync(botClient, message, cancellationToken);
   }

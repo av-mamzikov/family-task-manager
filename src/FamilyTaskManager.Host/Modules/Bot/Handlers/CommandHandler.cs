@@ -12,7 +12,12 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
-public class CommandHandler(
+public interface IMessageHandler
+{
+  Task HandleCommandAsync(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken);
+}
+
+public class MessageHandler(
   ISessionManager sessionManager,
   IMediator mediator,
   IUserRegistrationService userRegistrationService,
@@ -22,7 +27,7 @@ public class CommandHandler(
   PetCommandHandler petCommandHandler,
   StatsCommandHandler statsCommandHandler,
   TemplateCommandHandler templateCommandHandler)
-  : ICommandHandler
+  : IMessageHandler
 {
   public async Task HandleCommandAsync(ITelegramBotClient botClient, Message message,
     CancellationToken cancellationToken)

@@ -14,7 +14,6 @@ public static class StateKeyboardHelper
   public static IReplyMarkup? GetKeyboardForState(ConversationState state) =>
     state switch
     {
-      ConversationState.AwaitingFamilyName => GetCancelKeyboard(),
       ConversationState.AwaitingFamilyTimezone => null, // Используются inline кнопки
       ConversationState.AwaitingFamilyLocation => GetLocationOrBackKeyboard(),
       ConversationState.AwaitingPetName => GetCancelKeyboard(),
@@ -39,9 +38,6 @@ public static class StateKeyboardHelper
   public static string GetHintForState(ConversationState state) =>
     state switch
     {
-      ConversationState.AwaitingFamilyName =>
-        "\n\n💡 Доступные действия:\n• Введите название семьи\n• /cancel - Отменить создание",
-
       ConversationState.AwaitingFamilyLocation =>
         "\n\n💡 Доступные действия:\n• Отправьте геолокацию\n• ⬅️ Назад - Вернуться к выбору способа",
 

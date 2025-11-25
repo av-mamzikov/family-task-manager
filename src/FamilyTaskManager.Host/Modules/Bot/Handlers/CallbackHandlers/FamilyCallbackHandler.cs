@@ -1,6 +1,5 @@
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Configuration;
-using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Families;
@@ -36,24 +35,11 @@ public class FamilyCallbackHandler(
     session.SetState(ConversationState.AwaitingFamilyName,
       new Dictionary<string, object> { ["userId"] = userId.Value });
 
-    var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingFamilyName);
-
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      "✏️ Введите название семьи (минимум 3 символа):" +
-      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingFamilyName),
+      "✏️ Введите название семьи (минимум 3 символа):",
       cancellationToken: cancellationToken);
-
-    // Send keyboard in a separate message since EditMessageTextAsync doesn't support ReplyKeyboardMarkup
-    if (keyboard != null)
-    {
-      await botClient.SendTextMessageAsync(
-        chatId,
-        "Используйте кнопки ниже для управления:",
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-    }
   }
 
   public async Task HandleFamilySelectionAsync(

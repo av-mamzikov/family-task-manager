@@ -45,7 +45,7 @@ public static class BotModuleExtensions
 
     // Handlers
     services.AddScoped<IUpdateHandler, UpdateHandler>();
-    services.AddScoped<ICommandHandler, CommandHandler>();
+    services.AddScoped<IMessageHandler, MessageHandler>();
     services.AddScoped<ICallbackQueryHandler, CallbackQueryHandler>();
 
     // Command Handlers

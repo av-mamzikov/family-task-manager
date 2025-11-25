@@ -11,7 +11,9 @@ public enum PetType
 
 public class Pet : EntityBase<Pet, Guid>, IAggregateRoot
 {
-  private Pet() { }
+  private Pet()
+  {
+  }
 
   public Pet(Guid familyId, PetType type, string name)
   {
@@ -22,7 +24,7 @@ public class Pet : EntityBase<Pet, Guid>, IAggregateRoot
     FamilyId = familyId;
     Type = type;
     Name = name.Trim();
-    MoodScore = 50;
+    MoodScore = 100;
     CreatedAt = DateTime.UtcNow;
   }
 
