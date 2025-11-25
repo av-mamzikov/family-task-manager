@@ -54,7 +54,8 @@ public class CallbackQueryHandler(
         "task" => HandleTaskActionAsync(botClient, chatId, messageId, parts, session, callbackQuery.From,
           cancellationToken),
         "taskpet" => HandleTaskPetSelectionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
-        "pet" => HandlePetActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
+        "pet" => HandlePetActionAsync(botClient, chatId, messageId, parts, session, callbackQuery.From,
+          cancellationToken),
         "family" => HandleFamilyActionAsync(botClient, chatId, messageId, parts, session, callbackQuery.From,
           cancellationToken),
         "invite" => HandleInviteActionAsync(botClient, chatId, messageId, parts, session, callbackQuery.From,
@@ -454,11 +455,260 @@ public class CallbackQueryHandler(
     int messageId,
     string[] parts,
     UserSession session,
-    CancellationToken cancellationToken) =>
-    await botClient.SendTextMessageAsync(
+    User fromUser,
+    CancellationToken cancellationToken)
+  {
+    if (parts.Length < 3)
+    {
+      return;
+    }
+
+    var petAction = parts[1];
+    var petIdStr = parts[2];
+
+    if (!Guid.TryParse(petIdStr, out var petId))
+    {
+      return;
+    }
+
+    switch (petAction)
+    {
+      case "view":
+        await HandleViewPetAsync(botClient, chatId, messageId, petId, session, cancellationToken);
+        break;
+
+      case "delete":
+        await HandleDeletePetAsync(botClient, chatId, messageId, petId, session, cancellationToken);
+        break;
+
+      case "confirmdelete":
+        await HandleConfirmDeletePetAsync(botClient, chatId, messageId, petId, session, fromUser, cancellationToken);
+        break;
+
+      case "canceldelete":
+        await botClient.EditMessageTextAsync(
+          chatId,
+          messageId,
+          "❌ Удаление питомца отменено",
+          cancellationToken: cancellationToken);
+        break;
+
+      case "back":
+        await botClient.SendTextMessageAsync(
+          chatId,
+          "Используйте /pet для просмотра списка питомцев",
+          cancellationToken: cancellationToken);
+        break;
+    }
+  }
+
+  private async Task HandleViewPetAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    Guid petId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (session.CurrentFamilyId == null)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        BotConstants.Errors.NoFamily,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Get pet details
+    var getPetsQuery = new GetPetsQuery(session.CurrentFamilyId.Value);
+    var petsResult = await mediator.Send(getPetsQuery, cancellationToken);
+
+    if (!petsResult.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        "❌ Ошибка загрузки питомца",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var pet = petsResult.Value.FirstOrDefault(p => p.Id == petId);
+    if (pet == null)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        "❌ Питомец не найден",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var petEmoji = pet.Type switch
+    {
+      PetType.Cat => "🐱",
+      PetType.Dog => "🐶",
+      PetType.Hamster => "🐹",
+      _ => "🐾"
+    };
+
+    var petTypeText = pet.Type switch
+    {
+      PetType.Cat => "Кот",
+      PetType.Dog => "Собака",
+      PetType.Hamster => "Хомяк",
+      _ => "Неизвестно"
+    };
+
+    var moodEmoji = pet.MoodScore switch
+    {
+      >= 80 => "😊",
+      >= 60 => "🙂",
+      >= 40 => "😐",
+      >= 20 => "😟",
+      _ => "😢"
+    };
+
+    var moodText = pet.MoodScore switch
+    {
+      >= 80 => "Отлично!",
+      >= 60 => "Хорошо",
+      >= 40 => "Нормально",
+      >= 20 => "Грустит",
+      _ => "Очень грустно"
+    };
+
+    var messageText = $"{petEmoji} *{pet.Name}*\n\n" +
+                      $"📋 Тип: {petTypeText}\n" +
+                      $"💖 Настроение: {moodEmoji} {pet.MoodScore}/100 - {moodText}\n\n" +
+                      "Выполняйте задачи по уходу за питомцем, чтобы улучшить его настроение!";
+
+    var keyboard = new InlineKeyboardMarkup(new[]
+    {
+      new[] { InlineKeyboardButton.WithCallbackData("📋 Шаблоны задач", $"template_viewpet_{petId}") },
+      new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад к списку", "pet_back") }
+    });
+
+    await botClient.EditMessageTextAsync(
       chatId,
-      "🐾 Действие с питомцем\n(В разработке)",
+      messageId,
+      messageText,
+      ParseMode.Markdown,
+      replyMarkup: keyboard,
       cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleDeletePetAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    Guid petId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (session.CurrentFamilyId == null)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        BotConstants.Errors.NoFamily,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Get pet details for confirmation message
+    var getPetsQuery = new GetPetsQuery(session.CurrentFamilyId.Value);
+    var petsResult = await mediator.Send(getPetsQuery, cancellationToken);
+
+    if (!petsResult.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        "❌ Ошибка загрузки питомца",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var pet = petsResult.Value.FirstOrDefault(p => p.Id == petId);
+    if (pet == null)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        "❌ Питомец не найден",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var petEmoji = pet.Type switch
+    {
+      PetType.Cat => "🐱",
+      PetType.Dog => "🐶",
+      PetType.Hamster => "🐹",
+      _ => "🐾"
+    };
+
+    // Show confirmation dialog
+    var keyboard = new InlineKeyboardMarkup(new[]
+    {
+      new[] { InlineKeyboardButton.WithCallbackData("✅ Да, удалить питомца", $"pet_confirmdelete_{petId}") },
+      new[] { InlineKeyboardButton.WithCallbackData("❌ Отмена", "pet_canceldelete") }
+    });
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      $"⚠️ *Удаление питомца*\n\n" +
+      $"Вы уверены, что хотите удалить питомца {petEmoji} *{pet.Name}*?\n\n" +
+      "🚨 *Внимание!* Это действие необратимо и приведет к:\n" +
+      "• Удалению всех шаблонов задач питомца\n" +
+      "• Удалению всех связанных задач\n" +
+      "• Потере всей статистики по питомцу\n\n" +
+      BotConstants.Messages.ConfirmDeletion,
+      ParseMode.Markdown,
+      replyMarkup: keyboard,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleConfirmDeletePetAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    Guid petId,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken)
+  {
+    // Get user by telegram ID
+    var registerCommand = new RegisterUserCommand(fromUser.Id, fromUser.GetDisplayName());
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
+
+    if (!userResult.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        BotConstants.Errors.UnknownError,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Delete the pet
+    var deletePetCommand = new DeletePetCommand(petId, userResult.Value);
+    var deleteResult = await mediator.Send(deletePetCommand, cancellationToken);
+
+    if (!deleteResult.IsSuccess)
+    {
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        $"❌ Ошибка удаления питомца: {deleteResult.Errors.FirstOrDefault()}",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      "✅ Питомец успешно удалён!\n\n" +
+      "Все связанные шаблоны задач и задачи также были удалены.",
+      cancellationToken: cancellationToken);
+  }
 
   private async Task HandleFamilyActionAsync(
     ITelegramBotClient botClient,

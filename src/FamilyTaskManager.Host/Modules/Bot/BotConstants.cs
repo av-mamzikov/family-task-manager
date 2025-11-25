@@ -55,8 +55,14 @@ public static class BotConstants
     public const string FamilyDeleted =
       "Все данные семьи, включая участников, питомцев, задачи и статистику, были безвозвратно удалены.";
 
+    public const string PetDeleted =
+      "Все шаблоны задач и задачи, связанные с питомцем, были безвозвратно удалены.";
+
     public const string ConfirmFamilyDeletion = "Вы уверены, что хотите удалить эту семью?\n\n" +
                                                 "⚠️ Это действие нельзя отменить!";
+
+    public const string ConfirmPetDeletion = "Вы уверены, что хотите удалить этого питомца?\n\n" +
+                                             "⚠️ Это действие нельзя отменить!";
 
     public const string ConfirmDeletion = "Подтвердите удаление:";
     public const string SendInviteLink = "Отправьте эту ссылку человеку, которого хотите пригласить в семью.";

@@ -67,11 +67,22 @@ public class PetCommandHandler(IMediator mediator)
       messageText += $"   Тип: {GetPetTypeText(pet.Type)}\n\n";
     }
 
-    // Build inline keyboard
-    var buttons = new List<InlineKeyboardButton[]>
+    // Build inline keyboard with pet actions
+    var buttons = new List<InlineKeyboardButton[]>();
+
+    // Add button for each pet
+    foreach (var pet in pets)
     {
-      new[] { InlineKeyboardButton.WithCallbackData("➕ Создать питомца", "create_pet") }
-    };
+      var petEmoji = GetPetEmoji(pet.Type);
+      buttons.Add(new[]
+      {
+        InlineKeyboardButton.WithCallbackData($"{petEmoji} {pet.Name}", $"pet_view_{pet.Id}"),
+        InlineKeyboardButton.WithCallbackData("🗑️", $"pet_delete_{pet.Id}")
+      });
+    }
+
+    // Add create pet button
+    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать питомца", "create_pet") });
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
