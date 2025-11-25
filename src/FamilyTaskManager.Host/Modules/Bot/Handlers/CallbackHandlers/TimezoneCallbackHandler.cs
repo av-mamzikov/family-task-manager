@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Families;
@@ -79,11 +80,7 @@ public class TimezoneCallbackHandler(
   {
     session.State = ConversationState.AwaitingFamilyLocation;
 
-    var locationKeyboard = new ReplyKeyboardMarkup(new[]
-      {
-        new KeyboardButton("📍 Отправить местоположение") { RequestLocation = true }, new KeyboardButton("⬅️ Назад")
-      })
-      { ResizeKeyboard = true, OneTimeKeyboard = true };
+    var locationKeyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingFamilyLocation);
 
     await botClient.EditMessageTextAsync(
       chatId,
@@ -161,6 +158,13 @@ public class TimezoneCallbackHandler(
       $"🌍 Временная зона: {timezoneId}\n\n" +
       BotConstants.Success.NextStepsMessage,
       ParseMode.Markdown,
+      cancellationToken: cancellationToken);
+
+    // Send main menu with buttons
+    await botClient.SendTextMessageAsync(
+      chatId,
+      "🏠 Главное меню",
+      replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
   }
 

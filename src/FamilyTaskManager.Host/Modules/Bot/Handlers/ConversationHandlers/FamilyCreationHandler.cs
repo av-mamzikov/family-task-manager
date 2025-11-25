@@ -156,6 +156,12 @@ public class FamilyCreationHandler(
         parseMode: ParseMode.Markdown,
         replyMarkup: new ReplyKeyboardRemove(),
         cancellationToken: cancellationToken);
+
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "🏠 Главное меню",
+        replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
+        cancellationToken: cancellationToken);
     }
     catch (Exception ex)
     {

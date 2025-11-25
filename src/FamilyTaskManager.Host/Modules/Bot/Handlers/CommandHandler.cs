@@ -123,15 +123,18 @@ public class CommandHandler(
     if (familiesResult.IsSuccess && familiesResult.Value.Any())
     {
       // User has families
-      session.CurrentFamilyId = familiesResult.Value.First().Id;
-      await SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken);
+      var family = familiesResult.Value.First();
+      session.CurrentFamilyId = family.Id;
+      await SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken,
+        BotConstants.Messages.WelcomeMessage
+        + BotConstants.Messages.FamilyJoined(family.Name, BotConstants.Roles.GetRoleText(family.UserRole)));
     }
     else
     {
       // New user - offer to create family
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "👋 Добро пожаловать в Семейный менеджер дел!\n\n" +
+        BotConstants.Messages.WelcomeMessage +
         BotConstants.Messages.NoFamiliesJoin,
         replyMarkup: new InlineKeyboardMarkup(new[]
         {
@@ -360,10 +363,11 @@ public class CommandHandler(
   private async Task SendMainMenuAsync(
     ITelegramBotClient botClient,
     long chatId,
-    CancellationToken cancellationToken) =>
+    CancellationToken cancellationToken,
+    string welcomeMessage = "") =>
     await botClient.SendTextMessageAsync(
       chatId,
-      "🏠 Главное меню",
+      welcomeMessage + "🏠 Главное меню",
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
 }

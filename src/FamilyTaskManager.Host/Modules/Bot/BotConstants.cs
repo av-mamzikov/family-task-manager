@@ -47,6 +47,9 @@ public static class BotConstants
 
   public static class Messages
   {
+    public const string WelcomeMessage = "👋 Добро пожаловать в Семейный менеджер дел!\n\n"
+                                         + "Помогите вашей семье организовать быт и достигать целей вместе!\n\n";
+
     public const string NoFamilies = "У вас пока нет семей. Создайте свою первую семью!";
 
     public const string NoFamiliesJoin =
@@ -105,8 +108,7 @@ public static class BotConstants
 
     public static string FamilyJoined(string familyName, string roleName) =>
       $"Вы успешно присоединились к семье *{familyName}*\n" +
-      $"Ваша роль: {roleName}\n\n" +
-      "Используйте /tasks чтобы посмотреть задачи";
+      $"Ваша роль: {roleName}\n\n";
   }
 
   public static class Help
