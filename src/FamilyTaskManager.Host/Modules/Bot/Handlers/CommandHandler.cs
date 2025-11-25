@@ -70,7 +70,16 @@ public class CommandHandler(
     }
   }
 
-  private static InlineKeyboardMarkup GetRussianTimeZoneKeyboard()
+  private static InlineKeyboardMarkup GetTimezoneChoiceKeyboard()
+  {
+    return new InlineKeyboardMarkup(new[]
+    {
+      new[] { InlineKeyboardButton.WithCallbackData("📍 Определить по геолокации", "timezone_detect") },
+      new[] { InlineKeyboardButton.WithCallbackData("📋 Выбрать из списка", "timezone_showlist") }
+    });
+  }
+
+  private static InlineKeyboardMarkup GetRussianTimeZoneListKeyboard()
   {
     return new InlineKeyboardMarkup(new[]
     {
@@ -85,7 +94,6 @@ public class CommandHandler(
       new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Владивосток", "timezone_Asia/Vladivostok") },
       new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Магадан", "timezone_Asia/Magadan") },
       new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Камчатка", "timezone_Asia/Kamchatka") },
-      new[] { InlineKeyboardButton.WithCallbackData("📍 Определить по геолокации", "timezone_detect") },
       new[] { InlineKeyboardButton.WithCallbackData("⏭️ Пропустить (UTC)", "timezone_UTC") }
     });
   }
@@ -511,11 +519,11 @@ public class CommandHandler(
     session.Data["familyName"] = familyName;
     session.State = ConversationState.AwaitingFamilyTimezone;
 
-    var keyboard = GetRussianTimeZoneKeyboard();
+    var keyboard = GetTimezoneChoiceKeyboard();
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      $"🌍 Выберите вашу временную зону для семьи \"{familyName}\":",
+      $"🌍 Выберите способ определения временной зоны для семьи \"{familyName}\":",
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
   }
@@ -641,13 +649,13 @@ public class CommandHandler(
   {
     session.State = ConversationState.AwaitingFamilyTimezone;
 
-    var keyboard = GetRussianTimeZoneKeyboard();
+    var keyboard = GetTimezoneChoiceKeyboard();
 
     var familyName = session.Data["familyName"] as string ?? "ваша семья";
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      $"🌍 Выберите вашу временную зону для семьи \"{familyName}\":",
+      $"🌍 Выберите способ определения временной зоны для семьи \"{familyName}\":",
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
   }

@@ -78,6 +78,25 @@ public class CallbackQueryHandler(
     }
   }
 
+  private static InlineKeyboardMarkup GetRussianTimeZoneListKeyboard()
+  {
+    return new InlineKeyboardMarkup(new[]
+    {
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Калининград", "timezone_Europe/Kaliningrad") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Москва", "timezone_Europe/Moscow") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Самара", "timezone_Europe/Samara") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Екатеринбург", "timezone_Asia/Yekaterinburg") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Омск", "timezone_Asia/Omsk") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Красноярск", "timezone_Asia/Krasnoyarsk") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Иркутск", "timezone_Asia/Irkutsk") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Якутск", "timezone_Asia/Yakutsk") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Владивосток", "timezone_Asia/Vladivostok") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Магадан", "timezone_Asia/Magadan") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Камчатка", "timezone_Asia/Kamchatka") },
+      new[] { InlineKeyboardButton.WithCallbackData("⏭️ Пропустить (UTC)", "timezone_UTC") }
+    });
+  }
+
   private async Task HandleCreateActionAsync(
     ITelegramBotClient botClient,
     long chatId,
@@ -747,6 +766,25 @@ public class CallbackQueryHandler(
     }
 
     var timezoneId = parts[1];
+
+    // Handle show list request
+    if (timezoneId == "showlist")
+    {
+      var timezoneListKeyboard = GetRussianTimeZoneListKeyboard();
+
+      var listFamilyName = session.Data.TryGetValue("familyName", out var listFamilyNameObj) &&
+                           listFamilyNameObj is string fn
+        ? fn
+        : "вашей семьи";
+
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        $"🌍 Выберите временную зону для семьи \"{listFamilyName}\":",
+        replyMarkup: timezoneListKeyboard,
+        cancellationToken: cancellationToken);
+      return;
+    }
 
     // Handle geolocation detection request
     if (timezoneId == "detect")
