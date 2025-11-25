@@ -143,9 +143,8 @@ public class StatsCommandHandlerTests
       Arg.Any<CancellationToken>());
   }
 
-  private static Message CreateMessage(long chatId, string text = "/stats")
-  {
-    return new Message
+  private static Message CreateMessage(long chatId, string text = "/stats") =>
+    new()
     {
       MessageId = 1,
       Chat = new Chat { Id = chatId },
@@ -153,5 +152,4 @@ public class StatsCommandHandlerTests
       Text = text,
       Date = DateTime.UtcNow
     };
-  }
 }

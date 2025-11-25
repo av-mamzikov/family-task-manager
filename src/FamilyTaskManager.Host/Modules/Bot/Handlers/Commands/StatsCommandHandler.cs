@@ -81,14 +81,12 @@ public class StatsCommandHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
-  private string GetRoleText(FamilyRole role)
-  {
-    return role switch
+  private string GetRoleText(FamilyRole role) =>
+    role switch
     {
       FamilyRole.Admin => "Администратор",
       FamilyRole.Adult => "Взрослый",
       FamilyRole.Child => "Ребёнок",
       _ => "Неизвестно"
     };
-  }
 }

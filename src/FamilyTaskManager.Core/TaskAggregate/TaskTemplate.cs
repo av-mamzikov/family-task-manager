@@ -2,7 +2,9 @@ namespace FamilyTaskManager.Core.TaskAggregate;
 
 public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
 {
-  private TaskTemplate() { }
+  private TaskTemplate()
+  {
+  }
 
   public TaskTemplate(Guid familyId, Guid petId, string title, int points, string schedule, Guid createdBy)
   {
@@ -43,8 +45,5 @@ public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
     Schedule = schedule.Trim();
   }
 
-  public void Deactivate()
-  {
-    IsActive = false;
-  }
+  public void Deactivate() => IsActive = false;
 }

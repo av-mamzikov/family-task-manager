@@ -81,31 +81,26 @@ public class PetCommandHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
-  private string GetPetEmoji(PetType type)
-  {
-    return type switch
+  private string GetPetEmoji(PetType type) =>
+    type switch
     {
       PetType.Cat => "🐱",
       PetType.Dog => "🐶",
       PetType.Hamster => "🐹",
       _ => "🐾"
     };
-  }
 
-  private string GetPetTypeText(PetType type)
-  {
-    return type switch
+  private string GetPetTypeText(PetType type) =>
+    type switch
     {
       PetType.Cat => "Кот",
       PetType.Dog => "Собака",
       PetType.Hamster => "Хомяк",
       _ => "Неизвестно"
     };
-  }
 
-  private string GetMoodEmoji(int moodScore)
-  {
-    return moodScore switch
+  private string GetMoodEmoji(int moodScore) =>
+    moodScore switch
     {
       >= 80 => "😊",
       >= 60 => "🙂",
@@ -113,11 +108,9 @@ public class PetCommandHandler(IMediator mediator)
       >= 20 => "😟",
       _ => "😢"
     };
-  }
 
-  private string GetMoodText(int moodScore)
-  {
-    return moodScore switch
+  private string GetMoodText(int moodScore) =>
+    moodScore switch
     {
       >= 80 => "Отлично!",
       >= 60 => "Хорошо",
@@ -125,5 +118,4 @@ public class PetCommandHandler(IMediator mediator)
       >= 20 => "Грустит",
       _ => "Очень грустно"
     };
-  }
 }

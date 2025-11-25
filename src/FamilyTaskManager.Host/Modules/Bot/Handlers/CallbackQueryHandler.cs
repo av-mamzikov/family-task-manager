@@ -78,9 +78,8 @@ public class CallbackQueryHandler(
     }
   }
 
-  private static InlineKeyboardMarkup GetRussianTimeZoneListKeyboard()
-  {
-    return new InlineKeyboardMarkup(new[]
+  private static InlineKeyboardMarkup GetRussianTimeZoneListKeyboard() =>
+    new(new[]
     {
       new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Калининград", "timezone_Europe/Kaliningrad") },
       new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Москва", "timezone_Europe/Moscow") },
@@ -95,7 +94,6 @@ public class CallbackQueryHandler(
       new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Камчатка", "timezone_Asia/Kamchatka") },
       new[] { InlineKeyboardButton.WithCallbackData("⏭️ Пропустить (UTC)", "timezone_UTC") }
     });
-  }
 
   private async Task HandleCreateActionAsync(
     ITelegramBotClient botClient,
@@ -326,6 +324,7 @@ public class CallbackQueryHandler(
       chatId,
       messageId,
       BotConstants.Success.FamilySelected + BotConstants.Success.NextStepsMessage,
+      ParseMode.Markdown,
       cancellationToken: cancellationToken);
   }
 
@@ -455,13 +454,11 @@ public class CallbackQueryHandler(
     int messageId,
     string[] parts,
     UserSession session,
-    CancellationToken cancellationToken)
-  {
+    CancellationToken cancellationToken) =>
     await botClient.SendTextMessageAsync(
       chatId,
       "🐾 Действие с питомцем\n(В разработке)",
       cancellationToken: cancellationToken);
-  }
 
   private async Task HandleFamilyActionAsync(
     ITelegramBotClient botClient,
@@ -556,26 +553,22 @@ public class CallbackQueryHandler(
     long chatId,
     int messageId,
     Guid familyId,
-    CancellationToken cancellationToken)
-  {
+    CancellationToken cancellationToken) =>
     await botClient.SendTextMessageAsync(
       chatId,
       "👥 Управление участниками\n(В разработке)",
       cancellationToken: cancellationToken);
-  }
 
   private async Task HandleFamilySettingsAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
     Guid familyId,
-    CancellationToken cancellationToken)
-  {
+    CancellationToken cancellationToken) =>
     await botClient.SendTextMessageAsync(
       chatId,
       "⚙️ Настройки семьи\n(В разработке)",
       cancellationToken: cancellationToken);
-  }
 
   private async Task HandleDeleteFamilyAsync(
     ITelegramBotClient botClient,
@@ -928,13 +921,11 @@ public class CallbackQueryHandler(
   private async Task HandleUnknownCallbackAsync(
     ITelegramBotClient botClient,
     long chatId,
-    CancellationToken cancellationToken)
-  {
+    CancellationToken cancellationToken) =>
     await botClient.SendTextMessageAsync(
       chatId,
       "❓ Неизвестное действие",
       cancellationToken: cancellationToken);
-  }
 
   private async Task HandleConfirmActionAsync(
     ITelegramBotClient botClient,

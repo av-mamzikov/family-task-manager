@@ -220,11 +220,9 @@ public class TelegramNotificationService(
   /// <summary>
   ///   Escape HTML special characters for Telegram HTML parse mode
   /// </summary>
-  private static string EscapeHtml(string text)
-  {
-    return text
+  private static string EscapeHtml(string text) =>
+    text
       .Replace("&", "&amp;")
       .Replace("<", "&lt;")
       .Replace(">", "&gt;");
-  }
 }

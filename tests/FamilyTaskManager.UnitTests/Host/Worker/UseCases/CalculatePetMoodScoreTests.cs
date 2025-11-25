@@ -202,8 +202,6 @@ public class CalculatePetMoodScoreTests
     return task;
   }
 
-  private TaskInstance CreateOverdueTask(Guid familyId, Guid petId, int points, DateTime dueAt)
-  {
-    return new TaskInstance(familyId, petId, "Overdue Task", points, TaskType.OneTime, dueAt);
-  }
+  private TaskInstance CreateOverdueTask(Guid familyId, Guid petId, int points, DateTime dueAt) =>
+    new(familyId, petId, "Overdue Task", points, TaskType.OneTime, dueAt);
 }

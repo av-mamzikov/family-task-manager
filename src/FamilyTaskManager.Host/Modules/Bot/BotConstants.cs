@@ -8,19 +8,16 @@ public static class BotConstants
   {
     public const string NextStepsMessage = "🎉 Отлично! Теперь ваша семья готова к использованию.\n\n" +
                                            "📋 *Что дальше?*\n\n" +
-                                           "🐾 **/pet** — Добавьте питомцев, которые будут выполнять задачи\n" +
-                                           "📝 **/tasks** — Просматривайте и берите в работу актуальные задачи\n" +
-                                           "📋 **/templates** — Управляйте шаблонами задач (автоматическое создание по расписанию)\n" +
-                                           "🏆 **/stats** — Следите за статистикой и достижениями семьи\n" +
-                                           "👨‍👩‍👧‍👦 **/family** — Управляйте членами семьи и настройками\n\n" +
-                                           "💡 *Совет:* Начните с добавления питомца через /pet, а затем создавайте задачи для них!";
+                                           "🐾 Добавьте питомцев, которые будут выполнять задачи\n" +
+                                           "📝 Просматривайте и берите в работу актуальные задачи\n" +
+                                           "📋 Управляйте шаблонами задач (автоматическое создание по расписанию)\n" +
+                                           "🏆 Следите за статистикой и достижениями семьи\n" +
+                                           "👨‍👩‍👧‍👦 Управляйте членами семьи и настройками\n\n" +
+                                           "💡 *Совет:* Начните с добавления питомца , а затем создавайте шаблоны задач для них!";
 
     public const string FamilySelected = "✅ Семья выбрана!\n\n";
 
-    public static string FamilyCreatedMessage(string familyName)
-    {
-      return $"✅ Семья \"{familyName}\" успешно создана!\n\n";
-    }
+    public static string FamilyCreatedMessage(string familyName) => $"✅ Семья \"{familyName}\" успешно создана!\n\n";
   }
 
   public static class Errors
@@ -35,6 +32,17 @@ public static class BotConstants
     public const string TasksLoadError = "❌ Ошибка загрузки задач";
     public const string UnknownCommand = "❓ Неизвестная команда. Используйте /help для списка команд.";
     public const string NoPets = "❌ В семье нет питомцев. Сначала создайте питомца через /pet";
+    public const string FamilyNameTooShort = "❌ Название семьи должно содержать минимум 3 символа. Попробуйте снова:";
+    public const string SessionError = "❌ Ошибка. Попробуйте создать семью заново.";
+    public const string SessionErrorRetry = "❌ Ошибка сессии. Попробуйте создать семью заново.";
+    public const string InvalidLocationData = "❌ Получены некорректные данные о местоположении.\n\n";
+
+    public const string TimezoneDetectionFailed = "❌ Не удалось определить временную зону для вашей локации.\n\n" +
+                                                  "Пожалуйста, выберите временную зону вручную.";
+
+    public const string TimezoneValidationFailed = "❌ Не удалось определить временную зону для вашей локации.\n\n";
+
+    public static string FamilyCreationError(string? error) => $"❌ Ошибка создания семьи: {error}";
   }
 
   public static class Messages
@@ -79,17 +87,20 @@ public static class BotConstants
     public const string OrBackToManual = "или \"⬅️ Назад\" для выбора вручную.";
     public const string DefaultFamilyName = "ваша семья";
 
-    public static string GetTaskTypeText(string taskType)
-    {
-      return taskType == "onetime" ? "разовую" : "периодическую";
-    }
+    public static string ChooseTimezoneMethod(string familyName) =>
+      $"🌍 Выберите способ определения временной зоны для семьи \"{familyName}\":";
 
-    public static string FamilyJoined(string familyName, string roleName)
-    {
-      return $"Вы успешно присоединились к семье *{familyName}*\n" +
-             $"Ваша роль: {roleName}\n\n" +
-             "Используйте /tasks чтобы посмотреть задачи";
-    }
+    public static string FamilyCreatedWithTimezone(string familyName, string timezone) =>
+      Success.FamilyCreatedMessage(familyName) +
+      $"🌍 Определенная временная зона: {timezone}\n\n" +
+      Success.NextStepsMessage;
+
+    public static string GetTaskTypeText(string taskType) => taskType == "onetime" ? "разовую" : "периодическую";
+
+    public static string FamilyJoined(string familyName, string roleName) =>
+      $"Вы успешно присоединились к семье *{familyName}*\n" +
+      $"Ваша роль: {roleName}\n\n" +
+      "Используйте /tasks чтобы посмотреть задачи";
   }
 
   public static class Help
@@ -122,15 +133,13 @@ public static class BotConstants
 
   public static class Roles
   {
-    public static string GetRoleText(FamilyRole role)
-    {
-      return role switch
+    public static string GetRoleText(FamilyRole role) =>
+      role switch
       {
         FamilyRole.Admin => "Администратор",
         FamilyRole.Adult => "Взрослый",
         FamilyRole.Child => "Ребёнок",
         _ => "Неизвестно"
       };
-    }
   }
 }

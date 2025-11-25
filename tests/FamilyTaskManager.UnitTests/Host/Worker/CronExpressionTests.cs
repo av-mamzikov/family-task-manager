@@ -35,11 +35,9 @@ public class CronExpressionTests
   [InlineData("0 0 9,20 * * ?")] // Daily at 9:00 and 20:00
   [InlineData("0 0 9 ? * MON")] // Every Monday at 9:00
   [InlineData("0 0 9 1 * ?")] // First day of month at 9:00
-  public void CronExpression_ValidatesCorrectly_ForValidExpressions(string cronExpression)
-  {
+  public void CronExpression_ValidatesCorrectly_ForValidExpressions(string cronExpression) =>
     // Act & Assert
     Should.NotThrow(() => new CronExpression(cronExpression));
-  }
 
   [Theory]
   [InlineData("invalid")]
@@ -47,11 +45,9 @@ public class CronExpressionTests
   [InlineData("* * * *")] // Too few fields
   [InlineData("0 0 25 * * ?")] // Invalid hour (25)
   [InlineData("0 60 * * * ?")] // Invalid minute (60)
-  public void CronExpression_ThrowsException_ForInvalidExpressions(string cronExpression)
-  {
+  public void CronExpression_ThrowsException_ForInvalidExpressions(string cronExpression) =>
     // Act & Assert
     Should.Throw<Exception>(() => new CronExpression(cronExpression));
-  }
 
   [Fact]
   public void CronExpression_EveryMinute_WorksCorrectly()
@@ -134,8 +130,7 @@ public class CronExpressionTests
   [InlineData("0 0 9,20 * * ?", "Feed cat - twice daily")]
   [InlineData("0 0 20 * * ?", "Clean litter box - daily at 20:00")]
   [InlineData("0 0 9 */5 * ?", "Vet checkup - every 5 days")]
-  public void CronExpression_CommonPetTaskSchedules_AreValid(string cronExpression, string description)
-  {
+  public void CronExpression_CommonPetTaskSchedules_AreValid(string cronExpression, string description) =>
     // Act & Assert
     Should.NotThrow(() =>
     {
@@ -143,5 +138,4 @@ public class CronExpressionTests
       var next = cron.GetTimeAfter(DateTimeOffset.UtcNow);
       next.ShouldNotBeNull($"Schedule '{description}' should have a next occurrence");
     });
-  }
 }

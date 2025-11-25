@@ -7,10 +7,7 @@ public class UserSession
   public Dictionary<string, object> Data { get; set; } = new();
   public DateTime LastActivity { get; set; } = DateTime.UtcNow;
 
-  public void UpdateActivity()
-  {
-    LastActivity = DateTime.UtcNow;
-  }
+  public void UpdateActivity() => LastActivity = DateTime.UtcNow;
 
   public void SetState(ConversationState state, Dictionary<string, object>? data = null)
   {

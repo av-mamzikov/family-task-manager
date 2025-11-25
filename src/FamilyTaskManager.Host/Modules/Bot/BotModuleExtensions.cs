@@ -1,6 +1,7 @@
 using FamilyTaskManager.Host.Modules.Bot.Configuration;
 using FamilyTaskManager.Host.Modules.Bot.Handlers;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
+using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
@@ -36,6 +37,7 @@ public static class BotModuleExtensions
     // Bot Services
     services.AddSingleton<ISessionManager, SessionManager>();
     services.AddSingleton<ITelegramBotService, TelegramBotService>();
+    services.AddScoped<IUserRegistrationService, UserRegistrationService>();
 
     // Hosted Service for Long Polling
     services.AddHostedService<TelegramBotHostedService>();
@@ -44,11 +46,21 @@ public static class BotModuleExtensions
     services.AddScoped<IUpdateHandler, UpdateHandler>();
     services.AddScoped<ICommandHandler, CommandHandler>();
     services.AddScoped<ICallbackQueryHandler, CallbackQueryHandler>();
+
+    // Command Handlers
     services.AddScoped<FamilyCommandHandler>();
     services.AddScoped<TasksCommandHandler>();
     services.AddScoped<PetCommandHandler>();
     services.AddScoped<StatsCommandHandler>();
     services.AddScoped<TemplateCommandHandler>();
+
+    // Conversation Handlers
+    services.AddScoped<IConversationRouter, ConversationRouter>();
+    services.AddScoped<FamilyCreationHandler>();
+    services.AddScoped<PetCreationHandler>();
+    services.AddScoped<TaskCreationHandler>();
+    services.AddScoped<TemplateCreationHandler>();
+    services.AddScoped<TemplateEditHandler>();
 
     logger?.LogInformation("Bot Module registered: Telegram Bot with Long Polling");
 

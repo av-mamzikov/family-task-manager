@@ -2,7 +2,9 @@ namespace FamilyTaskManager.Core.FamilyAggregate;
 
 public class FamilyMember : EntityBase<FamilyMember, Guid>
 {
-  private FamilyMember() { }
+  private FamilyMember()
+  {
+  }
 
   public FamilyMember(Guid userId, Guid familyId, FamilyRole role)
   {
@@ -35,8 +37,5 @@ public class FamilyMember : EntityBase<FamilyMember, Guid>
     }
   }
 
-  public void Deactivate()
-  {
-    IsActive = false;
-  }
+  public void Deactivate() => IsActive = false;
 }

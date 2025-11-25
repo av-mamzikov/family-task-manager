@@ -29,20 +29,11 @@ public class Invitation : EntityBase<Invitation, Guid>, IAggregateRoot
   public bool IsActive { get; private set; }
   public Guid CreatedBy { get; private set; }
 
-  public void Deactivate()
-  {
-    IsActive = false;
-  }
+  public void Deactivate() => IsActive = false;
 
-  public bool IsExpired()
-  {
-    return ExpiresAt.HasValue && DateTime.UtcNow > ExpiresAt.Value;
-  }
+  public bool IsExpired() => ExpiresAt.HasValue && DateTime.UtcNow > ExpiresAt.Value;
 
-  public bool IsValid()
-  {
-    return IsActive && !IsExpired();
-  }
+  public bool IsValid() => IsActive && !IsExpired();
 
   private static string GenerateCode()
   {

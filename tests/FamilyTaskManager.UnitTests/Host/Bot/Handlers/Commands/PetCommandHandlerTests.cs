@@ -194,9 +194,8 @@ public class PetCommandHandlerTests
       Arg.Any<CancellationToken>());
   }
 
-  private static Message CreateMessage(long chatId, string text = "/pet")
-  {
-    return new Message
+  private static Message CreateMessage(long chatId, string text = "/pet") =>
+    new()
     {
       MessageId = 1,
       Chat = new Chat { Id = chatId },
@@ -204,5 +203,4 @@ public class PetCommandHandlerTests
       Text = text,
       Date = DateTime.UtcNow
     };
-  }
 }

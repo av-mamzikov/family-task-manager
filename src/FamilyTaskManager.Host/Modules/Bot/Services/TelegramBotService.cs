@@ -47,11 +47,9 @@ public class TelegramBotService(
     return Task.CompletedTask;
   }
 
-  public async Task SendMessageAsync(long chatId, string text, CancellationToken cancellationToken = default)
-  {
+  public async Task SendMessageAsync(long chatId, string text, CancellationToken cancellationToken = default) =>
     await botClient.SendTextMessageAsync(
       chatId,
       text,
       cancellationToken: cancellationToken);
-  }
 }

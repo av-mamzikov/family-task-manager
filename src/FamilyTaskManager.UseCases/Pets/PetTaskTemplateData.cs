@@ -122,16 +122,14 @@ public static class PetTaskTemplateData
     )
   };
 
-  public static IReadOnlyList<TaskTemplateData> GetDefaultTemplates(PetType petType)
-  {
-    return petType switch
+  public static IReadOnlyList<TaskTemplateData> GetDefaultTemplates(PetType petType) =>
+    petType switch
     {
       PetType.Cat => CatTemplates,
       PetType.Dog => DogTemplates,
       PetType.Hamster => HamsterTemplates,
       _ => throw new ArgumentOutOfRangeException(nameof(petType), petType, "Unknown pet type")
     };
-  }
 
   public record TaskTemplateData(string Title, int Points, string Schedule);
 }

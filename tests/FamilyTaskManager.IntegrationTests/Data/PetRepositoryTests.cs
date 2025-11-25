@@ -4,15 +4,11 @@ namespace FamilyTaskManager.IntegrationTests.Data;
 
 public class PetRepositoryTests : RepositoryTestsBase<Pet>
 {
-  protected override Pet CreateTestEntity(string uniqueSuffix = "")
-  {
-    return new Pet(Guid.NewGuid(), PetType.Cat, $"Fluffy{uniqueSuffix}");
-  }
+  protected override Pet CreateTestEntity(string uniqueSuffix = "") =>
+    new(Guid.NewGuid(), PetType.Cat, $"Fluffy{uniqueSuffix}");
 
-  protected override Pet CreateSecondTestEntity(string uniqueSuffix = "")
-  {
-    return new Pet(Guid.NewGuid(), PetType.Dog, $"Buddy{uniqueSuffix}");
-  }
+  protected override Pet CreateSecondTestEntity(string uniqueSuffix = "") =>
+    new(Guid.NewGuid(), PetType.Dog, $"Buddy{uniqueSuffix}");
 
   protected override void ModifyEntity(Pet entity)
   {

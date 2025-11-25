@@ -324,14 +324,12 @@ public class TemplateCommandHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
-  private string GetPetEmoji(PetType type)
-  {
-    return type switch
+  private string GetPetEmoji(PetType type) =>
+    type switch
     {
       PetType.Cat => "🐱",
       PetType.Dog => "🐶",
       PetType.Hamster => "🐹",
       _ => "🐾"
     };
-  }
 }

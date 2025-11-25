@@ -12,15 +12,9 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
     .WithPassword("Your_password123!")
     .Build();
 
-  public async Task InitializeAsync()
-  {
-    await _dbContainer.StartAsync();
-  }
+  public async Task InitializeAsync() => await _dbContainer.StartAsync();
 
-  public new async Task DisposeAsync()
-  {
-    await _dbContainer.DisposeAsync();
-  }
+  public new async Task DisposeAsync() => await _dbContainer.DisposeAsync();
 
   /// <summary>
   ///   Overriding CreateHost to avoid creating a separate ServiceProvider per this thread:
@@ -65,8 +59,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
     return host;
   }
 
-  protected override void ConfigureWebHost(IWebHostBuilder builder)
-  {
+  protected override void ConfigureWebHost(IWebHostBuilder builder) =>
     builder
       .ConfigureServices(services =>
       {
@@ -86,5 +79,4 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
           options.UseSqlServer(_dbContainer.GetConnectionString());
         });
       });
-  }
 }

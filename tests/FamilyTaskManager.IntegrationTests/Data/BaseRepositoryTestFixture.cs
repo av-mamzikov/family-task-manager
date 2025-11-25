@@ -41,25 +41,17 @@ public abstract class BaseRepositoryTestFixture : IAsyncLifetime
   /// <summary>
   ///   Создает репозиторий для указанного типа агрегата
   /// </summary>
-  protected IRepository<T> GetRepository<T>() where T : class, IAggregateRoot
-  {
-    return new EfRepository<T>(DbContext);
-  }
+  protected IRepository<T> GetRepository<T>() where T : class, IAggregateRoot => new EfRepository<T>(DbContext);
 
   /// <summary>
   ///   Создает read-only репозиторий для указанного типа агрегата
   /// </summary>
-  protected IReadRepository<T> GetReadRepository<T>() where T : class, IAggregateRoot
-  {
-    return new EfRepository<T>(DbContext);
-  }
+  protected IReadRepository<T> GetReadRepository<T>() where T : class, IAggregateRoot => new EfRepository<T>(DbContext);
 
   /// <summary>
   ///   Очищает все данные из БД между тестами (опционально)
   /// </summary>
-  protected async Task ClearDatabaseAsync()
-  {
+  protected async Task ClearDatabaseAsync() =>
     await DbContext.Database.ExecuteSqlRawAsync(
       "TRUNCATE TABLE \"Families\", \"FamilyMembers\", \"Users\", \"Pets\", \"TaskTemplates\", \"TaskInstances\", \"ActionHistory\" CASCADE");
-  }
 }

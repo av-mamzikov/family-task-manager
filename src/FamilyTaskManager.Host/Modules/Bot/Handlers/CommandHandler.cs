@@ -1,16 +1,10 @@
-using FamilyTaskManager.Core.FamilyAggregate;
-using FamilyTaskManager.Core.Interfaces;
-using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
+using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Families;
-using FamilyTaskManager.UseCases.Pets;
-using FamilyTaskManager.UseCases.Tasks;
-using FamilyTaskManager.UseCases.TaskTemplates;
 using FamilyTaskManager.UseCases.Users;
-using GeoTimeZone;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -19,15 +13,15 @@ using Telegram.Bot.Types.ReplyMarkups;
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
 public class CommandHandler(
-  ILogger<CommandHandler> logger,
   ISessionManager sessionManager,
   IMediator mediator,
+  IUserRegistrationService userRegistrationService,
+  IConversationRouter conversationRouter,
   FamilyCommandHandler familyCommandHandler,
   TasksCommandHandler tasksCommandHandler,
   PetCommandHandler petCommandHandler,
   StatsCommandHandler statsCommandHandler,
-  TemplateCommandHandler templateCommandHandler,
-  ITimeZoneService timeZoneService)
+  TemplateCommandHandler templateCommandHandler)
   : ICommandHandler
 {
   public async Task HandleCommandAsync(ITelegramBotClient botClient, Message message,
@@ -40,16 +34,36 @@ public class CommandHandler(
     // Handle conversation state
     if (session.State != ConversationState.None)
     {
-      await HandleConversationAsync(botClient, message, session, cancellationToken);
+      // Handle universal commands
+      var messageText = message.Text ?? string.Empty;
+      if (messageText is "❌ Отменить" or "/cancel")
+      {
+        await conversationRouter.HandleCancelConversationAsync(
+          botClient, message, session,
+          () => SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken),
+          cancellationToken);
+        return;
+      }
+
+      if (messageText == "⬅️ Назад")
+      {
+        await conversationRouter.HandleBackInConversationAsync(
+          botClient, message, session,
+          () => SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken),
+          cancellationToken);
+        return;
+      }
+
+      await conversationRouter.HandleConversationAsync(botClient, message, session, cancellationToken);
       return;
     }
 
     // Handle commands
-    var messageText = message.Text!;
-    if (messageText.StartsWith('/'))
+    var commandText = message.Text!;
+    if (commandText.StartsWith('/'))
     {
-      var command = messageText.Split(' ')[0].ToLower();
-      var args = messageText.Split(' ').Skip(1).ToArray();
+      var command = commandText.Split(' ')[0].ToLower();
+      var args = commandText.Split(' ').Skip(1).ToArray();
 
       await (command switch
       {
@@ -68,34 +82,6 @@ public class CommandHandler(
       // Handle persistent keyboard buttons
       await HandleKeyboardButtonAsync(botClient, message, session, cancellationToken);
     }
-  }
-
-  private static InlineKeyboardMarkup GetTimezoneChoiceKeyboard()
-  {
-    return new InlineKeyboardMarkup(new[]
-    {
-      new[] { InlineKeyboardButton.WithCallbackData("📍 Определить по геолокации", "timezone_detect") },
-      new[] { InlineKeyboardButton.WithCallbackData("📋 Выбрать из списка", "timezone_showlist") }
-    });
-  }
-
-  private static InlineKeyboardMarkup GetRussianTimeZoneListKeyboard()
-  {
-    return new InlineKeyboardMarkup(new[]
-    {
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Калининград", "timezone_Europe/Kaliningrad") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Москва", "timezone_Europe/Moscow") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Самара", "timezone_Europe/Samara") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Екатеринбург", "timezone_Asia/Yekaterinburg") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Омск", "timezone_Asia/Omsk") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Красноярск", "timezone_Asia/Krasnoyarsk") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Иркутск", "timezone_Asia/Irkutsk") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Якутск", "timezone_Asia/Yakutsk") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Владивосток", "timezone_Asia/Vladivostok") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Магадан", "timezone_Asia/Magadan") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Камчатка", "timezone_Asia/Kamchatka") },
-      new[] { InlineKeyboardButton.WithCallbackData("⏭️ Пропустить (UTC)", "timezone_UTC") }
-    });
   }
 
   private async Task HandleStartCommandAsync(
@@ -205,26 +191,13 @@ public class CommandHandler(
     }
   }
 
-  private string GetRoleText(FamilyRole role)
-  {
-    return role switch
-    {
-      FamilyRole.Admin => "👑 Администратор",
-      FamilyRole.Adult => "👤 Взрослый",
-      FamilyRole.Child => "👶 Ребёнок",
-      _ => "❓ Неизвестно"
-    };
-  }
-
   private async Task HandleFamilyCommandAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
     CancellationToken cancellationToken)
   {
-    // Get user ID
-    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
-    var userResult = await mediator.Send(registerCommand, cancellationToken);
+    var userResult = await userRegistrationService.GetOrRegisterUserAsync(message.From!, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -244,8 +217,7 @@ public class CommandHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
-    var userResult = await mediator.Send(registerCommand, cancellationToken);
+    var userResult = await userRegistrationService.GetOrRegisterUserAsync(message.From!, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -265,8 +237,7 @@ public class CommandHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
-    var userResult = await mediator.Send(registerCommand, cancellationToken);
+    var userResult = await userRegistrationService.GetOrRegisterUserAsync(message.From!, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -286,8 +257,7 @@ public class CommandHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
-    var userResult = await mediator.Send(registerCommand, cancellationToken);
+    var userResult = await userRegistrationService.GetOrRegisterUserAsync(message.From!, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -307,8 +277,7 @@ public class CommandHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
-    var userResult = await mediator.Send(registerCommand, cancellationToken);
+    var userResult = await userRegistrationService.GetOrRegisterUserAsync(message.From!, cancellationToken);
 
     if (!userResult.IsSuccess)
     {
@@ -342,13 +311,11 @@ public class CommandHandler(
   private async Task HandleUnknownCommandAsync(
     ITelegramBotClient botClient,
     Message message,
-    CancellationToken cancellationToken)
-  {
+    CancellationToken cancellationToken) =>
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       BotConstants.Errors.UnknownCommand,
       cancellationToken: cancellationToken);
-  }
 
   private async Task HandleKeyboardButtonAsync(
     ITelegramBotClient botClient,
@@ -388,1011 +355,6 @@ public class CommandHandler(
       message.Chat.Id,
       "⭐ Мои очки\n(В разработке)",
       cancellationToken: cancellationToken);
-  }
-
-  private async Task HandleConversationAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    // Handle location messages
-    if (message.Location != null && session.State == ConversationState.AwaitingFamilyLocation)
-    {
-      await HandleFamilyLocationInputAsync(botClient, message, session, cancellationToken);
-      return;
-    }
-
-    var text = message.Text!;
-
-    // Handle universal commands
-    if (text == "❌ Отменить" || text == "/cancel")
-    {
-      await HandleCancelConversationAsync(botClient, message, session, cancellationToken);
-      return;
-    }
-
-    if (text == "⬅️ Назад")
-    {
-      await HandleBackInConversationAsync(botClient, message, session, cancellationToken);
-      return;
-    }
-
-    switch (session.State)
-    {
-      case ConversationState.AwaitingFamilyName:
-        await HandleFamilyNameInputAsync(botClient, message, session, text, cancellationToken);
-        break;
-
-      case ConversationState.AwaitingFamilyTimezone:
-        // Timezone selection is handled via callbacks, not text input
-        await botClient.SendTextMessageAsync(
-          message.Chat.Id,
-          "❌ Пожалуйста, используйте кнопки для выбора временной зоны.",
-          cancellationToken: cancellationToken);
-        break;
-
-      case ConversationState.AwaitingFamilyLocation:
-        // Handle "Back" button
-        if (text == "⬅️ Назад")
-        {
-          await HandleBackToTimezoneSelectionAsync(botClient, message, session, cancellationToken);
-          return;
-        }
-
-        await botClient.SendTextMessageAsync(
-          message.Chat.Id,
-          "❌ Пожалуйста, используйте кнопку \"📍 Отправить местоположение\" для определения временной зоны.",
-          cancellationToken: cancellationToken);
-        break;
-
-      case ConversationState.AwaitingPetName:
-        await HandlePetNameInputAsync(botClient, message, session, text, cancellationToken);
-        break;
-
-      case ConversationState.AwaitingTaskTitle:
-        await HandleTaskTitleInputAsync(botClient, message, session, text, cancellationToken);
-        break;
-
-      case ConversationState.AwaitingTaskPoints:
-        await HandleTaskPointsInputAsync(botClient, message, session, text, cancellationToken);
-        break;
-
-      case ConversationState.AwaitingTaskDueDate:
-        await HandleTaskDueDateInputAsync(botClient, message, session, text, cancellationToken);
-        break;
-
-      case ConversationState.AwaitingTaskSchedule:
-        await HandleTaskScheduleInputAsync(botClient, message, session, text, cancellationToken);
-        break;
-
-      case ConversationState.AwaitingTemplateTitle:
-        await HandleTemplateTitleInputAsync(botClient, message, session, text, cancellationToken);
-        break;
-
-      case ConversationState.AwaitingTemplatePoints:
-        await HandleTemplatePointsInputAsync(botClient, message, session, text, cancellationToken);
-        break;
-
-      case ConversationState.AwaitingTemplateSchedule:
-        await HandleTemplateScheduleInputAsync(botClient, message, session, text, cancellationToken);
-        break;
-
-      case ConversationState.AwaitingTemplateEditTitle:
-        await HandleTemplateEditTitleInputAsync(botClient, message, session, text, cancellationToken);
-        break;
-
-      case ConversationState.AwaitingTemplateEditPoints:
-        await HandleTemplateEditPointsInputAsync(botClient, message, session, text, cancellationToken);
-        break;
-
-      case ConversationState.AwaitingTemplateEditSchedule:
-        await HandleTemplateEditScheduleInputAsync(botClient, message, session, text, cancellationToken);
-        break;
-
-      // Add more conversation handlers as needed
-      default:
-        session.ClearState();
-        await botClient.SendTextMessageAsync(
-          message.Chat.Id,
-          "❌ Произошла ошибка. Попробуйте снова.",
-          cancellationToken: cancellationToken);
-        break;
-    }
-  }
-
-  private async Task HandleFamilyNameInputAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    string familyName,
-    CancellationToken cancellationToken)
-  {
-    if (string.IsNullOrWhiteSpace(familyName) || familyName.Length < 3)
-    {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingFamilyName);
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Название семьи должно содержать минимум 3 символа. Попробуйте снова:" +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingFamilyName),
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    // Get userId from session data
-    if (!session.Data.TryGetValue("userId", out var userIdObj) || userIdObj is not Guid userId)
-    {
-      session.ClearState();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте создать семью заново.",
-        replyMarkup: new ReplyKeyboardRemove(),
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    // Store family name and ask for timezone
-    session.Data["familyName"] = familyName;
-    session.State = ConversationState.AwaitingFamilyTimezone;
-
-    var timezoneKeyboard = GetTimezoneChoiceKeyboard();
-
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      $"🌍 Выберите способ определения временной зоны для семьи \"{familyName}\":",
-      replyMarkup: timezoneKeyboard,
-      cancellationToken: cancellationToken);
-  }
-
-  private async Task HandleFamilyLocationInputAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    var location = message.Location;
-
-    // Defensive null check
-    if (location?.Latitude == null || location?.Longitude == null)
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Получены некорректные данные о местоположении.\n\n" +
-        BotConstants.Errors.TryAgain,
-        replyMarkup: new ReplyKeyboardRemove(),
-        cancellationToken: cancellationToken);
-
-      await HandleBackToTimezoneSelectionAsync(botClient, message, session, cancellationToken);
-      return;
-    }
-
-    try
-    {
-      // Convert coordinates to timezone using GeoTimeZone
-      var timeZoneResult = TimeZoneLookup.GetTimeZone(location.Latitude, location.Longitude);
-      var detectedTimezone = timeZoneResult.Result;
-
-      // Add null check for ocean/invalid coordinates
-      if (string.IsNullOrEmpty(detectedTimezone))
-      {
-        await botClient.SendTextMessageAsync(
-          message.Chat.Id,
-          "❌ Не удалось определить временную зону для вашей локации.\n\n" +
-          "Пожалуйста, выберите временную зону вручную.",
-          replyMarkup: new ReplyKeyboardRemove(),
-          cancellationToken: cancellationToken);
-
-        await HandleBackToTimezoneSelectionAsync(botClient, message, session, cancellationToken);
-        return;
-      }
-
-      logger.LogInformation("Detected timezone for coordinates {Lat}, {Lng}: {Timezone}",
-        location.Latitude, location.Longitude, detectedTimezone);
-
-      // Get required data from session
-      if (!session.Data.TryGetValue("userId", out var userIdObj) || userIdObj is not Guid userId ||
-          !session.Data.TryGetValue("familyName", out var familyNameObj) || familyNameObj is not string familyName)
-      {
-        session.ClearState();
-        await botClient.SendTextMessageAsync(
-          message.Chat.Id,
-          "❌ Ошибка сессии. Попробуйте создать семью заново.",
-          cancellationToken: cancellationToken);
-        return;
-      }
-
-      // Validate detected timezone
-      if (!timeZoneService.IsValidTimeZone(detectedTimezone))
-      {
-        await botClient.SendTextMessageAsync(
-          message.Chat.Id,
-          $"❌ Не удалось определить временную зону для вашей локации.\n\n" +
-          BotConstants.Errors.ChooseTimezoneManually,
-          replyMarkup: new ReplyKeyboardRemove(),
-          cancellationToken: cancellationToken);
-
-        await HandleBackToTimezoneSelectionAsync(botClient, message, session, cancellationToken);
-        return;
-      }
-
-      // Create family with detected timezone
-      var createFamilyCommand = new CreateFamilyCommand(userId, familyName, detectedTimezone);
-      var result = await mediator.Send(createFamilyCommand, cancellationToken);
-
-      if (!result.IsSuccess)
-      {
-        await botClient.SendTextMessageAsync(
-          message.Chat.Id,
-          $"❌ Ошибка создания семьи: {result.Errors.FirstOrDefault()}",
-          replyMarkup: new ReplyKeyboardRemove(),
-          cancellationToken: cancellationToken);
-        session.ClearState();
-        return;
-      }
-
-      session.CurrentFamilyId = result.Value;
-      session.ClearState();
-
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        BotConstants.Success.FamilyCreatedMessage(familyName) +
-        $"🌍 Определенная временная зона: {detectedTimezone}\n\n" +
-        BotConstants.Success.NextStepsMessage,
-        parseMode: ParseMode.Markdown,
-        replyMarkup: new ReplyKeyboardRemove(),
-        cancellationToken: cancellationToken);
-    }
-    catch (Exception ex)
-    {
-      logger.LogError(ex, "Error determining timezone from location");
-
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        BotConstants.Errors.LocationError +
-        BotConstants.Errors.TryAgainOrChooseTimezone,
-        replyMarkup: new ReplyKeyboardRemove(),
-        cancellationToken: cancellationToken);
-
-      await HandleBackToTimezoneSelectionAsync(botClient, message, session, cancellationToken);
-    }
-  }
-
-  private async Task HandleBackToTimezoneSelectionAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    session.State = ConversationState.AwaitingFamilyTimezone;
-
-    var keyboard = GetTimezoneChoiceKeyboard();
-
-    var familyName = session.Data["familyName"] as string ?? "ваша семья";
-
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      $"🌍 Выберите способ определения временной зоны для семьи \"{familyName}\":",
-      replyMarkup: keyboard,
-      cancellationToken: cancellationToken);
-  }
-
-  private async Task HandlePetNameInputAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    string petName,
-    CancellationToken cancellationToken)
-  {
-    if (string.IsNullOrWhiteSpace(petName) || petName.Length < 2 || petName.Length > 50)
-    {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingPetName);
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Имя питомца должно содержать от 2 до 50 символов. Попробуйте снова:" +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingPetName),
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    // Get data from session
-    if (!session.Data.TryGetValue("petType", out var petTypeObj) || petTypeObj is not string petTypeStr ||
-        !session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId)
-    {
-      session.ClearState();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте создать питомца заново.",
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    // Parse pet type
-    if (!Enum.TryParse<PetType>(petTypeStr, true, out var petType))
-    {
-      session.ClearState();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка типа питомца. Попробуйте создать питомца заново.",
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    // Create pet
-    var createPetCommand = new CreatePetCommand(familyId, petType, petName);
-    var result = await mediator.Send(createPetCommand, cancellationToken);
-
-    if (!result.IsSuccess)
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        $"❌ Ошибка создания питомца: {result.Errors.FirstOrDefault()}",
-        cancellationToken: cancellationToken);
-      session.ClearState();
-      return;
-    }
-
-    session.ClearState();
-
-    var petEmoji = petType switch
-    {
-      PetType.Cat => "🐱",
-      PetType.Dog => "🐶",
-      PetType.Hamster => "🐹",
-      _ => "🐾"
-    };
-
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      $"✅ Питомец {petEmoji} \"{petName}\" успешно создан!\n\n" +
-      BotConstants.Messages.PetTasksAvailable,
-      replyMarkup: new ReplyKeyboardRemove(),
-      cancellationToken: cancellationToken);
-  }
-
-  private async Task HandleTaskTitleInputAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    string title,
-    CancellationToken cancellationToken)
-  {
-    if (string.IsNullOrWhiteSpace(title) || title.Length < 3 || title.Length > 100)
-    {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskTitle);
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Название задачи должно содержать от 3 до 100 символов. Попробуйте снова:" +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskTitle),
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    // Store title and move to points input
-    session.Data["title"] = title;
-    session.State = ConversationState.AwaitingTaskPoints;
-
-    var pointsKeyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskPoints);
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      "💯 Введите количество очков за выполнение задачи (от 1 до 100):" +
-      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskPoints),
-      replyMarkup: pointsKeyboard,
-      cancellationToken: cancellationToken);
-  }
-
-  private async Task HandleTaskPointsInputAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    string pointsText,
-    CancellationToken cancellationToken)
-  {
-    if (!int.TryParse(pointsText, out var points) || points < 1 || points > 100)
-    {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskPoints);
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Количество очков должно быть числом от 1 до 100. Попробуйте снова:" +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskPoints),
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    // Store points and show pet selection
-    session.Data["points"] = points;
-    session.State = ConversationState.AwaitingTaskPetSelection;
-
-    // Get family pets
-    if (!session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId)
-    {
-      session.ClearState();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте создать задачу заново.",
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    var getPetsQuery = new GetPetsQuery(familyId);
-    var petsResult = await mediator.Send(getPetsQuery, cancellationToken);
-
-    if (!petsResult.IsSuccess || !petsResult.Value.Any())
-    {
-      session.ClearState();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        BotConstants.Errors.NoPets,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    var buttons = petsResult.Value.Select(p =>
-    {
-      var petEmoji = p.Type switch
-      {
-        PetType.Cat => "🐱",
-        PetType.Dog => "🐶",
-        PetType.Hamster => "🐹",
-        _ => "🐾"
-      };
-      return new[] { InlineKeyboardButton.WithCallbackData($"{petEmoji} {p.Name}", $"taskpet_{p.Id}") };
-    }).ToArray();
-
-    var petSelectionKeyboard = new InlineKeyboardMarkup(buttons);
-
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      "🐾 Выберите питомца, к которому относится задача:",
-      replyMarkup: petSelectionKeyboard,
-      cancellationToken: cancellationToken);
-  }
-
-  private async Task HandleTaskDueDateInputAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    string dueDateText,
-    CancellationToken cancellationToken)
-  {
-    // Try to parse the date
-    if (!int.TryParse(dueDateText, out var days) || days < 0 || days > 365)
-    {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskDueDate);
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Введите количество дней (от 0 до 365). Например: 1 (завтра), 7 (через неделю):" +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskDueDate),
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    var dueAt = DateTime.UtcNow.AddDays(days);
-
-    // Get all required data from session
-    if (!session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId ||
-        !session.Data.TryGetValue("petId", out var petIdObj) || petIdObj is not Guid petId ||
-        !session.Data.TryGetValue("title", out var titleObj) || titleObj is not string title ||
-        !session.Data.TryGetValue("points", out var pointsObj) || pointsObj is not int points)
-    {
-      session.ClearState();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте создать задачу заново.",
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    // Get user ID
-    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
-    var userResult = await mediator.Send(registerCommand, cancellationToken);
-
-    if (!userResult.IsSuccess)
-    {
-      session.ClearState();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте /start",
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    // Create one-time task
-    var createTaskCommand = new CreateTaskCommand(familyId, petId, title, points, dueAt, userResult.Value);
-    var result = await mediator.Send(createTaskCommand, cancellationToken);
-
-    if (!result.IsSuccess)
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        $"❌ Ошибка создания задачи: {result.Errors.FirstOrDefault()}",
-        cancellationToken: cancellationToken);
-      session.ClearState();
-      return;
-    }
-
-    session.ClearState();
-
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      $"✅ Задача \"{title}\" успешно создана!\n\n" +
-      $"💯 Очки: {points}\n" +
-      $"📅 Срок: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
-      BotConstants.Messages.TaskAvailableToAll,
-      replyMarkup: new ReplyKeyboardRemove(),
-      cancellationToken: cancellationToken);
-  }
-
-  private async Task HandleTaskScheduleInputAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    string schedule,
-    CancellationToken cancellationToken)
-  {
-    // Validate schedule (basic check)
-    if (string.IsNullOrWhiteSpace(schedule))
-    {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskSchedule);
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Расписание не может быть пустым. Попробуйте снова:" +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskSchedule),
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    // Get all required data from session
-    if (!session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId ||
-        !session.Data.TryGetValue("petId", out var petIdObj) || petIdObj is not Guid petId ||
-        !session.Data.TryGetValue("title", out var titleObj) || titleObj is not string title ||
-        !session.Data.TryGetValue("points", out var pointsObj) || pointsObj is not int points)
-    {
-      session.ClearState();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте создать задачу заново.",
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    // Get user ID
-    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
-    var userResult = await mediator.Send(registerCommand, cancellationToken);
-
-    if (!userResult.IsSuccess)
-    {
-      session.ClearState();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте /start",
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    // Create periodic task template
-    var createTemplateCommand =
-      new CreateTaskTemplateCommand(familyId, petId, title, points, schedule, userResult.Value);
-    var result = await mediator.Send(createTemplateCommand, cancellationToken);
-
-    if (!result.IsSuccess)
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        $"❌ Ошибка создания задачи: {result.Errors.FirstOrDefault()}\n\n" +
-        BotConstants.Errors.InvalidCron,
-        cancellationToken: cancellationToken);
-      session.ClearState();
-      return;
-    }
-
-    session.ClearState();
-
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      $"✅ Периодическая задача \"{title}\" успешно создана!\n\n" +
-      $"💯 Очки: {points}\n" +
-      $"🔄 Расписание: {schedule}\n\n" +
-      BotConstants.Messages.ScheduledTask,
-      cancellationToken: cancellationToken);
-  }
-
-  private async Task HandleTemplateTitleInputAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    string title,
-    CancellationToken cancellationToken)
-  {
-    if (string.IsNullOrWhiteSpace(title) || title.Length < 3 || title.Length > 100)
-    {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateTitle);
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Название шаблона должно содержать от 3 до 100 символов. Попробуйте снова:" +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateTitle),
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    session.Data["title"] = title;
-    session.State = ConversationState.AwaitingTemplatePoints;
-
-    var pointsKeyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplatePoints);
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      BotConstants.Templates.EnterTemplatePoints +
-      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplatePoints),
-      replyMarkup: pointsKeyboard,
-      cancellationToken: cancellationToken);
-  }
-
-  private async Task HandleTemplatePointsInputAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    string pointsText,
-    CancellationToken cancellationToken)
-  {
-    if (!int.TryParse(pointsText, out var points) || points < 1 || points > 100)
-    {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplatePoints);
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Количество очков должно быть числом от 1 до 100. Попробуйте снова:" +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplatePoints),
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    session.Data["points"] = points;
-    session.State = ConversationState.AwaitingTemplateSchedule;
-
-    var scheduleKeyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateSchedule);
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      BotConstants.Templates.EnterTemplateSchedule +
-      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateSchedule),
-      parseMode: ParseMode.Markdown,
-      replyMarkup: scheduleKeyboard,
-      cancellationToken: cancellationToken);
-  }
-
-  private async Task HandleTemplateScheduleInputAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    string schedule,
-    CancellationToken cancellationToken)
-  {
-    if (string.IsNullOrWhiteSpace(schedule))
-    {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateSchedule);
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Расписание не может быть пустым. Попробуйте снова:" +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateSchedule),
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    // Get all required data from session
-    if (!session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId ||
-        !session.Data.TryGetValue("petId", out var petIdObj) || petIdObj is not Guid petId ||
-        !session.Data.TryGetValue("title", out var titleObj) || titleObj is not string title ||
-        !session.Data.TryGetValue("points", out var pointsObj) || pointsObj is not int points)
-    {
-      session.ClearState();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте создать шаблон заново.",
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    // Get user ID
-    var registerCommand = new RegisterUserCommand(message.From!.Id, message.From.GetDisplayName());
-    var userResult = await mediator.Send(registerCommand, cancellationToken);
-
-    if (!userResult.IsSuccess)
-    {
-      session.ClearState();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте /start",
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    // Create template
-    var createTemplateCommand =
-      new CreateTaskTemplateCommand(familyId, petId, title, points, schedule, userResult.Value);
-    var result = await mediator.Send(createTemplateCommand, cancellationToken);
-
-    if (!result.IsSuccess)
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        $"❌ Ошибка создания шаблона: {result.Errors.FirstOrDefault()}\n\n" +
-        BotConstants.Errors.InvalidCron,
-        cancellationToken: cancellationToken);
-      session.ClearState();
-      return;
-    }
-
-    session.ClearState();
-
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      $"{BotConstants.Templates.TemplateCreated}\n\n" +
-      $"📝 Название: {title}\n" +
-      $"💯 Очки: {points}\n" +
-      $"🔄 Расписание: {schedule}\n\n" +
-      BotConstants.Messages.ScheduledTask,
-      replyMarkup: new ReplyKeyboardRemove(),
-      cancellationToken: cancellationToken);
-  }
-
-  private async Task HandleTemplateEditTitleInputAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    string title,
-    CancellationToken cancellationToken)
-  {
-    if (string.IsNullOrWhiteSpace(title) || title.Length < 3 || title.Length > 100)
-    {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditTitle);
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Название шаблона должно содержать от 3 до 100 символов. Попробуйте снова:" +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditTitle),
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    if (!session.Data.TryGetValue("templateId", out var templateIdObj) || templateIdObj is not Guid templateId ||
-        !session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId)
-    {
-      session.ClearState();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте снова.",
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, title, null, null);
-    var result = await mediator.Send(updateCommand, cancellationToken);
-
-    if (!result.IsSuccess)
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        $"❌ Ошибка обновления: {result.Errors.FirstOrDefault()}",
-        cancellationToken: cancellationToken);
-      session.ClearState();
-      return;
-    }
-
-    session.ClearState();
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      BotConstants.Templates.TemplateUpdated,
-      replyMarkup: new ReplyKeyboardRemove(),
-      cancellationToken: cancellationToken);
-  }
-
-  private async Task HandleTemplateEditPointsInputAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    string pointsText,
-    CancellationToken cancellationToken)
-  {
-    if (!int.TryParse(pointsText, out var points) || points < 1 || points > 100)
-    {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditPoints);
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Количество очков должно быть числом от 1 до 100. Попробуйте снова:" +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditPoints),
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    if (!session.Data.TryGetValue("templateId", out var templateIdObj) || templateIdObj is not Guid templateId ||
-        !session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId)
-    {
-      session.ClearState();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте снова.",
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, points, null);
-    var result = await mediator.Send(updateCommand, cancellationToken);
-
-    if (!result.IsSuccess)
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        $"❌ Ошибка обновления: {result.Errors.FirstOrDefault()}",
-        cancellationToken: cancellationToken);
-      session.ClearState();
-      return;
-    }
-
-    session.ClearState();
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      BotConstants.Templates.TemplateUpdated,
-      replyMarkup: new ReplyKeyboardRemove(),
-      cancellationToken: cancellationToken);
-  }
-
-  private async Task HandleTemplateEditScheduleInputAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    string schedule,
-    CancellationToken cancellationToken)
-  {
-    if (string.IsNullOrWhiteSpace(schedule))
-    {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditSchedule);
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Расписание не может быть пустым. Попробуйте снова:" +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditSchedule),
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    if (!session.Data.TryGetValue("templateId", out var templateIdObj) || templateIdObj is not Guid templateId ||
-        !session.Data.TryGetValue("familyId", out var familyIdObj) || familyIdObj is not Guid familyId)
-    {
-      session.ClearState();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте снова.",
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, null, schedule);
-    var result = await mediator.Send(updateCommand, cancellationToken);
-
-    if (!result.IsSuccess)
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        $"❌ Ошибка обновления: {result.Errors.FirstOrDefault()}\n\n" +
-        BotConstants.Errors.InvalidCron,
-        cancellationToken: cancellationToken);
-      session.ClearState();
-      return;
-    }
-
-    session.ClearState();
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      BotConstants.Templates.TemplateUpdated,
-      replyMarkup: new ReplyKeyboardRemove(),
-      cancellationToken: cancellationToken);
-  }
-
-  private async Task HandleCancelConversationAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    var previousState = session.State;
-    session.ClearState();
-
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      "❌ Действие отменено.",
-      replyMarkup: new ReplyKeyboardRemove(),
-      cancellationToken: cancellationToken);
-
-    // Return to main menu
-    await SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken);
-  }
-
-  private async Task HandleBackInConversationAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    var currentState = session.State;
-
-    // Determine previous state based on current state
-    var (previousState, shouldClear) = currentState switch
-    {
-      // Task creation flow
-      ConversationState.AwaitingTaskPoints => (ConversationState.AwaitingTaskTitle, false),
-      ConversationState.AwaitingTaskPetSelection => (ConversationState.AwaitingTaskPoints, false),
-      ConversationState.AwaitingTaskSchedule => (ConversationState.AwaitingTaskPetSelection, false),
-      ConversationState.AwaitingTaskDueDate => (ConversationState.AwaitingTaskPetSelection, false),
-
-      // Template creation flow
-      ConversationState.AwaitingTemplatePoints => (ConversationState.AwaitingTemplateTitle, false),
-      ConversationState.AwaitingTemplatePetSelection => (ConversationState.AwaitingTemplatePoints, false),
-      ConversationState.AwaitingTemplateSchedule => (ConversationState.AwaitingTemplatePoints, false),
-
-      // Template editing flow
-      ConversationState.AwaitingTemplateEditTitle => (ConversationState.None, true),
-      ConversationState.AwaitingTemplateEditPoints => (ConversationState.None, true),
-      ConversationState.AwaitingTemplateEditSchedule => (ConversationState.None, true),
-
-      // Family creation flow
-      ConversationState.AwaitingFamilyLocation => (ConversationState.AwaitingFamilyTimezone, false),
-
-      _ => (ConversationState.None, true)
-    };
-
-    if (shouldClear)
-    {
-      session.ClearState();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "⬅️ Возврат отменён.",
-        replyMarkup: new ReplyKeyboardRemove(),
-        cancellationToken: cancellationToken);
-      await SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken);
-      return;
-    }
-
-    // Set previous state
-    session.State = previousState;
-
-    // Send appropriate message for the previous state
-    var keyboard = StateKeyboardHelper.GetKeyboardForState(previousState);
-    var hint = StateKeyboardHelper.GetHintForState(previousState);
-
-    var messageText = previousState switch
-    {
-      ConversationState.AwaitingTaskTitle => "📝 Введите название задачи (от 3 до 100 символов):" + hint,
-      ConversationState.AwaitingTaskPoints => "💯 Введите количество очков за выполнение задачи (от 1 до 100):" + hint,
-      ConversationState.AwaitingTemplateTitle => "📝 Введите название шаблона (от 3 до 100 символов):" + hint,
-      ConversationState.AwaitingTemplatePoints => "💯 Введите количество очков (от 1 до 100):" + hint,
-      ConversationState.AwaitingFamilyTimezone => "🌍 Выберите способ определения временной зоны:",
-      _ => "⬅️ Возврат к предыдущему шагу."
-    };
-
-    if (previousState == ConversationState.AwaitingFamilyTimezone)
-    {
-      var timezoneKeyboard = GetTimezoneChoiceKeyboard();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        messageText,
-        replyMarkup: timezoneKeyboard,
-        cancellationToken: cancellationToken);
-    }
-    else
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        messageText,
-        replyMarkup: keyboard ?? new ReplyKeyboardRemove(),
-        cancellationToken: cancellationToken);
-    }
   }
 
   private async Task SendMainMenuAsync(

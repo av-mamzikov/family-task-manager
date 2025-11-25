@@ -11,9 +11,8 @@ public static class StateKeyboardHelper
   /// <summary>
   ///   Получить клавиатуру с доступными действиями для текущего состояния
   /// </summary>
-  public static IReplyMarkup? GetKeyboardForState(ConversationState state)
-  {
-    return state switch
+  public static IReplyMarkup? GetKeyboardForState(ConversationState state) =>
+    state switch
     {
       ConversationState.AwaitingFamilyName => GetCancelKeyboard(),
       ConversationState.AwaitingFamilyTimezone => null, // Используются inline кнопки
@@ -33,14 +32,12 @@ public static class StateKeyboardHelper
       ConversationState.AwaitingTemplateEditSchedule => GetBackOrCancelKeyboard(),
       _ => null
     };
-  }
 
   /// <summary>
   ///   Получить текст подсказки с доступными действиями для состояния
   /// </summary>
-  public static string GetHintForState(ConversationState state)
-  {
-    return state switch
+  public static string GetHintForState(ConversationState state) =>
+    state switch
     {
       ConversationState.AwaitingFamilyName =>
         "\n\n💡 Доступные действия:\n• Введите название семьи\n• /cancel - Отменить создание",
@@ -83,11 +80,9 @@ public static class StateKeyboardHelper
 
       _ => ""
     };
-  }
 
-  private static ReplyKeyboardMarkup GetCancelKeyboard()
-  {
-    return new ReplyKeyboardMarkup(new[]
+  private static ReplyKeyboardMarkup GetCancelKeyboard() =>
+    new(new[]
     {
       new KeyboardButton[] { new("❌ Отменить") }
     })
@@ -95,11 +90,9 @@ public static class StateKeyboardHelper
       ResizeKeyboard = true,
       OneTimeKeyboard = false
     };
-  }
 
-  private static ReplyKeyboardMarkup GetBackOrCancelKeyboard()
-  {
-    return new ReplyKeyboardMarkup(new[]
+  private static ReplyKeyboardMarkup GetBackOrCancelKeyboard() =>
+    new(new[]
     {
       new KeyboardButton[] { new("⬅️ Назад"), new("❌ Отменить") }
     })
@@ -107,11 +100,9 @@ public static class StateKeyboardHelper
       ResizeKeyboard = true,
       OneTimeKeyboard = false
     };
-  }
 
-  private static ReplyKeyboardMarkup GetLocationOrBackKeyboard()
-  {
-    return new ReplyKeyboardMarkup(new[]
+  private static ReplyKeyboardMarkup GetLocationOrBackKeyboard() =>
+    new(new[]
     {
       new KeyboardButton[] { new("📍 Отправить местоположение") { RequestLocation = true } },
       new KeyboardButton[] { new("⬅️ Назад") }
@@ -120,5 +111,4 @@ public static class StateKeyboardHelper
       ResizeKeyboard = true,
       OneTimeKeyboard = false
     };
-  }
 }

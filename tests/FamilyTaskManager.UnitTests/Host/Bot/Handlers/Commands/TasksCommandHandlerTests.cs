@@ -155,9 +155,8 @@ public class TasksCommandHandlerTests
       Arg.Any<CancellationToken>());
   }
 
-  private static Message CreateMessage(long chatId, string text = "/tasks")
-  {
-    return new Message
+  private static Message CreateMessage(long chatId, string text = "/tasks") =>
+    new()
     {
       MessageId = 1,
       Chat = new Chat { Id = chatId },
@@ -165,5 +164,4 @@ public class TasksCommandHandlerTests
       Text = text,
       Date = DateTime.UtcNow
     };
-  }
 }

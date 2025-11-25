@@ -255,14 +255,12 @@ public class CallbackQueryHandlerTests
     // Note: Cannot verify SendTextMessageAsync as it's an extension method
   }
 
-  private static CallbackQuery CreateCallbackQuery(string data, long chatId = 123)
-  {
-    return new CallbackQuery
+  private static CallbackQuery CreateCallbackQuery(string data, long chatId = 123) =>
+    new()
     {
       Id = "callback_id",
       Data = data,
       From = new User { Id = chatId, FirstName = "Test" },
       Message = new Message { MessageId = 1, Chat = new Chat { Id = chatId }, Date = DateTime.UtcNow }
     };
-  }
 }

@@ -91,19 +91,14 @@ public class FamilyCommandHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
-  private string GetRoleEmoji(FamilyRole role)
-  {
-    return role switch
+  private string GetRoleEmoji(FamilyRole role) =>
+    role switch
     {
       FamilyRole.Admin => "👑",
       FamilyRole.Adult => "👤",
       FamilyRole.Child => "👶",
       _ => "❓"
     };
-  }
 
-  private string GetRoleText(FamilyRole role)
-  {
-    return BotConstants.Roles.GetRoleText(role);
-  }
+  private string GetRoleText(FamilyRole role) => BotConstants.Roles.GetRoleText(role);
 }

@@ -112,9 +112,8 @@ public class FamilyCommandHandlerTests
       Arg.Any<CancellationToken>());
   }
 
-  private static Message CreateMessage(long chatId, string text = "/family")
-  {
-    return new Message
+  private static Message CreateMessage(long chatId, string text = "/family") =>
+    new()
     {
       MessageId = 1,
       Chat = new Chat { Id = chatId },
@@ -122,5 +121,4 @@ public class FamilyCommandHandlerTests
       Text = text,
       Date = DateTime.UtcNow
     };
-  }
 }
