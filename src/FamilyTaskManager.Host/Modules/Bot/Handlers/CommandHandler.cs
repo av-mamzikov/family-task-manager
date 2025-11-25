@@ -405,6 +405,19 @@ public class CommandHandler(
 
     var text = message.Text!;
 
+    // Handle universal commands
+    if (text == "❌ Отменить" || text == "/cancel")
+    {
+      await HandleCancelConversationAsync(botClient, message, session, cancellationToken);
+      return;
+    }
+
+    if (text == "⬅️ Назад")
+    {
+      await HandleBackInConversationAsync(botClient, message, session, cancellationToken);
+      return;
+    }
+
     switch (session.State)
     {
       case ConversationState.AwaitingFamilyName:
@@ -497,9 +510,12 @@ public class CommandHandler(
   {
     if (string.IsNullOrWhiteSpace(familyName) || familyName.Length < 3)
     {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingFamilyName);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Название семьи должно содержать минимум 3 символа. Попробуйте снова:",
+        "❌ Название семьи должно содержать минимум 3 символа. Попробуйте снова:" +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingFamilyName),
+        replyMarkup: keyboard,
         cancellationToken: cancellationToken);
       return;
     }
@@ -511,6 +527,7 @@ public class CommandHandler(
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         "❌ Ошибка. Попробуйте создать семью заново.",
+        replyMarkup: new ReplyKeyboardRemove(),
         cancellationToken: cancellationToken);
       return;
     }
@@ -519,12 +536,12 @@ public class CommandHandler(
     session.Data["familyName"] = familyName;
     session.State = ConversationState.AwaitingFamilyTimezone;
 
-    var keyboard = GetTimezoneChoiceKeyboard();
+    var timezoneKeyboard = GetTimezoneChoiceKeyboard();
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       $"🌍 Выберите способ определения временной зоны для семьи \"{familyName}\":",
-      replyMarkup: keyboard,
+      replyMarkup: timezoneKeyboard,
       cancellationToken: cancellationToken);
   }
 
@@ -669,9 +686,12 @@ public class CommandHandler(
   {
     if (string.IsNullOrWhiteSpace(petName) || petName.Length < 2 || petName.Length > 50)
     {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingPetName);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Имя питомца должно содержать от 2 до 50 символов. Попробуйте снова:",
+        "❌ Имя питомца должно содержать от 2 до 50 символов. Попробуйте снова:" +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingPetName),
+        replyMarkup: keyboard,
         cancellationToken: cancellationToken);
       return;
     }
@@ -727,6 +747,7 @@ public class CommandHandler(
       message.Chat.Id,
       $"✅ Питомец {petEmoji} \"{petName}\" успешно создан!\n\n" +
       BotConstants.Messages.PetTasksAvailable,
+      replyMarkup: new ReplyKeyboardRemove(),
       cancellationToken: cancellationToken);
   }
 
@@ -739,9 +760,12 @@ public class CommandHandler(
   {
     if (string.IsNullOrWhiteSpace(title) || title.Length < 3 || title.Length > 100)
     {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskTitle);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Название задачи должно содержать от 3 до 100 символов. Попробуйте снова:",
+        "❌ Название задачи должно содержать от 3 до 100 символов. Попробуйте снова:" +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskTitle),
+        replyMarkup: keyboard,
         cancellationToken: cancellationToken);
       return;
     }
@@ -750,9 +774,12 @@ public class CommandHandler(
     session.Data["title"] = title;
     session.State = ConversationState.AwaitingTaskPoints;
 
+    var pointsKeyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskPoints);
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      "💯 Введите количество очков за выполнение задачи (от 1 до 100):",
+      "💯 Введите количество очков за выполнение задачи (от 1 до 100):" +
+      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskPoints),
+      replyMarkup: pointsKeyboard,
       cancellationToken: cancellationToken);
   }
 
@@ -765,9 +792,12 @@ public class CommandHandler(
   {
     if (!int.TryParse(pointsText, out var points) || points < 1 || points > 100)
     {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskPoints);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Количество очков должно быть числом от 1 до 100. Попробуйте снова:",
+        "❌ Количество очков должно быть числом от 1 до 100. Попробуйте снова:" +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskPoints),
+        replyMarkup: keyboard,
         cancellationToken: cancellationToken);
       return;
     }
@@ -812,12 +842,12 @@ public class CommandHandler(
       return new[] { InlineKeyboardButton.WithCallbackData($"{petEmoji} {p.Name}", $"taskpet_{p.Id}") };
     }).ToArray();
 
-    var keyboard = new InlineKeyboardMarkup(buttons);
+    var petSelectionKeyboard = new InlineKeyboardMarkup(buttons);
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       "🐾 Выберите питомца, к которому относится задача:",
-      replyMarkup: keyboard,
+      replyMarkup: petSelectionKeyboard,
       cancellationToken: cancellationToken);
   }
 
@@ -831,9 +861,12 @@ public class CommandHandler(
     // Try to parse the date
     if (!int.TryParse(dueDateText, out var days) || days < 0 || days > 365)
     {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskDueDate);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Введите количество дней (от 0 до 365). Например: 1 (завтра), 7 (через неделю):",
+        "❌ Введите количество дней (от 0 до 365). Например: 1 (завтра), 7 (через неделю):" +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskDueDate),
+        replyMarkup: keyboard,
         cancellationToken: cancellationToken);
       return;
     }
@@ -890,6 +923,7 @@ public class CommandHandler(
       $"💯 Очки: {points}\n" +
       $"📅 Срок: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
       BotConstants.Messages.TaskAvailableToAll,
+      replyMarkup: new ReplyKeyboardRemove(),
       cancellationToken: cancellationToken);
   }
 
@@ -903,9 +937,12 @@ public class CommandHandler(
     // Validate schedule (basic check)
     if (string.IsNullOrWhiteSpace(schedule))
     {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskSchedule);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Расписание не может быть пустым. Попробуйте снова:",
+        "❌ Расписание не может быть пустым. Попробуйте снова:" +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskSchedule),
+        replyMarkup: keyboard,
         cancellationToken: cancellationToken);
       return;
     }
@@ -974,9 +1011,12 @@ public class CommandHandler(
   {
     if (string.IsNullOrWhiteSpace(title) || title.Length < 3 || title.Length > 100)
     {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateTitle);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Название шаблона должно содержать от 3 до 100 символов. Попробуйте снова:",
+        "❌ Название шаблона должно содержать от 3 до 100 символов. Попробуйте снова:" +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateTitle),
+        replyMarkup: keyboard,
         cancellationToken: cancellationToken);
       return;
     }
@@ -984,9 +1024,12 @@ public class CommandHandler(
     session.Data["title"] = title;
     session.State = ConversationState.AwaitingTemplatePoints;
 
+    var pointsKeyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplatePoints);
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Templates.EnterTemplatePoints,
+      BotConstants.Templates.EnterTemplatePoints +
+      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplatePoints),
+      replyMarkup: pointsKeyboard,
       cancellationToken: cancellationToken);
   }
 
@@ -999,9 +1042,12 @@ public class CommandHandler(
   {
     if (!int.TryParse(pointsText, out var points) || points < 1 || points > 100)
     {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplatePoints);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Количество очков должно быть числом от 1 до 100. Попробуйте снова:",
+        "❌ Количество очков должно быть числом от 1 до 100. Попробуйте снова:" +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplatePoints),
+        replyMarkup: keyboard,
         cancellationToken: cancellationToken);
       return;
     }
@@ -1009,10 +1055,13 @@ public class CommandHandler(
     session.Data["points"] = points;
     session.State = ConversationState.AwaitingTemplateSchedule;
 
+    var scheduleKeyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateSchedule);
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Templates.EnterTemplateSchedule,
+      BotConstants.Templates.EnterTemplateSchedule +
+      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateSchedule),
       parseMode: ParseMode.Markdown,
+      replyMarkup: scheduleKeyboard,
       cancellationToken: cancellationToken);
   }
 
@@ -1025,9 +1074,12 @@ public class CommandHandler(
   {
     if (string.IsNullOrWhiteSpace(schedule))
     {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateSchedule);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Расписание не может быть пустым. Попробуйте снова:",
+        "❌ Расписание не может быть пустым. Попробуйте снова:" +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateSchedule),
+        replyMarkup: keyboard,
         cancellationToken: cancellationToken);
       return;
     }
@@ -1085,6 +1137,7 @@ public class CommandHandler(
       $"💯 Очки: {points}\n" +
       $"🔄 Расписание: {schedule}\n\n" +
       BotConstants.Messages.ScheduledTask,
+      replyMarkup: new ReplyKeyboardRemove(),
       cancellationToken: cancellationToken);
   }
 
@@ -1097,9 +1150,12 @@ public class CommandHandler(
   {
     if (string.IsNullOrWhiteSpace(title) || title.Length < 3 || title.Length > 100)
     {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditTitle);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Название шаблона должно содержать от 3 до 100 символов. Попробуйте снова:",
+        "❌ Название шаблона должно содержать от 3 до 100 символов. Попробуйте снова:" +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditTitle),
+        replyMarkup: keyboard,
         cancellationToken: cancellationToken);
       return;
     }
@@ -1132,6 +1188,7 @@ public class CommandHandler(
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       BotConstants.Templates.TemplateUpdated,
+      replyMarkup: new ReplyKeyboardRemove(),
       cancellationToken: cancellationToken);
   }
 
@@ -1144,9 +1201,12 @@ public class CommandHandler(
   {
     if (!int.TryParse(pointsText, out var points) || points < 1 || points > 100)
     {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditPoints);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Количество очков должно быть числом от 1 до 100. Попробуйте снова:",
+        "❌ Количество очков должно быть числом от 1 до 100. Попробуйте снова:" +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditPoints),
+        replyMarkup: keyboard,
         cancellationToken: cancellationToken);
       return;
     }
@@ -1179,6 +1239,7 @@ public class CommandHandler(
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       BotConstants.Templates.TemplateUpdated,
+      replyMarkup: new ReplyKeyboardRemove(),
       cancellationToken: cancellationToken);
   }
 
@@ -1191,9 +1252,12 @@ public class CommandHandler(
   {
     if (string.IsNullOrWhiteSpace(schedule))
     {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditSchedule);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Расписание не может быть пустым. Попробуйте снова:",
+        "❌ Расписание не может быть пустым. Попробуйте снова:" +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditSchedule),
+        replyMarkup: keyboard,
         cancellationToken: cancellationToken);
       return;
     }
@@ -1227,7 +1291,108 @@ public class CommandHandler(
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       BotConstants.Templates.TemplateUpdated,
+      replyMarkup: new ReplyKeyboardRemove(),
       cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleCancelConversationAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    var previousState = session.State;
+    session.ClearState();
+
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      "❌ Действие отменено.",
+      replyMarkup: new ReplyKeyboardRemove(),
+      cancellationToken: cancellationToken);
+
+    // Return to main menu
+    await SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken);
+  }
+
+  private async Task HandleBackInConversationAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    var currentState = session.State;
+
+    // Determine previous state based on current state
+    var (previousState, shouldClear) = currentState switch
+    {
+      // Task creation flow
+      ConversationState.AwaitingTaskPoints => (ConversationState.AwaitingTaskTitle, false),
+      ConversationState.AwaitingTaskPetSelection => (ConversationState.AwaitingTaskPoints, false),
+      ConversationState.AwaitingTaskSchedule => (ConversationState.AwaitingTaskPetSelection, false),
+      ConversationState.AwaitingTaskDueDate => (ConversationState.AwaitingTaskPetSelection, false),
+
+      // Template creation flow
+      ConversationState.AwaitingTemplatePoints => (ConversationState.AwaitingTemplateTitle, false),
+      ConversationState.AwaitingTemplatePetSelection => (ConversationState.AwaitingTemplatePoints, false),
+      ConversationState.AwaitingTemplateSchedule => (ConversationState.AwaitingTemplatePoints, false),
+
+      // Template editing flow
+      ConversationState.AwaitingTemplateEditTitle => (ConversationState.None, true),
+      ConversationState.AwaitingTemplateEditPoints => (ConversationState.None, true),
+      ConversationState.AwaitingTemplateEditSchedule => (ConversationState.None, true),
+
+      // Family creation flow
+      ConversationState.AwaitingFamilyLocation => (ConversationState.AwaitingFamilyTimezone, false),
+
+      _ => (ConversationState.None, true)
+    };
+
+    if (shouldClear)
+    {
+      session.ClearState();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "⬅️ Возврат отменён.",
+        replyMarkup: new ReplyKeyboardRemove(),
+        cancellationToken: cancellationToken);
+      await SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken);
+      return;
+    }
+
+    // Set previous state
+    session.State = previousState;
+
+    // Send appropriate message for the previous state
+    var keyboard = StateKeyboardHelper.GetKeyboardForState(previousState);
+    var hint = StateKeyboardHelper.GetHintForState(previousState);
+
+    var messageText = previousState switch
+    {
+      ConversationState.AwaitingTaskTitle => "📝 Введите название задачи (от 3 до 100 символов):" + hint,
+      ConversationState.AwaitingTaskPoints => "💯 Введите количество очков за выполнение задачи (от 1 до 100):" + hint,
+      ConversationState.AwaitingTemplateTitle => "📝 Введите название шаблона (от 3 до 100 символов):" + hint,
+      ConversationState.AwaitingTemplatePoints => "💯 Введите количество очков (от 1 до 100):" + hint,
+      ConversationState.AwaitingFamilyTimezone => "🌍 Выберите способ определения временной зоны:",
+      _ => "⬅️ Возврат к предыдущему шагу."
+    };
+
+    if (previousState == ConversationState.AwaitingFamilyTimezone)
+    {
+      var timezoneKeyboard = GetTimezoneChoiceKeyboard();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        messageText,
+        replyMarkup: timezoneKeyboard,
+        cancellationToken: cancellationToken);
+    }
+    else
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        messageText,
+        replyMarkup: keyboard ?? new ReplyKeyboardRemove(),
+        cancellationToken: cancellationToken);
+    }
   }
 
   private async Task SendMainMenuAsync(

@@ -153,11 +153,24 @@ public class CallbackQueryHandler(
     session.SetState(ConversationState.AwaitingFamilyName,
       new Dictionary<string, object> { ["userId"] = userResult.Value });
 
+    var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingFamilyName);
+
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      "✏️ Введите название семьи (минимум 3 символа):",
+      "✏️ Введите название семьи (минимум 3 символа):" +
+      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingFamilyName),
       cancellationToken: cancellationToken);
+
+    // Send keyboard in a separate message since EditMessageTextAsync doesn't support ReplyKeyboardMarkup
+    if (keyboard != null)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        "Используйте кнопки ниже для управления:",
+        replyMarkup: keyboard,
+        cancellationToken: cancellationToken);
+    }
   }
 
   private async Task StartCreatePetAsync(
@@ -274,11 +287,24 @@ public class CallbackQueryHandler(
       _ => "🐾"
     };
 
+    var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingPetName);
+
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      $"{petTypeEmoji} Введите имя питомца:",
+      $"{petTypeEmoji} Введите имя питомца:" +
+      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingPetName),
       cancellationToken: cancellationToken);
+
+    // Send keyboard in a separate message
+    if (keyboard != null)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        "Используйте кнопки ниже для управления:",
+        replyMarkup: keyboard,
+        cancellationToken: cancellationToken);
+    }
   }
 
   private async Task HandleFamilySelectionAsync(
@@ -682,12 +708,24 @@ public class CallbackQueryHandler(
       new Dictionary<string, object> { ["taskType"] = taskType, ["familyId"] = session.CurrentFamilyId! });
 
     var taskTypeText = taskType == "onetime" ? "разовую" : "периодическую";
+    var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskTitle);
 
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      $"📝 Создание {taskTypeText} задачи\n\nВведите название задачи (от 3 до 100 символов):",
+      $"📝 Создание {taskTypeText} задачи\n\nВведите название задачи (от 3 до 100 символов):" +
+      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskTitle),
       cancellationToken: cancellationToken);
+
+    // Send keyboard in a separate message
+    if (keyboard != null)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        "Используйте кнопки ниже для управления:",
+        replyMarkup: keyboard,
+        cancellationToken: cancellationToken);
+    }
   }
 
   private async Task HandleTaskPetSelectionAsync(
@@ -726,6 +764,7 @@ public class CallbackQueryHandler(
     {
       // For one-time tasks, ask for due date
       session.State = ConversationState.AwaitingTaskDueDate;
+      var dueDateKeyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskDueDate);
 
       await botClient.EditMessageTextAsync(
         chatId,
@@ -734,21 +773,42 @@ public class CallbackQueryHandler(
         "0 - сегодня\n" +
         "1 - завтра\n" +
         "7 - через неделю\n" +
-        "30 - через месяц",
+        "30 - через месяц" +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskDueDate),
         cancellationToken: cancellationToken);
+
+      if (dueDateKeyboard != null)
+      {
+        await botClient.SendTextMessageAsync(
+          chatId,
+          "Используйте кнопки ниже для управления:",
+          replyMarkup: dueDateKeyboard,
+          cancellationToken: cancellationToken);
+      }
     }
     else
     {
       // For recurring tasks, ask for schedule
       session.State = ConversationState.AwaitingTaskSchedule;
+      var scheduleKeyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskSchedule);
 
       await botClient.EditMessageTextAsync(
         chatId,
         messageId,
         "🔄 Введите расписание задачи в формате Quartz Cron:\n\n" +
-        BotConstants.Messages.CronExamples,
+        BotConstants.Messages.CronExamples +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskSchedule),
         ParseMode.Markdown,
         cancellationToken: cancellationToken);
+
+      if (scheduleKeyboard != null)
+      {
+        await botClient.SendTextMessageAsync(
+          chatId,
+          "Используйте кнопки ниже для управления:",
+          replyMarkup: scheduleKeyboard,
+          cancellationToken: cancellationToken);
+      }
     }
   }
 
