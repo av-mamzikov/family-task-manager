@@ -3,10 +3,12 @@ using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Pets;
+using FamilyTaskManager.UseCases.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
 
@@ -173,13 +175,31 @@ public class PetCallbackHandler(
       return;
     }
 
+    // Get active tasks for the pet
+    var getTasksQuery = new GetTasksByPetQuery(petId, session.CurrentFamilyId.Value, TaskStatus.Active);
+    var tasksResult = await Mediator.Send(getTasksQuery, cancellationToken);
+
     var (petEmoji, petTypeText) = GetPetTypeInfo(pet.Type);
     var (moodEmoji, moodText) = GetMoodInfo(pet.MoodScore);
 
     var messageText = $"{petEmoji} *{pet.Name}*\n\n" +
                       $"📋 Тип: {petTypeText}\n" +
-                      $"💖 Настроение: {moodEmoji} {pet.MoodScore}/100 - {moodText}\n\n" +
-                      "Выполняйте задачи по уходу за питомцем, чтобы улучшить его настроение!";
+                      $"💖 Настроение: {moodEmoji} {pet.MoodScore}/100 - {moodText}\n\n";
+
+    // Add tasks section
+    if (tasksResult.IsSuccess && tasksResult.Value.Any())
+    {
+      messageText += $"📝 *{pet.Name} хочет чтобы вы ему помогли:*\n";
+      foreach (var task in tasksResult.Value)
+      {
+        messageText += $"• {task.Title} (+{task.Points} {task.DueAt}💖)\n";
+      }
+    }
+    else
+    {
+      messageText += $"📝 *Все задачи выполнены, {pet.Name} доволен!*\n";
+      messageText += "Нет активных задач. Создайте задачи из шаблонов!";
+    }
 
     var keyboard = new InlineKeyboardMarkup(new[]
     {
