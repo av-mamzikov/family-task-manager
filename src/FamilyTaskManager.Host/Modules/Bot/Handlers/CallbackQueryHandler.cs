@@ -458,12 +458,25 @@ public class CallbackQueryHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    if (parts.Length < 3)
+    if (parts.Length < 2)
     {
       return;
     }
 
     var petAction = parts[1];
+
+    // Handle "back" action separately as it doesn't have a petId
+    if (petAction == "back")
+    {
+      await HandlePetListAsync(botClient, chatId, messageId, session, fromUser, cancellationToken);
+      return;
+    }
+
+    if (parts.Length < 3)
+    {
+      return;
+    }
+
     var petIdStr = parts[2];
 
     if (!Guid.TryParse(petIdStr, out var petId))
@@ -490,13 +503,6 @@ public class CallbackQueryHandler(
           chatId,
           messageId,
           "❌ Удаление питомца отменено",
-          cancellationToken: cancellationToken);
-        break;
-
-      case "back":
-        await botClient.SendTextMessageAsync(
-          chatId,
-          "Используйте /pet для просмотра списка питомцев",
           cancellationToken: cancellationToken);
         break;
     }
@@ -707,6 +713,144 @@ public class CallbackQueryHandler(
       messageId,
       "✅ Питомец успешно удалён!\n\n" +
       "Все связанные шаблоны задач и задачи также были удалены.",
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandlePetListAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken)
+  {
+    if (session.CurrentFamilyId == null)
+    {
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        BotConstants.Errors.NoFamily,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Get user by telegram ID
+    var registerCommand = new RegisterUserCommand(fromUser.Id, fromUser.GetDisplayName());
+    var userResult = await mediator.Send(registerCommand, cancellationToken);
+
+    if (!userResult.IsSuccess)
+    {
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        BotConstants.Errors.UnknownError,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Get pets
+    var getPetsQuery = new GetPetsQuery(session.CurrentFamilyId.Value);
+    var petsResult = await mediator.Send(getPetsQuery, cancellationToken);
+
+    if (!petsResult.IsSuccess)
+    {
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        "❌ Ошибка загрузки питомцев",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var pets = petsResult.Value;
+
+    if (!pets.Any())
+    {
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        "🐾 У вас пока нет питомцев.\n\nАдминистратор может создать питомца.",
+        replyMarkup: new InlineKeyboardMarkup(new[]
+        {
+          InlineKeyboardButton.WithCallbackData("➕ Создать питомца", "create_pet")
+        }),
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var messageText = "🐾 *Ваши питомцы:*\n\n";
+
+    foreach (var pet in pets)
+    {
+      var petEmoji = pet.Type switch
+      {
+        PetType.Cat => "🐱",
+        PetType.Dog => "🐶",
+        PetType.Hamster => "🐹",
+        _ => "🐾"
+      };
+
+      var moodEmoji = pet.MoodScore switch
+      {
+        >= 80 => "😊",
+        >= 60 => "🙂",
+        >= 40 => "😐",
+        >= 20 => "😟",
+        _ => "😢"
+      };
+
+      var moodText = pet.MoodScore switch
+      {
+        >= 80 => "Отлично!",
+        >= 60 => "Хорошо",
+        >= 40 => "Нормально",
+        >= 20 => "Грустит",
+        _ => "Очень грустно"
+      };
+
+      var petTypeText = pet.Type switch
+      {
+        PetType.Cat => "Кот",
+        PetType.Dog => "Собака",
+        PetType.Hamster => "Хомяк",
+        _ => "Неизвестно"
+      };
+
+      messageText += $"{petEmoji} *{pet.Name}*\n";
+      messageText += $"   Настроение: {moodEmoji} {pet.MoodScore}/100 - {moodText}\n";
+      messageText += $"   Тип: {petTypeText}\n\n";
+    }
+
+    // Build inline keyboard with pet actions
+    var buttons = new List<InlineKeyboardButton[]>();
+
+    // Add button for each pet
+    foreach (var pet in pets)
+    {
+      var petEmoji = pet.Type switch
+      {
+        PetType.Cat => "🐱",
+        PetType.Dog => "🐶",
+        PetType.Hamster => "🐹",
+        _ => "🐾"
+      };
+
+      buttons.Add(new[]
+      {
+        InlineKeyboardButton.WithCallbackData($"{petEmoji} {pet.Name}", $"pet_view_{pet.Id}"),
+        InlineKeyboardButton.WithCallbackData("🗑️", $"pet_delete_{pet.Id}")
+      });
+    }
+
+    // Add create pet button
+    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать питомца", "create_pet") });
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      messageText,
+      ParseMode.Markdown,
+      replyMarkup: new InlineKeyboardMarkup(buttons),
       cancellationToken: cancellationToken);
   }
 
