@@ -1,29 +1,28 @@
 using FamilyTaskManager.Infrastructure.Data;
+using FamilyTaskManager.TestInfrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Telegram.Bot;
-using Testcontainers.PostgreSql;
 
 namespace FamilyTaskManager.FunctionalTests;
 
 public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProgram>, IAsyncLifetime
   where TProgram : class
 {
-  private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
-    .WithImage("postgres:16-alpine")
-    .WithDatabase("familytask_test")
-    .WithUsername("test")
-    .WithPassword("test123")
-    .Build();
+  private PooledContainer _pooledContainer = null!;
 
   /// <summary>
   ///   Test Telegram bot client for verifying bot interactions in tests
   /// </summary>
   public TestTelegramBotClient TelegramBotClient { get; } = new();
 
-  public async Task InitializeAsync() => await _dbContainer.StartAsync();
+  public async Task InitializeAsync() =>
+    // Получаем контейнер из пула
+    _pooledContainer = await PostgreSqlContainerPool<AppDbContext>.Instance.AcquireContainerAsync();
 
-  public new async Task DisposeAsync() => await _dbContainer.DisposeAsync();
+  public new async Task DisposeAsync() =>
+    // Возвращаем контейнер в пул
+    await PostgreSqlContainerPool<AppDbContext>.Instance.ReleaseContainerAsync(_pooledContainer);
 
   protected override void ConfigureWebHost(IWebHostBuilder builder)
   {
@@ -35,8 +34,8 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
       services.RemoveAll<AppDbContext>();
       services.RemoveAll<DbContextOptions<AppDbContext>>();
 
-      // Add DbContext using the Testcontainers PostgreSQL instance
-      services.AddDbContext<AppDbContext>(options => { options.UseNpgsql(_dbContainer.GetConnectionString()); });
+      // Add DbContext using the pooled container
+      services.AddDbContext<AppDbContext>(options => { options.UseNpgsql(_pooledContainer.GetConnectionString()); });
 
       // Remove the real ITelegramBotClient registration
       services.RemoveAll<ITelegramBotClient>();

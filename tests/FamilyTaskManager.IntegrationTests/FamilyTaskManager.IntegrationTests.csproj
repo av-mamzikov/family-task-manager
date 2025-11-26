@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FamilyTaskManager.Infrastructure\FamilyTaskManager.Infrastructure.csproj"/>
+    <ProjectReference Include="..\FamilyTaskManager.TestInfrastructure\FamilyTaskManager.TestInfrastructure.csproj"/>
   </ItemGroup>
 
   <ItemGroup>

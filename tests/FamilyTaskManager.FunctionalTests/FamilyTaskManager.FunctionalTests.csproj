@@ -37,5 +37,6 @@
     <ProjectReference Include="..\..\src\FamilyTaskManager.Infrastructure\FamilyTaskManager.Infrastructure.csproj"/>
     <ProjectReference Include="..\..\src\FamilyTaskManager.UseCases\FamilyTaskManager.UseCases.csproj"/>
     <ProjectReference Include="..\..\src\FamilyTaskManager.Core\FamilyTaskManager.Core.csproj"/>
+    <ProjectReference Include="..\FamilyTaskManager.TestInfrastructure\FamilyTaskManager.TestInfrastructure.csproj"/>
   </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
 ﻿<wpf:ResourceDictionary xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                         xmlns:s="clr-namespace:System;assembly=mscorlib"
-                        xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                        xml:space="preserve">
-	<s:Boolean
+                        xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xml:space="preserve">
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=postgre/@EntryIndexedValue">True</s:Boolean>
+    <s:Boolean
             x:Key="/Default/UserDictionary/Words/=_0434_0435_043D_043E_0440_043C_0430_043B_0438_0437_043E_0432_0430_043D_043D_043E_0435/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>

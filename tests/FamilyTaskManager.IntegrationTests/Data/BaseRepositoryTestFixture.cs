@@ -1,41 +1,46 @@
 using FamilyTaskManager.Infrastructure.Data;
-using Testcontainers.PostgreSql;
+using FamilyTaskManager.TestInfrastructure;
 
 namespace FamilyTaskManager.IntegrationTests.Data;
 
 /// <summary>
-///   Базовый класс для тестирования репозиториев с использованием Testcontainers PostgreSQL.
-///   Каждый тестовый класс получает свой изолированный контейнер с БД.
+///   Базовый класс для тестирования репозиториев с использованием пула контейнеров PostgreSQL.
+///   xUnit создаёт новый экземпляр класса для каждого теста, поэтому каждый тест получает свой контейнер.
 /// </summary>
+[Collection(nameof(PostgreSqlContainerPoolCollection))]
 public abstract class BaseRepositoryTestFixture : IAsyncLifetime
 {
-  private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
-    .WithImage("postgres:17-alpine")
-    .WithDatabase("familytaskmanager_test")
-    .WithUsername("postgres")
-    .WithPassword("Test_password123!")
-    .Build();
+  private PooledContainer _pooledContainer = null!;
 
   protected AppDbContext DbContext { get; private set; } = null!;
 
+  /// <summary>
+  ///   Инициализация перед каждым тестом - получаем контейнер из пула
+  /// </summary>
   public async Task InitializeAsync()
   {
-    await _dbContainer.StartAsync();
+    // Получаем контейнер из пула
+    _pooledContainer = await PostgreSqlContainerPool<AppDbContext>.Instance.AcquireContainerAsync();
 
+    // Создаём DbContext
     var options = new DbContextOptionsBuilder<AppDbContext>()
-      .UseNpgsql(_dbContainer.GetConnectionString())
+      .UseNpgsql(_pooledContainer.GetConnectionString())
       .Options;
 
     DbContext = new AppDbContext(options);
-
-    // Применяем миграции
-    await DbContext.Database.MigrateAsync();
   }
 
+  /// <summary>
+  ///   Очистка после каждого теста - закрываем DbContext и возвращаем контейнер в пул
+  /// </summary>
   public async Task DisposeAsync()
   {
+    // Явно закрываем соединение с базой данных
+    await DbContext.Database.CloseConnectionAsync();
     await DbContext.DisposeAsync();
-    await _dbContainer.DisposeAsync();
+
+    // Возвращаем контейнер в пул для повторного использования (с предварительным сбросом БД)
+    await PostgreSqlContainerPool<AppDbContext>.Instance.ReleaseContainerAsync(_pooledContainer);
   }
 
   /// <summary>
