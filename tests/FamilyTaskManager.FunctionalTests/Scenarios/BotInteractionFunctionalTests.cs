@@ -1,5 +1,3 @@
-using FamilyTaskManager.UseCases.Families;
-using Mediator;
 using Telegram.Bot.Requests;
 
 namespace FamilyTaskManager.FunctionalTests.Scenarios;
@@ -14,38 +12,6 @@ public class BotInteractionFunctionalTests : IClassFixture<CustomWebApplicationF
   public BotInteractionFunctionalTests(CustomWebApplicationFactory<Program> factory)
   {
     _factory = factory;
-  }
-
-  [Fact]
-  public async Task BotShouldSendMessageWhenFamilyCreated()
-  {
-    // Arrange
-    using var scope = _factory.Services.CreateScope();
-    var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-    var botClient = _factory.TelegramBotClient;
-
-    // Clear previous interactions
-    botClient.Clear();
-
-    var userId = Guid.NewGuid();
-    var chatId = 123456L;
-
-    // Act - Create family (this should trigger bot notification)
-    var createCommand = new CreateFamilyCommand(userId, "Тестовая семья", "Europe/Moscow");
-    var result = await mediator.Send(createCommand);
-
-    // Assert
-    result.IsSuccess.ShouldBeTrue();
-
-    // Verify bot sent a message
-    // Note: This is an example - actual implementation depends on your bot logic
-    var sentMessages = botClient.GetMessagesTo(chatId);
-    // sentMessages.ShouldNotBeEmpty();
-
-    // Example assertions:
-    // var lastMessage = botClient.GetLastMessageTo(chatId);
-    // lastMessage.ShouldNotBeNull();
-    // lastMessage.Text.ShouldContain("Тестовая семья");
   }
 
   [Fact]
