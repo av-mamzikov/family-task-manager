@@ -1,9 +1,8 @@
 using FamilyTaskManager.Host.Modules.Bot.Handlers;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
-using Telegram.Bot.Types.Enums;
 
-namespace FamilyTaskManager.Host.Modules.Bot;
+namespace FamilyTaskManager.Host.Modules.Bot.Services;
 
 /// <summary>
 ///   Hosted service wrapper for Telegram Bot with Long Polling
@@ -21,7 +20,7 @@ public class TelegramBotHostedService(
 
     var receiverOptions = new ReceiverOptions
     {
-      AllowedUpdates = Array.Empty<UpdateType>(),
+      AllowedUpdates = [],
       ThrowPendingUpdates = true
     };
 

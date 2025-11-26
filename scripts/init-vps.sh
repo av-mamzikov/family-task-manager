@@ -221,8 +221,8 @@ services:
     container_name: docker-registry
     restart: unless-stopped
     # Порт НЕ публикуется наружу - registry доступен только локально через localhost:5000
-    expose:
-      - "5000"
+    ports:                                                                                                                                                                                                                          
+      - "127.0.0.1:5000:5000"
     environment:
       REGISTRY_AUTH: htpasswd
       REGISTRY_AUTH_HTPASSWD_REALM: "Registry Realm"

@@ -37,7 +37,6 @@ public static class BotModuleExtensions
 
     // Bot Services
     services.AddSingleton<ISessionManager, SessionManager>();
-    services.AddSingleton<ITelegramBotService, TelegramBotService>();
     services.AddScoped<IUserRegistrationService, UserRegistrationService>();
 
     // Hosted Service for Long Polling
