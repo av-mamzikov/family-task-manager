@@ -22,11 +22,7 @@ public class MessageHandler(
   IMediator mediator,
   IUserRegistrationService userRegistrationService,
   IConversationRouter conversationRouter,
-  FamilyCommandHandler familyCommandHandler,
-  TasksCommandHandler tasksCommandHandler,
-  PetCommandHandler petCommandHandler,
-  StatsCommandHandler statsCommandHandler,
-  TemplateCommandHandler templateCommandHandler)
+  IServiceProvider serviceProvider)
   : IMessageHandler
 {
   public async Task HandleCommandAsync(ITelegramBotClient botClient, Message message,
@@ -216,7 +212,8 @@ public class MessageHandler(
       return;
     }
 
-    await familyCommandHandler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
+    var handler = serviceProvider.GetRequiredService<FamilyCommandHandler>();
+    await handler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
   }
 
   private async Task HandleTasksCommandAsync(
@@ -236,7 +233,8 @@ public class MessageHandler(
       return;
     }
 
-    await tasksCommandHandler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
+    var handler = serviceProvider.GetRequiredService<TasksCommandHandler>();
+    await handler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
   }
 
   private async Task HandlePetCommandAsync(
@@ -256,7 +254,8 @@ public class MessageHandler(
       return;
     }
 
-    await petCommandHandler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
+    var handler = serviceProvider.GetRequiredService<PetCommandHandler>();
+    await handler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
   }
 
   private async Task HandleStatsCommandAsync(
@@ -276,7 +275,8 @@ public class MessageHandler(
       return;
     }
 
-    await statsCommandHandler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
+    var handler = serviceProvider.GetRequiredService<StatsCommandHandler>();
+    await handler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
   }
 
   private async Task HandleTemplatesCommandAsync(
@@ -296,7 +296,8 @@ public class MessageHandler(
       return;
     }
 
-    await templateCommandHandler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
+    var handler = serviceProvider.GetRequiredService<TemplateCommandHandler>();
+    await handler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
   }
 
   private async Task HandleHelpCommandAsync(
