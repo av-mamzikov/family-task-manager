@@ -18,8 +18,12 @@ namespace FamilyTaskManager.FunctionalTests;
 public class TestTelegramBotClient : ITelegramBotClient
 {
   private readonly ConcurrentBag<(long ChatId, string Text)> _editedMessages = new();
+  private readonly ConcurrentQueue<Update> _pendingUpdates = new();
   private readonly ConcurrentBag<string> _sentCallbackAnswers = new();
   private readonly ConcurrentBag<Message> _sentMessages = new();
+  private readonly SemaphoreSlim _updateSignal = new(0);
+
+  public Func<GetUpdatesRequest, Task<Update[]>>? GetUpdatesHandler { get; set; }
 
   public User BotUser { get; } = new()
   {
@@ -60,8 +64,11 @@ public class TestTelegramBotClient : ITelegramBotClient
 
   public bool LocalBotServer => false;
   public long? BotId => BotUser.Id;
-  public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
+  public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(3);
   public IExceptionParser ExceptionsParser { get; set; } = null!;
+
+  public Task<User> GetMeAsync(CancellationToken cancellationToken = default) =>
+    Task.FromResult(BotUser);
 
   /// <summary>
   ///   Clears all captured interactions
@@ -85,78 +92,138 @@ public class TestTelegramBotClient : ITelegramBotClient
   public IEnumerable<Message> GetMessagesTo(long chatId) =>
     _sentMessages.Where(m => m.Chat.Id == chatId);
 
-  public Task<TResponse> MakeRequestAsync<TResponse>(
+  /// <summary>
+  ///   Adds a single update to be returned by GetUpdatesRequest when no custom handler is set
+  /// </summary>
+  public void EnqueueUpdate(Update update)
+  {
+    _pendingUpdates.Enqueue(update);
+    _updateSignal.Release();
+  }
+
+  /// <summary>
+  ///   Adds multiple updates to be returned by GetUpdatesRequest when no custom handler is set
+  /// </summary>
+  public void EnqueueUpdates(IEnumerable<Update> updates)
+  {
+    foreach (var update in updates)
+    {
+      EnqueueUpdate(update);
+    }
+  }
+
+  public async Task<TResponse> MakeRequestAsync<TResponse>(
     IRequest<TResponse> request,
     CancellationToken cancellationToken = default) =>
     request switch
     {
-      SendMessageRequest sendRequest => HandleSendMessage(sendRequest) as Task<TResponse>,
-      AnswerCallbackQueryRequest answerRequest => HandleAnswerCallback(answerRequest) as Task<TResponse>,
-      EditMessageTextRequest editRequest => HandleEditMessage(editRequest) as Task<TResponse>,
-      _ => Task.FromResult<TResponse>(default!)
-    } ?? Task.FromResult<TResponse>(default!);
-
-  private Task<Message> HandleSendMessage(SendMessageRequest request)
-  {
-    var message = new Message
-    {
-      MessageId = _sentMessages.Count + 1,
-      Date = DateTime.UtcNow,
-      Chat = new Chat { Id = request.ChatId.Identifier ?? 0, Type = ChatType.Private },
-      Text = request.Text,
-      ReplyMarkup = request.ReplyMarkup as InlineKeyboardMarkup
+      SendMessageRequest sendRequest => (TResponse)(object)await HandleSendMessage(sendRequest),
+      AnswerCallbackQueryRequest answerRequest => (TResponse)(object)await HandleAnswerCallback(answerRequest),
+      EditMessageTextRequest editRequest => (TResponse)(object)await HandleEditMessage(editRequest),
+      GetMeRequest getMeRequest => (TResponse)(object)await HandleGetMeMessage(getMeRequest),
+      GetUpdatesRequest getUpdatesRequest => (TResponse)(object)await HandleGetUpdates(getUpdatesRequest),
+      _ => throw new NotImplementedException($"Обработчик запроса {request} ещё не реализован")
     };
 
-    _sentMessages.Add(message);
-    return Task.FromResult(message);
-  }
+  private Task<User> HandleGetMeMessage(GetMeRequest _) =>
+    Task.Run(() => BotUser);
 
-  private Task<bool> HandleAnswerCallback(AnswerCallbackQueryRequest request)
-  {
-    if (!string.IsNullOrEmpty(request.Text))
+  private Task<Update[]> HandleGetUpdates(GetUpdatesRequest _) =>
+    Task.Run(async () =>
     {
-      _sentCallbackAnswers.Add(request.Text);
-    }
+      if (GetUpdatesHandler is not null)
+      {
+        return await GetUpdatesHandler(_);
+      }
 
-    return Task.FromResult(true);
-  }
+      var updates = new List<Update>();
 
-  private Task<Message> HandleEditMessage(EditMessageTextRequest request)
-  {
-    _editedMessages.Add((request.ChatId.Identifier ?? 0, request.Text));
+      while (_pendingUpdates.TryDequeue(out var update))
+      {
+        updates.Add(update);
+      }
 
-    var message = new Message
+      return updates.ToArray();
+    });
+
+  private Task<Message> HandleSendMessage(SendMessageRequest request) =>
+    Task.Run(() =>
     {
-      MessageId = request.MessageId,
-      Date = DateTime.UtcNow,
-      Chat = new Chat { Id = request.ChatId.Identifier ?? 0, Type = ChatType.Private },
-      Text = request.Text,
-      ReplyMarkup = request.ReplyMarkup
-    };
+      var message = new Message
+      {
+        MessageId = _sentMessages.Count + 1,
+        Date = DateTime.UtcNow,
+        Chat = new Chat { Id = request.ChatId.Identifier ?? 0, Type = ChatType.Private },
+        Text = request.Text,
+        ReplyMarkup = request.ReplyMarkup as InlineKeyboardMarkup
+      };
 
-    return Task.FromResult(message);
-  }
+      _sentMessages.Add(message);
+      return message;
+    });
 
-  public Task<User> GetMeAsync(CancellationToken cancellationToken = default) =>
-    Task.FromResult(BotUser);
+  private Task<bool> HandleAnswerCallback(AnswerCallbackQueryRequest request) =>
+    Task.Run(() =>
+    {
+      if (!string.IsNullOrEmpty(request.Text))
+      {
+        _sentCallbackAnswers.Add(request.Text);
+      }
+
+      return true;
+    });
+
+  private Task<Message> HandleEditMessage(EditMessageTextRequest request) =>
+    Task.Run(() =>
+    {
+      _editedMessages.Add((request.ChatId.Identifier ?? 0, request.Text));
+
+      var message = new Message
+      {
+        MessageId = request.MessageId,
+        Date = DateTime.UtcNow,
+        Chat = new Chat { Id = request.ChatId.Identifier ?? 0, Type = ChatType.Private },
+        Text = request.Text,
+        ReplyMarkup = request.ReplyMarkup
+      };
+
+      return message;
+    });
 
   /// <summary>
-  ///   Simulates receiving updates. In tests, this just waits for cancellation.
+  ///   Simulates receiving updates. Runs a background loop and returns immediately
+  ///   so it doesn't block host startup in tests.
   /// </summary>
-  public async Task ReceiveAsync(
+  public Task ReceiveAsync(
     IUpdateHandler updateHandler,
     ReceiverOptions? receiverOptions = null,
     CancellationToken cancellationToken = default)
   {
-    // In test mode, just wait for cancellation without actually polling
-    try
+    // Запускаем фоновой цикл обработки апдейтов и сразу возвращаем Task.CompletedTask,
+    // чтобы TelegramBotHostedService не блокировал старт хоста.
+    _ = Task.Run(async () =>
     {
-      await Task.Delay(System.Threading.Timeout.Infinite, cancellationToken);
-    }
-    catch (OperationCanceledException)
-    {
-      // Expected when the test host shuts down
-    }
+      try
+      {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+          // Сначала обрабатываем все накопившиеся апдейты
+          while (_pendingUpdates.TryDequeue(out var update))
+          {
+            await updateHandler.HandleUpdateAsync(this, update, cancellationToken);
+          }
+
+          // Затем ждём, пока не придёт следующий апдейт или не будет отмена
+          await _updateSignal.WaitAsync(cancellationToken);
+        }
+      }
+      catch (OperationCanceledException)
+      {
+        // Ожидаемо при остановке хоста в тестах
+      }
+    }, cancellationToken);
+
+    return Task.CompletedTask;
   }
 
 #pragma warning disable CS0067 // Event is never used

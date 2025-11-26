@@ -6,8 +6,6 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- Disable all source generators in test project -->
-    <EnableSourceGenerators>false</EnableSourceGenerators>
   </PropertyGroup>
 
   <ItemGroup>

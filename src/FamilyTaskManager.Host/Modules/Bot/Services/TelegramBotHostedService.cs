@@ -24,6 +24,8 @@ public class TelegramBotHostedService(
       ThrowPendingUpdates = true
     };
 
+    logger.LogInformation("TelegramBotHostedService: calling {client}.ReceiveAsync", botClient);
+
     await botClient.ReceiveAsync(
       new ScopedUpdateHandler(scopeFactory),
       receiverOptions,

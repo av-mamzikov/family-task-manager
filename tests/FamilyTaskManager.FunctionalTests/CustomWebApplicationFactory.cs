@@ -50,10 +50,9 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
       {
         services.Remove(quartzHostedService);
       }
-    });
 
-    // Configure services to run database migrations after host is built
-    builder.ConfigureServices(services => { services.AddHostedService<DatabaseInitializer>(); });
+      // Database is already created/migrated in PostgreSqlContainerPool, so no extra hosted initializer is needed here
+    });
   }
 
   private class DatabaseInitializer : IHostedService
