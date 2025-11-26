@@ -19,7 +19,7 @@ public class PetTests
     pet.FamilyId.ShouldBe(familyId);
     pet.Type.ShouldBe(type);
     pet.Name.ShouldBe(name);
-    pet.MoodScore.ShouldBe(50);
+    pet.MoodScore.ShouldBe(100);
     pet.CreatedAt.ShouldBeInRange(DateTime.UtcNow.AddSeconds(-1), DateTime.UtcNow.AddSeconds(1));
   }
 

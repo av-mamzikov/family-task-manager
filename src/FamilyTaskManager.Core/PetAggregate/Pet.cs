@@ -31,7 +31,12 @@ public class Pet : EntityBase<Pet, Guid>, IAggregateRoot
   public Guid FamilyId { get; private set; }
   public PetType Type { get; private set; }
   public string Name { get; private set; } = null!;
+
+  /// <summary>
+  ///   Денормализованное поле, которое рассчитывается периодически в зависимости от наличия невыполненных задач
+  /// </summary>
   public int MoodScore { get; private set; }
+
   public DateTime CreatedAt { get; private set; }
 
   public void UpdateName(string name)

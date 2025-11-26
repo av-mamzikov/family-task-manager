@@ -1,8 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Sdk Name="Microsoft.Build.CentralPackageVersions" Version="2.1.3"/>
 
   <PropertyGroup>
     <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Disable all source generators in test project -->
+    <EnableSourceGenerators>false</EnableSourceGenerators>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,15 +24,18 @@
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"/>
     <PackageReference Include="Testcontainers"/>
-    <PackageReference Include="Testcontainers.MsSql"/>
+    <PackageReference Include="Testcontainers.PostgreSql"/>
     <PackageReference Include="Ardalis.HttpClientTestExtensions"/>
     <PackageReference Include="NSubstitute"/>
     <PackageReference Include="Telegram.Bot"/>
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\FamilyTaskManager.Host\FamilyTaskManager.Host.csproj"/>
+
+    <!-- Direct references to layers we need for testing -->
     <ProjectReference Include="..\..\src\FamilyTaskManager.Infrastructure\FamilyTaskManager.Infrastructure.csproj"/>
     <ProjectReference Include="..\..\src\FamilyTaskManager.UseCases\FamilyTaskManager.UseCases.csproj"/>
+    <ProjectReference Include="..\..\src\FamilyTaskManager.Core\FamilyTaskManager.Core.csproj"/>
   </ItemGroup>
-
 </Project>

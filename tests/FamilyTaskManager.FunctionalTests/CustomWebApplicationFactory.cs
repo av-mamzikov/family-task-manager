@@ -1,82 +1,92 @@
 using FamilyTaskManager.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using Testcontainers.MsSql;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Telegram.Bot;
+using Testcontainers.PostgreSql;
 
 namespace FamilyTaskManager.FunctionalTests;
 
 public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProgram>, IAsyncLifetime
   where TProgram : class
 {
-  private readonly MsSqlContainer _dbContainer = new MsSqlBuilder()
-    .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
-    .WithPassword("Your_password123!")
+  private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
+    .WithImage("postgres:16-alpine")
+    .WithDatabase("familytask_test")
+    .WithUsername("test")
+    .WithPassword("test123")
     .Build();
+
+  /// <summary>
+  ///   Test Telegram bot client for verifying bot interactions in tests
+  /// </summary>
+  public TestTelegramBotClient TelegramBotClient { get; } = new();
 
   public async Task InitializeAsync() => await _dbContainer.StartAsync();
 
   public new async Task DisposeAsync() => await _dbContainer.DisposeAsync();
 
-  /// <summary>
-  ///   Overriding CreateHost to avoid creating a separate ServiceProvider per this thread:
-  ///   https://github.com/dotnet-architecture/eShopOnWeb/issues/465
-  /// </summary>
-  /// <param name="builder"></param>
-  /// <returns></returns>
-  protected override IHost CreateHost(IHostBuilder builder)
+  protected override void ConfigureWebHost(IWebHostBuilder builder)
   {
-    builder.UseEnvironment("Testing"); // will not send real emails
-    var host = builder.Build();
-    host.Start();
+    builder.UseEnvironment("Testing");
 
-    // Get service provider.
-    var serviceProvider = host.Services;
-
-    // Create a scope to obtain a reference to the database
-    // context (AppDbContext).
-    using (var scope = serviceProvider.CreateScope())
+    builder.ConfigureServices(services =>
     {
-      var scopedServices = scope.ServiceProvider;
-      var db = scopedServices.GetRequiredService<AppDbContext>();
+      // Remove the app's DbContext registration
+      services.RemoveAll<AppDbContext>();
+      services.RemoveAll<DbContextOptions<AppDbContext>>();
 
-      var logger = scopedServices
-        .GetRequiredService<ILogger<CustomWebApplicationFactory<TProgram>>>();
+      // Add DbContext using the Testcontainers PostgreSQL instance
+      services.AddDbContext<AppDbContext>(options => { options.UseNpgsql(_dbContainer.GetConnectionString()); });
+
+      // Remove the real ITelegramBotClient registration
+      services.RemoveAll<ITelegramBotClient>();
+
+      // Use test implementation to avoid real Telegram API calls
+      services.AddSingleton<ITelegramBotClient>(TelegramBotClient);
+
+      // Remove QuartzHostedService to prevent scheduler initialization in tests
+      var quartzHostedService = services
+        .FirstOrDefault(d => d.ImplementationType?.Name == "QuartzHostedService");
+      if (quartzHostedService != null)
+      {
+        services.Remove(quartzHostedService);
+      }
+    });
+
+    // Configure services to run database migrations after host is built
+    builder.ConfigureServices(services => { services.AddHostedService<DatabaseInitializer>(); });
+  }
+
+  private class DatabaseInitializer : IHostedService
+  {
+    private readonly ILogger<DatabaseInitializer> _logger;
+    private readonly IServiceProvider _serviceProvider;
+
+    public DatabaseInitializer(IServiceProvider serviceProvider, ILogger<DatabaseInitializer> logger)
+    {
+      _serviceProvider = serviceProvider;
+      _logger = logger;
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+      using var scope = _serviceProvider.CreateScope();
+      var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
       try
       {
         // Apply migrations to create the database schema
-        db.Database.Migrate();
+        await db.Database.MigrateAsync(cancellationToken);
 
-        // Seed the database with test data.
-        SeedData.PopulateTestDataAsync(db).Wait();
+        // Seed the database with test data
+        await SeedData.PopulateTestDataAsync(db);
       }
       catch (Exception ex)
       {
-        logger.LogError(ex, "An error occurred seeding the " +
-                            "database with test messages. Error: {exceptionMessage}", ex.Message);
+        _logger.LogError(ex, "An error occurred seeding the database with test data. Error: {Message}", ex.Message);
       }
     }
 
-    return host;
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
   }
-
-  protected override void ConfigureWebHost(IWebHostBuilder builder) =>
-    builder
-      .ConfigureServices(services =>
-      {
-        // Remove the app's ApplicationDbContext registration
-        var descriptors = services.Where(d => d.ServiceType == typeof(AppDbContext) ||
-                                              d.ServiceType == typeof(DbContextOptions<AppDbContext>))
-          .ToList();
-
-        foreach (var descriptor in descriptors)
-        {
-          services.Remove(descriptor);
-        }
-
-        // Add ApplicationDbContext using the Testcontainers SQL Server instance
-        services.AddDbContext<AppDbContext>((provider, options) =>
-        {
-          options.UseSqlServer(_dbContainer.GetConnectionString());
-        });
-      });
 }

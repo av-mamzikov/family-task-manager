@@ -9,10 +9,10 @@ public static class HostInitializationExtensions
   /// <summary>
   ///   Initializes infrastructure components (database migrations, schema, etc.)
   /// </summary>
-  /// <param name="host">The application host</param>
-  public static async Task InitializeInfrastructureAsync(this IHost host)
+  /// <param name="app">The web application</param>
+  public static async Task InitializeInfrastructureAsync(this WebApplication app)
   {
-    using var scope = host.Services.CreateScope();
+    using var scope = app.Services.CreateScope();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
     try

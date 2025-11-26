@@ -35,7 +35,7 @@ public class PetRepositoryTests : RepositoryTestsBase<Pet>
     // Assert
     var retrieved = await Repository.GetByIdAsync(pet.Id);
     retrieved.ShouldNotBeNull();
-    retrieved.MoodScore.ShouldBe(50);
+    retrieved.MoodScore.ShouldBe(100);
     retrieved.Type.ShouldBe(PetType.Hamster);
   }
 

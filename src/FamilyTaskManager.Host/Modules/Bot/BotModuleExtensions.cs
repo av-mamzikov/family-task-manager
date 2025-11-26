@@ -19,19 +19,18 @@ public static class BotModuleExtensions
     logger?.LogInformation("Registering Bot Module...");
 
     // Bot Configuration
-    var botConfig = configuration.GetSection("Bot").Get<BotConfiguration>();
-    if (botConfig == null || string.IsNullOrEmpty(botConfig.BotToken))
-    {
-      throw new InvalidOperationException(
-        "Bot configuration is missing. Please configure Bot:BotToken in appsettings.json or user secrets.");
-    }
-
-    services.AddSingleton(botConfig);
+    services.AddSingleton(configuration.GetSection("Bot").Get<BotConfiguration>() ?? new BotConfiguration());
 
     // Telegram Bot Client
     services.AddSingleton<ITelegramBotClient>(sp =>
     {
       var config = sp.GetRequiredService<BotConfiguration>();
+      if (string.IsNullOrEmpty(config.BotToken))
+      {
+        throw new InvalidOperationException(
+          "Bot configuration is missing. Please configure Bot:BotToken in appsettings.json or user secrets.");
+      }
+
       return new TelegramBotClient(config.BotToken);
     });
 

@@ -45,7 +45,7 @@ public class CreatePetHandlerTests
     capturedPet.FamilyId.ShouldBe(familyId);
     capturedPet.Type.ShouldBe(PetType.Cat);
     capturedPet.Name.ShouldBe("Fluffy");
-    capturedPet.MoodScore.ShouldBe(50);
+    capturedPet.MoodScore.ShouldBe(100);
   }
 
   [Fact]

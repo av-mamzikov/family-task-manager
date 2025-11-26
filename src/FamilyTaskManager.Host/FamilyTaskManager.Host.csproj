@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-FamilyTaskManager.Host-5ff0ffe8-5de0-4ee7-836b-7a685fe353b8</UserSecretsId>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,7 +13,10 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"/>
     <PackageReference Include="Serilog.AspNetCore"/>
     <PackageReference Include="Mediator.Abstractions"/>
-    <PackageReference Include="Mediator.SourceGenerator"/>
+    <PackageReference Include="Mediator.SourceGenerator">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Telegram.Bot"/>
     <PackageReference Include="Quartz"/>
     <PackageReference Include="Quartz.Extensions.Hosting"/>
