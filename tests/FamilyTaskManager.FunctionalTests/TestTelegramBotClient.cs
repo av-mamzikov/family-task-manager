@@ -66,15 +66,10 @@ public class TestTelegramBotClient : ITelegramBotClient
   public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(3);
   public IExceptionParser ExceptionsParser { get; set; } = null!;
 
-  public async Task<Message?> WaitForLastMessageToAsync(
-    long chatId,
-    TimeSpan timeout = default,
-    int pollDelayMs = 100)
+  public async Task<Message?> WaitForLastMessageToAsync(long chatId)
   {
-    if (timeout == default)
-    {
-      timeout = TimeSpan.FromSeconds(10);
-    }
+    var timeout = TimeSpan.FromSeconds(10);
+    const int pollDelayMs = 100;
 
     var start = DateTime.UtcNow;
     var initialCount = GetMessagesTo(chatId).Count();
@@ -98,16 +93,10 @@ public class TestTelegramBotClient : ITelegramBotClient
       : null;
   }
 
-  public async Task<IReadOnlyCollection<Message>> WaitForMessagesToAsync(
-    long chatId,
-    int minCount,
-    TimeSpan timeout = default,
-    int pollDelayMs = 100)
+  public async Task<IReadOnlyCollection<Message>> WaitForMessagesToAsync(long chatId, int minCount)
   {
-    if (timeout == default)
-    {
-      timeout = TimeSpan.FromSeconds(10);
-    }
+    var timeout = TimeSpan.FromSeconds(10);
+    const int pollDelayMs = 100;
 
     var start = DateTime.UtcNow;
     var initialCount = GetMessagesTo(chatId).Count();

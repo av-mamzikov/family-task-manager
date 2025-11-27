@@ -32,7 +32,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(chatId, userId, "/start"));
 
     // Assert - Check bot response (wait until message is actually sent)
-    var response = await botClient.WaitForLastMessageToAsync(chatId, TimeSpan.FromSeconds(5));
+    var response = await botClient.WaitForLastMessageToAsync(chatId);
     response.ShouldNotBeNull("Бот должен отправить приветственное сообщение при первом запуске");
     response!.ShouldContainText("Добро пожаловать");
 
@@ -53,7 +53,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     var createFamilyCallback = UpdateFactory.CreateCallbackUpdate(chatId, userId, "create_family");
     botClient.EnqueueUpdate(createFamilyCallback);
 
-    var step1Messages = (await botClient.WaitForMessagesToAsync(chatId, 1, TimeSpan.FromSeconds(5))).ToList();
+    var step1Messages = (await botClient.WaitForMessagesToAsync(chatId, 1)).ToList();
     var response1 = step1Messages.LastOrDefault();
     response1.ShouldNotBeNull("Бот должен попросить ввести название семьи");
     response1!.ShouldContainText("Введите название семьи");
@@ -63,7 +63,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     botClient.EnqueueUpdate(nameUpdate);
 
     var step2Messages =
-      (await botClient.WaitForMessagesToAsync(chatId, step1Messages.Count + 1, TimeSpan.FromSeconds(5))).ToList();
+      (await botClient.WaitForMessagesToAsync(chatId, 1)).ToList();
     var response2 = step2Messages.LastOrDefault();
     response2.ShouldNotBeNull("Бот должен попросить выбрать способ определения временной зоны");
     response2!.ShouldContainText("Выберите способ определения временной зоны");
@@ -73,7 +73,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     botClient.EnqueueUpdate(showTimezoneList);
 
     var step3Messages =
-      (await botClient.WaitForMessagesToAsync(chatId, step2Messages.Count + 1, TimeSpan.FromSeconds(5))).ToList();
+      (await botClient.WaitForMessagesToAsync(chatId, 1)).ToList();
     var timezonePrompt = step3Messages.LastOrDefault();
     timezonePrompt.ShouldNotBeNull("Бот должен показать список временных зон");
     timezonePrompt!.ShouldContainText("Выберите временную зону");
@@ -82,7 +82,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     var timezoneSelection = UpdateFactory.CreateCallbackUpdate(chatId, userId, "timezone_Europe/Moscow");
     botClient.EnqueueUpdate(timezoneSelection);
 
-    var messages = (await botClient.WaitForMessagesToAsync(chatId, step3Messages.Count + 1, TimeSpan.FromSeconds(5)))
+    var messages = (await botClient.WaitForMessagesToAsync(chatId, 1))
       .ToList();
     var successMessage = messages.LastOrDefault(m => m.Text?.Contains("Временная зона: Europe/Moscow") == true);
     successMessage.ShouldNotBeNull("Должно быть сообщение с подтверждением создания семьи");
@@ -109,7 +109,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     botClient.EnqueueUpdate(invalidNameUpdate);
 
     // Assert - Check bot response
-    var response = await botClient.WaitForLastMessageToAsync(chatId, TimeSpan.FromSeconds(5));
+    var response = await botClient.WaitForLastMessageToAsync(chatId);
     response.ShouldNotBeNull("Бот должен показать ошибку валидации имени семьи");
     response!.ShouldContainText(BotConstants.Errors.FamilyNameTooShort);
   }
