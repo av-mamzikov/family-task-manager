@@ -9,8 +9,9 @@ public class CreateInviteCodeHandler(
 {
   public async ValueTask<Result<string>> Handle(CreateInviteCodeCommand command, CancellationToken cancellationToken)
   {
-    // Verify family exists
-    var family = await familyRepository.GetByIdAsync(command.FamilyId, cancellationToken);
+    // Load family with members to validate creator membership and role
+    var familySpec = new GetFamilyWithMembersSpec(command.FamilyId);
+    var family = await familyRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
     if (family == null)
     {
       return Result<string>.NotFound("Family not found");

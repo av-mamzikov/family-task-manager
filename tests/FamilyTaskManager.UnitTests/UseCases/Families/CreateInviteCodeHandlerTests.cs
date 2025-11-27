@@ -1,6 +1,7 @@
 using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.UseCases.Families;
+using FamilyTaskManager.UseCases.Families.Specifications;
 
 namespace FamilyTaskManager.UnitTests.UseCases.Families;
 
@@ -28,7 +29,7 @@ public class CreateInviteCodeHandlerTests
 
     var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId);
 
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     Invitation? capturedInvitation = null;
@@ -56,7 +57,7 @@ public class CreateInviteCodeHandlerTests
     var userId = Guid.NewGuid();
     var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId);
 
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns((Family?)null);
 
     // Act
@@ -80,7 +81,7 @@ public class CreateInviteCodeHandlerTests
 
     var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId);
 
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act
@@ -103,7 +104,7 @@ public class CreateInviteCodeHandlerTests
 
     var command = new CreateInviteCodeCommand(familyId, FamilyRole.Child, userId);
 
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act
@@ -126,7 +127,7 @@ public class CreateInviteCodeHandlerTests
 
     var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId, 14);
 
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     Invitation? capturedInvitation = null;
