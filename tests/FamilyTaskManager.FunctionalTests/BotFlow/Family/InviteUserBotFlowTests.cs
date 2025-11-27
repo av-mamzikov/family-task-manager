@@ -30,32 +30,36 @@ public class InviteUserBotFlowTests(CustomWebApplicationFactory<Program> factory
     // Step 1: start family creation via callback
     var createFamilyCallback = UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, "create_family");
     botClient.EnqueueUpdate(createFamilyCallback);
-    await Task.Delay(BotProcessingDelayMs);
+    await botClient.WaitForLastMessageToAsync(adminChatId, TimeSpan.FromSeconds(5));
 
     // Step 2: enter family name
     var nameUpdate = UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, familyName);
     botClient.EnqueueUpdate(nameUpdate);
-    await Task.Delay(BotProcessingDelayMs);
+    await botClient.WaitForLastMessageToAsync(adminChatId, TimeSpan.FromSeconds(5));
 
     // Step 3: show timezone list
     var showTimezoneList = UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, "timezone_showlist");
     botClient.EnqueueUpdate(showTimezoneList);
-    await Task.Delay(BotProcessingDelayMs);
+    await botClient.WaitForLastMessageToAsync(adminChatId, TimeSpan.FromSeconds(5));
 
     // Step 4: select timezone
     var timezoneSelection = UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, "timezone_Europe/Moscow");
     botClient.EnqueueUpdate(timezoneSelection);
-    await Task.Delay(BotProcessingDelayMs);
+    await botClient.WaitForLastMessageToAsync(adminChatId, TimeSpan.FromSeconds(5));
 
     // Now admin has a family and main menu is shown
 
     // Step 5: open family menu via /family
+    var previousAdminMessagesCount = botClient.GetMessagesTo(adminChatId).Count();
     var familyCommandUpdate = UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "/family");
     botClient.EnqueueUpdate(familyCommandUpdate);
-    await Task.Delay(BotProcessingDelayMs);
 
-    var familyMenuMessage = botClient.GetLastMessageTo(adminChatId)!;
-    familyMenuMessage.ShouldContainText(familyName);
+    var familyMessages =
+      (await botClient.WaitForMessagesToAsync(adminChatId, previousAdminMessagesCount + 1, TimeSpan.FromSeconds(5)))
+      .ToList();
+    var familyMenuMessage = familyMessages.LastOrDefault();
+    familyMenuMessage.ShouldNotBeNull("Бот должен показать меню семьи после команды /family");
+    familyMenuMessage!.ShouldContainText(familyName);
     var familyMenuKeyboard = familyMenuMessage.ShouldHaveInlineKeyboard();
     var createInviteButton = familyMenuKeyboard.GetButton("Создать приглашение");
     createInviteButton.CallbackData.ShouldNotBeNull();
@@ -69,8 +73,11 @@ public class InviteUserBotFlowTests(CustomWebApplicationFactory<Program> factory
     await Task.Delay(BotProcessingDelayMs);
 
     // Step 7: select role for invite (Adult)
-    var inviteRoleMessage = botClient.GetLastMessageTo(adminChatId)!;
-    inviteRoleMessage.ShouldContainText("Создание приглашения");
+    var roleMessages =
+      (await botClient.WaitForMessagesToAsync(adminChatId, familyMessages.Count + 1, TimeSpan.FromSeconds(5))).ToList();
+    var inviteRoleMessage = roleMessages.LastOrDefault();
+    inviteRoleMessage.ShouldNotBeNull("Бот должен показать выбор роли для приглашения");
+    inviteRoleMessage!.ShouldContainText("Создание приглашения");
     var inviteRoleKeyboard = inviteRoleMessage.ShouldHaveInlineKeyboard();
     var adultRoleButton = inviteRoleKeyboard.GetButton("Взрослый");
     adultRoleButton.CallbackData.ShouldNotBeNull();
@@ -80,11 +87,13 @@ public class InviteUserBotFlowTests(CustomWebApplicationFactory<Program> factory
       adminTelegramId,
       adultRoleButton.CallbackData!);
     botClient.EnqueueUpdate(selectRoleCallback);
-    await Task.Delay(BotProcessingDelayMs);
 
     // Step 8: get invite link with payload
-    var inviteMessage = botClient.GetLastMessageTo(adminChatId)!;
-    inviteMessage.ShouldContainText("Приглашение создано");
+    var inviteMessages =
+      (await botClient.WaitForMessagesToAsync(adminChatId, roleMessages.Count + 1, TimeSpan.FromSeconds(5))).ToList();
+    var inviteMessage = inviteMessages.LastOrDefault();
+    inviteMessage.ShouldNotBeNull("Бот должен отправить сообщение о создании приглашения");
+    inviteMessage!.ShouldContainText("Приглашение создано");
 
     var inviteText = inviteMessage.Text!;
     var match = Regex.Match(inviteText, @"invite_[A-Z0-9]+");
@@ -102,9 +111,8 @@ public class InviteUserBotFlowTests(CustomWebApplicationFactory<Program> factory
       invitedTelegramId,
       $"/start {invitePayload}");
     botClient.EnqueueUpdate(startWithInviteUpdate);
-    await Task.Delay(BotProcessingDelayMs);
 
-    var invitedMessages = botClient.GetMessagesTo(invitedChatId).ToList();
+    var invitedMessages = (await botClient.WaitForMessagesToAsync(invitedChatId, 2, TimeSpan.FromSeconds(5))).ToList();
     invitedMessages.ShouldNotBeEmpty();
 
     var welcomeMessage = invitedMessages.FirstOrDefault(m =>

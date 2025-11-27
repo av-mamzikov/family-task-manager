@@ -66,6 +66,55 @@ public class TestTelegramBotClient : ITelegramBotClient
   public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(3);
   public IExceptionParser ExceptionsParser { get; set; } = null!;
 
+  public async Task<Message?> WaitForLastMessageToAsync(
+    long chatId,
+    TimeSpan timeout,
+    int pollDelayMs = 100)
+  {
+    var start = DateTime.UtcNow;
+    var initialCount = GetMessagesTo(chatId).Count();
+
+    while (DateTime.UtcNow - start < timeout)
+    {
+      var messages = GetMessagesTo(chatId).ToList();
+
+      if (messages.Count > initialCount)
+      {
+        return messages.Last();
+      }
+
+      await Task.Delay(pollDelayMs);
+    }
+
+    var finalMessages = GetMessagesTo(chatId).ToList();
+
+    return finalMessages.Count > initialCount
+      ? finalMessages.Last()
+      : null;
+  }
+
+  public async Task<IReadOnlyCollection<Message>> WaitForMessagesToAsync(
+    long chatId,
+    int minCount,
+    TimeSpan timeout,
+    int pollDelayMs = 100)
+  {
+    var start = DateTime.UtcNow;
+
+    while (DateTime.UtcNow - start < timeout)
+    {
+      var messages = GetMessagesTo(chatId).ToList();
+      if (messages.Count >= minCount)
+      {
+        return messages;
+      }
+
+      await Task.Delay(pollDelayMs);
+    }
+
+    return GetMessagesTo(chatId).ToList();
+  }
+
   public Task<User> GetMeAsync(CancellationToken cancellationToken = default) =>
     Task.FromResult(BotUser);
 

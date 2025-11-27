@@ -10,8 +10,6 @@ namespace FamilyTaskManager.FunctionalTests.BotFlow.Family;
 public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> factory)
   : IClassFixture<CustomWebApplicationFactory<Program>>, IAsyncLifetime
 {
-  private const int BotProcessingDelayMs = 1000;
-
   public Task InitializeAsync()
   {
     factory.CreateClient();
@@ -33,12 +31,10 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     // Act - Send /start
     botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(chatId, userId, "/start"));
 
-    // Небольшое ожидание обработки апдейта хендлером бота
-    await Task.Delay(BotProcessingDelayMs);
-
-    // Assert - Check bot response
-    var response = botClient.GetLastMessageTo(chatId)!;
-    response.ShouldContainText("Добро пожаловать");
+    // Assert - Check bot response (wait until message is actually sent)
+    var response = await botClient.WaitForLastMessageToAsync(chatId, TimeSpan.FromSeconds(5));
+    response.ShouldNotBeNull("Бот должен отправить приветственное сообщение при первом запуске");
+    response!.ShouldContainText("Добро пожаловать");
 
     var keyboard = response.ShouldHaveInlineKeyboard();
     keyboard.ShouldContainButton("Создать семью");
@@ -57,36 +53,37 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     var createFamilyCallback = UpdateFactory.CreateCallbackUpdate(chatId, userId, "create_family");
     botClient.EnqueueUpdate(createFamilyCallback);
 
-    await Task.Delay(BotProcessingDelayMs);
-
-    var response1 = botClient.GetLastMessageTo(chatId)!;
-    response1.ShouldContainText("Введите название семьи");
+    var step1Messages = (await botClient.WaitForMessagesToAsync(chatId, 1, TimeSpan.FromSeconds(5))).ToList();
+    var response1 = step1Messages.LastOrDefault();
+    response1.ShouldNotBeNull("Бот должен попросить ввести название семьи");
+    response1!.ShouldContainText("Введите название семьи");
 
     // Act & Assert - Step 2: Enter family name
     var nameUpdate = UpdateFactory.CreateTextUpdate(chatId, userId, "Семья Ивановых");
     botClient.EnqueueUpdate(nameUpdate);
 
-    await Task.Delay(BotProcessingDelayMs);
-
-    var response2 = botClient.GetLastMessageTo(chatId)!;
-    response2.ShouldContainText("Выберите способ определения временной зоны");
+    var step2Messages =
+      (await botClient.WaitForMessagesToAsync(chatId, step1Messages.Count + 1, TimeSpan.FromSeconds(5))).ToList();
+    var response2 = step2Messages.LastOrDefault();
+    response2.ShouldNotBeNull("Бот должен попросить выбрать способ определения временной зоны");
+    response2!.ShouldContainText("Выберите способ определения временной зоны");
 
     // Act & Assert - Step 3: Show timezone list
     var showTimezoneList = UpdateFactory.CreateCallbackUpdate(chatId, userId, "timezone_showlist");
     botClient.EnqueueUpdate(showTimezoneList);
 
-    await Task.Delay(BotProcessingDelayMs);
-
-    var timezonePrompt = botClient.GetLastMessageTo(chatId)!;
-    timezonePrompt.ShouldContainText("Выберите временную зону");
+    var step3Messages =
+      (await botClient.WaitForMessagesToAsync(chatId, step2Messages.Count + 1, TimeSpan.FromSeconds(5))).ToList();
+    var timezonePrompt = step3Messages.LastOrDefault();
+    timezonePrompt.ShouldNotBeNull("Бот должен показать список временных зон");
+    timezonePrompt!.ShouldContainText("Выберите временную зону");
 
     // Act & Assert - Step 4: Select timezone from list
     var timezoneSelection = UpdateFactory.CreateCallbackUpdate(chatId, userId, "timezone_Europe/Moscow");
     botClient.EnqueueUpdate(timezoneSelection);
 
-    await Task.Delay(BotProcessingDelayMs);
-
-    var messages = botClient.GetMessagesTo(chatId).ToList();
+    var messages = (await botClient.WaitForMessagesToAsync(chatId, step3Messages.Count + 1, TimeSpan.FromSeconds(5)))
+      .ToList();
     var successMessage = messages.LastOrDefault(m => m.Text?.Contains("Временная зона: Europe/Moscow") == true);
     successMessage.ShouldNotBeNull("Должно быть сообщение с подтверждением создания семьи");
     successMessage!.ShouldContainText("Семья Ивановых");
@@ -111,11 +108,10 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     var invalidNameUpdate = UpdateFactory.CreateTextUpdate(chatId, userId, "Аб"); // < 3 chars
     botClient.EnqueueUpdate(invalidNameUpdate);
 
-    await Task.Delay(BotProcessingDelayMs);
-
     // Assert - Check bot response
-    var response = botClient.GetLastMessageTo(chatId)!;
-    response.ShouldContainText(BotConstants.Errors.FamilyNameTooShort);
+    var response = await botClient.WaitForLastMessageToAsync(chatId, TimeSpan.FromSeconds(5));
+    response.ShouldNotBeNull("Бот должен показать ошибку валидации имени семьи");
+    response!.ShouldContainText(BotConstants.Errors.FamilyNameTooShort);
   }
 
   [Fact]
@@ -142,9 +138,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
       locationUpdate
     });
 
-    await Task.Delay(BotProcessingDelayMs);
-
-    var messages = botClient.GetMessagesTo(chatId).ToList();
+    var messages = (await botClient.WaitForMessagesToAsync(chatId, 2, TimeSpan.FromSeconds(5))).ToList();
     var successMessage = messages.LastOrDefault(m => m.Text?.Contains("успешно создана") == true);
     successMessage.ShouldNotBeNull("Должно быть сообщение с подтверждением создания семьи");
     successMessage!.ShouldContainText("Test Family");
