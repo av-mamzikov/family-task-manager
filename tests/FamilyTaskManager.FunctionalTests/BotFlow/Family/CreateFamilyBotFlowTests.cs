@@ -123,22 +123,15 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     var botClient = factory.TelegramBotClient;
     botClient.Clear();
 
-    // Act - Start family creation, enter name, select geolocation option
-    var createFamilyCallback = UpdateFactory.CreateCallbackUpdate(chatId, userId, "create_family");
-    var nameUpdate = UpdateFactory.CreateTextUpdate(chatId, userId, "Test Family");
-    var geolocationOption = UpdateFactory.CreateCallbackUpdate(chatId, userId, "timezone_detect");
-
-    // Send geolocation (Moscow coordinates)
-    var locationUpdate = UpdateFactory.CreateLocationUpdate(chatId, userId, 55.7558, 37.6173);
     botClient.EnqueueUpdates(new[]
     {
-      createFamilyCallback,
-      nameUpdate,
-      geolocationOption,
-      locationUpdate
+      UpdateFactory.CreateCallbackUpdate(chatId, userId, "create_family"),
+      UpdateFactory.CreateTextUpdate(chatId, userId, "Test Family"),
+      UpdateFactory.CreateCallbackUpdate(chatId, userId, "timezone_detect"),
+      UpdateFactory.CreateLocationUpdate(chatId, userId, 55.7558, 37.6173)
     });
 
-    var messages = (await botClient.WaitForMessagesToAsync(chatId, 2, TimeSpan.FromSeconds(5))).ToList();
+    var messages = (await botClient.WaitForMessagesToAsync(chatId, 6)).ToList();
     var successMessage = messages.LastOrDefault(m => m.Text?.Contains("успешно создана") == true);
     successMessage.ShouldNotBeNull("Должно быть сообщение с подтверждением создания семьи");
     successMessage!.ShouldContainText("Test Family");

@@ -68,9 +68,14 @@ public class TestTelegramBotClient : ITelegramBotClient
 
   public async Task<Message?> WaitForLastMessageToAsync(
     long chatId,
-    TimeSpan timeout,
+    TimeSpan timeout = default,
     int pollDelayMs = 100)
   {
+    if (timeout == default)
+    {
+      timeout = TimeSpan.FromSeconds(10);
+    }
+
     var start = DateTime.UtcNow;
     var initialCount = GetMessagesTo(chatId).Count();
 
@@ -96,23 +101,32 @@ public class TestTelegramBotClient : ITelegramBotClient
   public async Task<IReadOnlyCollection<Message>> WaitForMessagesToAsync(
     long chatId,
     int minCount,
-    TimeSpan timeout,
+    TimeSpan timeout = default,
     int pollDelayMs = 100)
   {
+    if (timeout == default)
+    {
+      timeout = TimeSpan.FromSeconds(10);
+    }
+
     var start = DateTime.UtcNow;
+    var initialCount = GetMessagesTo(chatId).Count();
 
     while (DateTime.UtcNow - start < timeout)
     {
       var messages = GetMessagesTo(chatId).ToList();
-      if (messages.Count >= minCount)
+      var newCount = messages.Count - initialCount;
+
+      if (newCount >= minCount)
       {
-        return messages;
+        return messages.Skip(initialCount).ToList();
       }
 
       await Task.Delay(pollDelayMs);
     }
 
-    return GetMessagesTo(chatId).ToList();
+    var finalMessages = GetMessagesTo(chatId).ToList();
+    return finalMessages.Skip(initialCount).ToList();
   }
 
   public Task<User> GetMeAsync(CancellationToken cancellationToken = default) =>
