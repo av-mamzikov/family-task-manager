@@ -65,6 +65,7 @@ public static class BotModuleExtensions
     // Callback Handlers
     services.AddScoped<ICallbackRouter, CallbackRouter>();
     services.AddScoped<FamilyCallbackHandler>();
+    services.AddScoped<FamilyMembersCallbackHandler>();
     services.AddScoped<PetCallbackHandler>();
     services.AddScoped<TaskCallbackHandler>();
     services.AddScoped<TemplateCallbackHandler>();

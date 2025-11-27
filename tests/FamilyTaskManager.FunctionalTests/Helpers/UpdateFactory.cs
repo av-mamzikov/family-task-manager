@@ -11,7 +11,8 @@ public static class UpdateFactory
   /// <summary>
   ///   Create a text message update
   /// </summary>
-  public static Update CreateTextUpdate(long chatId, long userId, string text, string? username = null) =>
+  public static Update CreateTextUpdate(long chatId, long userId, string text, string? username = null,
+    string? firstName = null) =>
     new()
     {
       Id = Random.Shared.Next(1, int.MaxValue),
@@ -19,7 +20,7 @@ public static class UpdateFactory
       {
         MessageId = Random.Shared.Next(1, int.MaxValue),
         Chat = new Chat { Id = chatId, Type = ChatType.Private },
-        From = new User { Id = userId, Username = username, IsBot = false },
+        From = new User { Id = userId, Username = username ?? "", FirstName = firstName ?? "", IsBot = false },
         Text = text,
         Date = DateTime.UtcNow
       }

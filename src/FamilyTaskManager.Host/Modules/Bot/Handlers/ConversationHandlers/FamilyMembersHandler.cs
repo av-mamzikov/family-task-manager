@@ -91,7 +91,6 @@ public class FamilyMembersHandler(IMediator mediator)
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
-    Guid familyId,
     Guid memberId,
     CancellationToken cancellationToken)
   {
@@ -103,8 +102,9 @@ public class FamilyMembersHandler(IMediator mediator)
       return;
     }
 
-    var familyCode = CallbackDataHelper.EncodeGuid(familyId);
-    var memberCode = CallbackDataHelper.EncodeGuid(member.UserId);
+    var (roleEmoji, roleText) = GetRoleInfo(member.Role);
+
+    var memberCode = CallbackDataHelper.EncodeGuid(member.Id);
 
     var availableRoles = Enum.GetValues<FamilyRole>()
       .Where(role => role != member.Role)
@@ -112,7 +112,7 @@ public class FamilyMembersHandler(IMediator mediator)
       {
         InlineKeyboardButton.WithCallbackData(
           BotConstants.Roles.GetRoleText(role),
-          $"family_mrpick_{familyCode}_{memberCode}_{(int)role}")
+          $"family_mrpick_{memberCode}_{(int)role}")
       })
       .ToList();
 
@@ -120,10 +120,8 @@ public class FamilyMembersHandler(IMediator mediator)
     {
       InlineKeyboardButton.WithCallbackData(
         "⬅️ Назад",
-        $"family_member_{familyCode}_{memberCode}")
+        $"family_member_{memberCode}")
     });
-
-    var (roleEmoji, roleText) = GetRoleInfo(member.Role);
 
     await botClient.EditMessageTextAsync(
       chatId,
@@ -210,12 +208,12 @@ public class FamilyMembersHandler(IMediator mediator)
     var familyCode = CallbackDataHelper.EncodeGuid(familyId);
     var buttons = members.Select(member =>
     {
-      var memberCode = CallbackDataHelper.EncodeGuid(member.UserId);
+      var memberCode = CallbackDataHelper.EncodeGuid(member.Id);
       return new[]
       {
         InlineKeyboardButton.WithCallbackData(
           $"{GetRoleInfo(member.Role).emoji} {member.Name}",
-          $"family_member_{familyCode}_{memberCode}")
+          $"family_member_{memberCode}")
       };
     }).ToList();
 

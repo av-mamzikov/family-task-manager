@@ -8,6 +8,9 @@ internal static class CallbackDataHelper
       .Replace('+', '-')
       .Replace('/', '.');
 
+  public static bool TryParseGuid(string value, out Guid guid) =>
+    Guid.TryParse(value, out guid) || TryDecodeGuid(value, out guid);
+
   public static bool TryDecodeGuid(string value, out Guid guid)
   {
     guid = Guid.Empty;

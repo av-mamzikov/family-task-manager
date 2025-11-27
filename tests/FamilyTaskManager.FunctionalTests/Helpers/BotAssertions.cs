@@ -93,4 +93,36 @@ public static class BotAssertions
     message.Chat.ShouldNotBeNull("Message chat should not be null");
     message.Chat.Id.ShouldBe(chatId);
   }
+
+  /// <summary>
+  ///   Assert that message does NOT contain expected text
+  /// </summary>
+  public static void ShouldNotContainText(this Message message, string unexpectedText)
+  {
+    message.ShouldNotBeNull("Message should not be null");
+    message.Text.ShouldNotBeNull("Message text should not be null");
+    message.Text.ShouldNotContain(unexpectedText);
+  }
+
+  /// <summary>
+  ///   Assert that inline keyboard does NOT contain button with specific text
+  /// </summary>
+  public static void ShouldNotContainButton(this InlineKeyboardMarkup keyboard, string buttonText)
+  {
+    keyboard.ShouldNotBeNull("Keyboard should not be null");
+    var hasButton = keyboard.InlineKeyboard
+      .Any(row => row.Any(btn => btn.Text.Contains(buttonText)));
+    hasButton.ShouldBeFalse($"Keyboard should NOT contain button with text: {buttonText}");
+  }
+
+  /// <summary>
+  ///   Assert that reply keyboard does NOT contain button with specific text
+  /// </summary>
+  public static void ShouldNotContainButton(this ReplyKeyboardMarkup keyboard, string buttonText)
+  {
+    keyboard.ShouldNotBeNull("Keyboard should not be null");
+    var hasButton = keyboard.Keyboard
+      .Any(row => row.Any(btn => btn.Text.Contains(buttonText)));
+    hasButton.ShouldBeFalse($"Keyboard should NOT contain button with text: {buttonText}");
+  }
 }

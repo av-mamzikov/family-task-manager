@@ -16,9 +16,11 @@ public class FamilyCallbackHandler(
   IMediator mediator,
   IUserRegistrationService userRegistrationService,
   BotConfiguration botConfiguration,
-  FamilyMembersHandler familyMembersHandler)
+  FamilyMembersHandler familyMembersHandler,
+  FamilyMembersCallbackHandler familyMembersCallbackHandler)
   : BaseCallbackHandler(logger, mediator, userRegistrationService)
 {
+  private readonly FamilyMembersCallbackHandler _familyMembersCallbackHandler = familyMembersCallbackHandler;
   private readonly FamilyMembersHandler _familyMembersHandler = familyMembersHandler;
 
   public async Task StartCreateFamilyAsync(
@@ -93,8 +95,6 @@ public class FamilyCallbackHandler(
       return;
     }
 
-    Guid memberId;
-
     switch (familyAction)
     {
       case "invite":
@@ -110,57 +110,12 @@ public class FamilyCallbackHandler(
         break;
 
       case "member":
-        if (parts.Length < 4 || !TryParseGuid(parts[2], out memberId))
-        {
-          return;
-        }
-
-        await _familyMembersHandler.ShowFamilyMemberAsync(botClient, chatId, messageId, memberId,
-          cancellationToken);
-        break;
-
       case "memberrole":
-        if (parts.Length < 4 || !TryParseGuid(parts[2], out memberId))
-        {
-          return;
-        }
-
-        await _familyMembersHandler.ShowRoleSelectionAsync(botClient, chatId, messageId, familyId, memberId,
-          cancellationToken);
-        break;
-
       case "mrpick":
-        if (parts.Length < 5 ||
-            !TryParseGuid(parts[2], out memberId) ||
-            !Enum.TryParse(parts[4], out FamilyRole newRole))
-        {
-          return;
-        }
-
-        await HandleMemberRoleUpdateAsync(
-          botClient, chatId, messageId, familyId, memberId, newRole, fromUser, cancellationToken);
-        break;
-
-      case "memberdelete":
       case "mdel":
-        if (parts.Length < 4 || !TryParseGuid(parts[2], out memberId))
-        {
-          return;
-        }
-
-        await _familyMembersHandler.ShowRemoveMemberConfirmationAsync(
-          botClient, chatId, messageId, memberId, cancellationToken);
-        break;
-
-      case "memberdeleteconfirm":
       case "mdelok":
-        if (parts.Length < 4 || !TryParseGuid(parts[2], out memberId))
-        {
-          return;
-        }
-
-        await HandleMemberRemovalAsync(
-          botClient, chatId, messageId, familyId, memberId, fromUser, cancellationToken);
+        await _familyMembersCallbackHandler.HandleMemberActionAsync(botClient, chatId, messageId, parts, fromUser,
+          cancellationToken);
         break;
 
       case "settings":
@@ -558,72 +513,5 @@ public class FamilyCallbackHandler(
       ParseMode.Markdown,
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
-  }
-
-  private async Task HandleMemberRoleUpdateAsync(
-    ITelegramBotClient botClient,
-    long chatId,
-    int messageId,
-    Guid familyId,
-    Guid memberId,
-    FamilyRole newRole,
-    User fromUser,
-    CancellationToken cancellationToken)
-  {
-    var requesterId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-    if (requesterId == null)
-    {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.UnknownError, cancellationToken);
-      return;
-    }
-
-    var command = new UpdateFamilyMemberRoleCommand(familyId, memberId, requesterId.Value, newRole);
-    var result = await Mediator.Send(command, cancellationToken);
-
-    if (!result.IsSuccess)
-    {
-      await EditMessageWithErrorAsync(
-        botClient,
-        chatId,
-        messageId,
-        $"❌ Не удалось изменить роль: {result.Errors.FirstOrDefault()}",
-        cancellationToken);
-      return;
-    }
-
-    await _familyMembersHandler.ShowFamilyMemberAsync(botClient, chatId, messageId, memberId, cancellationToken);
-  }
-
-  private async Task HandleMemberRemovalAsync(
-    ITelegramBotClient botClient,
-    long chatId,
-    int messageId,
-    Guid familyId,
-    Guid memberId,
-    User fromUser,
-    CancellationToken cancellationToken)
-  {
-    var requesterId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-    if (requesterId == null)
-    {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.UnknownError, cancellationToken);
-      return;
-    }
-
-    var command = new RemoveFamilyMemberCommand(familyId, memberId, requesterId.Value);
-    var result = await Mediator.Send(command, cancellationToken);
-
-    if (!result.IsSuccess)
-    {
-      await EditMessageWithErrorAsync(
-        botClient,
-        chatId,
-        messageId,
-        $"❌ Не удалось удалить участника: {result.Errors.FirstOrDefault()}",
-        cancellationToken);
-      return;
-    }
-
-    await _familyMembersHandler.ShowFamilyMembersAsync(botClient, chatId, messageId, familyId, cancellationToken);
   }
 }
