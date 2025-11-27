@@ -15,18 +15,18 @@ public class UpdateTaskTemplateHandler(IRepository<TaskTemplate> templateReposit
     var template = await templateRepository.GetByIdAsync(command.TemplateId, cancellationToken);
     if (template == null)
     {
-      return Result.NotFound("Task template not found");
+      return Result.NotFound("Шаблон задачи не найден");
     }
 
     // Authorization check - ensure template belongs to the requested family
     if (template.FamilyId != command.FamilyId)
     {
-      return Result.NotFound("Task template not found");
+      return Result.NotFound("Шаблон задачи не найден");
     }
 
     if (!template.IsActive)
     {
-      return Result.Error("Cannot update inactive template");
+      return Result.Error("Нельзя изменить неактивный шаблон");
     }
 
     // Get current values or use new ones
@@ -37,19 +37,19 @@ public class UpdateTaskTemplateHandler(IRepository<TaskTemplate> templateReposit
     // Validate title
     if (newTitle.Length < 3 || newTitle.Length > 100)
     {
-      return Result.Invalid(new ValidationError("Title must be between 3 and 100 characters"));
+      return Result.Invalid(new ValidationError("Название должно быть длиной от 3 до 100 символов"));
     }
 
     // Validate points
     if (newPoints < 1 || newPoints > 100)
     {
-      return Result.Invalid(new ValidationError("Points must be between 1 and 100"));
+      return Result.Invalid(new ValidationError("Очки должны быть в диапазоне от 1 до 100"));
     }
 
     // Validate schedule
     if (string.IsNullOrWhiteSpace(newSchedule))
     {
-      return Result.Invalid(new ValidationError("Schedule cannot be empty"));
+      return Result.Invalid(new ValidationError("Расписание не может быть пустым"));
     }
 
     // Update template

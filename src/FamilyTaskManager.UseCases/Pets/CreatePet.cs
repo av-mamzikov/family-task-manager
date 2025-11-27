@@ -13,13 +13,13 @@ public class CreatePetHandler(
     var family = await familyRepository.GetByIdAsync(command.FamilyId, cancellationToken);
     if (family == null)
     {
-      return Result<Guid>.NotFound("Family not found");
+      return Result<Guid>.NotFound("Семья не найдена");
     }
 
     // Validate name
     if (string.IsNullOrWhiteSpace(command.Name) || command.Name.Length < 2 || command.Name.Length > 50)
     {
-      return Result<Guid>.Invalid(new ValidationError("Pet name must be between 2 and 50 characters"));
+      return Result<Guid>.Invalid(new ValidationError("Имя питомца должно быть длиной от 2 до 50 символов"));
     }
 
     // Create pet

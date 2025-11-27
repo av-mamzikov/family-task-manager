@@ -18,30 +18,30 @@ public class CreateTaskTemplateHandler(
     var pet = await petRepository.GetByIdAsync(command.PetId, cancellationToken);
     if (pet == null)
     {
-      return Result<Guid>.NotFound("Pet not found");
+      return Result<Guid>.NotFound("Питомец не найден");
     }
 
     if (pet.FamilyId != command.FamilyId)
     {
-      return Result<Guid>.Error("Pet does not belong to this family");
+      return Result<Guid>.Error("Питомец не принадлежит этой семье");
     }
 
     // Validate title
     if (command.Title.Length < 3 || command.Title.Length > 100)
     {
-      return Result<Guid>.Invalid(new ValidationError("Title must be between 3 and 100 characters"));
+      return Result<Guid>.Invalid(new ValidationError("Название должно быть длиной от 3 до 100 символов"));
     }
 
     // Validate points
     if (command.Points < 1 || command.Points > 100)
     {
-      return Result<Guid>.Invalid(new ValidationError("Points must be between 1 and 100"));
+      return Result<Guid>.Invalid(new ValidationError("Очки должны быть в диапазоне от 1 до 100"));
     }
 
     // Validate schedule (basic check - Quartz will validate the cron expression)
     if (string.IsNullOrWhiteSpace(command.Schedule))
     {
-      return Result<Guid>.Invalid(new ValidationError("Schedule is required"));
+      return Result<Guid>.Invalid(new ValidationError("Требуется расписание"));
     }
 
     // Create template

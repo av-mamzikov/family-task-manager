@@ -16,13 +16,13 @@ public class CreateFamilyHandler(
     var user = await userRepository.GetByIdAsync(command.UserId, cancellationToken);
     if (user == null)
     {
-      return Result<Guid>.NotFound("User not found");
+      return Result<Guid>.NotFound("Пользователь не найден");
     }
 
     // Validate timezone
     if (!timeZoneService.IsValidTimeZone(command.Timezone))
     {
-      return Result<Guid>.Invalid(new ValidationError($"Invalid timezone: {command.Timezone}"));
+      return Result<Guid>.Invalid(new ValidationError($"Неверный часовой пояс: {command.Timezone}"));
     }
 
     // Create family

@@ -10,12 +10,12 @@ public class UpdatePetNameHandler(IRepository<Pet> petRepository)
     var pet = await petRepository.GetByIdAsync(command.PetId, cancellationToken);
     if (pet == null)
     {
-      return Result.NotFound("Pet not found");
+      return Result.NotFound("Питомец не найден");
     }
 
     if (string.IsNullOrWhiteSpace(command.NewName) || command.NewName.Length < 2 || command.NewName.Length > 50)
     {
-      return Result.Invalid(new ValidationError("Pet name must be between 2 and 50 characters"));
+      return Result.Invalid(new ValidationError("Имя питомца должно быть длиной от 2 до 50 символов"));
     }
 
     pet.UpdateName(command.NewName);
