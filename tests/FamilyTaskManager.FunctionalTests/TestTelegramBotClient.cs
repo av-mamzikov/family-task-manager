@@ -19,7 +19,7 @@ public class TestTelegramBotClient : ITelegramBotClient
   private readonly ConcurrentBag<(long ChatId, string Text)> _editedMessages = new();
   private readonly ConcurrentQueue<Update> _pendingUpdates = new();
   private readonly ConcurrentBag<string> _sentCallbackAnswers = new();
-  private readonly ConcurrentBag<Message> _sentMessages = new();
+  private readonly ConcurrentQueue<Message> _sentMessages = new();
   private readonly SemaphoreSlim _updateSignal = new(0);
 
   public Func<GetUpdatesRequest, Task<Update[]>>? GetUpdatesHandler { get; set; }
@@ -74,7 +74,10 @@ public class TestTelegramBotClient : ITelegramBotClient
   /// </summary>
   public void Clear()
   {
-    _sentMessages.Clear();
+    while (_sentMessages.TryDequeue(out _))
+    {
+    }
+
     _sentCallbackAnswers.Clear();
     _editedMessages.Clear();
   }
@@ -157,7 +160,7 @@ public class TestTelegramBotClient : ITelegramBotClient
         ReplyMarkup = request.ReplyMarkup as InlineKeyboardMarkup
       };
 
-      _sentMessages.Add(message);
+      _sentMessages.Enqueue(message);
       return message;
     });
 
@@ -186,7 +189,7 @@ public class TestTelegramBotClient : ITelegramBotClient
         ReplyMarkup = request.ReplyMarkup
       };
 
-      _sentMessages.Add(message);
+      _sentMessages.Enqueue(message);
       return message;
     });
 

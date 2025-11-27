@@ -1,4 +1,5 @@
 using FamilyTaskManager.FunctionalTests.Helpers;
+using FamilyTaskManager.Host.Modules.Bot;
 
 namespace FamilyTaskManager.FunctionalTests.BotFlow.Family;
 
@@ -68,17 +69,30 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     await Task.Delay(BotProcessingDelayMs);
 
     var response2 = botClient.GetLastMessageTo(chatId)!;
-    response2.ShouldContainText("временную зону");
+    response2.ShouldContainText("Выберите способ определения временной зоны");
 
-    // Act & Assert - Step 3: Select timezone
-    var timezoneCallback = UpdateFactory.CreateCallbackUpdate(chatId, userId, "tz:Europe/Moscow");
-    botClient.EnqueueUpdate(timezoneCallback);
+    // Act & Assert - Step 3: Show timezone list
+    var showTimezoneList = UpdateFactory.CreateCallbackUpdate(chatId, userId, "timezone_showlist");
+    botClient.EnqueueUpdate(showTimezoneList);
 
     await Task.Delay(BotProcessingDelayMs);
 
-    var finalResponse = botClient.GetLastMessageTo(chatId)!;
-    finalResponse.ShouldContainText("Семья создана");
-    finalResponse.ShouldContainText("Семья Ивановых");
+    var timezonePrompt = botClient.GetLastMessageTo(chatId)!;
+    timezonePrompt.ShouldContainText("Выберите временную зону");
+
+    // Act & Assert - Step 4: Select timezone from list
+    var timezoneSelection = UpdateFactory.CreateCallbackUpdate(chatId, userId, "timezone_Europe/Moscow");
+    botClient.EnqueueUpdate(timezoneSelection);
+
+    await Task.Delay(BotProcessingDelayMs);
+
+    var messages = botClient.GetMessagesTo(chatId).ToList();
+    var successMessage = messages.LastOrDefault(m => m.Text?.Contains("Временная зона: Europe/Moscow") == true);
+    successMessage.ShouldNotBeNull("Должно быть сообщение с подтверждением создания семьи");
+    successMessage!.ShouldContainText("Семья Ивановых");
+
+    var menuMessage = messages.Last();
+    menuMessage.ShouldContainText("Главное меню");
   }
 
   [Fact]
@@ -101,8 +115,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     // Assert - Check bot response
     var response = botClient.GetLastMessageTo(chatId)!;
-    response.ShouldContainText("ошибка");
-    response.ShouldContainText("название"); // or similar validation message
+    response.ShouldContainText(BotConstants.Errors.FamilyNameTooShort);
   }
 
   [Fact]
@@ -117,7 +130,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     // Act - Start family creation, enter name, select geolocation option
     var createFamilyCallback = UpdateFactory.CreateCallbackUpdate(chatId, userId, "create_family");
     var nameUpdate = UpdateFactory.CreateTextUpdate(chatId, userId, "Test Family");
-    var geolocationOption = UpdateFactory.CreateCallbackUpdate(chatId, userId, "tz:geolocation");
+    var geolocationOption = UpdateFactory.CreateCallbackUpdate(chatId, userId, "timezone_detect");
 
     // Send geolocation (Moscow coordinates)
     var locationUpdate = UpdateFactory.CreateLocationUpdate(chatId, userId, 55.7558, 37.6173);
@@ -131,8 +144,12 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     await Task.Delay(BotProcessingDelayMs);
 
-    var finalResponse = botClient.GetLastMessageTo(chatId)!;
-    finalResponse.ShouldContainText("Семья создана");
-    finalResponse.ShouldContainText("Test Family");
+    var messages = botClient.GetMessagesTo(chatId).ToList();
+    var successMessage = messages.LastOrDefault(m => m.Text?.Contains("успешно создана") == true);
+    successMessage.ShouldNotBeNull("Должно быть сообщение с подтверждением создания семьи");
+    successMessage!.ShouldContainText("Test Family");
+
+    var menuMessage = messages.Last();
+    menuMessage.ShouldContainText("Главное меню");
   }
 }
