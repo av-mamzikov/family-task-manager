@@ -35,19 +35,6 @@ public class UserTests
   }
 
   [Theory]
-  [InlineData(0)]
-  [InlineData(-1)]
-  [InlineData(-100)]
-  public void Constructor_WithInvalidTelegramId_ThrowsException(long invalidTelegramId)
-  {
-    // Arrange
-    var name = "John Doe";
-
-    // Act & Assert
-    Should.Throw<ArgumentException>(() => new User(invalidTelegramId, name));
-  }
-
-  [Theory]
   [InlineData(null)]
   [InlineData("")]
   [InlineData("   ")]

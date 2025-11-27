@@ -2,7 +2,7 @@ namespace FamilyTaskManager.UseCases.Families;
 
 public record UpdateFamilyMemberRoleCommand(
   Guid FamilyId,
-  Guid TargetUserId,
+  Guid memberId,
   Guid RequestedBy,
   FamilyRole NewRole) : ICommand<Result>;
 
@@ -29,7 +29,7 @@ public class UpdateFamilyMemberRoleHandler(IRepository<Family> familyRepository)
       return Result.Forbidden("Только администратор может менять роли участников");
     }
 
-    var member = family.Members.FirstOrDefault(m => m.UserId == command.TargetUserId && m.IsActive);
+    var member = family.Members.FirstOrDefault(m => m.Id == command.memberId && m.IsActive);
     if (member == null)
     {
       return Result.NotFound("Участник не найден");

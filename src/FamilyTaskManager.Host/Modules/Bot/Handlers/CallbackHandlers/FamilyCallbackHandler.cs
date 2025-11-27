@@ -93,6 +93,8 @@ public class FamilyCallbackHandler(
       return;
     }
 
+    Guid memberId;
+
     switch (familyAction)
     {
       case "invite":
@@ -108,55 +110,57 @@ public class FamilyCallbackHandler(
         break;
 
       case "member":
-        if (parts.Length < 4 || !TryParseGuid(parts[3], out var userId))
+        if (parts.Length < 4 || !TryParseGuid(parts[2], out memberId))
         {
           return;
         }
 
-        await _familyMembersHandler.ShowFamilyMemberAsync(botClient, chatId, messageId, familyId, userId,
+        await _familyMembersHandler.ShowFamilyMemberAsync(botClient, chatId, messageId, memberId,
           cancellationToken);
         break;
 
       case "memberrole":
-        if (parts.Length < 4 || !TryParseGuid(parts[3], out userId))
+        if (parts.Length < 4 || !TryParseGuid(parts[2], out memberId))
         {
           return;
         }
 
-        await _familyMembersHandler.ShowRoleSelectionAsync(botClient, chatId, messageId, familyId, userId,
+        await _familyMembersHandler.ShowRoleSelectionAsync(botClient, chatId, messageId, familyId, memberId,
           cancellationToken);
         break;
 
       case "mrpick":
         if (parts.Length < 5 ||
-            !TryParseGuid(parts[3], out userId) ||
+            !TryParseGuid(parts[2], out memberId) ||
             !Enum.TryParse(parts[4], out FamilyRole newRole))
         {
           return;
         }
 
         await HandleMemberRoleUpdateAsync(
-          botClient, chatId, messageId, familyId, userId, newRole, fromUser, cancellationToken);
+          botClient, chatId, messageId, familyId, memberId, newRole, fromUser, cancellationToken);
         break;
 
       case "memberdelete":
-        if (parts.Length < 4 || !TryParseGuid(parts[3], out userId))
+      case "mdel":
+        if (parts.Length < 4 || !TryParseGuid(parts[2], out memberId))
         {
           return;
         }
 
         await _familyMembersHandler.ShowRemoveMemberConfirmationAsync(
-          botClient, chatId, messageId, familyId, userId, cancellationToken);
+          botClient, chatId, messageId, memberId, cancellationToken);
         break;
 
       case "memberdeleteconfirm":
-        if (parts.Length < 4 || !TryParseGuid(parts[3], out userId))
+      case "mdelok":
+        if (parts.Length < 4 || !TryParseGuid(parts[2], out memberId))
         {
           return;
         }
 
         await HandleMemberRemovalAsync(
-          botClient, chatId, messageId, familyId, userId, fromUser, cancellationToken);
+          botClient, chatId, messageId, familyId, memberId, fromUser, cancellationToken);
         break;
 
       case "settings":
@@ -561,7 +565,7 @@ public class FamilyCallbackHandler(
     long chatId,
     int messageId,
     Guid familyId,
-    Guid userId,
+    Guid memberId,
     FamilyRole newRole,
     User fromUser,
     CancellationToken cancellationToken)
@@ -573,7 +577,7 @@ public class FamilyCallbackHandler(
       return;
     }
 
-    var command = new UpdateFamilyMemberRoleCommand(familyId, userId, requesterId.Value, newRole);
+    var command = new UpdateFamilyMemberRoleCommand(familyId, memberId, requesterId.Value, newRole);
     var result = await Mediator.Send(command, cancellationToken);
 
     if (!result.IsSuccess)
@@ -587,8 +591,7 @@ public class FamilyCallbackHandler(
       return;
     }
 
-    await _familyMembersHandler.ShowFamilyMemberAsync(botClient, chatId, messageId, familyId, userId,
-      cancellationToken);
+    await _familyMembersHandler.ShowFamilyMemberAsync(botClient, chatId, messageId, memberId, cancellationToken);
   }
 
   private async Task HandleMemberRemovalAsync(
@@ -596,7 +599,7 @@ public class FamilyCallbackHandler(
     long chatId,
     int messageId,
     Guid familyId,
-    Guid userId,
+    Guid memberId,
     User fromUser,
     CancellationToken cancellationToken)
   {
@@ -607,7 +610,7 @@ public class FamilyCallbackHandler(
       return;
     }
 
-    var command = new RemoveFamilyMemberCommand(familyId, userId, requesterId.Value);
+    var command = new RemoveFamilyMemberCommand(familyId, memberId, requesterId.Value);
     var result = await Mediator.Send(command, cancellationToken);
 
     if (!result.IsSuccess)

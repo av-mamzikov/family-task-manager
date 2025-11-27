@@ -1,3 +1,5 @@
+using FamilyTaskManager.Core.UserAggregate;
+
 namespace FamilyTaskManager.Core.FamilyAggregate;
 
 public class FamilyMember : EntityBase<FamilyMember, Guid>
@@ -19,6 +21,7 @@ public class FamilyMember : EntityBase<FamilyMember, Guid>
     IsActive = true;
   }
 
+  public User User { get; private set; } = null!;
   public Guid UserId { get; private set; }
   public Guid FamilyId { get; private set; }
   public FamilyRole Role { get; private set; }

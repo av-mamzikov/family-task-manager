@@ -46,11 +46,10 @@ public class FamilyMembersHandler(IMediator mediator)
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
-    Guid familyId,
-    Guid userId,
+    Guid memberId,
     CancellationToken cancellationToken)
   {
-    var member = await GetMemberAsync(familyId, userId, cancellationToken);
+    var member = await GetMemberAsync(memberId, cancellationToken);
     if (member == null)
     {
       await botClient.EditMessageTextAsync(chatId, messageId, "❌ Участник не найден",
@@ -63,15 +62,15 @@ public class FamilyMembersHandler(IMediator mediator)
                       $"Роль: {roleText}\n" +
                       $"Очки: ⭐ {member.Points}";
 
-    var familyCode = CallbackDataHelper.EncodeGuid(familyId);
-    var memberCode = CallbackDataHelper.EncodeGuid(member.UserId);
+    var familyCode = CallbackDataHelper.EncodeGuid(member.FamilyId);
+    var memberCode = CallbackDataHelper.EncodeGuid(member.Id);
 
     var keyboard = new InlineKeyboardMarkup(new[]
     {
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("♻️ Сменить роль", $"family_memberrole_{familyCode}_{memberCode}"),
-        InlineKeyboardButton.WithCallbackData("🗑️ Удалить участника", $"family_mdelete_{familyCode}_{memberCode}")
+        InlineKeyboardButton.WithCallbackData("♻️ Сменить роль", $"family_memberrole_{memberCode}"),
+        InlineKeyboardButton.WithCallbackData("🗑️ Удалить участника", $"family_mdel_{memberCode}")
       },
       new[]
       {
@@ -93,10 +92,10 @@ public class FamilyMembersHandler(IMediator mediator)
     long chatId,
     int messageId,
     Guid familyId,
-    Guid userId,
+    Guid memberId,
     CancellationToken cancellationToken)
   {
-    var member = await GetMemberAsync(familyId, userId, cancellationToken);
+    var member = await GetMemberAsync(memberId, cancellationToken);
     if (member == null)
     {
       await botClient.EditMessageTextAsync(chatId, messageId, "❌ Участник не найден",
@@ -139,11 +138,10 @@ public class FamilyMembersHandler(IMediator mediator)
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
-    Guid familyId,
-    Guid userId,
+    Guid memberId,
     CancellationToken cancellationToken)
   {
-    var member = await GetMemberAsync(familyId, userId, cancellationToken);
+    var member = await GetMemberAsync(memberId, cancellationToken);
     if (member == null)
     {
       await botClient.EditMessageTextAsync(chatId, messageId, "❌ Участник не найден",
@@ -153,8 +151,7 @@ public class FamilyMembersHandler(IMediator mediator)
 
     var (roleEmoji, roleText) = GetRoleInfo(member.Role);
 
-    var familyCode = CallbackDataHelper.EncodeGuid(familyId);
-    var memberCode = CallbackDataHelper.EncodeGuid(member.UserId);
+    var memberCode = CallbackDataHelper.EncodeGuid(member.Id);
 
     var keyboard = new InlineKeyboardMarkup(new[]
     {
@@ -162,10 +159,10 @@ public class FamilyMembersHandler(IMediator mediator)
       {
         InlineKeyboardButton.WithCallbackData(
           "✅ Да, удалить",
-          $"family_mdeleteok_{familyCode}_{memberCode}"),
+          $"family_mdelok_{memberCode}"),
         InlineKeyboardButton.WithCallbackData(
           "❌ Отмена",
-          $"family_member_{familyCode}_{memberCode}")
+          $"family_member_{memberCode}")
       }
     });
 
@@ -181,15 +178,12 @@ public class FamilyMembersHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
-  private async Task<FamilyMemberDto?> GetMemberAsync(Guid familyId, Guid userId, CancellationToken cancellationToken)
+  private async Task<FamilyMemberDto?> GetMemberAsync(Guid memberId, CancellationToken cancellationToken)
   {
-    var result = await _mediator.Send(new GetFamilyMembersQuery(familyId), cancellationToken);
+    var result = await _mediator.Send(new GetFamilyMemberByIdQuery(memberId), cancellationToken);
     if (!result.IsSuccess)
-    {
       return null;
-    }
-
-    return result.Value.FirstOrDefault(m => m.UserId == userId);
+    return result.Value;
   }
 
   private static string BuildMembersListText(List<FamilyMemberDto> members)

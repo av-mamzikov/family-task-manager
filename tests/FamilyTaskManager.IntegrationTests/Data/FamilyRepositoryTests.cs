@@ -1,10 +1,12 @@
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.UserAggregate;
 
 namespace FamilyTaskManager.IntegrationTests.Data;
 
 public class FamilyRepositoryTests : BaseRepositoryTestFixture
 {
   private IRepository<Family> Repository => GetRepository<Family>();
+  private IRepository<User> UserRepository => GetRepository<User>();
 
   [Fact]
   public async Task AddAsync_ShouldPersistFamilyToDatabase()
@@ -101,12 +103,12 @@ public class FamilyRepositoryTests : BaseRepositoryTestFixture
     // Arrange
     var family = new Family("Family With Members", "UTC");
     await Repository.AddAsync(family);
+    var user = new User(0, "Name");
+    await UserRepository.AddAsync(user);
     await DbContext.SaveChangesAsync();
 
-    var userId = Guid.NewGuid();
-
     // Act
-    var member = family.AddMember(userId, FamilyRole.Admin);
+    var member = family.AddMember(user.Id, FamilyRole.Admin);
     await Repository.UpdateAsync(family);
     await DbContext.SaveChangesAsync();
 
@@ -114,7 +116,7 @@ public class FamilyRepositoryTests : BaseRepositoryTestFixture
     var retrieved = await Repository.GetByIdAsync(family.Id);
     retrieved.ShouldNotBeNull();
     retrieved.Members.Count.ShouldBe(1);
-    retrieved.Members.First().UserId.ShouldBe(userId);
+    retrieved.Members.First().UserId.ShouldBe(user.Id);
     retrieved.Members.First().Role.ShouldBe(FamilyRole.Admin);
   }
 

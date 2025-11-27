@@ -1,6 +1,6 @@
 namespace FamilyTaskManager.UseCases.Families;
 
-public record RemoveFamilyMemberCommand(Guid FamilyId, Guid TargetUserId, Guid RequestedBy)
+public record RemoveFamilyMemberCommand(Guid FamilyId, Guid MemberId, Guid RequestedBy)
   : ICommand<Result>;
 
 public class RemoveFamilyMemberHandler(IRepository<Family> familyRepository)
@@ -26,7 +26,7 @@ public class RemoveFamilyMemberHandler(IRepository<Family> familyRepository)
       return Result.Forbidden("Только администратор может удалять участников");
     }
 
-    var member = family.Members.FirstOrDefault(m => m.UserId == command.TargetUserId && m.IsActive);
+    var member = family.Members.FirstOrDefault(m => m.Id == command.MemberId && m.IsActive);
     if (member == null)
     {
       return Result.NotFound("Участник не найден");

@@ -1,7 +1,9 @@
 namespace FamilyTaskManager.UseCases.Families;
 
 public record FamilyMemberDto(
+  Guid Id,
   Guid UserId,
+  Guid FamilyId,
   string Name,
   FamilyRole Role,
   int Points);
@@ -31,7 +33,7 @@ public class GetFamilyMembersHandler(
       var user = await userRepository.GetByIdAsync(member.UserId, cancellationToken);
       var name = user?.Name ?? "Неизвестный пользователь";
 
-      members.Add(new FamilyMemberDto(member.UserId, name, member.Role, member.Points));
+      members.Add(new FamilyMemberDto(member.Id, member.UserId, member.FamilyId, name, member.Role, member.Points));
     }
 
     return Result<List<FamilyMemberDto>>.Success(members);
