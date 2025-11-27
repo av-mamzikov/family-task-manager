@@ -56,6 +56,7 @@ public static class BotModuleExtensions
     // Conversation Handlers
     services.AddScoped<IConversationRouter, ConversationRouter>();
     services.AddScoped<FamilyCreationHandler>();
+    services.AddScoped<FamilyMembersHandler>();
     services.AddScoped<PetCreationHandler>();
     services.AddScoped<TaskCreationHandler>();
     services.AddScoped<TemplateCreationHandler>();

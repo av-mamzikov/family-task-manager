@@ -38,4 +38,6 @@ public class FamilyMember : EntityBase<FamilyMember, Guid>
   }
 
   public void Deactivate() => IsActive = false;
+
+  public void UpdateRole(FamilyRole role) => Role = role;
 }
