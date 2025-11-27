@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using Telegram.Bot;
 using Telegram.Bot.Args;
 using Telegram.Bot.Exceptions;
-using Telegram.Bot.Polling;
 using Telegram.Bot.Requests;
 using Telegram.Bot.Requests.Abstractions;
 using Telegram.Bot.Types;
@@ -112,7 +111,7 @@ public class TestTelegramBotClient : ITelegramBotClient
     }
   }
 
-  public async Task<TResponse> MakeRequestAsync<TResponse>(
+  private async Task<TResponse> MakeRequestAsync<TResponse>(
     IRequest<TResponse> request,
     CancellationToken cancellationToken = default) =>
     request switch
@@ -187,44 +186,9 @@ public class TestTelegramBotClient : ITelegramBotClient
         ReplyMarkup = request.ReplyMarkup
       };
 
+      _sentMessages.Add(message);
       return message;
     });
-
-  /// <summary>
-  ///   Simulates receiving updates. Runs a background loop and returns immediately
-  ///   so it doesn't block host startup in tests.
-  /// </summary>
-  public Task ReceiveAsync(
-    IUpdateHandler updateHandler,
-    ReceiverOptions? receiverOptions = null,
-    CancellationToken cancellationToken = default)
-  {
-    // Запускаем фоновой цикл обработки апдейтов и сразу возвращаем Task.CompletedTask,
-    // чтобы TelegramBotHostedService не блокировал старт хоста.
-    _ = Task.Run(async () =>
-    {
-      try
-      {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-          // Сначала обрабатываем все накопившиеся апдейты
-          while (_pendingUpdates.TryDequeue(out var update))
-          {
-            await updateHandler.HandleUpdateAsync(this, update, cancellationToken);
-          }
-
-          // Затем ждём, пока не придёт следующий апдейт или не будет отмена
-          await _updateSignal.WaitAsync(cancellationToken);
-        }
-      }
-      catch (OperationCanceledException)
-      {
-        // Ожидаемо при остановке хоста в тестах
-      }
-    }, cancellationToken);
-
-    return Task.CompletedTask;
-  }
 
 #pragma warning disable CS0067 // Event is never used
   public event AsyncEventHandler<ApiRequestEventArgs>? OnMakingApiRequest;

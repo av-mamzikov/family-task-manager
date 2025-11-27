@@ -6,18 +6,14 @@ namespace FamilyTaskManager.FunctionalTests.BotFlow.Family;
 ///   Bot flow tests for family creation scenarios
 ///   Based on TEST_SCENARIOS_BOT_FLOW.md: TS-BOT-001, TS-BOT-002, TS-BOT-003
 /// </summary>
-public class CreateFamilyBotFlowTests : IClassFixture<CustomWebApplicationFactory<Program>>, IAsyncLifetime
+public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> factory)
+  : IClassFixture<CustomWebApplicationFactory<Program>>, IAsyncLifetime
 {
-  private readonly CustomWebApplicationFactory<Program> _factory;
-
-  public CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> factory)
-  {
-    _factory = factory;
-  }
+  private const int BotProcessingDelayMs = 1000;
 
   public Task InitializeAsync()
   {
-    _factory.CreateClient();
+    factory.CreateClient();
     return Task.CompletedTask;
   }
 
@@ -29,7 +25,7 @@ public class CreateFamilyBotFlowTests : IClassFixture<CustomWebApplicationFactor
     // Arrange
     var userId = TestDataBuilder.GenerateTelegramId();
     var chatId = userId; // In private chats, chatId = userId
-    var botClient = _factory.TelegramBotClient;
+    var botClient = factory.TelegramBotClient;
     botClient.Clear();
 
 
@@ -37,7 +33,7 @@ public class CreateFamilyBotFlowTests : IClassFixture<CustomWebApplicationFactor
     botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(chatId, userId, "/start"));
 
     // Небольшое ожидание обработки апдейта хендлером бота
-    await Task.Delay(1000);
+    await Task.Delay(BotProcessingDelayMs);
 
     // Assert - Check bot response
     var response = botClient.GetLastMessageTo(chatId)!;
@@ -53,14 +49,14 @@ public class CreateFamilyBotFlowTests : IClassFixture<CustomWebApplicationFactor
     // Arrange
     var userId = TestDataBuilder.GenerateTelegramId();
     var chatId = userId;
-    var botClient = _factory.TelegramBotClient;
+    var botClient = factory.TelegramBotClient;
     botClient.Clear();
 
     // Act & Assert - Step 1: Click "Create Family"
     var createFamilyCallback = UpdateFactory.CreateCallbackUpdate(chatId, userId, "create_family");
     botClient.EnqueueUpdate(createFamilyCallback);
 
-    await Task.Delay(200);
+    await Task.Delay(BotProcessingDelayMs);
 
     var response1 = botClient.GetLastMessageTo(chatId)!;
     response1.ShouldContainText("Введите название семьи");
@@ -69,7 +65,7 @@ public class CreateFamilyBotFlowTests : IClassFixture<CustomWebApplicationFactor
     var nameUpdate = UpdateFactory.CreateTextUpdate(chatId, userId, "Семья Ивановых");
     botClient.EnqueueUpdate(nameUpdate);
 
-    await Task.Delay(200);
+    await Task.Delay(BotProcessingDelayMs);
 
     var response2 = botClient.GetLastMessageTo(chatId)!;
     response2.ShouldContainText("временную зону");
@@ -78,7 +74,7 @@ public class CreateFamilyBotFlowTests : IClassFixture<CustomWebApplicationFactor
     var timezoneCallback = UpdateFactory.CreateCallbackUpdate(chatId, userId, "tz:Europe/Moscow");
     botClient.EnqueueUpdate(timezoneCallback);
 
-    await Task.Delay(200);
+    await Task.Delay(BotProcessingDelayMs);
 
     var finalResponse = botClient.GetLastMessageTo(chatId)!;
     finalResponse.ShouldContainText("Семья создана");
@@ -91,7 +87,7 @@ public class CreateFamilyBotFlowTests : IClassFixture<CustomWebApplicationFactor
     // Arrange
     var userId = TestDataBuilder.GenerateTelegramId();
     var chatId = userId;
-    var botClient = _factory.TelegramBotClient;
+    var botClient = factory.TelegramBotClient;
     botClient.Clear();
 
     // Act - Start family creation and enter invalid name
@@ -101,7 +97,7 @@ public class CreateFamilyBotFlowTests : IClassFixture<CustomWebApplicationFactor
     var invalidNameUpdate = UpdateFactory.CreateTextUpdate(chatId, userId, "Аб"); // < 3 chars
     botClient.EnqueueUpdate(invalidNameUpdate);
 
-    await Task.Delay(200);
+    await Task.Delay(BotProcessingDelayMs);
 
     // Assert - Check bot response
     var response = botClient.GetLastMessageTo(chatId)!;
@@ -115,7 +111,7 @@ public class CreateFamilyBotFlowTests : IClassFixture<CustomWebApplicationFactor
     // Arrange
     var userId = TestDataBuilder.GenerateTelegramId();
     var chatId = userId;
-    var botClient = _factory.TelegramBotClient;
+    var botClient = factory.TelegramBotClient;
     botClient.Clear();
 
     // Act - Start family creation, enter name, select geolocation option
@@ -133,7 +129,7 @@ public class CreateFamilyBotFlowTests : IClassFixture<CustomWebApplicationFactor
       locationUpdate
     });
 
-    await Task.Delay(500);
+    await Task.Delay(BotProcessingDelayMs);
 
     var finalResponse = botClient.GetLastMessageTo(chatId)!;
     finalResponse.ShouldContainText("Семья создана");
