@@ -206,6 +206,70 @@ public class TelegramNotificationService(
     }
   }
 
+  public async Task SendPetCreatedAsync(Guid familyId, string petName, string petType,
+    CancellationToken cancellationToken = default)
+  {
+    try
+    {
+      var emoji = petType.ToLowerInvariant() switch
+      {
+        "cat" => "🐱",
+        "dog" => "🐶",
+        "hamster" => "🐹",
+        _ => "🐾"
+      };
+
+      var petTypeRu = petType.ToLowerInvariant() switch
+      {
+        "cat" => "кошка",
+        "dog" => "собака",
+        "hamster" => "хомяк",
+        _ => "питомец"
+      };
+
+      var message = $"{emoji} <b>Новый питомец в семье!</b>\n\n" +
+                    $"🐾 Имя: {EscapeHtml(petName)}\n" +
+                    $"📋 Тип: {petTypeRu}\n\n" +
+                    $"Добро пожаловать в семью! 🎉";
+
+      await SendToFamilyMembersAsync(familyId, message, cancellationToken);
+
+      logger.LogInformation(
+        "Pet created notification sent to family {FamilyId}: pet '{PetName}' ({PetType})",
+        familyId, petName, petType);
+    }
+    catch (Exception ex)
+    {
+      logger.LogError(ex,
+        "Failed to send pet created notification to family {FamilyId}",
+        familyId);
+      throw;
+    }
+  }
+
+  public async Task SendPetDeletedAsync(Guid familyId, string petName, CancellationToken cancellationToken = default)
+  {
+    try
+    {
+      var message = $"😢 <b>Питомец покинул семью</b>\n\n" +
+                    $"🐾 {EscapeHtml(petName)}\n\n" +
+                    $"Мы будем скучать! 💔";
+
+      await SendToFamilyMembersAsync(familyId, message, cancellationToken);
+
+      logger.LogInformation(
+        "Pet deleted notification sent to family {FamilyId}: pet '{PetName}'",
+        familyId, petName);
+    }
+    catch (Exception ex)
+    {
+      logger.LogError(ex,
+        "Failed to send pet deleted notification to family {FamilyId}",
+        familyId);
+      throw;
+    }
+  }
+
   public async Task SendMemberJoinedAsync(Guid familyId, string userName, CancellationToken cancellationToken = default)
   {
     try

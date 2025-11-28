@@ -27,6 +27,8 @@ public class Pet : EntityBase<Pet, Guid>, IAggregateRoot
     Name = name.Trim();
     MoodScore = 100;
     CreatedAt = DateTime.UtcNow;
+
+    RegisterDomainEvent(new PetCreatedEvent(this));
   }
 
   public Guid FamilyId { get; private set; }
@@ -62,6 +64,8 @@ public class Pet : EntityBase<Pet, Guid>, IAggregateRoot
       RegisterDomainEvent(new PetMoodChangedEvent(this, oldMood, newMood));
     }
   }
+
+  public void MarkForDeletion() => RegisterDomainEvent(new PetDeletedEvent(this));
 
   /// <summary>
   ///   Determines if a mood change is significant enough to send a notification.

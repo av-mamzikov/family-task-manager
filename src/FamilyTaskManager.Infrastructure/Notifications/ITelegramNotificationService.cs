@@ -21,5 +21,10 @@ public interface ITelegramNotificationService
   Task SendPetMoodChangedAsync(Guid familyId, string petName, int moodScore,
     CancellationToken cancellationToken = default);
 
+  Task SendPetCreatedAsync(Guid familyId, string petName, string petType,
+    CancellationToken cancellationToken = default);
+
+  Task SendPetDeletedAsync(Guid familyId, string petName, CancellationToken cancellationToken = default);
+
   Task SendMemberJoinedAsync(Guid familyId, string userName, CancellationToken cancellationToken = default);
 }
