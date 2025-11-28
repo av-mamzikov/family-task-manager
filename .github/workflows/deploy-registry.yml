@@ -402,34 +402,20 @@ jobs:
           script: |
             const prNumber = ${{ needs.setup.outputs.pr_number }};
             const imageTag = '${{ needs.setup.outputs.image_tag }}';
-            const botUsername = '${{ secrets[needs.setup.outputs.bot_username_secret] }}';
-            
             const comment = `## 🚀 PR Preview Environment Deployed
-            
-            Your changes have been deployed to a preview environment!
-            
+
+            Your changes for PR #${prNumber} have been deployed to a preview environment.
+
             **Environment Details:**
-            - 🤖 **Telegram Bot:** \`${botUsername}\`
-            - 🐳 **Container:** \`family-task-manager-pr-${prNumber}\`
-            - 🗄️ **Database:** \`FamilyTaskManager_PR_${prNumber}\`
             - 🏷️ **Image Tag:** \`${imageTag}\`
-            - 📦 **Registry:** \`localhost:5000/family-task-manager:${imageTag}\`
-            
+
             **How to test:**
-            1. Open Telegram
-            2. Find bot \`${botUsername}\`
-            3. Send \`/start\`
-            4. Test your changes
-            
-            **View logs:**
-            \`\`\`bash
-            ssh ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}
-            docker logs family-task-manager-pr-${prNumber} -f
-            \`\`\`
-            
-            **To update:** Push new commits to this PR
-            
-            **To cleanup:** Close this PR or run cleanup workflow manually
+            1. Open the configured preview environment for this PR.
+            2. Use your usual testing workflow to verify the changes.
+
+            **To update:** Push new commits to this PR.
+
+            **To cleanup:** Close this PR or run the cleanup workflow manually.
             `;
             
             await github.rest.issues.createComment({
