@@ -87,3 +87,8 @@ Family Task Manager помогает семьям организовать вы�
 ## 📄 Лицензия
 
 [Proprietary License](LICENSE) - Все права защищены
+
+## 👨‍💻 Автор
+
+- **Name**: Aleksandr Mamzikov
+- **Email**: av.mamzikov@gmail.com
