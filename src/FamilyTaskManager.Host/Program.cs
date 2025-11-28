@@ -20,32 +20,25 @@ var builder = WebApplication.CreateBuilder(args);
 // Add Aspire ServiceDefaults for monitoring, health checks, and service discovery
 builder.AddServiceDefaults();
 
-// Add Serilog
 builder.Services.AddSerilog();
 
-// Register services by layer (Clean Architecture)
 var loggerFactory = LoggerFactory.Create(b => b.AddSerilog());
 var logger = loggerFactory.CreateLogger("Startup");
 
+// Register services by layer (Clean Architecture)
 builder.Services
-  .AddCoreServices() // Domain layer
-  .AddUseCasesServices() // Application layer
-  .AddInfrastructureServices(builder.Configuration, logger); // Infrastructure layer
+  .AddCoreServices()
+  .AddUseCasesServices()
+  .AddInfrastructureServices(builder.Configuration, logger);
 
-// Register Mediator (must be in Host where SourceGenerator can scan all assemblies)
 builder.Services.AddMediator(options =>
 {
   options.ServiceLifetime = ServiceLifetime.Scoped;
-
-  // Explicitly specify assemblies to scan for handlers
-  // This ensures the generator only looks in the right places
   options.Assemblies =
   [
     typeof(CreateFamilyCommand).Assembly, // UseCases
     typeof(Family).Assembly // Core
   ];
-
-  // Make generated types internal to avoid conflicts with test projects
   options.Namespace = "FamilyTaskManager.Host.Generated";
   options.GenerateTypesAsInternal = true;
 });

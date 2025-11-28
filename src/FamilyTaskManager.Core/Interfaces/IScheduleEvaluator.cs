@@ -23,6 +23,6 @@ public interface IScheduleEvaluator
   /// <param name="windowEnd">End of the time window</param>
   /// <param name="timezoneId">Timezone identifier for schedule evaluation</param>
   /// <returns>True if the schedule triggers within the window, along with the trigger time</returns>
-  (bool shouldTrigger, DateTime? triggerTime) ShouldTriggerInWindow(string scheduleExpression, DateTime windowStart,
+  DateTime? ShouldTriggerInWindow(string scheduleExpression, DateTime windowStart,
     DateTime windowEnd, string timezoneId);
 }

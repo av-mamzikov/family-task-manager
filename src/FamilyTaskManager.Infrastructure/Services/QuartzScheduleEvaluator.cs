@@ -31,7 +31,7 @@ public class QuartzScheduleEvaluator : IScheduleEvaluator
     }
   }
 
-  public (bool shouldTrigger, DateTime? triggerTime) ShouldTriggerInWindow(string scheduleExpression,
+  public DateTime? ShouldTriggerInWindow(string scheduleExpression,
     DateTime windowStart, DateTime windowEnd, string? timezoneId = null)
   {
     try
@@ -39,31 +39,35 @@ public class QuartzScheduleEvaluator : IScheduleEvaluator
       var cronExpression = new CronExpression(scheduleExpression);
 
       // Set timezone if provided
+      TimeZoneInfo? timeZone = null;
       if (!string.IsNullOrWhiteSpace(timezoneId))
       {
-        cronExpression.TimeZone = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+        timeZone = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+        cronExpression.TimeZone = timeZone;
       }
 
-      // Get the next occurrence after the window start
-      var nextOccurrence = cronExpression.GetTimeAfter(new DateTimeOffset(windowStart));
+      // Convert windowStart to the target timezone for cron evaluation
+      var windowStartInTz = timeZone != null
+        ? TimeZoneInfo.ConvertTime(windowStart, timeZone)
+        : new DateTimeOffset(windowStart);
 
-      if (nextOccurrence.HasValue)
-      {
-        var occurrenceTime = nextOccurrence.Value.UtcDateTime;
+      // Get the next occurrence after the window start (in target timezone)
+      var nextOccurrence = cronExpression.GetTimeAfter(windowStartInTz);
 
-        // Check if the occurrence falls within our window
-        if (occurrenceTime > windowStart && occurrenceTime <= windowEnd)
-        {
-          return (true, occurrenceTime);
-        }
-      }
+      if (!nextOccurrence.HasValue)
+        return null;
 
-      return (false, null);
+      var occurrenceTime = nextOccurrence.Value.UtcDateTime;
+
+      // Check if the occurrence falls within our window (both in UTC)
+      if (occurrenceTime > windowStart && occurrenceTime <= windowEnd)
+        return occurrenceTime;
+
+      return null;
     }
     catch (Exception)
     {
-      // Invalid cron expression or other parsing error
-      return (false, null);
+      return null;
     }
   }
 }

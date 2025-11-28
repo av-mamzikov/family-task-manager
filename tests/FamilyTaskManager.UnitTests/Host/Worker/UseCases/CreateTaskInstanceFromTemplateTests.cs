@@ -1,4 +1,5 @@
 using Ardalis.Result;
+using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.UseCases.Tasks;
 using FamilyTaskManager.UseCases.Tasks.Specifications;
@@ -8,6 +9,7 @@ namespace FamilyTaskManager.UnitTests.Host.Worker.UseCases;
 public class CreateTaskInstanceFromTemplateTests
 {
   private readonly CreateTaskInstanceFromTemplateHandler _handler;
+  private readonly ITaskInstanceFactory _taskInstanceFactory;
   private readonly IRepository<TaskInstance> _taskRepository;
   private readonly IRepository<TaskTemplate> _templateRepository;
 
@@ -15,7 +17,8 @@ public class CreateTaskInstanceFromTemplateTests
   {
     _templateRepository = Substitute.For<IRepository<TaskTemplate>>();
     _taskRepository = Substitute.For<IRepository<TaskInstance>>();
-    _handler = new CreateTaskInstanceFromTemplateHandler(_templateRepository, _taskRepository);
+    _taskInstanceFactory = Substitute.For<ITaskInstanceFactory>();
+    _handler = new CreateTaskInstanceFromTemplateHandler(_templateRepository, _taskRepository, _taskInstanceFactory);
   }
 
   [Fact]
@@ -34,6 +37,13 @@ public class CreateTaskInstanceFromTemplateTests
 
     _taskRepository.ListAsync(Arg.Any<TaskInstancesByTemplateSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance>()); // No existing instances
+
+    var newInstance = new TaskInstance(
+      familyId, petId, "Test Task", 10,
+      TaskType.Recurring, dueAt, templateId);
+
+    _taskInstanceFactory.CreateFromTemplate(template, dueAt, Arg.Any<List<TaskInstance>>())
+      .Returns(Result.Success(newInstance));
 
     // Act
     var result = await _handler.Handle(
@@ -85,6 +95,12 @@ public class CreateTaskInstanceFromTemplateTests
     _templateRepository.GetByIdAsync(templateId, Arg.Any<CancellationToken>())
       .Returns(template);
 
+    _taskRepository.ListAsync(Arg.Any<TaskInstancesByTemplateSpec>(), Arg.Any<CancellationToken>())
+      .Returns(new List<TaskInstance>());
+
+    _taskInstanceFactory.CreateFromTemplate(template, Arg.Any<DateTime>(), Arg.Any<List<TaskInstance>>())
+      .Returns(Result.Error("Template is not active"));
+
     // Act
     var result = await _handler.Handle(
       new CreateTaskInstanceFromTemplateCommand(templateId, DateTime.UtcNow),
@@ -116,6 +132,9 @@ public class CreateTaskInstanceFromTemplateTests
 
     _taskRepository.ListAsync(Arg.Any<TaskInstancesByTemplateSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance> { existingInstance });
+
+    _taskInstanceFactory.CreateFromTemplate(template, Arg.Any<DateTime>(), Arg.Any<List<TaskInstance>>())
+      .Returns(Result.Error("Active TaskInstance already exists"));
 
     // Act
     var result = await _handler.Handle(
@@ -150,6 +169,13 @@ public class CreateTaskInstanceFromTemplateTests
     _taskRepository.ListAsync(Arg.Any<TaskInstancesByTemplateSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance> { completedInstance });
 
+    var newInstance = new TaskInstance(
+      familyId, petId, "Test Task", 10,
+      TaskType.Recurring, DateTime.UtcNow, templateId);
+
+    _taskInstanceFactory.CreateFromTemplate(template, Arg.Any<DateTime>(), Arg.Any<List<TaskInstance>>())
+      .Returns(Result.Success(newInstance));
+
     // Act
     var result = await _handler.Handle(
       new CreateTaskInstanceFromTemplateCommand(templateId, DateTime.UtcNow),
@@ -181,6 +207,9 @@ public class CreateTaskInstanceFromTemplateTests
 
     _taskRepository.ListAsync(Arg.Any<TaskInstancesByTemplateSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance> { inProgressInstance });
+
+    _taskInstanceFactory.CreateFromTemplate(template, Arg.Any<DateTime>(), Arg.Any<List<TaskInstance>>())
+      .Returns(Result.Error("Active TaskInstance already exists"));
 
     // Act
     var result = await _handler.Handle(

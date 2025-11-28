@@ -404,18 +404,7 @@ jobs:
             const imageTag = '${{ needs.setup.outputs.image_tag }}';
             const comment = `## 🚀 PR Preview Environment Deployed
 
-            Your changes for PR #${prNumber} have been deployed to a preview environment.
-
-            **Environment Details:**
-            - 🏷️ **Image Tag:** \`${imageTag}\`
-
-            **How to test:**
-            1. Open the configured preview environment for this PR.
-            2. Use your usual testing workflow to verify the changes.
-
-            **To update:** Push new commits to this PR.
-
-            **To cleanup:** Close this PR or run the cleanup workflow manually.
+            Your changes for PR #${prNumber} have been deployed to a preview environment, 🏷️ \`${imageTag}\`.
             `;
             
             await github.rest.issues.createComment({

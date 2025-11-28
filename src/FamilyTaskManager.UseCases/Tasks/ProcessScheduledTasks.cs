@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.Core.Services;
 using Microsoft.Extensions.Logging;
 
 namespace FamilyTaskManager.UseCases.Tasks;
@@ -17,7 +18,8 @@ public record ProcessScheduledTaskCommand(DateTime CheckFrom, DateTime CheckTo) 
 /// </summary>
 public class ProcessScheduledTasksHandler(
   IReadRepository<TaskTemplate> templateRepository,
-  IMediator mediator,
+  IRepository<TaskInstance> taskRepository,
+  ITaskInstanceFactory taskInstanceFactory,
   IScheduleEvaluator scheduleEvaluator,
   ILogger<ProcessScheduledTasksHandler> logger)
   : ICommandHandler<ProcessScheduledTaskCommand, Result<int>>
@@ -26,11 +28,14 @@ public class ProcessScheduledTasksHandler(
   {
     try
     {
-      // Get all active task templates with projection to DTO (SQL-level SELECT)
       var spec = new ActiveTaskTemplatesWithTimeZoneSpec();
-      var templates = await templateRepository.ListAsync(spec, cancellationToken);
+      var templateDtos = await templateRepository.ListAsync(spec, cancellationToken);
 
-      logger.LogInformation("Found {Count} active task templates to evaluate", templates.Count);
+      logger.LogInformation("Found {Count} active task templates to evaluate", templateDtos.Count);
+
+      // Load full TaskTemplate entities for the domain service
+      var templateIds = templateDtos.Select(t => t.Id).ToList();
+      var templates = await templateRepository.ListAsync(new TaskTemplatesByIdsSpec(templateIds), cancellationToken);
 
       var createdCount = 0;
 
@@ -38,31 +43,37 @@ public class ProcessScheduledTasksHandler(
       {
         try
         {
-          var (shouldTrigger, triggerTime) = scheduleEvaluator.ShouldTriggerInWindow(
-            template.Schedule, request.CheckFrom, request.CheckTo, template.timeZone);
-          if (!shouldTrigger || !triggerTime.HasValue)
-          {
+          var triggerTime = scheduleEvaluator.ShouldTriggerInWindow(
+            template.Schedule, request.CheckFrom, request.CheckTo, template.Family.Timezone);
+          if (!triggerTime.HasValue)
             continue;
-          }
 
           logger.LogInformation(
             "Creating TaskInstance for template {TemplateId} ({Title}), due at {DueAt} (family timezone: {Timezone})",
-            template.Id, template.Title, triggerTime.Value, template.timeZone);
-          var createResult = await mediator.Send(
-            new CreateTaskInstanceFromTemplateCommand(template.Id, triggerTime.Value),
-            cancellationToken);
+            template.Id, template.Title, triggerTime.Value, template.Family.Timezone);
+
+          // Get existing instances for this template
+          var existingSpec = new TaskInstancesByTemplateSpec(template.Id);
+          var existingInstances = await taskRepository.ListAsync(existingSpec, cancellationToken);
+
+          // Create task instance using domain service
+          var createResult = taskInstanceFactory.CreateFromTemplate(template, triggerTime.Value, existingInstances);
+
           if (createResult.IsSuccess)
           {
+            await taskRepository.AddAsync(createResult.Value, cancellationToken);
+            await taskRepository.SaveChangesAsync(cancellationToken);
+
             createdCount++;
             logger.LogInformation(
               "Successfully created TaskInstance {InstanceId} from template {TemplateId}",
-              createResult.Value, template.Id);
+              createResult.Value.Id, template.Id);
           }
           else
           {
             // This is expected if there's already an active instance
             logger.LogDebug(
-              "Could not create TaskInstance for template {TemplateId}: {Error}",
+              "Could not create TaskInstance for template {TemplateId}: {Error} because it is already active",
               template.Id, string.Join(", ", createResult.Errors));
           }
         }

@@ -1,6 +1,15 @@
+using System.Linq.Expressions;
+
 namespace FamilyTaskManager.UseCases.Tasks.Specifications;
 
-public record TaskTemplateDto(Guid Id, Guid FamilyId, string Title, string Schedule, string timeZone);
+public record TaskTemplateDto(Guid Id, Guid FamilyId, string Title, string Schedule, string timeZone)
+{
+  public static class Projections
+  {
+    public static readonly Expression<Func<TaskTemplate, TaskTemplateDto>> FromTaskTemplate =
+      t => new TaskTemplateDto(t.Id, t.FamilyId, t.Title, t.Schedule, t.Family.Timezone);
+  }
+}
 
 /// <summary>
 ///   Specification to get active task templates with projection to DTO for SQL-level SELECT.
@@ -11,6 +20,6 @@ public class ActiveTaskTemplatesWithTimeZoneSpec : Specification<TaskTemplate, T
   {
     Query
       .Where(t => t.IsActive)
-      .Select(t => new TaskTemplateDto(t.Id, t.FamilyId, t.Title, t.Schedule, t.Family.Timezone));
+      .Select(TaskTemplateDto.Projections.FromTaskTemplate);
   }
 }
