@@ -203,7 +203,7 @@ public class PetCallbackHandler(
 
     var keyboard = new InlineKeyboardMarkup(new[]
     {
-      new[] { InlineKeyboardButton.WithCallbackData("📋 Шаблоны задач", $"template_viewpet_{petId}") },
+      new[] { InlineKeyboardButton.WithCallbackData("📋 Шаблоны задач", $"tpl_vp_{petId}") },
       new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад к списку", "pet_back") }
     });
 

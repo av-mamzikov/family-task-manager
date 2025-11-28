@@ -52,7 +52,7 @@ public class CallbackRouter(
         fromUser, cancellationToken),
       "timezone" => timezoneCallbackHandler.HandleTimezoneSelectionAsync(botClient, chatId, messageId, parts, session,
         cancellationToken),
-      "template" => templateCallbackHandler.HandleTemplateActionAsync(botClient, chatId, messageId, parts, session,
+      "tpl" => templateCallbackHandler.HandleTemplateActionAsync(botClient, chatId, messageId, parts, session,
         fromUser, cancellationToken),
       "confirm" => HandleConfirmActionAsync(botClient, chatId, messageId, parts, session, fromUser, cancellationToken),
       "cancel" => HandleCancelActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),

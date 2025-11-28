@@ -180,13 +180,13 @@ public class TemplateEditHandler(
     string dueDurationText,
     CancellationToken cancellationToken)
   {
-    if (!int.TryParse(dueDurationText, out var dueDurationHours) || dueDurationHours < 0 || dueDurationHours > 8760)
+    if (!int.TryParse(dueDurationText, out var dueDurationHours) || dueDurationHours < 0 || dueDurationHours > 24)
     {
       var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditDueDuration);
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
-        "❌ Срок выполнения должен быть числом от 0 до 8760 часов. Попробуйте снова:",
+        "❌ Срок выполнения должен быть числом от 0 до 24 часов. Попробуйте снова:",
         StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditDueDuration),
         keyboard,
         cancellationToken);

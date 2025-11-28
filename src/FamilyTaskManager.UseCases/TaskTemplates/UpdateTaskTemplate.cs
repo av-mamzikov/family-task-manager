@@ -57,8 +57,8 @@ public class UpdateTaskTemplateHandler(IRepository<TaskTemplate> templateReposit
     var newDueDuration = command.DueDuration ?? template.DueDuration;
 
     // Validate dueDuration
-    if (newDueDuration < TimeSpan.Zero || newDueDuration > TimeSpan.FromHours(8760))
-      return Result.Invalid(new ValidationError("Срок выполнения должен быть в диапазоне от 0 до 8760 часов"));
+    if (newDueDuration < TimeSpan.Zero || newDueDuration > TimeSpan.FromHours(24))
+      return Result.Invalid(new ValidationError("Срок выполнения должен быть в диапазоне от 0 до 24 часов"));
 
     template.Update(newTitle, newPoints, newSchedule, newDueDuration);
     await templateRepository.UpdateAsync(template, cancellationToken);

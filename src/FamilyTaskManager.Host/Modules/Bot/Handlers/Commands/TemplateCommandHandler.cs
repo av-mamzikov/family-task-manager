@@ -44,10 +44,10 @@ public class TemplateCommandHandler(IMediator mediator)
     var buttons = petsResult.Value.Select(p =>
     {
       var petEmoji = GetPetEmoji(p.Type);
-      return new[] { InlineKeyboardButton.WithCallbackData($"{petEmoji} {p.Name}", $"template_viewpet_{p.Id}") };
+      return new[] { InlineKeyboardButton.WithCallbackData($"{petEmoji} {p.Name}", $"tpl_vp_{p.Id}") };
     }).ToList();
 
-    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", "template_create") });
+    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", "tpl_c") });
 
     var keyboard = new InlineKeyboardMarkup(buttons);
 
@@ -103,8 +103,8 @@ public class TemplateCommandHandler(IMediator mediator)
         ParseMode.Markdown,
         replyMarkup: new InlineKeyboardMarkup(new[]
         {
-          new[] { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", $"template_createfor_{petId}") },
-          new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", "template_back") }
+          new[] { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", $"tpl_cf_{petId}") },
+          new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", "tpl_b") }
         }),
         cancellationToken: cancellationToken);
       return;
@@ -122,11 +122,11 @@ public class TemplateCommandHandler(IMediator mediator)
 
     // Build buttons for each template
     var buttons = templates.Select(t =>
-      new[] { InlineKeyboardButton.WithCallbackData($"✏️ {t.Title}", $"template_view_{t.Id}") }
+      new[] { InlineKeyboardButton.WithCallbackData($"✏️ {t.Title}", $"tpl_v_{t.Id}") }
     ).ToList();
 
-    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", $"template_createfor_{petId}") });
-    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", "template_back") });
+    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", $"tpl_cf_{petId}") });
+    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", "tpl_b") });
 
     var keyboard = new InlineKeyboardMarkup(buttons);
 
@@ -177,14 +177,15 @@ public class TemplateCommandHandler(IMediator mediator)
                       $"🐾 Питомец: {template.PetName}\n" +
                       $"💯 Очки: {template.Points}\n" +
                       $"🔄 Расписание: `{template.Schedule}`\n" +
+                      $"🔄 Срок выполнения: `{template.DueDuration}`\n" +
                       $"📅 Создан: {template.CreatedAt:dd.MM.yyyy}\n" +
                       $"✅ Активен: {(template.IsActive ? "Да" : "Нет")}";
 
     var keyboard = new InlineKeyboardMarkup(new[]
     {
-      new[] { InlineKeyboardButton.WithCallbackData("✏️ Редактировать", $"template_edit_{templateId}") },
-      new[] { InlineKeyboardButton.WithCallbackData("🗑️ Удалить", $"template_delete_{templateId}") },
-      new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", $"template_viewpet_{template.PetId}") }
+      new[] { InlineKeyboardButton.WithCallbackData("✏️ Редактировать", $"tpl_e_{templateId}") },
+      new[] { InlineKeyboardButton.WithCallbackData("🗑️ Удалить", $"tpl_d_{templateId}") },
+      new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", $"tpl_vp_{template.PetId}") }
     });
 
     await botClient.EditMessageTextAsync(
@@ -216,8 +217,8 @@ public class TemplateCommandHandler(IMediator mediator)
     // Show confirmation
     var keyboard = new InlineKeyboardMarkup(new[]
     {
-      new[] { InlineKeyboardButton.WithCallbackData("✅ Да, удалить", $"template_confirmdelete_{templateId}") },
-      new[] { InlineKeyboardButton.WithCallbackData("❌ Отмена", $"template_view_{templateId}") }
+      new[] { InlineKeyboardButton.WithCallbackData("✅ Да, удалить", $"tpl_cd_{templateId}") },
+      new[] { InlineKeyboardButton.WithCallbackData("❌ Отмена", $"tpl_v_{templateId}") }
     });
 
     await botClient.EditMessageTextAsync(
@@ -305,14 +306,14 @@ public class TemplateCommandHandler(IMediator mediator)
 
     var keyboard = new InlineKeyboardMarkup(new[]
     {
-      new[] { InlineKeyboardButton.WithCallbackData("✏️ Название", $"template_editfield_{templateId}_title") },
-      new[] { InlineKeyboardButton.WithCallbackData("💯 Очки", $"template_editfield_{templateId}_points") },
-      new[] { InlineKeyboardButton.WithCallbackData("🔄 Расписание", $"template_editfield_{templateId}_schedule") },
+      new[] { InlineKeyboardButton.WithCallbackData("✏️ Название", $"tpl_ef_{templateId}_t") },
+      new[] { InlineKeyboardButton.WithCallbackData("💯 Очки", $"tpl_ef_{templateId}_p") },
+      new[] { InlineKeyboardButton.WithCallbackData("🔄 Расписание", $"tpl_ef_{templateId}_s") },
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("⏰ Срок выполнения", $"template_editfield_{templateId}_dueduration")
+        InlineKeyboardButton.WithCallbackData("⏰ Срок выполнения", $"tpl_ef_{templateId}_d")
       },
-      new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", $"template_view_{templateId}") }
+      new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", $"tpl_v_{templateId}") }
     });
 
     await botClient.EditMessageTextAsync(

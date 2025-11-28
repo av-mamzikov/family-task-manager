@@ -1,5 +1,4 @@
 using FamilyTaskManager.Core.FamilyAggregate;
-using FamilyTaskManager.Host.Modules.Bot.Configuration;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
@@ -15,7 +14,7 @@ public class FamilyCallbackHandler(
   ILogger<FamilyCallbackHandler> logger,
   IMediator mediator,
   IUserRegistrationService userRegistrationService,
-  BotConfiguration botConfiguration,
+  BotInfoService botInfoService,
   FamilyMembersHandler familyMembersHandler,
   FamilyMembersCallbackHandler familyMembersCallbackHandler)
   : BaseCallbackHandler(logger, mediator, userRegistrationService)
@@ -185,7 +184,13 @@ public class FamilyCallbackHandler(
     }
 
     var inviteCode = result.Value;
-    var botUsername = botConfiguration.BotUsername;
+
+    if (!botInfoService.IsInitialized || string.IsNullOrEmpty(botInfoService.Username))
+    {
+      throw new InvalidOperationException("Bot username is not available. Please ensure the bot is fully started.");
+    }
+
+    var botUsername = botInfoService.Username;
     var inviteLink = $"https://t.me/{botUsername}?start=invite_{inviteCode}";
 
     var roleText = BotConstants.Roles.GetRoleText(role);

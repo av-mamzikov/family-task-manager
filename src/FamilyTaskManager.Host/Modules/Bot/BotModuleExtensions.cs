@@ -35,6 +35,7 @@ public static class BotModuleExtensions
     });
 
     // Bot Services
+    services.AddSingleton<BotInfoService>();
     services.AddSingleton<ISessionManager, SessionManager>();
     services.AddScoped<IUserRegistrationService, UserRegistrationService>();
 

@@ -10,26 +10,42 @@ namespace FamilyTaskManager.Host.Modules.Bot.Services;
 public class TelegramBotHostedService(
   ITelegramBotClient botClient,
   IServiceScopeFactory scopeFactory,
+  BotInfoService botInfoService,
   ILogger<TelegramBotHostedService> logger)
   : BackgroundService
 {
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
-    var me = await botClient.GetMeAsync(stoppingToken);
-    logger.LogInformation("Bot Module started: @{Username}", me.Username);
-
-    var receiverOptions = new ReceiverOptions
+    while (true)
     {
-      AllowedUpdates = [],
-      ThrowPendingUpdates = true
-    };
+      try
+      {
+        logger.LogInformation("Starting bot module...");
+        var me = await botClient.GetMeAsync(stoppingToken);
 
-    logger.LogInformation("TelegramBotHostedService: calling {client}.ReceiveAsync", botClient);
+        if (string.IsNullOrEmpty(me.Username))
+          throw new InvalidOperationException("Failed to get bot username from Telegram API.");
 
-    await botClient.ReceiveAsync(
-      new ScopedUpdateHandler(scopeFactory),
-      receiverOptions,
-      stoppingToken);
+        botInfoService.SetBotInfo(me.Username);
+        logger.LogInformation("Bot Module started: @{Username}", me.Username);
+
+        var receiverOptions = new ReceiverOptions
+        {
+          AllowedUpdates = [],
+          ThrowPendingUpdates = true
+        };
+
+        await botClient.ReceiveAsync(
+          new ScopedUpdateHandler(scopeFactory),
+          receiverOptions,
+          stoppingToken);
+      }
+      catch (Exception ex)
+      {
+        logger.LogCritical(ex, "Ошибка связи с телеграм-ботом");
+        await Task.Delay(5000, stoppingToken);
+      }
+    }
   }
 
   public override async Task StopAsync(CancellationToken cancellationToken)

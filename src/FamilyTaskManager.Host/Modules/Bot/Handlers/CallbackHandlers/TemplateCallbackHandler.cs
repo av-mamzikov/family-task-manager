@@ -35,46 +35,54 @@ public class TemplateCallbackHandler(
 
     switch (templateAction)
     {
-      case "viewpet" when parts.Length >= 3 && Guid.TryParse(parts[2], out var petId):
+      case "vp" when parts.Length >= 3 && Guid.TryParse(parts[2], out var petId):
         await templateCommandHandler.HandleViewPetTemplatesAsync(botClient, chatId, messageId, petId, session,
           cancellationToken);
         break;
 
-      case "view" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
+      case "v" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
         await templateCommandHandler.HandleViewTemplateAsync(botClient, chatId, messageId, templateId, session,
           cancellationToken);
         break;
 
-      case "delete" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
+      case "d" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
         await templateCommandHandler.HandleDeleteTemplateAsync(botClient, chatId, messageId, templateId, session,
           cancellationToken);
         break;
 
-      case "confirmdelete" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
+      case "cd" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
         await templateCommandHandler.HandleConfirmDeleteTemplateAsync(botClient, chatId, messageId, templateId,
           session, cancellationToken);
         break;
 
-      case "edit" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
+      case "e" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
         await templateCommandHandler.HandleEditTemplateAsync(botClient, chatId, messageId, templateId, session,
           cancellationToken);
         break;
 
-      case "editfield" when parts.Length >= 4 && Guid.TryParse(parts[2], out var templateId):
-        await HandleTemplateEditFieldAsync(botClient, chatId, messageId, templateId, parts[3], session,
+      case "ef" when parts.Length >= 4 && Guid.TryParse(parts[2], out var templateId):
+        var fieldMap = new Dictionary<string, string>
+        {
+          { "t", "title" },
+          { "p", "points" },
+          { "s", "schedule" },
+          { "d", "dueduration" }
+        };
+        var fieldName = fieldMap.GetValueOrDefault(parts[3], "title");
+        await HandleTemplateEditFieldAsync(botClient, chatId, messageId, templateId, fieldName, session,
           cancellationToken);
         break;
 
-      case "create":
+      case "c":
         await HandleTemplateCreateAsync(botClient, chatId, messageId, session, fromUser, cancellationToken);
         break;
 
-      case "createfor" when parts.Length >= 3 && Guid.TryParse(parts[2], out var petId):
+      case "cf" when parts.Length >= 3 && Guid.TryParse(parts[2], out var petId):
         await HandleTemplateCreateForPetAsync(botClient, chatId, messageId, petId, session, fromUser,
           cancellationToken);
         break;
 
-      case "back":
+      case "b":
         // Re-show templates menu
         var userId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
         if (userId != null)
@@ -145,7 +153,7 @@ public class TemplateCallbackHandler(
         await botClient.EditMessageTextAsync(
           chatId,
           messageId,
-          "⏰ Введите новый срок выполнения в часах (от 0 до 8760):",
+          "⏰ Введите новый срок выполнения в часах (от 0 до 24):",
           cancellationToken: cancellationToken);
         break;
 
@@ -189,7 +197,7 @@ public class TemplateCallbackHandler(
         PetType.Hamster => "🐹",
         _ => "🐾"
       };
-      return new[] { InlineKeyboardButton.WithCallbackData($"{petEmoji} {p.Name}", $"template_createfor_{p.Id}") };
+      return new[] { InlineKeyboardButton.WithCallbackData($"{petEmoji} {p.Name}", $"tpl_cf_{p.Id}") };
     }).ToArray();
 
     var keyboard = new InlineKeyboardMarkup(buttons);
