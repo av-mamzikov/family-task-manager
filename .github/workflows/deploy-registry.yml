@@ -51,6 +51,7 @@ jobs:
       bot_username_secret: ${{ steps.env.outputs.bot_username_secret }}
       postgres_user_secret: ${{ steps.env.outputs.postgres_user_secret }}
       postgres_password_secret: ${{ steps.env.outputs.postgres_password_secret }}
+      clean_db: ${{ steps.labels.outputs.clean_db }}
     
     steps:
       - name: Determine environment
@@ -100,6 +101,18 @@ jobs:
             echo "postgres_user_secret=PR_POSTGRES_USER" >> $GITHUB_OUTPUT
             echo "postgres_password_secret=PR_POSTGRES_PASSWORD" >> $GITHUB_OUTPUT
           fi
+
+      - name: Check clean-db label (for PR preview)
+        id: labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            let cleanDb = false;
+            if (context.eventName === 'pull_request') {
+              const labels = context.payload.pull_request.labels || [];
+              cleanDb = labels.some(l => l.name === 'clean-db');
+            }
+            core.setOutput('clean_db', cleanDb ? 'true' : 'false');
 
   build-and-push:
     name: Build and Push to Registry
@@ -225,6 +238,7 @@ jobs:
           IS_PRODUCTION: ${{ needs.setup.outputs.is_production }}
           IS_PR_PREVIEW: ${{ needs.setup.outputs.is_pr_preview }}
           PR_NUMBER: ${{ needs.setup.outputs.pr_number }}
+          CLEAN_DB: ${{ needs.setup.outputs.clean_db }}
           BOT_TOKEN: ${{ secrets[needs.setup.outputs.bot_token_secret] }}
           BOT_USERNAME: ${{ secrets[needs.setup.outputs.bot_username_secret] }}
           POSTGRES_USER: ${{ secrets[needs.setup.outputs.postgres_user_secret] }}
@@ -237,7 +251,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: DEPLOY_DIR,IMAGE_TAG,IS_PRODUCTION,IS_PR_PREVIEW,PR_NUMBER,BOT_TOKEN,BOT_USERNAME,POSTGRES_USER,POSTGRES_PASSWORD,REGISTRY_USER,REGISTRY_PASS,DOCKERHUB_USER,DOCKERHUB_PASS
+          envs: DEPLOY_DIR,IMAGE_TAG,IS_PRODUCTION,IS_PR_PREVIEW,PR_NUMBER,CLEAN_DB,BOT_TOKEN,BOT_USERNAME,POSTGRES_USER,POSTGRES_PASSWORD,REGISTRY_USER,REGISTRY_PASS,DOCKERHUB_USER,DOCKERHUB_PASS
           script: |
             echo "=== Starting deployment ==="
             echo "Environment: $([ "$IS_PRODUCTION" == "true" ] && echo "Production" || echo "PR Preview #$PR_NUMBER")"
@@ -264,9 +278,10 @@ jobs:
             echo "$REGISTRY_PASS" | docker login localhost:5000 -u "$REGISTRY_USER" --password-stdin
             echo "✓ Logged in to registry"
             
-            # Для PR preview: остановить и очистить старое окружение
-            if [ "$IS_PR_PREVIEW" == "true" ]; then
-              echo "Cleaning up old PR preview environment..."
+            # Для PR preview: по умолчанию сохраняем старую БД и окружение.
+            # Полный cleanup (контейнеры, volumes, сети) выполняем только если PR имеет label clean-db.
+            if [ "$IS_PR_PREVIEW" == "true" ] && [ "$CLEAN_DB" == "true" ]; then
+              echo "Cleaning up old PR preview environment (clean-db label is set)..."
             
               # Остановить и удалить старые контейнеры preview
               docker ps -a --filter "name=family-task-manager-pr-" --format "{{.Names}}" | xargs -r docker stop
@@ -281,6 +296,10 @@ jobs:
               docker network ls --filter "name=family-task-network-pr-" --format "{{.Name}}" | xargs -r docker network rm || true
             
               echo "✓ Old PR preview cleaned up"
+            else
+              if [ "$IS_PR_PREVIEW" == "true" ]; then
+                echo "Skipping PR preview cleanup to preserve existing database (no clean-db label)"
+              fi
             fi
             
             # Переход в директорию деплоя
