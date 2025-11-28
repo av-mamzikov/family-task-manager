@@ -42,7 +42,7 @@ public class TemplateEditHandler(
       return;
     }
 
-    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, title, null, null);
+    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, title, null, null, null);
     var result = await Mediator.Send(updateCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -96,7 +96,7 @@ public class TemplateEditHandler(
       return;
     }
 
-    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, points, null);
+    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, points, null, null);
     var result = await Mediator.Send(updateCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -150,7 +150,7 @@ public class TemplateEditHandler(
       return;
     }
 
-    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, null, schedule);
+    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, null, schedule, null);
     var result = await Mediator.Send(updateCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -161,6 +161,61 @@ public class TemplateEditHandler(
         session,
         $"❌ Ошибка обновления: {result.Errors.FirstOrDefault()}\n\n" +
         BotConstants.Errors.InvalidCron,
+        cancellationToken);
+      return;
+    }
+
+    session.ClearState();
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      BotConstants.Templates.TemplateUpdated,
+      replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
+      cancellationToken: cancellationToken);
+  }
+
+  public async Task HandleTemplateEditDueDurationInputAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    string dueDurationText,
+    CancellationToken cancellationToken)
+  {
+    if (!int.TryParse(dueDurationText, out var dueDurationHours) || dueDurationHours < 0 || dueDurationHours > 8760)
+    {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditDueDuration);
+      await SendValidationErrorAsync(
+        botClient,
+        message.Chat.Id,
+        "❌ Срок выполнения должен быть числом от 0 до 8760 часов. Попробуйте снова:",
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditDueDuration),
+        keyboard,
+        cancellationToken);
+      return;
+    }
+
+    if (!TryGetSessionData<Guid>(session, "templateId", out var templateId) ||
+        !TryGetSessionData<Guid>(session, "familyId", out var familyId))
+    {
+      await SendErrorAndClearStateAsync(
+        botClient,
+        message.Chat.Id,
+        session,
+        "❌ Ошибка. Попробуйте снова.",
+        cancellationToken);
+      return;
+    }
+
+    var dueDuration = TimeSpan.FromHours(dueDurationHours);
+    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, null, null, dueDuration);
+    var result = await Mediator.Send(updateCommand, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      await SendErrorAndClearStateAsync(
+        botClient,
+        message.Chat.Id,
+        session,
+        $"❌ Ошибка обновления: {result.Errors.FirstOrDefault()}",
         cancellationToken);
       return;
     }

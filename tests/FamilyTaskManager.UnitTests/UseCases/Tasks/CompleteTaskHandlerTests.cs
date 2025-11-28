@@ -1,5 +1,7 @@
 using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.UseCases.Families.Specifications;
 using FamilyTaskManager.UseCases.Tasks;
@@ -11,13 +13,17 @@ public class CompleteTaskHandlerTests
 {
   private readonly IRepository<Family> _familyRepository;
   private readonly CompleteTaskHandler _handler;
+  private readonly IPetMoodCalculator _moodCalculator;
+  private readonly IRepository<Pet> _petRepository;
   private readonly IRepository<TaskInstance> _taskRepository;
 
   public CompleteTaskHandlerTests()
   {
     _taskRepository = Substitute.For<IRepository<TaskInstance>>();
     _familyRepository = Substitute.For<IRepository<Family>>();
-    _handler = new CompleteTaskHandler(_taskRepository, _familyRepository);
+    _petRepository = Substitute.For<IRepository<Pet>>();
+    _moodCalculator = Substitute.For<IPetMoodCalculator>();
+    _handler = new CompleteTaskHandler(_taskRepository, _familyRepository, _petRepository, _moodCalculator);
   }
 
   [Fact]

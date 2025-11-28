@@ -16,7 +16,7 @@ public class TaskTemplateTests
     var createdBy = Guid.NewGuid();
 
     // Act
-    var template = new TaskTemplate(familyId, petId, title, points, schedule, createdBy);
+    var template = new TaskTemplate(familyId, petId, title, points, schedule, TimeSpan.FromHours(12), createdBy);
 
     // Assert
     template.FamilyId.ShouldBe(familyId);
@@ -41,7 +41,7 @@ public class TaskTemplateTests
     var createdBy = Guid.NewGuid();
 
     // Act
-    var template = new TaskTemplate(familyId, petId, title, points, schedule, createdBy);
+    var template = new TaskTemplate(familyId, petId, title, points, schedule, TimeSpan.FromHours(12), createdBy);
 
     // Assert
     template.Title.ShouldBe("Feed the pet");
@@ -61,7 +61,7 @@ public class TaskTemplateTests
 
     // Act & Assert
     Should.Throw<ArgumentException>(() =>
-      new TaskTemplate(familyId, petId, title, points, schedule, createdBy));
+      new TaskTemplate(familyId, petId, title, points, schedule, TimeSpan.FromHours(12), createdBy));
   }
 
   [Fact]
@@ -77,7 +77,7 @@ public class TaskTemplateTests
 
     // Act & Assert
     Should.Throw<ArgumentException>(() =>
-      new TaskTemplate(familyId, petId, title, points, schedule, createdBy));
+      new TaskTemplate(familyId, petId, title, points, schedule, TimeSpan.FromHours(12), createdBy));
   }
 
   [Fact]
@@ -93,7 +93,7 @@ public class TaskTemplateTests
 
     // Act & Assert
     Should.Throw<ArgumentException>(() =>
-      new TaskTemplate(familyId, petId, title, points, schedule, createdBy));
+      new TaskTemplate(familyId, petId, title, points, schedule, TimeSpan.FromHours(12), createdBy));
   }
 
   [Theory]
@@ -111,7 +111,7 @@ public class TaskTemplateTests
 
     // Act & Assert
     Should.Throw<ArgumentException>(() =>
-      new TaskTemplate(familyId, petId, invalidTitle!, points, schedule, createdBy));
+      new TaskTemplate(familyId, petId, invalidTitle!, points, schedule, TimeSpan.FromHours(12), createdBy));
   }
 
   [Theory]
@@ -130,7 +130,7 @@ public class TaskTemplateTests
 
     // Act & Assert
     Should.Throw<ArgumentException>(() =>
-      new TaskTemplate(familyId, petId, title, invalidPoints, schedule, createdBy));
+      new TaskTemplate(familyId, petId, title, invalidPoints, schedule, TimeSpan.FromHours(12), createdBy));
   }
 
   [Theory]
@@ -147,7 +147,7 @@ public class TaskTemplateTests
     var createdBy = Guid.NewGuid();
 
     // Act
-    var template = new TaskTemplate(familyId, petId, title, validPoints, schedule, createdBy);
+    var template = new TaskTemplate(familyId, petId, title, validPoints, schedule, TimeSpan.FromHours(12), createdBy);
 
     // Assert
     template.Points.ShouldBe(validPoints);
@@ -168,7 +168,7 @@ public class TaskTemplateTests
 
     // Act & Assert
     Should.Throw<ArgumentException>(() =>
-      new TaskTemplate(familyId, petId, title, points, invalidSchedule!, createdBy));
+      new TaskTemplate(familyId, petId, title, points, invalidSchedule!, TimeSpan.FromHours(12), createdBy));
   }
 
   [Fact]
@@ -176,13 +176,13 @@ public class TaskTemplateTests
   {
     // Arrange
     var template = new TaskTemplate(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, "0 0 9 * * ?", Guid.NewGuid());
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, "0 0 9 * * ?", TimeSpan.FromHours(12), Guid.NewGuid());
     var newTitle = "Walk the dog";
     var newPoints = 20;
     var newSchedule = "0 0 18 * * ?";
 
     // Act
-    template.Update(newTitle, newPoints, newSchedule);
+    template.Update(newTitle, newPoints, newSchedule, TimeSpan.FromHours(12));
 
     // Assert
     template.Title.ShouldBe(newTitle);
@@ -195,13 +195,13 @@ public class TaskTemplateTests
   {
     // Arrange
     var template = new TaskTemplate(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, "0 0 9 * * ?", Guid.NewGuid());
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, "0 0 9 * * ?", TimeSpan.FromHours(12), Guid.NewGuid());
     var newTitle = "  Walk the dog  ";
     var newPoints = 20;
     var newSchedule = "  0 0 18 * * ?  ";
 
     // Act
-    template.Update(newTitle, newPoints, newSchedule);
+    template.Update(newTitle, newPoints, newSchedule, TimeSpan.FromHours(12));
 
     // Assert
     template.Title.ShouldBe("Walk the dog");
@@ -216,10 +216,10 @@ public class TaskTemplateTests
   {
     // Arrange
     var template = new TaskTemplate(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, "0 0 9 * * ?", Guid.NewGuid());
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, "0 0 9 * * ?", TimeSpan.FromHours(12), Guid.NewGuid());
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => template.Update(invalidTitle!, 20, "0 0 18 * * ?"));
+    Should.Throw<ArgumentException>(() => template.Update(invalidTitle!, 20, "0 0 18 * * ?", TimeSpan.FromHours(12)));
   }
 
   [Theory]
@@ -230,10 +230,11 @@ public class TaskTemplateTests
   {
     // Arrange
     var template = new TaskTemplate(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, "0 0 9 * * ?", Guid.NewGuid());
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, "0 0 9 * * ?", TimeSpan.FromHours(12), Guid.NewGuid());
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => template.Update("Walk the dog", invalidPoints, "0 0 18 * * ?"));
+    Should.Throw<ArgumentException>(() =>
+      template.Update("Walk the dog", invalidPoints, "0 0 18 * * ?", TimeSpan.FromHours(12)));
   }
 
   [Theory]
@@ -244,10 +245,11 @@ public class TaskTemplateTests
   {
     // Arrange
     var template = new TaskTemplate(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, "0 0 9 * * ?", Guid.NewGuid());
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, "0 0 9 * * ?", TimeSpan.FromHours(12), Guid.NewGuid());
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => template.Update("Walk the dog", 20, invalidSchedule!));
+    Should.Throw<ArgumentException>(() =>
+      template.Update("Walk the dog", 20, invalidSchedule!, TimeSpan.FromHours(12)));
   }
 
   [Fact]
@@ -255,7 +257,7 @@ public class TaskTemplateTests
   {
     // Arrange
     var template = new TaskTemplate(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, "0 0 9 * * ?", Guid.NewGuid());
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, "0 0 9 * * ?", TimeSpan.FromHours(12), Guid.NewGuid());
     template.IsActive.ShouldBeTrue();
 
     // Act
@@ -270,7 +272,7 @@ public class TaskTemplateTests
   {
     // Arrange
     var template = new TaskTemplate(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, "0 0 9 * * ?", Guid.NewGuid());
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, "0 0 9 * * ?", TimeSpan.FromHours(12), Guid.NewGuid());
 
     // Act
     template.Deactivate();
@@ -290,7 +292,7 @@ public class TaskTemplateTests
     var points = 10;
     var schedule = "0 0 9 * * ?";
     var createdBy = Guid.NewGuid();
-    var template = new TaskTemplate(familyId, petId, title, points, schedule, createdBy);
+    var template = new TaskTemplate(familyId, petId, title, points, schedule, TimeSpan.FromHours(12), createdBy);
 
     // Act
     template.Deactivate();

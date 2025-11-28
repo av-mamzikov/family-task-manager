@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.Core.Services;
 
 namespace FamilyTaskManager.UseCases.Tasks;
 
@@ -19,7 +20,8 @@ public class CreateTaskHandler(
   IRepository<TaskInstance> taskRepository,
   IRepository<Pet> petRepository,
   IRepository<Family> familyRepository,
-  ITimeZoneService timeZoneService) : ICommandHandler<CreateTaskCommand, Result<Guid>>
+  ITimeZoneService timeZoneService,
+  IPetMoodCalculator moodCalculator) : ICommandHandler<CreateTaskCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreateTaskCommand command, CancellationToken cancellationToken)
   {
@@ -75,6 +77,12 @@ public class CreateTaskHandler(
       dueAtUtc);
 
     await taskRepository.AddAsync(task, cancellationToken);
+    await taskRepository.SaveChangesAsync(cancellationToken);
+
+    // Trigger immediate mood recalculation for the pet
+    var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(command.PetId, cancellationToken);
+    pet.UpdateMoodScore(newMoodScore);
+    await petRepository.SaveChangesAsync(cancellationToken);
 
     return Result<Guid>.Success(task.Id);
   }

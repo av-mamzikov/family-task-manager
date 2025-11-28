@@ -140,6 +140,15 @@ public class TemplateCallbackHandler(
           cancellationToken: cancellationToken);
         break;
 
+      case "dueduration":
+        session.State = ConversationState.AwaitingTemplateEditDueDuration;
+        await botClient.EditMessageTextAsync(
+          chatId,
+          messageId,
+          "⏰ Введите новый срок выполнения в часах (от 0 до 8760):",
+          cancellationToken: cancellationToken);
+        break;
+
       default:
         await SendErrorAsync(botClient, chatId, "❌ Неизвестное поле", cancellationToken);
         break;

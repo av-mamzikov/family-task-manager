@@ -2,6 +2,7 @@ using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.UseCases.Tasks;
 
@@ -11,6 +12,7 @@ public class CreateTaskHandlerTests
 {
   private readonly IRepository<Family> _familyRepository;
   private readonly CreateTaskHandler _handler;
+  private readonly IPetMoodCalculator _moodCalculator;
   private readonly IRepository<Pet> _petRepository;
   private readonly IRepository<TaskInstance> _taskRepository;
   private readonly ITimeZoneService _timeZoneService;
@@ -21,7 +23,9 @@ public class CreateTaskHandlerTests
     _petRepository = Substitute.For<IRepository<Pet>>();
     _familyRepository = Substitute.For<IRepository<Family>>();
     _timeZoneService = Substitute.For<ITimeZoneService>();
-    _handler = new CreateTaskHandler(_taskRepository, _petRepository, _familyRepository, _timeZoneService);
+    _moodCalculator = Substitute.For<IPetMoodCalculator>();
+    _handler = new CreateTaskHandler(_taskRepository, _petRepository, _familyRepository, _timeZoneService,
+      _moodCalculator);
   }
 
   [Fact]

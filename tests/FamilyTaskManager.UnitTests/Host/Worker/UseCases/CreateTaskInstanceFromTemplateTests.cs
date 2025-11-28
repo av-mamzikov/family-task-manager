@@ -1,4 +1,5 @@
 using Ardalis.Result;
+using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.UseCases.Tasks;
@@ -9,6 +10,8 @@ namespace FamilyTaskManager.UnitTests.Host.Worker.UseCases;
 public class CreateTaskInstanceFromTemplateTests
 {
   private readonly CreateTaskInstanceFromTemplateHandler _handler;
+  private readonly IPetMoodCalculator _moodCalculator;
+  private readonly IRepository<Pet> _petRepository;
   private readonly ITaskInstanceFactory _taskInstanceFactory;
   private readonly IRepository<TaskInstance> _taskRepository;
   private readonly IRepository<TaskTemplate> _templateRepository;
@@ -18,7 +21,10 @@ public class CreateTaskInstanceFromTemplateTests
     _templateRepository = Substitute.For<IRepository<TaskTemplate>>();
     _taskRepository = Substitute.For<IRepository<TaskInstance>>();
     _taskInstanceFactory = Substitute.For<ITaskInstanceFactory>();
-    _handler = new CreateTaskInstanceFromTemplateHandler(_templateRepository, _taskRepository, _taskInstanceFactory);
+    _petRepository = Substitute.For<IRepository<Pet>>();
+    _moodCalculator = Substitute.For<IPetMoodCalculator>();
+    _handler = new CreateTaskInstanceFromTemplateHandler(_templateRepository, _taskRepository, _taskInstanceFactory,
+      _petRepository, _moodCalculator);
   }
 
   [Fact]
@@ -30,7 +36,8 @@ public class CreateTaskInstanceFromTemplateTests
     var petId = Guid.NewGuid();
     var dueAt = DateTime.UtcNow.AddHours(1);
 
-    var template = new TaskTemplate(familyId, petId, "Test Task", 10, "0 0 9 * * ?", Guid.NewGuid());
+    var template = new TaskTemplate(familyId, petId, "Test Task", 10, "0 0 9 * * ?", TimeSpan.FromHours(12),
+      Guid.NewGuid());
 
     _templateRepository.GetByIdAsync(templateId, Arg.Any<CancellationToken>())
       .Returns(template);
@@ -89,7 +96,7 @@ public class CreateTaskInstanceFromTemplateTests
     var templateId = Guid.NewGuid();
     var template = new TaskTemplate(
       Guid.NewGuid(), Guid.NewGuid(),
-      "Test Task", 10, "0 0 9 * * ?", Guid.NewGuid());
+      "Test Task", 10, "0 0 9 * * ?", TimeSpan.FromHours(12), Guid.NewGuid());
     template.Deactivate();
 
     _templateRepository.GetByIdAsync(templateId, Arg.Any<CancellationToken>())
@@ -120,7 +127,8 @@ public class CreateTaskInstanceFromTemplateTests
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
 
-    var template = new TaskTemplate(familyId, petId, "Test Task", 10, "0 0 9 * * ?", Guid.NewGuid());
+    var template = new TaskTemplate(familyId, petId, "Test Task", 10, "0 0 9 * * ?", TimeSpan.FromHours(12),
+      Guid.NewGuid());
 
     // Существующий активный TaskInstance
     var existingInstance = new TaskInstance(
@@ -155,7 +163,8 @@ public class CreateTaskInstanceFromTemplateTests
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
 
-    var template = new TaskTemplate(familyId, petId, "Test Task", 10, "0 0 9 * * ?", Guid.NewGuid());
+    var template = new TaskTemplate(familyId, petId, "Test Task", 10, "0 0 9 * * ?", TimeSpan.FromHours(12),
+      Guid.NewGuid());
 
     // Существующий ЗАВЕРШЕННЫЙ TaskInstance
     var completedInstance = new TaskInstance(
@@ -194,7 +203,8 @@ public class CreateTaskInstanceFromTemplateTests
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
 
-    var template = new TaskTemplate(familyId, petId, "Test Task", 10, "0 0 9 * * ?", Guid.NewGuid());
+    var template = new TaskTemplate(familyId, petId, "Test Task", 10, "0 0 9 * * ?", TimeSpan.FromHours(12),
+      Guid.NewGuid());
 
     // Существующий TaskInstance "В работе"
     var inProgressInstance = new TaskInstance(

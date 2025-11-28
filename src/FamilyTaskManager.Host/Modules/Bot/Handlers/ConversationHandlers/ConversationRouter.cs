@@ -104,6 +104,10 @@ public class ConversationRouter(
       ConversationState.AwaitingTemplateEditSchedule =>
         templateEditHandler.HandleTemplateEditScheduleInputAsync(botClient, message, session, text, cancellationToken),
 
+      ConversationState.AwaitingTemplateEditDueDuration =>
+        templateEditHandler.HandleTemplateEditDueDurationInputAsync(botClient, message, session, text,
+          cancellationToken),
+
       _ => HandleUnknownState(botClient, message, session, cancellationToken)
     });
   }
@@ -154,6 +158,7 @@ public class ConversationRouter(
       ConversationState.AwaitingTemplateEditTitle => (ConversationState.None, true),
       ConversationState.AwaitingTemplateEditPoints => (ConversationState.None, true),
       ConversationState.AwaitingTemplateEditSchedule => (ConversationState.None, true),
+      ConversationState.AwaitingTemplateEditDueDuration => (ConversationState.None, true),
 
       // Family creation flow
       ConversationState.AwaitingFamilyLocation => (ConversationState.AwaitingFamilyTimezone, false),

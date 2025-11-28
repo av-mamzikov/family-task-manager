@@ -1,10 +1,14 @@
+using FamilyTaskManager.Core.Services;
+
 namespace FamilyTaskManager.UseCases.Tasks;
 
 public record CompleteTaskCommand(Guid TaskId, Guid UserId) : ICommand<Result>;
 
 public class CompleteTaskHandler(
   IRepository<TaskInstance> taskRepository,
-  IRepository<Family> familyRepository) : ICommandHandler<CompleteTaskCommand, Result>
+  IRepository<Family> familyRepository,
+  IRepository<Pet> petRepository,
+  IPetMoodCalculator moodCalculator) : ICommandHandler<CompleteTaskCommand, Result>
 {
   public async ValueTask<Result> Handle(CompleteTaskCommand command, CancellationToken cancellationToken)
   {
@@ -44,6 +48,15 @@ public class CompleteTaskHandler(
     // Update both entities (domain events will be dispatched automatically)
     await taskRepository.UpdateAsync(task, cancellationToken);
     await familyRepository.UpdateAsync(family, cancellationToken);
+
+    // Trigger immediate mood recalculation for the pet
+    var pet = await petRepository.GetByIdAsync(task.PetId, cancellationToken);
+    if (pet != null)
+    {
+      var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(task.PetId, cancellationToken);
+      pet.UpdateMoodScore(newMoodScore);
+      await petRepository.SaveChangesAsync(cancellationToken);
+    }
 
     return Result.Success();
   }

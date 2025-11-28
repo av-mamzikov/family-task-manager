@@ -1,5 +1,6 @@
 using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.Core.Services;
+using FamilyTaskManager.UseCases.TaskTemplates.Specifications;
 using Microsoft.Extensions.Logging;
 
 namespace FamilyTaskManager.UseCases.Tasks;
@@ -35,7 +36,8 @@ public class ProcessScheduledTasksHandler(
 
       // Load full TaskTemplate entities for the domain service
       var templateIds = templateDtos.Select(t => t.Id).ToList();
-      var templates = await templateRepository.ListAsync(new TaskTemplatesByIdsSpec(templateIds), cancellationToken);
+      var templates =
+        await templateRepository.ListAsync(new TaskTemplatesWithFamilyByIdsSpec(templateIds), cancellationToken);
 
       var createdCount = 0;
 
@@ -48,16 +50,18 @@ public class ProcessScheduledTasksHandler(
           if (!triggerTime.HasValue)
             continue;
 
+          // Create task instance using domain service
+          // Calculate dueAt as scheduled time + due duration
+          var dueAt = triggerTime.Value + template.DueDuration;
+
           logger.LogInformation(
-            "Creating TaskInstance for template {TemplateId} ({Title}), due at {DueAt} (family timezone: {Timezone})",
-            template.Id, template.Title, triggerTime.Value, template.Family.Timezone);
+            "Creating TaskInstance for template {TemplateId} ({Title}), scheduled at {ScheduledTime}, due at {DueAt} (family timezone: {Timezone})",
+            template.Id, template.Title, triggerTime.Value, dueAt, template.Family.Timezone);
 
           // Get existing instances for this template
           var existingSpec = new TaskInstancesByTemplateSpec(template.Id);
           var existingInstances = await taskRepository.ListAsync(existingSpec, cancellationToken);
-
-          // Create task instance using domain service
-          var createResult = taskInstanceFactory.CreateFromTemplate(template, triggerTime.Value, existingInstances);
+          var createResult = taskInstanceFactory.CreateFromTemplate(template, dueAt, existingInstances);
 
           if (createResult.IsSuccess)
           {

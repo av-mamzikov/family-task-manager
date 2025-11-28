@@ -29,6 +29,7 @@ public static class StateKeyboardHelper
       ConversationState.AwaitingTemplateEditTitle => GetBackOrCancelKeyboard(),
       ConversationState.AwaitingTemplateEditPoints => GetBackOrCancelKeyboard(),
       ConversationState.AwaitingTemplateEditSchedule => GetBackOrCancelKeyboard(),
+      ConversationState.AwaitingTemplateEditDueDuration => GetBackOrCancelKeyboard(),
       _ => null
     };
 
@@ -73,6 +74,9 @@ public static class StateKeyboardHelper
 
       ConversationState.AwaitingTemplateEditSchedule =>
         "\n\n💡 Доступные действия:\n• Введите новое расписание\n• ⬅️ Назад - Отменить редактирование\n• /cancel - Выйти из режима редактирования",
+
+      ConversationState.AwaitingTemplateEditDueDuration =>
+        "\n\n💡 Доступные действия:\n• Введите новый срок выполнения в часах (0-8760)\n• ⬅️ Назад - Отменить редактирование\n• /cancel - Выйти из режима редактирования",
 
       _ => ""
     };

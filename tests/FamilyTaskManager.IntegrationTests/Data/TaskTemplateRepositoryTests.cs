@@ -25,7 +25,7 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
 
     // Создаем шаблон задачи с валидными ID
     var createdBy = Guid.NewGuid();
-    return new TaskTemplate(family.Id, pet.Id, title, points, schedule, createdBy);
+    return new TaskTemplate(family.Id, pet.Id, title, points, schedule, TimeSpan.FromHours(12), createdBy);
   }
 
   [Fact]
@@ -56,7 +56,7 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
     await DbContext.SaveChangesAsync();
 
     // Act
-    taskTemplate.Update("Updated Title", 15, "0 10 * * *");
+    taskTemplate.Update("Updated Title", 15, "0 10 * * *", TimeSpan.FromHours(12));
     await Repository.UpdateAsync(taskTemplate);
     await DbContext.SaveChangesAsync();
 

@@ -1,4 +1,4 @@
-namespace FamilyTaskManager.UseCases.Tasks.Specifications;
+namespace FamilyTaskManager.Core.TaskAggregate.Specifications;
 
 public class TasksByPetSpec : Specification<TaskInstance>
 {
@@ -6,10 +6,7 @@ public class TasksByPetSpec : Specification<TaskInstance>
   {
     Query.Where(t => t.PetId == petId);
 
-    if (status.HasValue)
-    {
-      Query.Where(t => t.Status == status.Value);
-    }
+    if (status.HasValue) Query.Where(t => t.Status == status.Value);
 
     Query.OrderBy(t => t.DueAt);
   }

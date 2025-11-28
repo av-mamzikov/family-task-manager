@@ -5,7 +5,8 @@ public record UpdateTaskTemplateCommand(
   Guid FamilyId,
   string? Title,
   int? Points,
-  string? Schedule) : ICommand<Result>;
+  string? Schedule,
+  TimeSpan? DueDuration) : ICommand<Result>;
 
 public class UpdateTaskTemplateHandler(IRepository<TaskTemplate> templateRepository)
   : ICommandHandler<UpdateTaskTemplateCommand, Result>
@@ -53,7 +54,13 @@ public class UpdateTaskTemplateHandler(IRepository<TaskTemplate> templateReposit
     }
 
     // Update template
-    template.Update(newTitle, newPoints, newSchedule);
+    var newDueDuration = command.DueDuration ?? template.DueDuration;
+
+    // Validate dueDuration
+    if (newDueDuration < TimeSpan.Zero || newDueDuration > TimeSpan.FromHours(8760))
+      return Result.Invalid(new ValidationError("Срок выполнения должен быть в диапазоне от 0 до 8760 часов"));
+
+    template.Update(newTitle, newPoints, newSchedule, newDueDuration);
     await templateRepository.UpdateAsync(template, cancellationToken);
 
     return Result.Success();

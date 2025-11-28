@@ -6,6 +6,7 @@ public record CreateTaskTemplateCommand(
   string Title,
   int Points,
   string Schedule,
+  TimeSpan DueDuration,
   Guid CreatedBy) : ICommand<Result<Guid>>;
 
 public class CreateTaskTemplateHandler(
@@ -51,6 +52,7 @@ public class CreateTaskTemplateHandler(
       command.Title,
       command.Points,
       command.Schedule,
+      command.DueDuration,
       command.CreatedBy);
 
     await templateRepository.AddAsync(template, cancellationToken);

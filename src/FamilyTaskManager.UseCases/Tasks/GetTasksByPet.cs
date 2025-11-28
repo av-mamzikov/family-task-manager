@@ -1,3 +1,5 @@
+using FamilyTaskManager.Core.TaskAggregate.Specifications;
+
 namespace FamilyTaskManager.UseCases.Tasks;
 
 public record GetTasksByPetQuery(Guid PetId, Guid FamilyId, TaskStatus? Status = null)

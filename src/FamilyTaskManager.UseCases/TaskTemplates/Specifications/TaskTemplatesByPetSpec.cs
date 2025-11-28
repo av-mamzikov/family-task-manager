@@ -1,6 +1,6 @@
 namespace FamilyTaskManager.UseCases.TaskTemplates.Specifications;
 
-public class TaskTemplatesByPetSpec : Specification<TaskTemplate>
+public class TaskTemplatesByPetSpec : Specification<TaskTemplate, TaskTemplateDto>
 {
   public TaskTemplatesByPetSpec(Guid petId, bool? isActive = null)
   {
@@ -12,5 +12,6 @@ public class TaskTemplatesByPetSpec : Specification<TaskTemplate>
     }
 
     Query.OrderBy(t => t.CreatedAt);
+    Query.Select(TaskTemplateDto.Projections.FromTaskTemplate);
   }
 }

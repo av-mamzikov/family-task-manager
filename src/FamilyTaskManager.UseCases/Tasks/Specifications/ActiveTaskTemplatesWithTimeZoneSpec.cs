@@ -1,15 +1,6 @@
-using System.Linq.Expressions;
+using FamilyTaskManager.UseCases.TaskTemplates;
 
 namespace FamilyTaskManager.UseCases.Tasks.Specifications;
-
-public record TaskTemplateDto(Guid Id, Guid FamilyId, string Title, string Schedule, string timeZone)
-{
-  public static class Projections
-  {
-    public static readonly Expression<Func<TaskTemplate, TaskTemplateDto>> FromTaskTemplate =
-      t => new TaskTemplateDto(t.Id, t.FamilyId, t.Title, t.Schedule, t.Family.Timezone);
-  }
-}
 
 /// <summary>
 ///   Specification to get active task templates with projection to DTO for SQL-level SELECT.

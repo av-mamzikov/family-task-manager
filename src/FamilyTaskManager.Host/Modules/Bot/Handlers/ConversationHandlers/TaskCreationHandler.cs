@@ -252,7 +252,7 @@ public class TaskCreationHandler(
 
     // Create periodic task template
     var createTemplateCommand =
-      new CreateTaskTemplateCommand(familyId, petId, title, points, schedule, userResult.Value);
+      new CreateTaskTemplateCommand(familyId, petId, title, points, schedule, TimeSpan.FromHours(12), userResult.Value);
     var result = await Mediator.Send(createTemplateCommand, cancellationToken);
 
     if (!result.IsSuccess)

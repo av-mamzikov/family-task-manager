@@ -1,51 +1,49 @@
+using System.Linq.Expressions;
 using FamilyTaskManager.UseCases.TaskTemplates.Specifications;
 
 namespace FamilyTaskManager.UseCases.TaskTemplates;
 
 public record TaskTemplateDto(
   Guid Id,
+  Guid FamilyId,
   string Title,
   int Points,
   string Schedule,
   Guid PetId,
   string PetName,
   bool IsActive,
-  DateTime CreatedAt);
+  DateTime CreatedAt,
+  TimeSpan DueDuration)
+{
+  public static class Projections
+  {
+    public static readonly Expression<Func<TaskTemplate, TaskTemplateDto>> FromTaskTemplate =
+      t => new TaskTemplateDto(
+        t.Id,
+        t.FamilyId,
+        t.Title,
+        t.Points,
+        t.Schedule,
+        t.PetId,
+        t.Pet.Name,
+        t.IsActive,
+        t.CreatedAt,
+        t.DueDuration);
+  }
+}
 
 public record GetTaskTemplatesByFamilyQuery(Guid FamilyId, bool? IsActive = null)
   : IQuery<Result<List<TaskTemplateDto>>>;
 
 public class GetTaskTemplatesByFamilyHandler(
-  IRepository<TaskTemplate> templateRepository,
-  IRepository<Pet> petRepository)
+  IReadRepository<TaskTemplate> templateRepository)
   : IQueryHandler<GetTaskTemplatesByFamilyQuery, Result<List<TaskTemplateDto>>>
 {
   public async ValueTask<Result<List<TaskTemplateDto>>> Handle(GetTaskTemplatesByFamilyQuery request,
     CancellationToken cancellationToken)
   {
-    var spec = new TaskTemplatesByFamilySpec(request.FamilyId, request.IsActive);
+    var spec = new TaskTemplatesDtoByFamilyIdsSpec(request.FamilyId);
     var templates = await templateRepository.ListAsync(spec, cancellationToken);
-
-    if (templates.Count == 0)
-    {
-      return Result<List<TaskTemplateDto>>.Success(new List<TaskTemplateDto>());
-    }
-
-    // Get pet names for all templates
-    var petIds = templates.Select(t => t.PetId).Distinct().ToList();
-    var pets = await petRepository.ListAsync(new PetsByIdsSpec(petIds), cancellationToken);
-    var petDict = pets.ToDictionary(p => p.Id, p => p.Name);
-
-    var result = templates.Select(t => new TaskTemplateDto(
-      t.Id,
-      t.Title,
-      t.Points,
-      t.Schedule,
-      t.PetId,
-      petDict.GetValueOrDefault(t.PetId, "Unknown Pet"),
-      t.IsActive,
-      t.CreatedAt)).ToList();
-
-    return Result<List<TaskTemplateDto>>.Success(result);
+    return Result<List<TaskTemplateDto>>.Success(templates);
   }
 }

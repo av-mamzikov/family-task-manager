@@ -7,7 +7,9 @@ public record CreateTaskInstanceFromTemplateCommand(Guid TemplateId, DateTime Du
 public class CreateTaskInstanceFromTemplateHandler(
   IRepository<TaskTemplate> templateRepository,
   IRepository<TaskInstance> taskRepository,
-  ITaskInstanceFactory taskInstanceFactory)
+  ITaskInstanceFactory taskInstanceFactory,
+  IRepository<Pet> petRepository,
+  IPetMoodCalculator moodCalculator)
   : ICommandHandler<CreateTaskInstanceFromTemplateCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreateTaskInstanceFromTemplateCommand request,
@@ -25,6 +27,15 @@ public class CreateTaskInstanceFromTemplateHandler(
 
     await taskRepository.AddAsync(createResult.Value, cancellationToken);
     await taskRepository.SaveChangesAsync(cancellationToken);
+
+    // Trigger immediate mood recalculation for the pet
+    var pet = await petRepository.GetByIdAsync(createResult.Value.PetId, cancellationToken);
+    if (pet != null)
+    {
+      var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(createResult.Value.PetId, cancellationToken);
+      pet.UpdateMoodScore(newMoodScore);
+      await petRepository.SaveChangesAsync(cancellationToken);
+    }
 
     return Result.Success(createResult.Value.Id);
   }

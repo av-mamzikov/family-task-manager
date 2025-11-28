@@ -424,12 +424,10 @@ jobs:
             const prNumber = ${{ needs.setup.outputs.pr_number }};
             const imageTag = '${{ needs.setup.outputs.image_tag }}';
             const cleanDb = process.env.CLEAN_DB === 'true';
-            const dbInfo = cleanDb ? 'Yes (clean-db label is set)' : 'No (database preserved)';
+            const dbInfo = cleanDb ? 'database was reset (clean-db label is set)' : 'database was preserved (clean-db label is not set)';
             const comment = `## 🚀 PR Preview Environment Deployed
 
-            Your changes for PR #${prNumber} have been deployed to a preview environment, 🏷️ \`${imageTag}\`.
-            
-            **Database reset**: ${dbInfo}
+            Your changes for PR #${prNumber} have been deployed to a preview environment, ${dbInfo}, 🏷️ \`${imageTag}\`.
             `;
             
             await github.rest.issues.createComment({

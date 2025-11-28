@@ -308,6 +308,10 @@ public class TemplateCommandHandler(IMediator mediator)
       new[] { InlineKeyboardButton.WithCallbackData("✏️ Название", $"template_editfield_{templateId}_title") },
       new[] { InlineKeyboardButton.WithCallbackData("💯 Очки", $"template_editfield_{templateId}_points") },
       new[] { InlineKeyboardButton.WithCallbackData("🔄 Расписание", $"template_editfield_{templateId}_schedule") },
+      new[]
+      {
+        InlineKeyboardButton.WithCallbackData("⏰ Срок выполнения", $"template_editfield_{templateId}_dueduration")
+      },
       new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", $"template_view_{templateId}") }
     });
 
@@ -317,7 +321,8 @@ public class TemplateCommandHandler(IMediator mediator)
       $"✏️ *Редактирование шаблона*\n\n" +
       $"📝 Название: {template.Title}\n" +
       $"💯 Очки: {template.Points}\n" +
-      $"🔄 Расписание: `{template.Schedule}`\n\n" +
+      $"🔄 Расписание: `{template.Schedule}`\n" +
+      $"⏰ Срок выполнения: {template.DueDuration.TotalHours} часов\n\n" +
       "Выберите поле для редактирования:",
       ParseMode.Markdown,
       replyMarkup: keyboard,

@@ -48,5 +48,6 @@ public enum ConversationState
   AwaitingTemplatePetSelection,
   AwaitingTemplateEditTitle,
   AwaitingTemplateEditPoints,
-  AwaitingTemplateEditSchedule
+  AwaitingTemplateEditSchedule,
+  AwaitingTemplateEditDueDuration
 }

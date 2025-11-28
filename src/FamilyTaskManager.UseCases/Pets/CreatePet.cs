@@ -39,6 +39,7 @@ public class CreatePetHandler(
         templateData.Title,
         templateData.Points,
         templateData.Schedule,
+        templateData.DueDuration,
         systemUserId);
 
       await taskTemplateRepository.AddAsync(taskTemplate, cancellationToken);
