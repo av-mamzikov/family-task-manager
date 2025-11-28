@@ -417,13 +417,19 @@ jobs:
       - name: Comment on PR (if PR preview)
         if: needs.setup.outputs.is_pr_preview == 'true' && needs.setup.outputs.pr_number != ''
         uses: actions/github-script@v7
+        env:
+          CLEAN_DB: ${{ needs.setup.outputs.clean_db }}
         with:
           script: |
             const prNumber = ${{ needs.setup.outputs.pr_number }};
             const imageTag = '${{ needs.setup.outputs.image_tag }}';
+            const cleanDb = process.env.CLEAN_DB === 'true';
+            const dbInfo = cleanDb ? 'Yes (clean-db label is set)' : 'No (database preserved)';
             const comment = `## 🚀 PR Preview Environment Deployed
 
             Your changes for PR #${prNumber} have been deployed to a preview environment, 🏷️ \`${imageTag}\`.
+            
+            **Database reset**: ${dbInfo}
             `;
             
             await github.rest.issues.createComment({

@@ -77,6 +77,7 @@ Family Task Manager помогает семьям организовать вы�
 
 - [VPS Setup](docs/setup/VPS_SETUP.md) — настройка сервера
 - [🔐 Secrets Setup](docs/setup/SECRETS_SETUP.md) — установка секретов в GitHub
+ - [CI/CD и PR Preview](docs/setup/GITHUB_ACTIONS_SETUP.md) — описание GitHub Actions, PR Preview и меток PR
 
 ### 📖 Проектная документация
 
