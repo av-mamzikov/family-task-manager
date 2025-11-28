@@ -31,5 +31,11 @@ public class PetConfiguration : IEntityTypeConfiguration<Pet>
 
     // Index for FamilyId to optimize queries
     builder.HasIndex(p => p.FamilyId);
+
+    // Foreign key relationship to Family
+    builder.HasOne(p => p.Family)
+      .WithMany()
+      .HasForeignKey(p => p.FamilyId)
+      .OnDelete(DeleteBehavior.Cascade);
   }
 }

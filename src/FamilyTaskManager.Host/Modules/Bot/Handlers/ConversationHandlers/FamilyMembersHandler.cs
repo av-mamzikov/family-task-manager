@@ -58,7 +58,7 @@ public class FamilyMembersHandler(IMediator mediator)
     }
 
     var (roleEmoji, roleText) = GetRoleInfo(member.Role);
-    var messageText = $"{roleEmoji} *{member.Name}*\n\n" +
+    var messageText = $"{roleEmoji} *{member.UserName}*\n\n" +
                       $"Роль: {roleText}\n" +
                       $"Очки: ⭐ {member.Points}";
 
@@ -165,7 +165,7 @@ public class FamilyMembersHandler(IMediator mediator)
     });
 
     var messageText = $"⚠️ *Удаление участника*\n\n" +
-                      $"Вы уверены, что хотите удалить {roleEmoji} *{member.Name}* ({roleText}) из семьи?";
+                      $"Вы уверены, что хотите удалить {roleEmoji} *{member.UserName}* ({roleText}) из семьи?";
 
     await botClient.EditMessageTextAsync(
       chatId,
@@ -195,7 +195,7 @@ public class FamilyMembersHandler(IMediator mediator)
     foreach (var member in members)
     {
       var (emoji, roleText) = GetRoleInfo(member.Role);
-      sb.AppendLine($"{emoji} *{member.Name}*");
+      sb.AppendLine($"{emoji} *{member.UserName}*");
       sb.AppendLine($"   Роль: {roleText}");
       sb.AppendLine($"   Очки: ⭐ {member.Points}\n");
     }
@@ -212,7 +212,7 @@ public class FamilyMembersHandler(IMediator mediator)
       return new[]
       {
         InlineKeyboardButton.WithCallbackData(
-          $"{GetRoleInfo(member.Role).emoji} {member.Name}",
+          $"{GetRoleInfo(member.Role).emoji} {member.UserName}",
           $"family_member_{memberCode}")
       };
     }).ToList();

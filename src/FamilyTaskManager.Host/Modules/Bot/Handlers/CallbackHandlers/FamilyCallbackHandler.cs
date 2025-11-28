@@ -442,7 +442,7 @@ public class FamilyCallbackHandler(
           _ => "❓"
         };
 
-        messageText += $"{roleEmoji} *{member.Name}*\n" +
+        messageText += $"{roleEmoji} *{member.UserName}*\n" +
                        $"   Роль: {roleText}\n" +
                        $"   Очки: ⭐ {member.Points}\n\n";
       }

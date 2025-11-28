@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.PetAggregate.Events;
 
 namespace FamilyTaskManager.Core.PetAggregate;
@@ -31,6 +32,9 @@ public class Pet : EntityBase<Pet, Guid>, IAggregateRoot
   public Guid FamilyId { get; private set; }
   public PetType Type { get; private set; }
   public string Name { get; private set; } = null!;
+
+  // Navigation property
+  public Family Family { get; private set; } = null!;
 
   /// <summary>
   ///   Денормализованное поле, которое рассчитывается периодически в зависимости от наличия невыполненных задач

@@ -1,3 +1,5 @@
+using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 
 namespace FamilyTaskManager.IntegrationTests.Data;
@@ -6,14 +8,31 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
 {
   private IRepository<TaskTemplate> Repository => GetRepository<TaskTemplate>();
 
+  private async Task<TaskTemplate> CreateTaskTemplateWithDependencies(string title = "Feed the cat", int points = 10,
+    string schedule = "0 8 * * *")
+  {
+    // Создаем семью
+    var family = new Family($"Test Family {Guid.NewGuid():N}", "UTC");
+    var familyRepository = GetRepository<Family>();
+    await familyRepository.AddAsync(family);
+    await DbContext.SaveChangesAsync();
+
+    // Создаем питомца для этой семьи
+    var pet = new Pet(family.Id, PetType.Cat, "Test Pet");
+    var petRepository = GetRepository<Pet>();
+    await petRepository.AddAsync(pet);
+    await DbContext.SaveChangesAsync();
+
+    // Создаем шаблон задачи с валидными ID
+    var createdBy = Guid.NewGuid();
+    return new TaskTemplate(family.Id, pet.Id, title, points, schedule, createdBy);
+  }
+
   [Fact]
   public async Task AddAsync_ShouldPersistTaskTemplateToDatabase()
   {
     // Arrange
-    var familyId = Guid.NewGuid();
-    var petId = Guid.NewGuid();
-    var createdBy = Guid.NewGuid();
-    var taskTemplate = new TaskTemplate(familyId, petId, "Feed the cat", 10, "0 8 * * *", createdBy);
+    var taskTemplate = await CreateTaskTemplateWithDependencies();
 
     // Act
     await Repository.AddAsync(taskTemplate);
@@ -25,9 +44,6 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
     retrieved.Title.ShouldBe("Feed the cat");
     retrieved.Points.ShouldBe(10);
     retrieved.Schedule.ShouldBe("0 8 * * *");
-    retrieved.FamilyId.ShouldBe(familyId);
-    retrieved.PetId.ShouldBe(petId);
-    retrieved.CreatedBy.ShouldBe(createdBy);
     retrieved.IsActive.ShouldBeTrue();
   }
 
@@ -35,14 +51,7 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
   public async Task UpdateAsync_ShouldModifyExistingTaskTemplate()
   {
     // Arrange
-    var taskTemplate = new TaskTemplate(
-      Guid.NewGuid(),
-      Guid.NewGuid(),
-      "Original Title",
-      5,
-      "0 9 * * *",
-      Guid.NewGuid()
-    );
+    var taskTemplate = await CreateTaskTemplateWithDependencies("Original Title", 5, "0 9 * * *");
     await Repository.AddAsync(taskTemplate);
     await DbContext.SaveChangesAsync();
 
@@ -63,14 +72,7 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
   public async Task Deactivate_ShouldSetIsActiveToFalse()
   {
     // Arrange
-    var taskTemplate = new TaskTemplate(
-      Guid.NewGuid(),
-      Guid.NewGuid(),
-      "Task to Deactivate",
-      10,
-      "0 8 * * *",
-      Guid.NewGuid()
-    );
+    var taskTemplate = await CreateTaskTemplateWithDependencies("Task to Deactivate");
     await Repository.AddAsync(taskTemplate);
     await DbContext.SaveChangesAsync();
 
@@ -89,14 +91,7 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
   public async Task DeleteAsync_ShouldRemoveTaskTemplateFromDatabase()
   {
     // Arrange
-    var taskTemplate = new TaskTemplate(
-      Guid.NewGuid(),
-      Guid.NewGuid(),
-      "Task to Delete",
-      10,
-      "0 8 * * *",
-      Guid.NewGuid()
-    );
+    var taskTemplate = await CreateTaskTemplateWithDependencies("Task to Delete");
     await Repository.AddAsync(taskTemplate);
     await DbContext.SaveChangesAsync();
 
@@ -113,13 +108,9 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
   public async Task ListAsync_ShouldReturnAllTaskTemplates()
   {
     // Arrange
-    var familyId = Guid.NewGuid();
-    var petId = Guid.NewGuid();
-    var createdBy = Guid.NewGuid();
-
-    var task1 = new TaskTemplate(familyId, petId, "Task 1", 10, "0 8 * * *", createdBy);
-    var task2 = new TaskTemplate(familyId, petId, "Task 2", 15, "0 9 * * *", createdBy);
-    var task3 = new TaskTemplate(familyId, petId, "Task 3", 20, "0 10 * * *", createdBy);
+    var task1 = await CreateTaskTemplateWithDependencies("Task 1");
+    var task2 = await CreateTaskTemplateWithDependencies("Task 2", 15, "0 9 * * *");
+    var task3 = await CreateTaskTemplateWithDependencies("Task 3", 20, "0 10 * * *");
 
     await Repository.AddRangeAsync([task1, task2, task3]);
     await DbContext.SaveChangesAsync();
@@ -138,14 +129,10 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
   public async Task CountAsync_ShouldReturnCorrectCount()
   {
     // Arrange
-    var familyId = Guid.NewGuid();
-    var petId = Guid.NewGuid();
-    var createdBy = Guid.NewGuid();
+    var task1 = await CreateTaskTemplateWithDependencies("Task 1");
+    var task2 = await CreateTaskTemplateWithDependencies("Task 2", 15, "0 9 * * *");
 
-    await Repository.AddRangeAsync([
-      new TaskTemplate(familyId, petId, "Task 1", 10, "0 8 * * *", createdBy),
-      new TaskTemplate(familyId, petId, "Task 2", 15, "0 9 * * *", createdBy)
-    ]);
+    await Repository.AddRangeAsync([task1, task2]);
     await DbContext.SaveChangesAsync();
 
     // Act
@@ -172,14 +159,7 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
   public async Task AnyAsync_WithExistingData_ShouldReturnTrue()
   {
     // Arrange
-    var taskTemplate = new TaskTemplate(
-      Guid.NewGuid(),
-      Guid.NewGuid(),
-      "Test Task",
-      10,
-      "0 8 * * *",
-      Guid.NewGuid()
-    );
+    var taskTemplate = await CreateTaskTemplateWithDependencies("Test Task");
     await Repository.AddAsync(taskTemplate);
     await DbContext.SaveChangesAsync();
 

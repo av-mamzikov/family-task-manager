@@ -45,6 +45,9 @@ public static class InfrastructureServiceExtensions
     services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>))
       .AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
 
+    // Register universal read-only repository for any entity
+    services.AddScoped(typeof(IReadOnlyEntityRepository<>), typeof(EfReadOnlyEntityRepository<>));
+
     // Register Mediator Pipeline Behaviors
     services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(MediatorLoggingBehavior<,>));
     logger.LogInformation("Mediator pipeline behaviors registered");

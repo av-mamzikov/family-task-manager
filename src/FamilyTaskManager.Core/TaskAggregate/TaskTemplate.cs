@@ -1,3 +1,6 @@
+using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.PetAggregate;
+
 namespace FamilyTaskManager.Core.TaskAggregate;
 
 public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
@@ -26,7 +29,9 @@ public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
   }
 
   public Guid FamilyId { get; private set; }
+  public Family Family { get; private set; } = null!;
   public Guid PetId { get; private set; }
+  public Pet Pet { get; private set; } = null!;
   public string Title { get; private set; } = null!;
   public int Points { get; private set; }
   public string Schedule { get; private set; } = null!;

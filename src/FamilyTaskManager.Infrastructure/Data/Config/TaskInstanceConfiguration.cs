@@ -54,5 +54,29 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
     builder.HasIndex(t => t.TemplateId);
     builder.HasIndex(t => new { t.FamilyId, t.Status });
     builder.HasIndex(t => new { t.Status, t.DueAt });
+
+    // Foreign key relationship to Family
+    builder.HasOne(t => t.Family)
+      .WithMany()
+      .HasForeignKey(t => t.FamilyId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    // Foreign key relationship to Pet
+    builder.HasOne(t => t.Pet)
+      .WithMany()
+      .HasForeignKey(t => t.PetId)
+      .OnDelete(DeleteBehavior.ClientCascade);
+
+    // Foreign key relationship to TaskTemplate
+    builder.HasOne(t => t.Template)
+      .WithMany()
+      .HasForeignKey(t => t.TemplateId)
+      .OnDelete(DeleteBehavior.NoAction);
+
+    // Foreign key relationship to User (CompletedBy)
+    builder.HasOne(t => t.CompletedByUser)
+      .WithMany()
+      .HasForeignKey(t => t.CompletedBy)
+      .OnDelete(DeleteBehavior.NoAction);
   }
 }

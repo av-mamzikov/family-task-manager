@@ -1,5 +1,4 @@
 using FamilyTaskManager.Core.Interfaces;
-using FamilyTaskManager.UseCases.TaskTemplates.Specifications;
 using Microsoft.Extensions.Logging;
 
 namespace FamilyTaskManager.UseCases.Tasks;
@@ -17,8 +16,7 @@ public record ProcessScheduledTaskCommand(DateTime CheckFrom, DateTime CheckTo) 
 ///   within the specified time window.
 /// </summary>
 public class ProcessScheduledTasksHandler(
-  IRepository<TaskTemplate> templateRepository,
-  IRepository<Family> familyRepository,
+  IReadRepository<TaskTemplate> templateRepository,
   IMediator mediator,
   IScheduleEvaluator scheduleEvaluator,
   ILogger<ProcessScheduledTasksHandler> logger)
@@ -28,8 +26,8 @@ public class ProcessScheduledTasksHandler(
   {
     try
     {
-      // Get all active task templates
-      var spec = new ActiveTaskTemplatesSpec();
+      // Get all active task templates with projection to DTO (SQL-level SELECT)
+      var spec = new ActiveTaskTemplatesWithTimeZoneSpec();
       var templates = await templateRepository.ListAsync(spec, cancellationToken);
 
       logger.LogInformation("Found {Count} active task templates to evaluate", templates.Count);
@@ -40,43 +38,32 @@ public class ProcessScheduledTasksHandler(
       {
         try
         {
-          // Get the family to access timezone
-          var family = await familyRepository.GetByIdAsync(template.FamilyId, cancellationToken);
-          if (family == null)
+          var (shouldTrigger, triggerTime) = scheduleEvaluator.ShouldTriggerInWindow(
+            template.Schedule, request.CheckFrom, request.CheckTo, template.timeZone);
+          if (!shouldTrigger || !triggerTime.HasValue)
           {
-            logger.LogWarning("Family {FamilyId} not found for template {TemplateId}", template.FamilyId, template.Id);
             continue;
           }
 
-          // Check if the template should trigger within our time window using family timezone
-          var (shouldTrigger, triggerTime) = scheduleEvaluator.ShouldTriggerInWindow(
-            template.Schedule, request.CheckFrom, request.CheckTo, family.Timezone);
-
-          if (shouldTrigger && triggerTime.HasValue)
+          logger.LogInformation(
+            "Creating TaskInstance for template {TemplateId} ({Title}), due at {DueAt} (family timezone: {Timezone})",
+            template.Id, template.Title, triggerTime.Value, template.timeZone);
+          var createResult = await mediator.Send(
+            new CreateTaskInstanceFromTemplateCommand(template.Id, triggerTime.Value),
+            cancellationToken);
+          if (createResult.IsSuccess)
           {
+            createdCount++;
             logger.LogInformation(
-              "Creating TaskInstance for template {TemplateId} ({Title}), due at {DueAt} (family timezone: {Timezone})",
-              template.Id, template.Title, triggerTime.Value, family.Timezone);
-
-            // Delegate task instance creation to existing command
-            var createResult = await mediator.Send(
-              new CreateTaskInstanceFromTemplateCommand(template.Id, triggerTime.Value),
-              cancellationToken);
-
-            if (createResult.IsSuccess)
-            {
-              createdCount++;
-              logger.LogInformation(
-                "Successfully created TaskInstance {InstanceId} from template {TemplateId}",
-                createResult.Value, template.Id);
-            }
-            else
-            {
-              // This is expected if there's already an active instance
-              logger.LogDebug(
-                "Could not create TaskInstance for template {TemplateId}: {Error}",
-                template.Id, string.Join(", ", createResult.Errors));
-            }
+              "Successfully created TaskInstance {InstanceId} from template {TemplateId}",
+              createResult.Value, template.Id);
+          }
+          else
+          {
+            // This is expected if there's already an active instance
+            logger.LogDebug(
+              "Could not create TaskInstance for template {TemplateId}: {Error}",
+              template.Id, string.Join(", ", createResult.Errors));
           }
         }
         catch (Exception ex)

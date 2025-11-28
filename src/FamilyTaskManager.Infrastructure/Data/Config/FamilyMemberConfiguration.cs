@@ -37,5 +37,11 @@ public class FamilyMemberConfiguration : IEntityTypeConfiguration<FamilyMember>
 
     // Index for FamilyId to optimize queries
     builder.HasIndex(m => m.FamilyId);
+
+    // Foreign key relationship to User
+    builder.HasOne(m => m.User)
+      .WithMany()
+      .HasForeignKey(m => m.UserId)
+      .OnDelete(DeleteBehavior.NoAction);
   }
 }

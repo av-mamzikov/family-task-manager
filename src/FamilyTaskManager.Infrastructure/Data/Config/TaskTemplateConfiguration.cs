@@ -41,5 +41,17 @@ public class TaskTemplateConfiguration : IEntityTypeConfiguration<TaskTemplate>
     builder.HasIndex(t => t.FamilyId);
     builder.HasIndex(t => t.PetId);
     builder.HasIndex(t => new { t.FamilyId, t.IsActive });
+
+    // Foreign key relationship to Family
+    builder.HasOne(t => t.Family)
+      .WithMany()
+      .HasForeignKey(t => t.FamilyId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    // Foreign key relationship to Pet
+    builder.HasOne(t => t.Pet)
+      .WithMany()
+      .HasForeignKey(t => t.PetId)
+      .OnDelete(DeleteBehavior.ClientCascade);
   }
 }

@@ -1,5 +1,3 @@
-using FamilyTaskManager.Core.FamilyAggregate;
-
 namespace FamilyTaskManager.Core.UserAggregate;
 
 public class User : EntityBase<User, Guid>, IAggregateRoot
@@ -20,8 +18,6 @@ public class User : EntityBase<User, Guid>, IAggregateRoot
   public long TelegramId { get; private set; }
   public string Name { get; private set; } = null!;
   public DateTime CreatedAt { get; private set; }
-
-  public List<FamilyMember> FamilyMembers { get; set; } = [];
 
   public void UpdateName(string name)
   {

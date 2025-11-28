@@ -43,5 +43,17 @@ public class InvitationConfiguration : IEntityTypeConfiguration<Invitation>
 
     // Create composite index for active invitations
     builder.HasIndex(i => new { i.IsActive, i.ExpiresAt });
+
+    // Foreign key relationship to Family
+    builder.HasOne(i => i.Family)
+      .WithMany()
+      .HasForeignKey(i => i.FamilyId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    // Foreign key relationship to User (CreatedBy)
+    builder.HasOne(i => i.Creator)
+      .WithMany()
+      .HasForeignKey(i => i.CreatedBy)
+      .OnDelete(DeleteBehavior.NoAction);
   }
 }

@@ -21,9 +21,10 @@ public class FamilyMember : EntityBase<FamilyMember, Guid>
     IsActive = true;
   }
 
-  public User User { get; private set; } = null!;
   public Guid UserId { get; private set; }
+  public User User { get; private set; } = null!;
   public Guid FamilyId { get; private set; }
+  public Family Family { get; private set; } = null!;
   public FamilyRole Role { get; private set; }
   public int Points { get; private set; }
   public DateTime JoinedAt { get; private set; }

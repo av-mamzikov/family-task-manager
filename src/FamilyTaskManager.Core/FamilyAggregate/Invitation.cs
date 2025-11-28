@@ -1,3 +1,5 @@
+using FamilyTaskManager.Core.UserAggregate;
+
 namespace FamilyTaskManager.Core.FamilyAggregate;
 
 public class Invitation : EntityBase<Invitation, Guid>, IAggregateRoot
@@ -28,6 +30,10 @@ public class Invitation : EntityBase<Invitation, Guid>, IAggregateRoot
   public DateTime? ExpiresAt { get; }
   public bool IsActive { get; private set; }
   public Guid CreatedBy { get; private set; }
+
+  // Navigation properties
+  public Family Family { get; private set; } = null!;
+  public User Creator { get; private set; } = null!;
 
   public void Deactivate() => IsActive = false;
 

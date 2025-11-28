@@ -1,12 +1,21 @@
+using System.Linq.Expressions;
+
 namespace FamilyTaskManager.UseCases.Families;
 
 public record FamilyMemberDto(
   Guid Id,
   Guid UserId,
   Guid FamilyId,
-  string Name,
+  string UserName,
   FamilyRole Role,
-  int Points);
+  int Points)
+{
+  public static class Projections
+  {
+    public static readonly Expression<Func<FamilyMember, FamilyMemberDto>> FromFamilyMember =
+      m => new FamilyMemberDto(m.Id, m.UserId, m.FamilyId, m.User.Name, m.Role, m.Points);
+  }
+}
 
 public record GetFamilyMembersQuery(Guid FamilyId) : IQuery<Result<List<FamilyMemberDto>>>;
 

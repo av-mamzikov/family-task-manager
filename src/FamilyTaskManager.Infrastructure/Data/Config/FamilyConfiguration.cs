@@ -28,7 +28,7 @@ public class FamilyConfiguration : IEntityTypeConfiguration<Family>
 
     // Configure owned collection of members
     builder.HasMany(f => f.Members)
-      .WithOne()
+      .WithOne(m => m.Family)
       .HasForeignKey(m => m.FamilyId)
       .OnDelete(DeleteBehavior.Cascade);
   }

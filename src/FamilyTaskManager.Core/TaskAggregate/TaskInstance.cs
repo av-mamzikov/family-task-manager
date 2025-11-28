@@ -1,10 +1,15 @@
+using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.TaskAggregate.Events;
+using FamilyTaskManager.Core.UserAggregate;
 
 namespace FamilyTaskManager.Core.TaskAggregate;
 
 public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
 {
-  private TaskInstance() { }
+  private TaskInstance()
+  {
+  }
 
   public TaskInstance(Guid familyId, Guid petId, string title, int points, TaskType type, DateTime dueAt,
     Guid? templateId = null)
@@ -38,6 +43,12 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public DateTime? CompletedAt { get; private set; }
   public DateTime CreatedAt { get; private set; }
   public DateTime DueAt { get; private set; }
+
+  // Navigation properties
+  public Family Family { get; private set; } = null!;
+  public Pet Pet { get; private set; } = null!;
+  public TaskTemplate? Template { get; private set; }
+  public User? CompletedByUser { get; private set; }
 
   public void Start()
   {

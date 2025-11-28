@@ -1,3 +1,6 @@
+using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.UserAggregate;
+
 namespace FamilyTaskManager.Core.ActionHistoryAggregate;
 
 public enum ActionType
@@ -11,7 +14,9 @@ public enum ActionType
 
 public class ActionHistory : EntityBase<ActionHistory, Guid>, IAggregateRoot
 {
-  private ActionHistory() { }
+  private ActionHistory()
+  {
+  }
 
   public ActionHistory(Guid familyId, Guid userId, ActionType actionType, string description, string? metadataJson)
   {
@@ -33,4 +38,8 @@ public class ActionHistory : EntityBase<ActionHistory, Guid>, IAggregateRoot
   public string Description { get; private set; } = null!;
   public string? MetadataJson { get; private set; }
   public DateTime CreatedAt { get; private set; }
+
+  // Navigation properties
+  public Family Family { get; private set; } = null!;
+  public User User { get; private set; } = null!;
 }
