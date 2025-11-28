@@ -57,7 +57,7 @@ public static class InfrastructureServiceExtensions
     if (!string.IsNullOrEmpty(botToken))
     {
       services.AddSingleton<ITelegramBotClient>(sp => new TelegramBotClient(botToken));
-      services.AddScoped<TelegramNotificationService>();
+      services.AddScoped<ITelegramNotificationService, TelegramNotificationService>();
       logger.LogInformation("Telegram notification service registered");
     }
     else

@@ -10,6 +10,7 @@ public class User : EntityBase<User, Guid>, IAggregateRoot
   {
     Guard.Against.NullOrWhiteSpace(name);
 
+    Id = Guid.NewGuid();
     TelegramId = telegramId;
     Name = name.Trim();
     CreatedAt = DateTime.UtcNow;

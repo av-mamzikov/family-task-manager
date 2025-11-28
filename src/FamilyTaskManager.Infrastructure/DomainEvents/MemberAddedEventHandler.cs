@@ -7,7 +7,7 @@ namespace FamilyTaskManager.Infrastructure.DomainEvents;
 
 public class MemberAddedEventHandler(
   ILogger<MemberAddedEventHandler> logger,
-  TelegramNotificationService notificationService,
+  ITelegramNotificationService notificationService,
   IRepository<User> userRepository)
   : INotificationHandler<MemberAddedEvent>
 {

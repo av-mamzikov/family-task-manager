@@ -14,7 +14,7 @@ public class TelegramNotificationService(
   ITelegramBotClient botClient,
   IRepository<Family> familyRepository,
   IRepository<User> userRepository,
-  ILogger<TelegramNotificationService> logger)
+  ILogger<TelegramNotificationService> logger) : ITelegramNotificationService
 {
   public async Task SendTaskReminderAsync(long telegramId, TaskReminderDto task,
     CancellationToken cancellationToken = default)
@@ -41,6 +41,80 @@ public class TelegramNotificationService(
       logger.LogError(ex,
         "Failed to send task reminder to TelegramId {TelegramId} for task '{TaskTitle}'",
         telegramId, task.Title);
+      throw;
+    }
+  }
+
+  public async Task SendTaskReminderToFamilyAsync(Guid familyId, TaskReminderDto task,
+    CancellationToken cancellationToken = default)
+  {
+    try
+    {
+      // Get family with members
+      var spec = new GetFamilyWithMembersSpec(familyId);
+      var family = await familyRepository.FirstOrDefaultAsync(spec, cancellationToken);
+
+      if (family == null)
+      {
+        logger.LogWarning("Family {FamilyId} not found for task reminder", familyId);
+        return;
+      }
+
+      var activeMembers = family.Members.Where(m => m.IsActive).ToList();
+
+      if (activeMembers.Count == 0)
+      {
+        logger.LogWarning("No active members found in family {FamilyId} for task reminder", familyId);
+        return;
+      }
+
+      // Send reminder to each member
+      var message = $"⏰ <b>Напоминание о задаче</b>\n\n" +
+                    $"📝 {EscapeHtml(task.Title)}\n" +
+                    $"⏳ Срок: {task.DueAt:dd.MM.yyyy HH:mm}\n\n" +
+                    $"Не забудьте выполнить задачу вовремя! 🎯";
+
+      var tasks = new List<Task>();
+      foreach (var member in activeMembers) tasks.Add(SendToUserAsync(member.UserId, message, cancellationToken));
+
+      await Task.WhenAll(tasks);
+
+      logger.LogInformation(
+        "Task reminder sent to {MemberCount} members in family {FamilyId} for task '{TaskTitle}'",
+        activeMembers.Count, familyId, task.Title);
+    }
+    catch (Exception ex)
+    {
+      logger.LogError(ex,
+        "Failed to send task reminder to family {FamilyId} for task '{TaskTitle}'",
+        familyId, task.Title);
+      throw;
+    }
+  }
+
+  public async Task SendTaskCreatedAsync(Guid familyId, string taskTitle, int points, string petName, DateTime dueAt,
+    CancellationToken cancellationToken = default)
+  {
+    try
+    {
+      var message = $"📝 <b>Новая задача создана!</b>\n\n" +
+                    $"🐾 {EscapeHtml(petName)}\n" +
+                    $"📋 {EscapeHtml(taskTitle)}\n" +
+                    $"⭐ {points} очков\n" +
+                    $"⏳ Срок: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
+                    $"Время приступать к работе! 🎯";
+
+      await SendToFamilyMembersAsync(familyId, message, cancellationToken);
+
+      logger.LogInformation(
+        "Task created notification sent to family {FamilyId}: '{TaskTitle}' for pet '{PetName}'",
+        familyId, taskTitle, petName);
+    }
+    catch (Exception ex)
+    {
+      logger.LogError(ex,
+        "Failed to send task created notification to family {FamilyId}",
+        familyId);
       throw;
     }
   }

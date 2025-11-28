@@ -7,7 +7,7 @@ namespace FamilyTaskManager.Infrastructure.DomainEvents;
 
 public class TaskCompletedEventHandler(
   ILogger<TaskCompletedEventHandler> logger,
-  TelegramNotificationService notificationService,
+  ITelegramNotificationService notificationService,
   IRepository<User> userRepository)
   : INotificationHandler<TaskCompletedEvent>
 {

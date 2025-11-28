@@ -8,7 +8,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace FamilyTaskManager.FunctionalTests;
+namespace FamilyTaskManager.TestInfrastructure;
 
 /// <summary>
 ///   Test implementation of ITelegramBotClient for functional tests.

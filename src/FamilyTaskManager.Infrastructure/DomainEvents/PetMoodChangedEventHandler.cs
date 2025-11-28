@@ -6,7 +6,7 @@ namespace FamilyTaskManager.Infrastructure.DomainEvents;
 
 public class PetMoodChangedEventHandler(
   ILogger<PetMoodChangedEventHandler> logger,
-  TelegramNotificationService notificationService)
+  ITelegramNotificationService notificationService)
   : INotificationHandler<PetMoodChangedEvent>
 {
   public async ValueTask Handle(PetMoodChangedEvent notification, CancellationToken cancellationToken)

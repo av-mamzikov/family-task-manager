@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.FunctionalTests.Helpers;
 using FamilyTaskManager.Host.Modules.Bot;
+using FamilyTaskManager.TestInfrastructure;
 
 namespace FamilyTaskManager.FunctionalTests.BotFlow.Family;
 
