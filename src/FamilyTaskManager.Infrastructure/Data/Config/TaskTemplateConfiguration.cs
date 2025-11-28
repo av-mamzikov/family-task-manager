@@ -52,6 +52,6 @@ public class TaskTemplateConfiguration : IEntityTypeConfiguration<TaskTemplate>
     builder.HasOne(t => t.Pet)
       .WithMany()
       .HasForeignKey(t => t.PetId)
-      .OnDelete(DeleteBehavior.ClientCascade);
+      .OnDelete(DeleteBehavior.Cascade);
   }
 }

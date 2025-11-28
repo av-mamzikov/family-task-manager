@@ -39,6 +39,8 @@ public class TelegramBotHostedService(
           new ScopedUpdateHandler(scopeFactory),
           receiverOptions,
           stoppingToken);
+        logger.LogInformation("Bot Module completed");
+        return;
       }
       catch (Exception ex)
       {

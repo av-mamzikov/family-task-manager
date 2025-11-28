@@ -43,6 +43,7 @@ public class DeletePetHandler(
 
     // Delete the pet (this will cascade delete related entities like task templates and tasks)
     await petRepository.DeleteAsync(pet, cancellationToken);
+    await petRepository.SaveChangesAsync(cancellationToken);
 
     return Result.Success();
   }

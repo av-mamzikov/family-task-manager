@@ -37,7 +37,8 @@ builder.Services.AddMediator(options =>
   options.Assemblies =
   [
     typeof(CreateFamilyCommand).Assembly, // UseCases
-    typeof(Family).Assembly // Core
+    typeof(Family).Assembly, // Core
+    typeof(InfrastructureServiceExtensions).Assembly // Infrastructure (for event handlers)
   ];
   options.Namespace = "FamilyTaskManager.Host.Generated";
   options.GenerateTypesAsInternal = true;

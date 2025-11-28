@@ -34,6 +34,7 @@ public class JoinFamilyHandler(
 
     // Update family (domain events will be dispatched automatically)
     await familyRepository.UpdateAsync(family, cancellationToken);
+    await familyRepository.SaveChangesAsync(cancellationToken);
 
     return Result<Guid>.Success(member.Id);
   }

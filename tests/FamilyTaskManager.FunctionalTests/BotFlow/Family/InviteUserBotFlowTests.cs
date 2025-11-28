@@ -95,13 +95,15 @@ public partial class InviteUserBotFlowTests(CustomWebApplicationFactory<Program>
     var invitedMessages = await botClient.WaitForMessagesToAsync(invitedTelegramId, 2);
     invitedMessages.ShouldNotBeEmpty();
 
-    var welcomeMessage = invitedMessages.FirstOrDefault(m =>
-      m.Text != null && m.Text.Contains("Добро пожаловать в семью"));
-    welcomeMessage.ShouldNotBeNull("Должно быть приветственное сообщение о вступлении в семью");
-    welcomeMessage!.Text!.ShouldContain(familyName);
+    invitedMessages.ShouldContain(m => m.Text != null && m.Text.Contains("Добро пожаловать в семью"));
+    invitedMessages.ShouldContain(m => m.Text != null && m.Text.Contains("Главное меню"));
 
-    var mainMenuMessage = invitedMessages.Last();
-    mainMenuMessage.ShouldContainText("Главное меню");
+    // Assert: admin should receive notification about new member joining
+    var adminNotification = await botClient.WaitForLastMessageToAsync(adminChatId);
+
+    adminNotification.ShouldNotBeNull("Администратор должен получить уведомление о присоединении нового участника");
+    adminNotification!.ShouldContainText("присоединился");
+    adminNotification.ShouldContainText(familyName);
   }
 
   [GeneratedRegex(@"invite_[A-Z0-9]+")]

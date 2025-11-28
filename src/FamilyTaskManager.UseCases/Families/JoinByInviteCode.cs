@@ -60,6 +60,7 @@ public class JoinByInviteCodeHandler(
     // Update both entities
     await familyRepository.UpdateAsync(family, cancellationToken);
     await invitationRepository.UpdateAsync(invitation, cancellationToken);
+    await familyRepository.SaveChangesAsync(cancellationToken);
 
     return Result<Guid>.Success(member.Id);
   }

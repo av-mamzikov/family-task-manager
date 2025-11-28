@@ -32,6 +32,7 @@ public class CreateFamilyHandler(
     family.AddMember(command.UserId, FamilyRole.Admin);
 
     await familyRepository.AddAsync(family, cancellationToken);
+    await familyRepository.SaveChangesAsync(cancellationToken);
 
     return Result<Guid>.Success(family.Id);
   }

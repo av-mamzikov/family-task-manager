@@ -48,6 +48,7 @@ public class CompleteTaskHandler(
     // Update both entities (domain events will be dispatched automatically)
     await taskRepository.UpdateAsync(task, cancellationToken);
     await familyRepository.UpdateAsync(family, cancellationToken);
+    await taskRepository.SaveChangesAsync(cancellationToken);
 
     // Trigger immediate mood recalculation for the pet
     var pet = await petRepository.GetByIdAsync(task.PetId, cancellationToken);

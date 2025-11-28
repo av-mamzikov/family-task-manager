@@ -6,7 +6,6 @@ using FamilyTaskManager.Infrastructure.Interfaces;
 using FamilyTaskManager.Infrastructure.Notifications;
 using FamilyTaskManager.Infrastructure.Services;
 using Mediator;
-using Telegram.Bot;
 
 namespace FamilyTaskManager.Infrastructure;
 
@@ -53,17 +52,8 @@ public static class InfrastructureServiceExtensions
     logger.LogInformation("Mediator pipeline behaviors registered");
 
     // Telegram Bot Client (from configuration)
-    var botToken = config["Bot:BotToken"];
-    if (!string.IsNullOrEmpty(botToken))
-    {
-      services.AddSingleton<ITelegramBotClient>(sp => new TelegramBotClient(botToken));
-      services.AddScoped<ITelegramNotificationService, TelegramNotificationService>();
-      logger.LogInformation("Telegram notification service registered");
-    }
-    else
-    {
-      logger.LogWarning("Bot:BotToken not configured - Telegram notifications will not be available");
-    }
+    services.AddScoped<ITelegramNotificationService, TelegramNotificationService>();
+    logger.LogInformation("Telegram notification service registered");
 
     // Register Schedule Evaluator
     services.AddScoped<IScheduleEvaluator, QuartzScheduleEvaluator>();

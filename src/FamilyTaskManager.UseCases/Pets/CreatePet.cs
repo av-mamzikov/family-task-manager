@@ -25,6 +25,7 @@ public class CreatePetHandler(
     // Create pet
     var pet = new Pet(command.FamilyId, command.Type, command.Name);
     await petRepository.AddAsync(pet, cancellationToken);
+    await petRepository.SaveChangesAsync(cancellationToken);
 
     // Create default task templates for this pet type
     var defaultTemplates = PetTaskTemplateData.GetDefaultTemplates(command.Type);
