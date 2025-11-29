@@ -36,6 +36,10 @@ public static class ScheduleKeyboardHelper
       new[]
       {
         InlineKeyboardButton.WithCallbackData("✋ Вручную", "schedule_type_manual")
+      },
+      new[]
+      {
+        InlineKeyboardButton.WithCallbackData("⬅️ Назад", "schedule_type_back")
       }
     });
 

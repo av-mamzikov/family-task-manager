@@ -56,6 +56,13 @@ public class ScheduleCallbackHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
+    // Handle back button
+    if (scheduleType == "back")
+    {
+      await HandleBackFromScheduleTypeAsync(botClient, chatId, messageId, session, cancellationToken);
+      return;
+    }
+
     // Store schedule type in session
     session.Data["scheduleType"] = scheduleType;
 
@@ -190,5 +197,48 @@ public class ScheduleCallbackHandler(
     else
       // For task creation flows, keep state for now (will be implemented later)
       session.State = ConversationState.None;
+  }
+
+  private async Task HandleBackFromScheduleTypeAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    // Delete the inline keyboard message
+    await botClient.DeleteMessageAsync(chatId, messageId, cancellationToken);
+
+    // Determine previous state based on current state
+    var isEditing = session.State == ConversationState.AwaitingTemplateEditScheduleType;
+    var isTask = session.State == ConversationState.AwaitingTaskScheduleType;
+
+    ConversationState previousState;
+    string messageText;
+
+    if (isEditing)
+    {
+      previousState = ConversationState.AwaitingTemplateEditPoints;
+      messageText = "💯 Введите количество очков (от 1 до 100):";
+    }
+    else if (isTask)
+    {
+      previousState = ConversationState.AwaitingTaskPoints;
+      messageText = "💯 Введите количество очков за выполнение задачи (от 1 до 100):";
+    }
+    else
+    {
+      previousState = ConversationState.AwaitingTemplatePoints;
+      messageText = "💯 Введите количество очков (от 1 до 100):";
+    }
+
+    session.State = previousState;
+
+    var keyboard = StateKeyboardHelper.GetKeyboardForState(previousState);
+    await botClient.SendTextMessageAsync(
+      chatId,
+      messageText + StateKeyboardHelper.GetHintForState(previousState),
+      replyMarkup: keyboard,
+      cancellationToken: cancellationToken);
   }
 }

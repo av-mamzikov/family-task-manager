@@ -32,12 +32,29 @@ public class MessageHandler(
     var session = sessionManager.GetSession(telegramId);
     session.UpdateActivity();
 
+    var messageText = message.Text ?? string.Empty;
+
+    // Check if user pressed main menu button while in conversation
+    var isMainMenuButton =
+      messageText is "🏠 Семья" or "✅ Наши задачи" or "🐾 Питомец" or "⭐ Мои очки" or "📊 Статистика";
+    var isCommand = messageText.StartsWith('/');
+
     // Handle conversation state
     if (session.State != ConversationState.None)
     {
-      // Handle universal commands
-      var messageText = message.Text ?? string.Empty;
-      if (messageText is "❌ Отменить" or "/cancel")
+      // If user pressed main menu button or command, clear conversation state
+      if (isMainMenuButton || isCommand)
+      {
+        session.ClearState();
+        await botClient.SendTextMessageAsync(
+          message.Chat.Id,
+          "❌ Предыдущее действие отменено.",
+          replyMarkup: new ReplyKeyboardRemove(),
+          cancellationToken: cancellationToken);
+        // Continue to handle the button/command
+      }
+      // Handle universal conversation commands
+      else if (messageText is "❌ Отменить" or "/cancel")
       {
         await conversationRouter.HandleCancelConversationAsync(
           botClient, message, session,
@@ -45,8 +62,7 @@ public class MessageHandler(
           cancellationToken);
         return;
       }
-
-      if (messageText == "⬅️ Назад")
+      else if (messageText == "⬅️ Назад")
       {
         await conversationRouter.HandleBackInConversationAsync(
           botClient, message, session,
@@ -54,9 +70,11 @@ public class MessageHandler(
           cancellationToken);
         return;
       }
-
-      await conversationRouter.HandleConversationAsync(botClient, message, session, cancellationToken);
-      return;
+      else
+      {
+        await conversationRouter.HandleConversationAsync(botClient, message, session, cancellationToken);
+        return;
+      }
     }
 
     // Handle commands
