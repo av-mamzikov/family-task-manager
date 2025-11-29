@@ -184,7 +184,7 @@ public class PetCallbackHandler(
 
     var messageText = $"{petEmoji} *{pet.Name}*\n\n" +
                       $"📋 Тип: {petTypeText}\n" +
-                      $"💖 Настроение: {moodEmoji} {pet.MoodScore}/100 - {moodText}\n\n";
+                      $"💖 Настроение: {moodEmoji} - {moodText}\n\n";
 
     // Add tasks section
     if (tasksResult.IsSuccess && tasksResult.Value.Any())
@@ -381,7 +381,7 @@ public class PetCallbackHandler(
       var (moodEmoji, moodText) = GetMoodInfo(pet.MoodScore);
 
       messageText += $"{petEmoji} *{pet.Name}*\n";
-      messageText += $"   Настроение: {moodEmoji} {pet.MoodScore}/100 - {moodText}\n";
+      messageText += $"   Настроение: {moodEmoji} - {moodText}\n";
       messageText += $"   Тип: {petTypeText}\n\n";
     }
 

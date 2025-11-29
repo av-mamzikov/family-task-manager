@@ -63,7 +63,7 @@ public class PetCommandHandler(IMediator mediator)
       var moodText = GetMoodText(pet.MoodScore);
 
       messageText += $"{petEmoji} *{pet.Name}*\n";
-      messageText += $"   Настроение: {moodEmoji} {pet.MoodScore}/100 - {moodText}\n";
+      messageText += $"   Настроение: {moodEmoji} - {moodText}\n";
       messageText += $"   Тип: {GetPetTypeText(pet.Type)}\n\n";
     }
 

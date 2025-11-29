@@ -204,7 +204,7 @@ public class TelegramNotificationService(
 
       var message = $"{emoji} <b>Настроение питомца изменилось</b>\n\n" +
                     $"🐾 {EscapeHtml(petName)}\n" +
-                    $"💭 Настроение: {status} ({moodScore}/100)\n\n";
+                    $"💭 Настроение: {status}\n\n";
 
       if (moodScore < 20)
       {
