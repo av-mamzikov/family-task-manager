@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Pets;
 using FamilyTaskManager.UseCases.TaskTemplates;
@@ -116,7 +117,8 @@ public class TemplateCommandHandler(IMediator mediator)
     {
       messageText += $"📝 *{template.Title}*\n";
       messageText += $"   💯 Очки: {template.Points}\n";
-      messageText += $"   🔄 Расписание: `{template.Schedule}`\n";
+      messageText +=
+        $"   🔄 Расписание: {ScheduleFormatter.Format(template.ScheduleType, template.ScheduleTime, template.ScheduleDayOfWeek, template.ScheduleDayOfMonth)}\n";
       messageText += $"   📅 Создан: {template.CreatedAt:dd.MM.yyyy}\n\n";
     }
 
@@ -176,7 +178,7 @@ public class TemplateCommandHandler(IMediator mediator)
                       $"📝 Название: *{template.Title}*\n" +
                       $"🐾 Питомец: {template.PetName}\n" +
                       $"💯 Очки: {template.Points}\n" +
-                      $"🔄 Расписание: `{template.Schedule}`\n" +
+                      $"🔄 Расписание: {ScheduleFormatter.Format(template.ScheduleType, template.ScheduleTime, template.ScheduleDayOfWeek, template.ScheduleDayOfMonth)}\n" +
                       $"🔄 Срок выполнения: `{template.DueDuration}`\n" +
                       $"📅 Создан: {template.CreatedAt:dd.MM.yyyy}\n" +
                       $"✅ Активен: {(template.IsActive ? "Да" : "Нет")}";
@@ -322,7 +324,7 @@ public class TemplateCommandHandler(IMediator mediator)
       $"✏️ *Редактирование шаблона*\n\n" +
       $"📝 Название: {template.Title}\n" +
       $"💯 Очки: {template.Points}\n" +
-      $"🔄 Расписание: `{template.Schedule}`\n" +
+      $"🔄 Расписание: {ScheduleFormatter.Format(template.ScheduleType, template.ScheduleTime, template.ScheduleDayOfWeek, template.ScheduleDayOfMonth)}\n" +
       $"⏰ Срок выполнения: {template.DueDuration.TotalHours} часов\n\n" +
       "Выберите поле для редактирования:",
       ParseMode.Markdown,

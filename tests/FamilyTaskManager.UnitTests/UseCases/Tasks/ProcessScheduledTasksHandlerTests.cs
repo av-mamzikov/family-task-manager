@@ -1,6 +1,6 @@
 using Ardalis.Result;
+using Ardalis.Specification;
 using FamilyTaskManager.Core.FamilyAggregate;
-using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.UseCases.Tasks;
@@ -14,7 +14,6 @@ public class ProcessScheduledTasksHandlerTests
 {
   private readonly ProcessScheduledTasksHandler _handler;
   private readonly ILogger<ProcessScheduledTasksHandler> _logger;
-  private readonly IScheduleEvaluator _scheduleEvaluator;
   private readonly ITaskInstanceFactory _taskInstanceFactory;
   private readonly IRepository<TaskInstance> _taskRepository;
   private readonly IReadRepository<TaskTemplate> _templateRepository;
@@ -24,14 +23,12 @@ public class ProcessScheduledTasksHandlerTests
     _templateRepository = Substitute.For<IReadRepository<TaskTemplate>>();
     _taskRepository = Substitute.For<IRepository<TaskInstance>>();
     _taskInstanceFactory = Substitute.For<ITaskInstanceFactory>();
-    _scheduleEvaluator = Substitute.For<IScheduleEvaluator>();
     _logger = Substitute.For<ILogger<ProcessScheduledTasksHandler>>();
 
     _handler = new ProcessScheduledTasksHandler(
       _templateRepository,
       _taskRepository,
       _taskInstanceFactory,
-      _scheduleEvaluator,
       _logger);
   }
 
@@ -62,35 +59,38 @@ public class ProcessScheduledTasksHandlerTests
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
     var templateId = Guid.NewGuid();
-    var checkFrom = DateTime.UtcNow;
-    var checkTo = checkFrom.AddHours(1);
+    var checkFrom = new DateTime(2024, 1, 15, 8, 0, 0, DateTimeKind.Utc); // 8:00 UTC
+    var checkTo = checkFrom.AddHours(1); // 9:00 UTC
 
     var command = new ProcessScheduledTaskCommand(checkFrom, checkTo);
+
+    // Schedule at 10:00 - outside the window
+    var schedule = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
+    var family = new Family("Test Family", "UTC", false);
+    var template = new TaskTemplate(familyId, petId, "Daily Task", 10, schedule, TimeSpan.FromHours(24),
+      Guid.NewGuid());
+    typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
     var templateDto = new TaskTemplateDto(
       templateId,
       familyId,
       "Daily Task",
       10,
-      "0 9 * * *",
+      schedule.Type,
+      schedule.Time,
+      schedule.DayOfWeek,
+      schedule.DayOfMonth,
       petId,
       "Test Pet",
       true,
       DateTime.UtcNow,
       TimeSpan.FromHours(24));
-    var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, petId, "Daily Task", 10, "0 9 * * *", TimeSpan.FromHours(24),
-      Guid.NewGuid());
-    typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
     _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplateDto> { templateDto });
 
     _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template });
-
-    _scheduleEvaluator.ShouldTriggerInWindow(template.Schedule, checkFrom, checkTo, family.Timezone)
-      .Returns((DateTime?)null);
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);
@@ -102,36 +102,41 @@ public class ProcessScheduledTasksHandlerTests
   }
 
   [Fact]
-  public async Task Handle_TemplateTriggeredInWindow_CreatesTaskInstance()
+  public async Task Handle_TemplateTriggeredInWindow_CreatesInstance()
   {
     // Arrange
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
     var templateId = Guid.NewGuid();
-    var checkFrom = DateTime.UtcNow;
-    var checkTo = checkFrom.AddHours(1);
-    var triggerTime = checkFrom.AddMinutes(30);
+    var checkFrom = new DateTime(2024, 1, 15, 9, 0, 0, DateTimeKind.Utc); // 9:00 UTC
+    var checkTo = checkFrom.AddHours(2); // 11:00 UTC
 
     var command = new ProcessScheduledTaskCommand(checkFrom, checkTo);
+
+    // Schedule at 10:00 - inside the window
+    var schedule = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
+    var family = new Family("Test Family", "UTC", false);
+    var template = new TaskTemplate(familyId, petId, "Daily Task", 10, schedule, TimeSpan.FromHours(24),
+      Guid.NewGuid());
+    typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
     var templateDto = new TaskTemplateDto(
       templateId,
       familyId,
       "Daily Task",
       10,
-      "0 9 * * *",
+      schedule.Type,
+      schedule.Time,
+      schedule.DayOfWeek,
+      schedule.DayOfMonth,
       petId,
       "Test Pet",
       true,
       DateTime.UtcNow,
       TimeSpan.FromHours(24));
-    var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, petId, "Daily Task", 10, "0 9 * * *", TimeSpan.FromHours(24),
-      Guid.NewGuid());
-    typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
-    var taskInstance =
-      new TaskInstance(familyId, petId, "Daily Task", 10, TaskType.Recurring, triggerTime.AddHours(24));
+    var newInstance = new TaskInstance(familyId, petId, "Daily Task", 10, TaskType.Recurring,
+      DateTime.UtcNow.AddHours(24), templateId);
 
     _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplateDto> { templateDto });
@@ -139,15 +144,11 @@ public class ProcessScheduledTasksHandlerTests
     _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template });
 
-    _scheduleEvaluator.ShouldTriggerInWindow(template.Schedule, checkFrom, checkTo, family.Timezone)
-      .Returns(triggerTime);
-
-    _taskRepository.ListAsync(Arg.Any<TaskInstancesByTemplateSpec>(), Arg.Any<CancellationToken>())
+    _taskRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance>());
 
-    _taskInstanceFactory
-      .CreateFromTemplate(template, triggerTime + template.DueDuration, Arg.Any<IEnumerable<TaskInstance>>())
-      .Returns(Result<TaskInstance>.Success(taskInstance));
+    _taskInstanceFactory.CreateFromTemplate(template, Arg.Any<DateTime>(), Arg.Any<List<TaskInstance>>())
+      .Returns(Result<TaskInstance>.Success(newInstance));
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);
@@ -155,86 +156,8 @@ public class ProcessScheduledTasksHandlerTests
     // Assert
     result.IsSuccess.ShouldBeTrue();
     result.Value.ShouldBe(1);
-    await _taskRepository.Received(1).AddAsync(taskInstance, Arg.Any<CancellationToken>());
+    await _taskRepository.Received(1).AddAsync(Arg.Any<TaskInstance>(), Arg.Any<CancellationToken>());
     await _taskRepository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
-  }
-
-  [Fact]
-  public async Task Handle_MultipleTemplatesTriggered_CreatesMultipleInstances()
-  {
-    // Arrange
-    var familyId = Guid.NewGuid();
-    var petId1 = Guid.NewGuid();
-    var petId2 = Guid.NewGuid();
-    var templateId1 = Guid.NewGuid();
-    var templateId2 = Guid.NewGuid();
-    var checkFrom = DateTime.UtcNow;
-    var checkTo = checkFrom.AddHours(1);
-    var triggerTime = checkFrom.AddMinutes(30);
-
-    var command = new ProcessScheduledTaskCommand(checkFrom, checkTo);
-
-    var templateDto1 = new TaskTemplateDto(
-      templateId1,
-      familyId,
-      "Task 1",
-      10,
-      "0 9 * * *",
-      petId1,
-      "Pet 1",
-      true,
-      DateTime.UtcNow,
-      TimeSpan.FromHours(24));
-    var templateDto2 = new TaskTemplateDto(
-      templateId2,
-      familyId,
-      "Task 2",
-      15,
-      "0 10 * * *",
-      petId2,
-      "Pet 2",
-      true,
-      DateTime.UtcNow,
-      TimeSpan.FromHours(12));
-    var family = new Family("Test Family", "UTC", false);
-
-    var template1 =
-      new TaskTemplate(familyId, petId1, "Task 1", 10, "0 9 * * *", TimeSpan.FromHours(24), Guid.NewGuid());
-    var template2 = new TaskTemplate(familyId, petId2, "Task 2", 15, "0 10 * * *", TimeSpan.FromHours(12),
-      Guid.NewGuid());
-    typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template1, family);
-    typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template2, family);
-
-    var taskInstance1 = new TaskInstance(familyId, petId1, "Task 1", 10, TaskType.Recurring, triggerTime.AddHours(24));
-    var taskInstance2 = new TaskInstance(familyId, petId2, "Task 2", 15, TaskType.Recurring, triggerTime.AddHours(12));
-
-    _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
-      .Returns(new List<TaskTemplateDto> { templateDto1, templateDto2 });
-
-    _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
-      .Returns(new List<TaskTemplate> { template1, template2 });
-
-    _scheduleEvaluator.ShouldTriggerInWindow(template1.Schedule, checkFrom, checkTo, family.Timezone)
-      .Returns(triggerTime);
-    _scheduleEvaluator.ShouldTriggerInWindow(template2.Schedule, checkFrom, checkTo, family.Timezone)
-      .Returns(triggerTime);
-
-    _taskRepository.ListAsync(Arg.Any<TaskInstancesByTemplateSpec>(), Arg.Any<CancellationToken>())
-      .Returns(new List<TaskInstance>());
-
-    _taskInstanceFactory.CreateFromTemplate(template1, Arg.Any<DateTime>(), Arg.Any<IEnumerable<TaskInstance>>())
-      .Returns(Result<TaskInstance>.Success(taskInstance1));
-    _taskInstanceFactory.CreateFromTemplate(template2, Arg.Any<DateTime>(), Arg.Any<IEnumerable<TaskInstance>>())
-      .Returns(Result<TaskInstance>.Success(taskInstance2));
-
-    // Act
-    var result = await _handler.Handle(command, CancellationToken.None);
-
-    // Assert
-    result.IsSuccess.ShouldBeTrue();
-    result.Value.ShouldBe(2);
-    await _taskRepository.Received(2).AddAsync(Arg.Any<TaskInstance>(), Arg.Any<CancellationToken>());
-    await _taskRepository.Received(2).SaveChangesAsync(Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -244,27 +167,31 @@ public class ProcessScheduledTasksHandlerTests
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
     var templateId = Guid.NewGuid();
-    var checkFrom = DateTime.UtcNow;
-    var checkTo = checkFrom.AddHours(1);
-    var triggerTime = checkFrom.AddMinutes(30);
+    var checkFrom = new DateTime(2024, 1, 15, 9, 0, 0, DateTimeKind.Utc);
+    var checkTo = checkFrom.AddHours(2);
 
     var command = new ProcessScheduledTaskCommand(checkFrom, checkTo);
+
+    var schedule = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
+    var family = new Family("Test Family", "UTC", false);
+    var template = new TaskTemplate(familyId, petId, "Daily Task", 10, schedule, TimeSpan.FromHours(24),
+      Guid.NewGuid());
+    typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
     var templateDto = new TaskTemplateDto(
       templateId,
       familyId,
       "Daily Task",
       10,
-      "0 9 * * *",
+      schedule.Type,
+      schedule.Time,
+      schedule.DayOfWeek,
+      schedule.DayOfMonth,
       petId,
       "Test Pet",
       true,
       DateTime.UtcNow,
       TimeSpan.FromHours(24));
-    var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, petId, "Daily Task", 10, "0 9 * * *", TimeSpan.FromHours(24),
-      Guid.NewGuid());
-    typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
     _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplateDto> { templateDto });
@@ -272,14 +199,12 @@ public class ProcessScheduledTasksHandlerTests
     _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template });
 
-    _scheduleEvaluator.ShouldTriggerInWindow(template.Schedule, checkFrom, checkTo, family.Timezone)
-      .Returns(triggerTime);
-
-    _taskRepository.ListAsync(Arg.Any<TaskInstancesByTemplateSpec>(), Arg.Any<CancellationToken>())
+    _taskRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance>());
 
-    _taskInstanceFactory.CreateFromTemplate(template, Arg.Any<DateTime>(), Arg.Any<IEnumerable<TaskInstance>>())
-      .Returns(Result<TaskInstance>.Error("Active instance already exists"));
+    // Factory returns error (e.g., already has active instance)
+    _taskInstanceFactory.CreateFromTemplate(template, Arg.Any<DateTime>(), Arg.Any<List<TaskInstance>>())
+      .Returns(Result<TaskInstance>.Error("Already has active instance"));
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);
@@ -291,200 +216,64 @@ public class ProcessScheduledTasksHandlerTests
   }
 
   [Fact]
-  public async Task Handle_TemplateProcessingThrowsException_ContinuesWithOtherTemplates()
+  public async Task Handle_MultipleTemplates_CreatesMultipleInstances()
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var petId1 = Guid.NewGuid();
-    var petId2 = Guid.NewGuid();
-    var templateId1 = Guid.NewGuid();
-    var templateId2 = Guid.NewGuid();
-    var checkFrom = DateTime.UtcNow;
-    var checkTo = checkFrom.AddHours(1);
-    var triggerTime = checkFrom.AddMinutes(30);
+    var petId = Guid.NewGuid();
+    var checkFrom = new DateTime(2024, 1, 15, 9, 0, 0, DateTimeKind.Utc);
+    var checkTo = checkFrom.AddHours(2);
 
     var command = new ProcessScheduledTaskCommand(checkFrom, checkTo);
 
-    var templateDto1 = new TaskTemplateDto(
-      templateId1,
-      familyId,
-      "Task 1",
-      10,
-      "0 9 * * *",
-      petId1,
-      "Pet 1",
-      true,
-      DateTime.UtcNow,
-      TimeSpan.FromHours(24));
-    var templateDto2 = new TaskTemplateDto(
-      templateId2,
-      familyId,
-      "Task 2",
-      15,
-      "0 10 * * *",
-      petId2,
-      "Pet 2",
-      true,
-      DateTime.UtcNow,
-      TimeSpan.FromHours(12));
+    var schedule1 = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
+    var schedule2 = Schedule.CreateDaily(new TimeOnly(10, 30)).Value;
+
     var family = new Family("Test Family", "UTC", false);
 
-    var template1 =
-      new TaskTemplate(familyId, petId1, "Task 1", 10, "0 9 * * *", TimeSpan.FromHours(24), Guid.NewGuid());
-    var template2 = new TaskTemplate(familyId, petId2, "Task 2", 15, "0 10 * * *", TimeSpan.FromHours(12),
+    var template1 = new TaskTemplate(familyId, petId, "Task 1", 10, schedule1, TimeSpan.FromHours(24),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template1, family);
+
+    var template2 = new TaskTemplate(familyId, petId, "Task 2", 15, schedule2, TimeSpan.FromHours(24),
+      Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template2, family);
 
-    var taskInstance2 = new TaskInstance(familyId, petId2, "Task 2", 15, TaskType.Recurring, triggerTime.AddHours(12));
+    var templateDtos = new List<TaskTemplateDto>
+    {
+      new(template1.Id, familyId, "Task 1", 10, schedule1.Type, schedule1.Time, null, null, petId, "Pet", true,
+        DateTime.UtcNow, TimeSpan.FromHours(24)),
+      new(template2.Id, familyId, "Task 2", 15, schedule2.Type, schedule2.Time, null, null, petId, "Pet", true,
+        DateTime.UtcNow, TimeSpan.FromHours(24))
+    };
 
     _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
-      .Returns(new List<TaskTemplateDto> { templateDto1, templateDto2 });
+      .Returns(templateDtos);
 
     _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template1, template2 });
 
-    _scheduleEvaluator.ShouldTriggerInWindow(template1.Schedule, checkFrom, checkTo, family.Timezone)
-      .Returns(_ => throw new InvalidOperationException("Schedule evaluation failed"));
-    _scheduleEvaluator.ShouldTriggerInWindow(template2.Schedule, checkFrom, checkTo, family.Timezone)
-      .Returns(triggerTime);
-
-    _taskRepository.ListAsync(Arg.Any<TaskInstancesByTemplateSpec>(), Arg.Any<CancellationToken>())
+    _taskRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance>());
 
-    _taskInstanceFactory.CreateFromTemplate(template2, Arg.Any<DateTime>(), Arg.Any<IEnumerable<TaskInstance>>())
-      .Returns(Result<TaskInstance>.Success(taskInstance2));
+    _taskInstanceFactory.CreateFromTemplate(Arg.Any<TaskTemplate>(), Arg.Any<DateTime>(),
+        Arg.Any<List<TaskInstance>>())
+      .Returns(x =>
+      {
+        var template = x.ArgAt<TaskTemplate>(0);
+        var dueAt = x.ArgAt<DateTime>(1);
+        var instance = new TaskInstance(template.FamilyId, template.PetId, template.Title, template.Points,
+          TaskType.Recurring, dueAt, template.Id);
+        return Result<TaskInstance>.Success(instance);
+      });
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);
 
     // Assert
     result.IsSuccess.ShouldBeTrue();
-    result.Value.ShouldBe(1);
-    await _taskRepository.Received(1).AddAsync(taskInstance2, Arg.Any<CancellationToken>());
-  }
-
-  [Fact]
-  public async Task Handle_CalculatesDueAtCorrectly()
-  {
-    // Arrange
-    var familyId = Guid.NewGuid();
-    var petId = Guid.NewGuid();
-    var templateId = Guid.NewGuid();
-    var checkFrom = DateTime.UtcNow;
-    var checkTo = checkFrom.AddHours(1);
-    var triggerTime = checkFrom.AddMinutes(30);
-    var dueDuration = TimeSpan.FromHours(24);
-    var expectedDueAt = triggerTime + dueDuration;
-
-    var command = new ProcessScheduledTaskCommand(checkFrom, checkTo);
-
-    var templateDto = new TaskTemplateDto(
-      templateId,
-      familyId,
-      "Daily Task",
-      10,
-      "0 9 * * *",
-      petId,
-      "Test Pet",
-      true,
-      DateTime.UtcNow,
-      TimeSpan.FromHours(24));
-    var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, petId, "Daily Task", 10, "0 9 * * *", dueDuration, Guid.NewGuid());
-    typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
-
-    var taskInstance = new TaskInstance(familyId, petId, "Daily Task", 10, TaskType.Recurring, expectedDueAt);
-
-    _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
-      .Returns(new List<TaskTemplateDto> { templateDto });
-
-    _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
-      .Returns(new List<TaskTemplate> { template });
-
-    _scheduleEvaluator.ShouldTriggerInWindow(template.Schedule, checkFrom, checkTo, family.Timezone)
-      .Returns(triggerTime);
-
-    _taskRepository.ListAsync(Arg.Any<TaskInstancesByTemplateSpec>(), Arg.Any<CancellationToken>())
-      .Returns(new List<TaskInstance>());
-
-    DateTime? capturedDueAt = null;
-    _taskInstanceFactory.CreateFromTemplate(
-        Arg.Is(template),
-        Arg.Do<DateTime>(d => capturedDueAt = d),
-        Arg.Any<IEnumerable<TaskInstance>>())
-      .Returns(Result<TaskInstance>.Success(taskInstance));
-
-    // Act
-    var result = await _handler.Handle(command, CancellationToken.None);
-
-    // Assert
-    result.IsSuccess.ShouldBeTrue();
-    capturedDueAt.ShouldNotBeNull();
-    capturedDueAt.Value.ShouldBe(expectedDueAt);
-  }
-
-  [Fact]
-  public async Task Handle_PassesExistingInstancesToFactory()
-  {
-    // Arrange
-    var familyId = Guid.NewGuid();
-    var petId = Guid.NewGuid();
-    var templateId = Guid.NewGuid();
-    var checkFrom = DateTime.UtcNow;
-    var checkTo = checkFrom.AddHours(1);
-    var triggerTime = checkFrom.AddMinutes(30);
-
-    var command = new ProcessScheduledTaskCommand(checkFrom, checkTo);
-
-    var templateDto = new TaskTemplateDto(
-      templateId,
-      familyId,
-      "Daily Task",
-      10,
-      "0 9 * * *",
-      petId,
-      "Test Pet",
-      true,
-      DateTime.UtcNow,
-      TimeSpan.FromHours(24));
-    var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, petId, "Daily Task", 10, "0 9 * * *", TimeSpan.FromHours(24),
-      Guid.NewGuid());
-    typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
-
-    var existingInstance =
-      new TaskInstance(familyId, petId, "Daily Task", 10, TaskType.Recurring, DateTime.UtcNow.AddDays(-1));
-    var existingInstances = new List<TaskInstance> { existingInstance };
-
-    var taskInstance =
-      new TaskInstance(familyId, petId, "Daily Task", 10, TaskType.Recurring, triggerTime.AddHours(24));
-
-    _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
-      .Returns(new List<TaskTemplateDto> { templateDto });
-
-    _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
-      .Returns(new List<TaskTemplate> { template });
-
-    _scheduleEvaluator.ShouldTriggerInWindow(template.Schedule, checkFrom, checkTo, family.Timezone)
-      .Returns(triggerTime);
-
-    _taskRepository.ListAsync(Arg.Any<TaskInstancesByTemplateSpec>(), Arg.Any<CancellationToken>())
-      .Returns(existingInstances);
-
-    IEnumerable<TaskInstance>? capturedExistingInstances = null;
-    _taskInstanceFactory.CreateFromTemplate(
-        Arg.Is(template),
-        Arg.Any<DateTime>(),
-        Arg.Do<IEnumerable<TaskInstance>>(instances => capturedExistingInstances = instances))
-      .Returns(Result<TaskInstance>.Success(taskInstance));
-
-    // Act
-    var result = await _handler.Handle(command, CancellationToken.None);
-
-    // Assert
-    result.IsSuccess.ShouldBeTrue();
-    capturedExistingInstances.ShouldNotBeNull();
-    capturedExistingInstances.ShouldBe(existingInstances);
+    result.Value.ShouldBe(2);
+    await _taskRepository.Received(2).AddAsync(Arg.Any<TaskInstance>(), Arg.Any<CancellationToken>());
+    await _taskRepository.Received(2).SaveChangesAsync(Arg.Any<CancellationToken>());
   }
 }

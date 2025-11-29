@@ -5,7 +5,10 @@ public record UpdateTaskTemplateCommand(
   Guid FamilyId,
   string? Title,
   int? Points,
-  string? Schedule,
+  ScheduleType? ScheduleType,
+  TimeOnly? ScheduleTime,
+  DayOfWeek? ScheduleDayOfWeek,
+  int? ScheduleDayOfMonth,
   TimeSpan? DueDuration) : ICommand<Result>;
 
 public class UpdateTaskTemplateHandler(IRepository<TaskTemplate> templateRepository)
@@ -33,7 +36,29 @@ public class UpdateTaskTemplateHandler(IRepository<TaskTemplate> templateReposit
     // Get current values or use new ones
     var newTitle = command.Title ?? template.Title;
     var newPoints = command.Points ?? template.Points;
-    var newSchedule = command.Schedule ?? template.Schedule;
+    var newSchedule = template.Schedule;
+
+    // If schedule parameters are provided, create new schedule
+    if (command.ScheduleType != null && command.ScheduleTime != null)
+    {
+      var scheduleResult = command.ScheduleType.Name switch
+      {
+        nameof(ScheduleType.Daily) => Schedule.CreateDaily(command.ScheduleTime.Value),
+        nameof(ScheduleType.Weekly) => command.ScheduleDayOfWeek.HasValue
+          ? Schedule.CreateWeekly(command.ScheduleTime.Value, command.ScheduleDayOfWeek.Value)
+          : Result<Schedule>.Error("DayOfWeek is required for Weekly schedule"),
+        nameof(ScheduleType.Monthly) => command.ScheduleDayOfMonth.HasValue
+          ? Schedule.CreateMonthly(command.ScheduleTime.Value, command.ScheduleDayOfMonth.Value)
+          : Result<Schedule>.Error("DayOfMonth is required for Monthly schedule"),
+        nameof(ScheduleType.Workdays) => Schedule.CreateWorkdays(command.ScheduleTime.Value),
+        nameof(ScheduleType.Weekends) => Schedule.CreateWeekends(command.ScheduleTime.Value),
+        _ => Result<Schedule>.Error("Invalid schedule type")
+      };
+
+      if (!scheduleResult.IsSuccess) return Result.Invalid(new ValidationError(scheduleResult.Errors.First()));
+
+      newSchedule = scheduleResult.Value;
+    }
 
     // Validate title
     if (newTitle.Length < 3 || newTitle.Length > 100)
@@ -45,12 +70,6 @@ public class UpdateTaskTemplateHandler(IRepository<TaskTemplate> templateReposit
     if (newPoints < 1 || newPoints > 100)
     {
       return Result.Invalid(new ValidationError("Очки должны быть в диапазоне от 1 до 100"));
-    }
-
-    // Validate schedule
-    if (string.IsNullOrWhiteSpace(newSchedule))
-    {
-      return Result.Invalid(new ValidationError("Расписание не может быть пустым"));
     }
 
     // Update template

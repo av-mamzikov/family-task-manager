@@ -128,9 +128,27 @@ public class TemplateCreationHandler(
       return;
     }
 
+    // Parse schedule
+    var parseResult = ScheduleParser.Parse(schedule);
+    if (!parseResult.IsSuccess)
+    {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateSchedule);
+      await SendValidationErrorAsync(
+        botClient,
+        message.Chat.Id,
+        $"❌ {parseResult.Errors.FirstOrDefault()}",
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateSchedule),
+        keyboard,
+        cancellationToken);
+      return;
+    }
+
+    var (scheduleType, scheduleTime, scheduleDayOfWeek, scheduleDayOfMonth) = parseResult.Value;
+
     // Create template
     var createTemplateCommand =
-      new CreateTaskTemplateCommand(familyId, petId, title, points, schedule, TimeSpan.FromHours(12), userResult.Value);
+      new CreateTaskTemplateCommand(familyId, petId, title, points, scheduleType, scheduleTime, scheduleDayOfWeek,
+        scheduleDayOfMonth, TimeSpan.FromHours(12), userResult.Value);
     var result = await Mediator.Send(createTemplateCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -139,8 +157,7 @@ public class TemplateCreationHandler(
         botClient,
         message.Chat.Id,
         session,
-        $"❌ Ошибка создания шаблона: {result.Errors.FirstOrDefault()}\n\n" +
-        BotConstants.Errors.InvalidCron,
+        $"❌ Ошибка создания шаблона: {result.Errors.FirstOrDefault()}",
         cancellationToken);
       return;
     }

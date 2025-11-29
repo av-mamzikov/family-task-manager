@@ -250,9 +250,27 @@ public class TaskCreationHandler(
       return;
     }
 
+    // Parse schedule
+    var parseResult = ScheduleParser.Parse(schedule);
+    if (!parseResult.IsSuccess)
+    {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskSchedule);
+      await SendValidationErrorAsync(
+        botClient,
+        message.Chat.Id,
+        $"❌ {parseResult.Errors.FirstOrDefault()}",
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskSchedule),
+        keyboard,
+        cancellationToken);
+      return;
+    }
+
+    var (scheduleType, scheduleTime, scheduleDayOfWeek, scheduleDayOfMonth) = parseResult.Value;
+
     // Create periodic task template
     var createTemplateCommand =
-      new CreateTaskTemplateCommand(familyId, petId, title, points, schedule, TimeSpan.FromHours(12), userResult.Value);
+      new CreateTaskTemplateCommand(familyId, petId, title, points, scheduleType, scheduleTime, scheduleDayOfWeek,
+        scheduleDayOfMonth, TimeSpan.FromHours(12), userResult.Value);
     var result = await Mediator.Send(createTemplateCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -261,19 +279,19 @@ public class TaskCreationHandler(
         botClient,
         message.Chat.Id,
         session,
-        $"❌ Ошибка создания задачи: {result.Errors.FirstOrDefault()}\n\n" +
-        BotConstants.Errors.InvalidCron,
+        $"❌ Ошибка создания задачи: {result.Errors.FirstOrDefault()}",
         cancellationToken);
       return;
     }
 
     session.ClearState();
 
+    var scheduleText = ScheduleFormatter.Format(scheduleType, scheduleTime, scheduleDayOfWeek, scheduleDayOfMonth);
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       $"✅ Периодическая задача \"{title}\" успешно создана!\n\n" +
       $"💯 Очки: {points}\n" +
-      $"🔄 Расписание: {schedule}\n\n" +
+      $"🔄 Расписание: {scheduleText}\n\n" +
       BotConstants.Messages.ScheduledTask,
       cancellationToken: cancellationToken);
   }

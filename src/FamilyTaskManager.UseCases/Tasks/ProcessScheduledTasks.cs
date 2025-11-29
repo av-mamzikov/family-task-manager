@@ -1,4 +1,3 @@
-using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.UseCases.TaskTemplates.Specifications;
 using Microsoft.Extensions.Logging;
@@ -21,7 +20,6 @@ public class ProcessScheduledTasksHandler(
   IReadRepository<TaskTemplate> templateRepository,
   IRepository<TaskInstance> taskRepository,
   ITaskInstanceFactory taskInstanceFactory,
-  IScheduleEvaluator scheduleEvaluator,
   ILogger<ProcessScheduledTasksHandler> logger)
   : ICommandHandler<ProcessScheduledTaskCommand, Result<int>>
 {
@@ -45,8 +43,9 @@ public class ProcessScheduledTasksHandler(
       {
         try
         {
-          var triggerTime = scheduleEvaluator.ShouldTriggerInWindow(
-            template.Schedule, request.CheckFrom, request.CheckTo, template.Family.Timezone);
+          var timeZone = TimeZoneInfo.FindSystemTimeZoneById(template.Family.Timezone);
+          var triggerTime = template.Schedule.ShouldTriggerInWindow(
+            request.CheckFrom, request.CheckTo, timeZone);
           if (!triggerTime.HasValue)
             continue;
 

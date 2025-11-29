@@ -42,7 +42,7 @@ public class TemplateEditHandler(
       return;
     }
 
-    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, title, null, null, null);
+    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, title, null, null, null, null, null, null);
     var result = await Mediator.Send(updateCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -96,7 +96,7 @@ public class TemplateEditHandler(
       return;
     }
 
-    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, points, null, null);
+    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, points, null, null, null, null, null);
     var result = await Mediator.Send(updateCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -150,7 +150,25 @@ public class TemplateEditHandler(
       return;
     }
 
-    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, null, schedule, null);
+    // Parse schedule
+    var parseResult = ScheduleParser.Parse(schedule);
+    if (!parseResult.IsSuccess)
+    {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditSchedule);
+      await SendValidationErrorAsync(
+        botClient,
+        message.Chat.Id,
+        $"❌ {parseResult.Errors.FirstOrDefault()}",
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditSchedule),
+        keyboard,
+        cancellationToken);
+      return;
+    }
+
+    var (scheduleType, scheduleTime, scheduleDayOfWeek, scheduleDayOfMonth) = parseResult.Value;
+
+    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, null, scheduleType, scheduleTime,
+      scheduleDayOfWeek, scheduleDayOfMonth, null);
     var result = await Mediator.Send(updateCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -159,8 +177,7 @@ public class TemplateEditHandler(
         botClient,
         message.Chat.Id,
         session,
-        $"❌ Ошибка обновления: {result.Errors.FirstOrDefault()}\n\n" +
-        BotConstants.Errors.InvalidCron,
+        $"❌ Ошибка обновления: {result.Errors.FirstOrDefault()}",
         cancellationToken);
       return;
     }
@@ -206,7 +223,8 @@ public class TemplateEditHandler(
     }
 
     var dueDuration = TimeSpan.FromHours(dueDurationHours);
-    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, null, null, dueDuration);
+    var updateCommand =
+      new UpdateTaskTemplateCommand(templateId, familyId, null, null, null, null, null, null, dueDuration);
     var result = await Mediator.Send(updateCommand, cancellationToken);
 
     if (!result.IsSuccess)

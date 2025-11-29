@@ -55,9 +55,6 @@ public static class InfrastructureServiceExtensions
     services.AddScoped<ITelegramNotificationService, TelegramNotificationService>();
     logger.LogInformation("Telegram notification service registered");
 
-    // Register Schedule Evaluator
-    services.AddScoped<IScheduleEvaluator, QuartzScheduleEvaluator>();
-
     // Register TimeZone Service
     services.AddScoped<ITimeZoneService, TimeZoneService>();
 

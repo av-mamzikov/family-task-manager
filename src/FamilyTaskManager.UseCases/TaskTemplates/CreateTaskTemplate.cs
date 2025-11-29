@@ -5,7 +5,10 @@ public record CreateTaskTemplateCommand(
   Guid PetId,
   string Title,
   int Points,
-  string Schedule,
+  ScheduleType ScheduleType,
+  TimeOnly ScheduleTime,
+  DayOfWeek? ScheduleDayOfWeek,
+  int? ScheduleDayOfMonth,
   TimeSpan DueDuration,
   Guid CreatedBy) : ICommand<Result<Guid>>;
 
@@ -39,10 +42,24 @@ public class CreateTaskTemplateHandler(
       return Result<Guid>.Invalid(new ValidationError("Очки должны быть в диапазоне от 1 до 100"));
     }
 
-    // Validate schedule (basic check - Quartz will validate the cron expression)
-    if (string.IsNullOrWhiteSpace(command.Schedule))
+    // Create schedule
+    var scheduleResult = command.ScheduleType.Name switch
     {
-      return Result<Guid>.Invalid(new ValidationError("Требуется расписание"));
+      nameof(ScheduleType.Daily) => Schedule.CreateDaily(command.ScheduleTime),
+      nameof(ScheduleType.Weekly) => command.ScheduleDayOfWeek.HasValue
+        ? Schedule.CreateWeekly(command.ScheduleTime, command.ScheduleDayOfWeek.Value)
+        : Result<Schedule>.Error("DayOfWeek is required for Weekly schedule"),
+      nameof(ScheduleType.Monthly) => command.ScheduleDayOfMonth.HasValue
+        ? Schedule.CreateMonthly(command.ScheduleTime, command.ScheduleDayOfMonth.Value)
+        : Result<Schedule>.Error("DayOfMonth is required for Monthly schedule"),
+      nameof(ScheduleType.Workdays) => Schedule.CreateWorkdays(command.ScheduleTime),
+      nameof(ScheduleType.Weekends) => Schedule.CreateWeekends(command.ScheduleTime),
+      _ => Result<Schedule>.Error("Invalid schedule type")
+    };
+
+    if (!scheduleResult.IsSuccess)
+    {
+      return Result<Guid>.Invalid(new ValidationError(scheduleResult.Errors.First()));
     }
 
     // Create template
@@ -51,7 +68,7 @@ public class CreateTaskTemplateHandler(
       command.PetId,
       command.Title,
       command.Points,
-      command.Schedule,
+      scheduleResult.Value,
       command.DueDuration,
       command.CreatedBy);
 
