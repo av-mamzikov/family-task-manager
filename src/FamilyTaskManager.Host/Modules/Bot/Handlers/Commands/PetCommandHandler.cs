@@ -76,8 +76,7 @@ public class PetCommandHandler(IMediator mediator)
       var petEmoji = GetPetEmoji(pet.Type);
       buttons.Add(new[]
       {
-        InlineKeyboardButton.WithCallbackData($"{petEmoji} {pet.Name}", $"pet_view_{pet.Id}"),
-        InlineKeyboardButton.WithCallbackData("🗑️", $"pet_delete_{pet.Id}")
+        InlineKeyboardButton.WithCallbackData($"{petEmoji} {pet.Name}", $"pet_view_{pet.Id}")
       });
     }
 

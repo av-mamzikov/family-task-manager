@@ -204,6 +204,7 @@ public class PetCallbackHandler(
     var keyboard = new InlineKeyboardMarkup(new[]
     {
       new[] { InlineKeyboardButton.WithCallbackData("📋 Шаблоны задач", $"tpl_vp_{petId}") },
+      new[] { InlineKeyboardButton.WithCallbackData("🗑️ Удалить питомца", $"pet_delete_{petId}") },
       new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад к списку", "pet_back") }
     });
 
@@ -398,8 +399,7 @@ public class PetCallbackHandler(
 
       buttons.Add(new[]
       {
-        InlineKeyboardButton.WithCallbackData($"{petEmoji} {pet.Name}", $"pet_view_{pet.Id}"),
-        InlineKeyboardButton.WithCallbackData("🗑️", $"pet_delete_{pet.Id}")
+        InlineKeyboardButton.WithCallbackData($"{petEmoji} {pet.Name}", $"pet_view_{pet.Id}")
       });
     }
 
