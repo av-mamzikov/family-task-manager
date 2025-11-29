@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Core.UserAggregate;
 using FamilyTaskManager.UseCases.Families.Specifications;
 using FamilyTaskManager.UseCases.Tasks;
@@ -92,7 +93,8 @@ public class TelegramNotificationService(
     }
   }
 
-  public async Task SendTaskCreatedAsync(Guid familyId, string taskTitle, int points, string petName, DateTime dueAt,
+  public async Task SendTaskCreatedAsync(Guid familyId, string taskTitle, TaskPoints points, string petName,
+    DateTime dueAt,
     CancellationToken cancellationToken = default)
   {
     try
@@ -100,7 +102,7 @@ public class TelegramNotificationService(
       var message = $"📝 <b>Новая задача создана!</b>\n\n" +
                     $"🐾 {EscapeHtml(petName)}\n" +
                     $"📋 {EscapeHtml(taskTitle)}\n" +
-                    $"⭐ {points} очков\n" +
+                    $"{points} очков\n" +
                     $"⏳ Срок: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
                     $"Время приступать к работе! 🎯";
 
@@ -119,7 +121,7 @@ public class TelegramNotificationService(
     }
   }
 
-  public async Task SendTaskCompletedAsync(Guid familyId, string userName, string taskTitle, int points,
+  public async Task SendTaskCompletedAsync(Guid familyId, string userName, string taskTitle, TaskPoints points,
     CancellationToken cancellationToken = default)
   {
     try
@@ -127,7 +129,7 @@ public class TelegramNotificationService(
       var message = $"✅ <b>Задача выполнена!</b>\n\n" +
                     $"👤 {EscapeHtml(userName)}\n" +
                     $"📝 {EscapeHtml(taskTitle)}\n" +
-                    $"⭐ +{points} очков\n\n" +
+                    $"{points} очков\n\n" +
                     $"Отличная работа! 🎉";
 
       await SendToFamilyMembersAsync(familyId, message, cancellationToken);

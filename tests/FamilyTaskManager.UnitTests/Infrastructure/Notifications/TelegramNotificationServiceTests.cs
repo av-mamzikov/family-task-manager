@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Infrastructure.Notifications;
 using FamilyTaskManager.TestInfrastructure;
 using FamilyTaskManager.UseCases.Families.Specifications;
@@ -93,7 +94,8 @@ public class TelegramNotificationServiceTests
     _userRepository.GetByIdAsync(user2.Id, Arg.Any<CancellationToken>()).Returns(user2);
 
     // Act
-    await _service.SendTaskCreatedAsync(family.Id, "Test Task", 15, "Fluffy", dueAt, CancellationToken.None);
+    await _service.SendTaskCreatedAsync(family.Id, "Test Task", new TaskPoints(2), "Fluffy", dueAt,
+      CancellationToken.None);
 
     // Assert
     _botClient.SentMessages.Count.ShouldBe(2);
@@ -103,14 +105,14 @@ public class TelegramNotificationServiceTests
     message1.Text!.ShouldContain("Новая задача создана");
     message1.Text!.ShouldContain("Test Task");
     message1.Text!.ShouldContain("Fluffy");
-    message1.Text!.ShouldContain("15 очков");
+    message1.Text!.ShouldContain("⭐⭐ очков");
 
     var message2 = _botClient.GetLastMessageTo(telegramId2)!;
     message2.ShouldNotBeNull();
     message2.Text!.ShouldContain("Новая задача создана");
     message2.Text!.ShouldContain("Test Task");
     message2.Text!.ShouldContain("Fluffy");
-    message2.Text!.ShouldContain("15 очков");
+    message2.Text!.ShouldContain("⭐⭐ очков");
   }
 
   [Fact]

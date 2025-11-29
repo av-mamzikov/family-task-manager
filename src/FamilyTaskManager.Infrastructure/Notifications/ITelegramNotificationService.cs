@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.UseCases.Tasks;
 
 namespace FamilyTaskManager.Infrastructure.Notifications;
@@ -12,10 +13,10 @@ public interface ITelegramNotificationService
   Task SendTaskReminderToFamilyAsync(Guid familyId, TaskReminderDto task,
     CancellationToken cancellationToken = default);
 
-  Task SendTaskCreatedAsync(Guid familyId, string taskTitle, int points, string petName, DateTime dueAt,
+  Task SendTaskCreatedAsync(Guid familyId, string taskTitle, TaskPoints points, string petName, DateTime dueAt,
     CancellationToken cancellationToken = default);
 
-  Task SendTaskCompletedAsync(Guid familyId, string userName, string taskTitle, int points,
+  Task SendTaskCompletedAsync(Guid familyId, string userName, string taskTitle, TaskPoints points,
     CancellationToken cancellationToken = default);
 
   Task SendPetMoodChangedAsync(Guid familyId, string petName, int moodScore,

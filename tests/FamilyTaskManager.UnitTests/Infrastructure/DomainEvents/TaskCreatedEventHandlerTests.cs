@@ -66,7 +66,7 @@ public class TaskCreatedEventHandlerTests
     await _notificationService.Received(1).SendTaskCreatedAsync(
       family.Id,
       "Test Task",
-      2,
+      new TaskPoints(2),
       "Test Pet",
       dueAtLocal,
       Arg.Any<CancellationToken>());
@@ -101,7 +101,7 @@ public class TaskCreatedEventHandlerTests
     await _notificationService.DidNotReceive().SendTaskCreatedAsync(
       Arg.Any<Guid>(),
       Arg.Any<string>(),
-      Arg.Any<int>(),
+      Arg.Any<TaskPoints>(),
       Arg.Any<string>(),
       Arg.Any<DateTime>(),
       Arg.Any<CancellationToken>());
@@ -143,7 +143,7 @@ public class TaskCreatedEventHandlerTests
     _notificationService.SendTaskCreatedAsync(
         Arg.Any<Guid>(),
         Arg.Any<string>(),
-        Arg.Any<int>(),
+        Arg.Any<TaskPoints>(),
         Arg.Any<string>(),
         Arg.Any<DateTime>(),
         Arg.Any<CancellationToken>())
@@ -156,7 +156,7 @@ public class TaskCreatedEventHandlerTests
     await _notificationService.Received(1).SendTaskCreatedAsync(
       family.Id,
       "Test Task",
-      2,
+      new TaskPoints(2),
       "Test Pet",
       dueAtLocal,
       Arg.Any<CancellationToken>());

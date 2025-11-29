@@ -36,4 +36,6 @@ public class TaskPoints : ValueObject
   {
     yield return Value;
   }
+
+  public override string ToString() => ToStars();
 }
