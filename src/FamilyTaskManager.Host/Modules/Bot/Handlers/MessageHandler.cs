@@ -36,7 +36,7 @@ public class MessageHandler(
 
     // Check if user pressed main menu button while in conversation
     var isMainMenuButton =
-      messageText is "🏠 Семья" or "✅ Наши задачи" or "🐾 Питомец" or "⭐ Мои очки" or "📊 Статистика";
+      messageText is "🏠 Семья" or "✅ Наши задачи" or "🐾 Питомец" or "📊 Статистика";
     var isCommand = messageText.StartsWith('/');
 
     // Handle conversation state
