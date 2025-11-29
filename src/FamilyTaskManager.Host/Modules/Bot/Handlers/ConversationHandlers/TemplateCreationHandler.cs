@@ -289,7 +289,7 @@ public class TemplateCreationHandler(
       familyId,
       petId,
       title,
-      points,
+      new TaskPoints(points),
       scheduleType,
       scheduleTime,
       scheduleDayOfWeek == default ? null : scheduleDayOfWeek,
@@ -320,7 +320,7 @@ public class TemplateCreationHandler(
       message.Chat.Id,
       $"{BotConstants.Templates.TemplateCreated}\n\n" +
       $"✅ Шаблон \"{title}\" успешно создан!\n\n" +
-      $"💯 Очки: {points}\n" +
+      $"💯 Очки: {TaskPointsHelper.ToStars(points)}\n" +
       $"🔄 Расписание: {scheduleDescription}\n\n" +
       BotConstants.Messages.ScheduledTask,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),

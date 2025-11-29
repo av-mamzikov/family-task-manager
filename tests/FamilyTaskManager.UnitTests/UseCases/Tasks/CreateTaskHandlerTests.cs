@@ -37,7 +37,7 @@ public class CreateTaskHandlerTests
     var pet = new Pet(familyId, PetType.Cat, "Fluffy");
     var family = new Family("Test Family", "UTC", false);
     var dueAt = DateTime.UtcNow.AddDays(1);
-    var command = new CreateTaskCommand(familyId, petId, "Feed the cat", 10, dueAt, Guid.NewGuid());
+    var command = new CreateTaskCommand(familyId, petId, "Feed the cat", new TaskPoints(2), dueAt, Guid.NewGuid());
 
     _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>())
       .Returns(pet);
@@ -59,7 +59,7 @@ public class CreateTaskHandlerTests
     capturedTask.FamilyId.ShouldBe(familyId);
     capturedTask.PetId.ShouldBe(petId);
     capturedTask.Title.ShouldBe("Feed the cat");
-    capturedTask.Points.ShouldBe(10);
+    capturedTask.Points.Value.ShouldBe(2);
     capturedTask.Type.ShouldBe(TaskType.OneTime);
   }
 
@@ -67,7 +67,8 @@ public class CreateTaskHandlerTests
   public async Task Handle_NonExistentPet_ReturnsNotFound()
   {
     // Arrange
-    var command = new CreateTaskCommand(Guid.NewGuid(), Guid.NewGuid(), "Feed the cat", 10, DateTime.UtcNow,
+    var command = new CreateTaskCommand(Guid.NewGuid(), Guid.NewGuid(), "Feed the cat", new TaskPoints(2),
+      DateTime.UtcNow,
       Guid.NewGuid());
 
     _petRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
@@ -90,7 +91,8 @@ public class CreateTaskHandlerTests
     var petId = Guid.NewGuid();
     var pet = new Pet(differentFamilyId, PetType.Cat, "Fluffy");
     var family = new Family("Test Family", "UTC", false);
-    var command = new CreateTaskCommand(familyId, petId, "Feed the cat", 10, DateTime.UtcNow, Guid.NewGuid());
+    var command = new CreateTaskCommand(familyId, petId, "Feed the cat", new TaskPoints(2), DateTime.UtcNow,
+      Guid.NewGuid());
 
     _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>())
       .Returns(pet);
@@ -106,8 +108,8 @@ public class CreateTaskHandlerTests
   }
 
   [Theory]
-  [InlineData("AB", 10)] // Too short
-  [InlineData("", 10)] // Empty
+  [InlineData("AB", 1)] // Too short
+  [InlineData("", 1)] // Empty
   public async Task Handle_InvalidTitle_ReturnsInvalid(string title, int points)
   {
     // Arrange
@@ -115,7 +117,8 @@ public class CreateTaskHandlerTests
     var petId = Guid.NewGuid();
     var pet = new Pet(familyId, PetType.Cat, "Fluffy");
     var family = new Family("Test Family", "UTC", false);
-    var command = new CreateTaskCommand(familyId, petId, title, points, DateTime.UtcNow, Guid.NewGuid());
+    var command =
+      new CreateTaskCommand(familyId, petId, title, new TaskPoints(points), DateTime.UtcNow, Guid.NewGuid());
 
     _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>())
       .Returns(pet);
@@ -132,27 +135,8 @@ public class CreateTaskHandlerTests
 
   [Theory]
   [InlineData(0)]
-  [InlineData(-1)]
-  [InlineData(101)]
-  public async Task Handle_InvalidPoints_ReturnsInvalid(int points)
-  {
-    // Arrange
-    var familyId = Guid.NewGuid();
-    var petId = Guid.NewGuid();
-    var pet = new Pet(familyId, PetType.Cat, "Fluffy");
-    var family = new Family("Test Family", "UTC", false);
-    var command = new CreateTaskCommand(familyId, petId, "Valid Title", points, DateTime.UtcNow, Guid.NewGuid());
-
-    _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>())
-      .Returns(pet);
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
-      .Returns(family);
-
-    // Act
-    var result = await _handler.Handle(command, CancellationToken.None);
-
-    // Assert
-    result.IsSuccess.ShouldBeFalse();
-    result.Status.ShouldBe(ResultStatus.Invalid);
-  }
+  [InlineData(4)]
+  public void TaskPoints_Constructor_WithInvalidPoints_ThrowsException(int points) =>
+    // Act & Assert
+    Should.Throw<ArgumentException>(() => new TaskPoints(points));
 }

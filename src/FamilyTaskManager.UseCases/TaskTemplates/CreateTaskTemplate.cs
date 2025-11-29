@@ -4,7 +4,7 @@ public record CreateTaskTemplateCommand(
   Guid FamilyId,
   Guid PetId,
   string Title,
-  int Points,
+  TaskPoints Points,
   ScheduleType ScheduleType,
   TimeOnly ScheduleTime,
   DayOfWeek? ScheduleDayOfWeek,
@@ -34,12 +34,6 @@ public class CreateTaskTemplateHandler(
     if (command.Title.Length < 3 || command.Title.Length > 100)
     {
       return Result<Guid>.Invalid(new ValidationError("Название должно быть длиной от 3 до 100 символов"));
-    }
-
-    // Validate points
-    if (command.Points < 1 || command.Points > 100)
-    {
-      return Result<Guid>.Invalid(new ValidationError("Очки должны быть в диапазоне от 1 до 100"));
     }
 
     // Create schedule

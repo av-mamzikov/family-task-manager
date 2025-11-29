@@ -4,7 +4,7 @@ public record UpdateTaskTemplateCommand(
   Guid TemplateId,
   Guid FamilyId,
   string? Title,
-  int? Points,
+  TaskPoints? Points,
   ScheduleType? ScheduleType,
   TimeOnly? ScheduleTime,
   DayOfWeek? ScheduleDayOfWeek,
@@ -65,12 +65,6 @@ public class UpdateTaskTemplateHandler(IRepository<TaskTemplate> templateReposit
     if (newTitle.Length < 3 || newTitle.Length > 100)
     {
       return Result.Invalid(new ValidationError("Название должно быть длиной от 3 до 100 символов"));
-    }
-
-    // Validate points
-    if (newPoints < 1 || newPoints > 100)
-    {
-      return Result.Invalid(new ValidationError("Очки должны быть в диапазоне от 1 до 100"));
     }
 
     // Update template

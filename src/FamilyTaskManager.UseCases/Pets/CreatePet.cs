@@ -38,7 +38,7 @@ public class CreatePetHandler(
         command.FamilyId,
         pet.Id,
         templateData.Title,
-        templateData.Points,
+        templateData.GetTaskPoints(),
         templateData.Schedule,
         templateData.DueDuration,
         systemUserId);

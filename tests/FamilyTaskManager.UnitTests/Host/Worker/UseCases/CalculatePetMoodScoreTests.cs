@@ -158,13 +158,14 @@ public class CalculatePetMoodScoreTests
   }
 
   // Helper methods
-  private TaskInstance CreateCompletedTask(Guid familyId, Guid petId, int points, DateTime dueAt, DateTime completedAt)
+  private TaskInstance CreateCompletedTask(Guid familyId, Guid petId, TaskPoints points, DateTime dueAt,
+    DateTime completedAt)
   {
     var task = new TaskInstance(familyId, petId, "Test Task", points, TaskType.OneTime, dueAt);
     task.Complete(Guid.NewGuid(), completedAt);
     return task;
   }
 
-  private TaskInstance CreateOverdueTask(Guid familyId, Guid petId, int points, DateTime dueAt) =>
+  private TaskInstance CreateOverdueTask(Guid familyId, Guid petId, TaskPoints points, DateTime dueAt) =>
     new(familyId, petId, "Overdue Task", points, TaskType.OneTime, dueAt);
 }

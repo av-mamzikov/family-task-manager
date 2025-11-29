@@ -159,9 +159,9 @@ public class CreatePetHandlerTests
     capturedTemplates.Count.ShouldBe(8);
 
     // Verify some key templates
-    capturedTemplates.ShouldContain(t => t.Title == "Убрать какахи из лотка кота" && t.Points == 4);
-    capturedTemplates.ShouldContain(t => t.Title == "Налить свежую воду коту" && t.Points == 3);
-    capturedTemplates.ShouldContain(t => t.Title == "Поиграть с котом" && t.Points == 2);
+    capturedTemplates.ShouldContain(t => t.Title == "Убрать какахи из лотка кота" && t.Points.Value == 3);
+    capturedTemplates.ShouldContain(t => t.Title == "Налить свежую воду коту" && t.Points.Value == 2);
+    capturedTemplates.ShouldContain(t => t.Title == "Поиграть с котом" && t.Points.Value == 1);
 
     // All templates should belong to the same family and pet
     capturedTemplates.ShouldAllBe(t => t.FamilyId == familyId);
@@ -194,9 +194,9 @@ public class CreatePetHandlerTests
     capturedTemplates.Count.ShouldBe(6);
 
     // Verify some key templates
-    capturedTemplates.ShouldContain(t => t.Title == "Выгулять собаку утром" && t.Points == 5);
-    capturedTemplates.ShouldContain(t => t.Title == "Выгулять собаку вечером" && t.Points == 5);
-    capturedTemplates.ShouldContain(t => t.Title == "Искупать собаку" && t.Points == 8);
+    capturedTemplates.ShouldContain(t => t.Title == "Выгулять собаку утром" && t.Points.Value == 3);
+    capturedTemplates.ShouldContain(t => t.Title == "Выгулять собаку вечером" && t.Points.Value == 3);
+    capturedTemplates.ShouldContain(t => t.Title == "Искупать собаку" && t.Points.Value == 3);
   }
 
   [Fact]
@@ -223,8 +223,8 @@ public class CreatePetHandlerTests
     capturedTemplates.Count.ShouldBe(5);
 
     // Verify some key templates
-    capturedTemplates.ShouldContain(t => t.Title == "Насыпать корм хомяку" && t.Points == 2);
-    capturedTemplates.ShouldContain(t => t.Title == "Убрать клетку хомяка" && t.Points == 5);
-    capturedTemplates.ShouldContain(t => t.Title == "Полностью помыть клетку хомяка" && t.Points == 7);
+    capturedTemplates.ShouldContain(t => t.Title == "Насыпать корм хомяку" && t.Points.Value == 2);
+    capturedTemplates.ShouldContain(t => t.Title == "Убрать клетку хомяка" && t.Points.Value == 3);
+    capturedTemplates.ShouldContain(t => t.Title == "Полностью помыть клетку хомяка" && t.Points.Value == 3);
   }
 }

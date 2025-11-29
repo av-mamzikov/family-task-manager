@@ -35,7 +35,8 @@ public class CompleteTaskHandlerTests
     var taskId = Guid.NewGuid();
     var petId = Guid.NewGuid();
 
-    var task = new TaskInstance(familyId, petId, "Feed the cat", 10, TaskType.OneTime, DateTime.UtcNow.AddDays(1));
+    var task = new TaskInstance(familyId, petId, "Feed the cat", new TaskPoints(2), TaskType.OneTime,
+      DateTime.UtcNow.AddDays(1));
     var family = new Family("Smith Family", "UTC");
     family.AddMember(userId, FamilyRole.Child);
 
@@ -56,7 +57,7 @@ public class CompleteTaskHandlerTests
     task.CompletedAt.ShouldNotBeNull();
 
     var member = family.Members.First();
-    member.Points.ShouldBe(10);
+    member.Points.ShouldBe(2);
 
     await _taskRepository.Received(1).UpdateAsync(task, Arg.Any<CancellationToken>());
     await _familyRepository.Received(1).UpdateAsync(family, Arg.Any<CancellationToken>());
@@ -88,7 +89,8 @@ public class CompleteTaskHandlerTests
     var taskId = Guid.NewGuid();
     var petId = Guid.NewGuid();
 
-    var task = new TaskInstance(familyId, petId, "Feed the cat", 10, TaskType.OneTime, DateTime.UtcNow.AddDays(1));
+    var task = new TaskInstance(familyId, petId, "Feed the cat", new TaskPoints(2), TaskType.OneTime,
+      DateTime.UtcNow.AddDays(1));
     task.Complete(userId, DateTime.UtcNow);
 
     var command = new CompleteTaskCommand(taskId, userId);
@@ -114,7 +116,8 @@ public class CompleteTaskHandlerTests
     var taskId = Guid.NewGuid();
     var petId = Guid.NewGuid();
 
-    var task = new TaskInstance(familyId, petId, "Feed the cat", 10, TaskType.OneTime, DateTime.UtcNow.AddDays(1));
+    var task = new TaskInstance(familyId, petId, "Feed the cat", new TaskPoints(2), TaskType.OneTime,
+      DateTime.UtcNow.AddDays(1));
     var family = new Family("Smith Family", "UTC");
     family.AddMember(differentUserId, FamilyRole.Child); // Different user
 

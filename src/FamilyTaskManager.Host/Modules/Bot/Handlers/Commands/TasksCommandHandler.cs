@@ -63,7 +63,7 @@ public class TasksCommandHandler(IMediator mediator)
       {
         var overdueMarker = task.DueAt < DateTime.UtcNow ? "⚠️" : "";
         messageText += $"{overdueMarker} *{task.Title}*\n";
-        messageText += $"   🐾 {task.PetName} | ⭐ {task.Points} очков\n";
+        messageText += $"   🐾 {task.PetName} | {task.Points.ToStars()}\n";
         messageText += $"   📅 До: {task.DueAt:dd.MM.yyyy HH:mm}\n\n";
       }
     }
@@ -74,7 +74,7 @@ public class TasksCommandHandler(IMediator mediator)
       foreach (var task in inProgressTasks)
       {
         messageText += $"🔄 *{task.Title}*\n";
-        messageText += $"   🐾 {task.PetName} | ⭐ {task.Points} очков\n";
+        messageText += $"   🐾 {task.PetName} | {task.Points.ToStars()}\n";
         if (!string.IsNullOrEmpty(task.StartedByUserName)) messageText += $"   👤 Взял: {task.StartedByUserName}\n";
 
         messageText += "\n";

@@ -13,18 +13,18 @@ public class TaskInstanceTests
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
     var title = "Feed the pet";
-    var points = 10;
+    var points = 2;
     var type = TaskType.OneTime;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act
-    var task = new TaskInstance(familyId, petId, title, points, type, dueAt);
+    var task = new TaskInstance(familyId, petId, title, new TaskPoints(points), type, dueAt);
 
     // Assert
     task.FamilyId.ShouldBe(familyId);
     task.PetId.ShouldBe(petId);
     task.Title.ShouldBe(title);
-    task.Points.ShouldBe(points);
+    task.Points.Value.ShouldBe(points);
     task.Type.ShouldBe(type);
     task.DueAt.ShouldBe(dueAt);
     task.Status.ShouldBe(TaskStatus.Active);
@@ -41,13 +41,13 @@ public class TaskInstanceTests
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
     var title = "Feed the pet";
-    var points = 10;
+    var points = 2;
     var type = TaskType.Recurring;
     var dueAt = DateTime.UtcNow.AddHours(2);
     var templateId = Guid.NewGuid();
 
     // Act
-    var task = new TaskInstance(familyId, petId, title, points, type, dueAt, templateId);
+    var task = new TaskInstance(familyId, petId, title, new TaskPoints(points), type, dueAt, templateId);
 
     // Assert
     task.TemplateId.ShouldBe(templateId);
@@ -61,12 +61,12 @@ public class TaskInstanceTests
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
     var title = "  Feed the pet  ";
-    var points = 10;
+    var points = 2;
     var type = TaskType.OneTime;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act
-    var task = new TaskInstance(familyId, petId, title, points, type, dueAt);
+    var task = new TaskInstance(familyId, petId, title, new TaskPoints(points), type, dueAt);
 
     // Assert
     task.Title.ShouldBe("Feed the pet");
@@ -79,12 +79,12 @@ public class TaskInstanceTests
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
     var title = "Feed the pet";
-    var points = 10;
+    var points = 2;
     var type = TaskType.OneTime;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act
-    var task = new TaskInstance(familyId, petId, title, points, type, dueAt);
+    var task = new TaskInstance(familyId, petId, title, new TaskPoints(points), type, dueAt);
 
     // Assert
     task.DomainEvents.ShouldContain(e => e is TaskCreatedEvent);
@@ -103,7 +103,7 @@ public class TaskInstanceTests
 
     // Act & Assert
     Should.Throw<ArgumentException>(() =>
-      new TaskInstance(familyId, petId, title, points, type, dueAt));
+      new TaskInstance(familyId, petId, title, new TaskPoints(points), type, dueAt));
   }
 
   [Fact]
@@ -119,7 +119,7 @@ public class TaskInstanceTests
 
     // Act & Assert
     Should.Throw<ArgumentException>(() =>
-      new TaskInstance(familyId, petId, title, points, type, dueAt));
+      new TaskInstance(familyId, petId, title, new TaskPoints(points), type, dueAt));
   }
 
   [Theory]
@@ -137,14 +137,12 @@ public class TaskInstanceTests
 
     // Act & Assert
     Should.Throw<ArgumentException>(() =>
-      new TaskInstance(familyId, petId, invalidTitle!, points, type, dueAt));
+      new TaskInstance(familyId, petId, invalidTitle!, new TaskPoints(points), type, dueAt));
   }
 
   [Theory]
   [InlineData(0)]
-  [InlineData(-1)]
-  [InlineData(101)]
-  [InlineData(200)]
+  [InlineData(4)]
   public void Constructor_WithInvalidPoints_ThrowsException(int invalidPoints)
   {
     // Arrange
@@ -156,13 +154,13 @@ public class TaskInstanceTests
 
     // Act & Assert
     Should.Throw<ArgumentException>(() =>
-      new TaskInstance(familyId, petId, title, invalidPoints, type, dueAt));
+      new TaskInstance(familyId, petId, title, new TaskPoints(invalidPoints), type, dueAt));
   }
 
   [Theory]
   [InlineData(1)]
-  [InlineData(50)]
-  [InlineData(100)]
+  [InlineData(2)]
+  [InlineData(3)]
   public void Constructor_WithValidPoints_CreatesTask(int validPoints)
   {
     // Arrange
@@ -173,10 +171,10 @@ public class TaskInstanceTests
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act
-    var task = new TaskInstance(familyId, petId, title, validPoints, type, dueAt);
+    var task = new TaskInstance(familyId, petId, title, new TaskPoints(validPoints), type, dueAt);
 
     // Assert
-    task.Points.ShouldBe(validPoints);
+    task.Points.Value.ShouldBe(validPoints);
   }
 
   [Theory]
@@ -188,11 +186,11 @@ public class TaskInstanceTests
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
     var title = "Feed the pet";
-    var points = 10;
+    var points = 2;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act
-    var task = new TaskInstance(familyId, petId, title, points, type, dueAt);
+    var task = new TaskInstance(familyId, petId, title, new TaskPoints(points), type, dueAt);
 
     // Assert
     task.Type.ShouldBe(type);
@@ -203,7 +201,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var task = new TaskInstance(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, TaskType.OneTime, DateTime.UtcNow.AddHours(2));
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", new TaskPoints(2), TaskType.OneTime, DateTime.UtcNow.AddHours(2));
     var memberId = Guid.NewGuid();
     task.Status.ShouldBe(TaskStatus.Active);
 
@@ -220,7 +218,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var task = new TaskInstance(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, TaskType.OneTime, DateTime.UtcNow.AddHours(2));
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", new TaskPoints(2), TaskType.OneTime, DateTime.UtcNow.AddHours(2));
     var memberId = Guid.NewGuid();
     task.Start(memberId);
 
@@ -236,7 +234,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var task = new TaskInstance(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, TaskType.OneTime, DateTime.UtcNow.AddHours(2));
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", new TaskPoints(2), TaskType.OneTime, DateTime.UtcNow.AddHours(2));
     var memberId = Guid.NewGuid();
     var completedBy = Guid.NewGuid();
     task.Complete(completedBy, DateTime.UtcNow);
@@ -253,7 +251,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var task = new TaskInstance(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, TaskType.OneTime, DateTime.UtcNow.AddHours(2));
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", new TaskPoints(2), TaskType.OneTime, DateTime.UtcNow.AddHours(2));
     var completedBy = Guid.NewGuid();
     var completedAt = DateTime.UtcNow;
 
@@ -271,7 +269,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var task = new TaskInstance(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, TaskType.OneTime, DateTime.UtcNow.AddHours(2));
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", new TaskPoints(2), TaskType.OneTime, DateTime.UtcNow.AddHours(2));
     var memberId = Guid.NewGuid();
     task.Start(memberId);
     var completedBy = Guid.NewGuid();
@@ -291,7 +289,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var task = new TaskInstance(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, TaskType.OneTime, DateTime.UtcNow.AddHours(2));
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", new TaskPoints(2), TaskType.OneTime, DateTime.UtcNow.AddHours(2));
     var completedBy = Guid.NewGuid();
     var completedAt = DateTime.UtcNow;
 
@@ -307,7 +305,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var task = new TaskInstance(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, TaskType.OneTime, DateTime.UtcNow.AddHours(2));
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", new TaskPoints(2), TaskType.OneTime, DateTime.UtcNow.AddHours(2));
     var firstCompletedBy = Guid.NewGuid();
     var firstCompletedAt = DateTime.UtcNow;
     task.Complete(firstCompletedBy, firstCompletedAt);
@@ -329,7 +327,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var task = new TaskInstance(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, TaskType.OneTime, DateTime.UtcNow.AddHours(2));
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", new TaskPoints(2), TaskType.OneTime, DateTime.UtcNow.AddHours(2));
     var completedBy = Guid.Empty;
     var completedAt = DateTime.UtcNow;
 
@@ -342,7 +340,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var task = new TaskInstance(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, TaskType.OneTime, DateTime.UtcNow.AddHours(2));
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", new TaskPoints(2), TaskType.OneTime, DateTime.UtcNow.AddHours(2));
     var completedBy = Guid.NewGuid();
     var completedAt = DateTime.UtcNow;
 
@@ -368,7 +366,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var task = new TaskInstance(
-      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, TaskType.OneTime, DateTime.UtcNow.AddHours(2));
+      Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", new TaskPoints(2), TaskType.OneTime, DateTime.UtcNow.AddHours(2));
     var completedBy = Guid.NewGuid();
     var completedAt = DateTime.UtcNow;
 

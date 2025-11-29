@@ -67,7 +67,7 @@ public class ProcessScheduledTasksHandlerTests
     // Schedule at 10:00 - outside the window
     var schedule = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
     var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, petId, "Daily Task", 10, schedule, TimeSpan.FromHours(24),
+    var template = new TaskTemplate(familyId, petId, "Daily Task", new TaskPoints(2), schedule, TimeSpan.FromHours(24),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
@@ -75,7 +75,7 @@ public class ProcessScheduledTasksHandlerTests
       templateId,
       familyId,
       "Daily Task",
-      10,
+      new TaskPoints(2),
       schedule.Type,
       schedule.Time,
       schedule.DayOfWeek,
@@ -116,7 +116,7 @@ public class ProcessScheduledTasksHandlerTests
     // Schedule at 10:00 - inside the window
     var schedule = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
     var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, petId, "Daily Task", 10, schedule, TimeSpan.FromHours(24),
+    var template = new TaskTemplate(familyId, petId, "Daily Task", new TaskPoints(2), schedule, TimeSpan.FromHours(24),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
@@ -124,7 +124,7 @@ public class ProcessScheduledTasksHandlerTests
       templateId,
       familyId,
       "Daily Task",
-      10,
+      new TaskPoints(2),
       schedule.Type,
       schedule.Time,
       schedule.DayOfWeek,
@@ -135,7 +135,7 @@ public class ProcessScheduledTasksHandlerTests
       DateTime.UtcNow,
       TimeSpan.FromHours(24));
 
-    var newInstance = new TaskInstance(familyId, petId, "Daily Task", 10, TaskType.Recurring,
+    var newInstance = new TaskInstance(familyId, petId, "Daily Task", new TaskPoints(2), TaskType.Recurring,
       DateTime.UtcNow.AddHours(24), templateId);
 
     _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
@@ -174,7 +174,7 @@ public class ProcessScheduledTasksHandlerTests
 
     var schedule = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
     var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, petId, "Daily Task", 10, schedule, TimeSpan.FromHours(24),
+    var template = new TaskTemplate(familyId, petId, "Daily Task", new TaskPoints(2), schedule, TimeSpan.FromHours(24),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
@@ -182,7 +182,7 @@ public class ProcessScheduledTasksHandlerTests
       templateId,
       familyId,
       "Daily Task",
-      10,
+      new TaskPoints(2),
       schedule.Type,
       schedule.Time,
       schedule.DayOfWeek,
@@ -231,19 +231,21 @@ public class ProcessScheduledTasksHandlerTests
 
     var family = new Family("Test Family", "UTC", false);
 
-    var template1 = new TaskTemplate(familyId, petId, "Task 1", 10, schedule1, TimeSpan.FromHours(24),
+    var template1 = new TaskTemplate(familyId, petId, "Task 1", new TaskPoints(2), schedule1, TimeSpan.FromHours(24),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template1, family);
 
-    var template2 = new TaskTemplate(familyId, petId, "Task 2", 15, schedule2, TimeSpan.FromHours(24),
+    var template2 = new TaskTemplate(familyId, petId, "Task 2", new TaskPoints(2), schedule2, TimeSpan.FromHours(24),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template2, family);
 
     var templateDtos = new List<TaskTemplateDto>
     {
-      new(template1.Id, familyId, "Task 1", 10, schedule1.Type, schedule1.Time, null, null, petId, "Pet", true,
+      new(template1.Id, familyId, "Task 1", new TaskPoints(2), schedule1.Type, schedule1.Time, null, null, petId, "Pet",
+        true,
         DateTime.UtcNow, TimeSpan.FromHours(24)),
-      new(template2.Id, familyId, "Task 2", 15, schedule2.Type, schedule2.Time, null, null, petId, "Pet", true,
+      new(template2.Id, familyId, "Task 2", new TaskPoints(2), schedule2.Type, schedule2.Time, null, null, petId, "Pet",
+        true,
         DateTime.UtcNow, TimeSpan.FromHours(24))
     };
 

@@ -72,13 +72,13 @@ public class TemplateEditHandler(
     string pointsText,
     CancellationToken cancellationToken)
   {
-    if (!int.TryParse(pointsText, out var points) || points < 1 || points > 100)
+    if (!int.TryParse(pointsText, out var points))
     {
       var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditPoints);
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
-        "❌ Количество очков должно быть числом от 1 до 100. Попробуйте снова:",
+        "❌ Количество очков должно быть числом. Попробуйте снова:",
         StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditPoints),
         keyboard,
         cancellationToken);
@@ -97,7 +97,8 @@ public class TemplateEditHandler(
       return;
     }
 
-    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, points, null, null, null, null, null);
+    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, new TaskPoints(points), null, null,
+      null, null, null);
     var result = await Mediator.Send(updateCommand, cancellationToken);
 
     if (!result.IsSuccess)

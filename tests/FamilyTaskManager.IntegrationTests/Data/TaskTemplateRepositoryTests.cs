@@ -26,7 +26,8 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
     // Создаем шаблон задачи с валидными ID
     var createdBy = Guid.NewGuid();
     var defaultSchedule = schedule ?? Schedule.CreateDaily(new TimeOnly(8, 0)).Value;
-    return new TaskTemplate(family.Id, pet.Id, title, points, defaultSchedule, TimeSpan.FromHours(12), createdBy);
+    return new TaskTemplate(family.Id, pet.Id, title, new TaskPoints(points), defaultSchedule, TimeSpan.FromHours(12),
+      createdBy);
   }
 
   [Fact]
@@ -43,7 +44,7 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
     var retrieved = await Repository.GetByIdAsync(taskTemplate.Id);
     retrieved.ShouldNotBeNull();
     retrieved.Title.ShouldBe("Feed the cat");
-    retrieved.Points.ShouldBe(10);
+    retrieved.Points.Value.ShouldBe(10);
     retrieved.Schedule.Type.ShouldBe(ScheduleType.Daily);
     retrieved.Schedule.Time.ShouldBe(new TimeOnly(8, 0));
     retrieved.IsActive.ShouldBeTrue();
@@ -60,7 +61,7 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
 
     // Act
     var updatedSchedule = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
-    taskTemplate.Update("Updated Title", 15, updatedSchedule, TimeSpan.FromHours(12));
+    taskTemplate.Update("Updated Title", new TaskPoints(3), updatedSchedule, TimeSpan.FromHours(12));
     await Repository.UpdateAsync(taskTemplate);
     await DbContext.SaveChangesAsync();
 
@@ -68,7 +69,7 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
     var retrieved = await Repository.GetByIdAsync(taskTemplate.Id);
     retrieved.ShouldNotBeNull();
     retrieved.Title.ShouldBe("Updated Title");
-    retrieved.Points.ShouldBe(15);
+    retrieved.Points.Value.ShouldBe(3);
     retrieved.Schedule.Type.ShouldBe(ScheduleType.Daily);
     retrieved.Schedule.Time.ShouldBe(new TimeOnly(10, 0));
   }

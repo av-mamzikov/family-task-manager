@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
@@ -174,7 +175,8 @@ public class TaskCreationHandler(
     }
 
     // Create one-time task
-    var createTaskCommand = new CreateTaskCommand(familyId, petId, title, points, dueAt, userResult.Value);
+    var createTaskCommand =
+      new CreateTaskCommand(familyId, petId, title, new TaskPoints(points), dueAt, userResult.Value);
     var result = await Mediator.Send(createTaskCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -193,8 +195,8 @@ public class TaskCreationHandler(
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       $"✅ Задача \"{title}\" успешно создана!\n\n" +
-      $"💯 Очки: {points}\n" +
-      $"📅 Срок: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
+      $"💯 Очки: {TaskPointsHelper.ToStars(points)}\n" +
+      $"📎 Срок: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
       BotConstants.Messages.TaskAvailableToAll,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
@@ -269,7 +271,8 @@ public class TaskCreationHandler(
 
     // Create periodic task template
     var createTemplateCommand =
-      new CreateTaskTemplateCommand(familyId, petId, title, points, scheduleType, scheduleTime, scheduleDayOfWeek,
+      new CreateTaskTemplateCommand(familyId, petId, title, new TaskPoints(points), scheduleType, scheduleTime,
+        scheduleDayOfWeek,
         scheduleDayOfMonth, TimeSpan.FromHours(12), userResult.Value);
     var result = await Mediator.Send(createTemplateCommand, cancellationToken);
 
@@ -290,7 +293,7 @@ public class TaskCreationHandler(
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       $"✅ Периодическая задача \"{title}\" успешно создана!\n\n" +
-      $"💯 Очки: {points}\n" +
+      $"💯 Очки: {TaskPointsHelper.ToStars(points)}\n" +
       $"🔄 Расписание: {scheduleText}\n\n" +
       BotConstants.Messages.ScheduledTask,
       cancellationToken: cancellationToken);

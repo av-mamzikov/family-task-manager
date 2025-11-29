@@ -117,7 +117,7 @@ public class TemplateCommandHandler(IMediator mediator)
     foreach (var template in templates)
     {
       messageText += $"📝 *{template.Title}*\n";
-      messageText += $"   💯 Очки: {template.Points}\n";
+      messageText += $"   💯 Очки: {template.Points.ToStars()}\n";
       messageText +=
         $"   🔄 Расписание: {ScheduleFormatter.Format(template.ScheduleType, template.ScheduleTime, template.ScheduleDayOfWeek, template.ScheduleDayOfMonth)}\n";
       messageText += $"   📅 Создан: {template.CreatedAt:dd.MM.yyyy}\n\n";
@@ -178,7 +178,7 @@ public class TemplateCommandHandler(IMediator mediator)
     var messageText = $"📋 *Шаблон задачи*\n\n" +
                       $"📝 Название: *{template.Title}*\n" +
                       $"🐾 Питомец: {template.PetName}\n" +
-                      $"💯 Очки: {template.Points}\n" +
+                      $"💯 Очки: {template.Points.ToStars()}\n" +
                       $"🔄 Расписание: {ScheduleFormatter.Format(template.ScheduleType, template.ScheduleTime, template.ScheduleDayOfWeek, template.ScheduleDayOfMonth)}\n" +
                       $"🔄 Срок выполнения: `{template.DueDuration}`\n";
 
@@ -323,7 +323,7 @@ public class TemplateCommandHandler(IMediator mediator)
       messageId,
       $"✏️ *Редактирование шаблона*\n\n" +
       $"📝 Название: {template.Title}\n" +
-      $"💯 Очки: {template.Points}\n" +
+      $"💯 Очки: {template.Points.ToStars()}\n" +
       $"🔄 Расписание: {ScheduleFormatter.Format(template.ScheduleType, template.ScheduleTime, template.ScheduleDayOfWeek, template.ScheduleDayOfMonth)}\n" +
       $"⏰ Срок выполнения: {template.DueDuration.TotalHours} часов\n\n" +
       "Выберите поле для редактирования:",
@@ -387,7 +387,7 @@ public class TemplateCommandHandler(IMediator mediator)
       $"✅ *Задача создана!*\n\n" +
       $"📝 Название: {template.Title}\n" +
       $"🐾 Питомец: {template.PetName}\n" +
-      $"💯 Очки: {template.Points}\n" +
+      $"💯 Очки: {template.Points.ToStars()}\n" +
       $"⏰ Срок выполнения: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
       "Задача добавлена в список активных задач питомца.",
       ParseMode.Markdown,

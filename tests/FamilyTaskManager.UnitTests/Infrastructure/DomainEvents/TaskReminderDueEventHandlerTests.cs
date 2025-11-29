@@ -46,7 +46,7 @@ public class TaskReminderDueEventHandlerTests
       family.Id,
       pet.Id,
       "Test Task",
-      10,
+      new TaskPoints(2),
       TaskType.OneTime,
       dueAtUtc);
 
@@ -86,7 +86,7 @@ public class TaskReminderDueEventHandlerTests
       familyId,
       petId,
       "Test Task",
-      10,
+      new TaskPoints(2),
       TaskType.OneTime,
       dueAtUtc);
 
@@ -124,7 +124,7 @@ public class TaskReminderDueEventHandlerTests
       family.Id,
       pet.Id,
       "Test Task",
-      10,
+      new TaskPoints(2),
       TaskType.OneTime,
       dueAtUtc);
 

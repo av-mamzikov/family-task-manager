@@ -10,13 +10,13 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   {
   }
 
-  public TaskInstance(Guid familyId, Guid petId, string title, int points, TaskType type, DateTime dueAt,
+  public TaskInstance(Guid familyId, Guid petId, string title, TaskPoints points, TaskType type, DateTime dueAt,
     Guid? templateId = null)
   {
     Guard.Against.Default(familyId);
     Guard.Against.Default(petId);
     Guard.Against.NullOrWhiteSpace(title);
-    Guard.Against.OutOfRange(points, nameof(points), 1, 100);
+    Guard.Against.Null(points);
 
     FamilyId = familyId;
     PetId = petId;
@@ -34,7 +34,7 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public Guid FamilyId { get; private set; }
   public Guid PetId { get; private set; }
   public string Title { get; private set; } = null!;
-  public int Points { get; private set; }
+  public TaskPoints Points { get; private set; } = null!;
   public TaskType Type { get; private set; }
   public Guid? TemplateId { get; private set; }
   public TaskStatus Status { get; private set; }

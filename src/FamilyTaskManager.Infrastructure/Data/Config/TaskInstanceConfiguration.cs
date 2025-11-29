@@ -21,7 +21,10 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
       .HasMaxLength(100);
 
     builder.Property(t => t.Points)
-      .IsRequired();
+      .IsRequired()
+      .HasConversion(
+        v => v.Value,
+        v => new TaskPoints(v));
 
     builder.Property(t => t.Type)
       .IsRequired()

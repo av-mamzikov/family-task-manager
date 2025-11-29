@@ -7,7 +7,7 @@ public record TaskTemplateDto(
   Guid Id,
   Guid FamilyId,
   string Title,
-  int Points,
+  TaskPoints Points,
   ScheduleType ScheduleType,
   TimeOnly ScheduleTime,
   DayOfWeek? ScheduleDayOfWeek,

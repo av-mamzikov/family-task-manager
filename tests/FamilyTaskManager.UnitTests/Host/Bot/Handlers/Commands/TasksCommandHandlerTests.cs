@@ -1,4 +1,5 @@
 using Ardalis.Result;
+using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Tasks;
@@ -74,7 +75,7 @@ public class TasksCommandHandlerTests
       new(
         Guid.NewGuid(),
         "Feed the cat",
-        10,
+        new TaskPoints(2),
         TaskStatus.Active,
         DateTime.UtcNow.AddHours(2),
         Guid.NewGuid(),
@@ -93,7 +94,7 @@ public class TasksCommandHandlerTests
     // Assert
     await _botClient.Received(1).MakeRequestAsync(
       Arg.Is<SendMessageRequest>(req =>
-        req.Text.Contains("Feed the cat") && req.Text.Contains("Fluffy") && req.Text.Contains("10")),
+        req.Text.Contains("Feed the cat") && req.Text.Contains("Fluffy") && req.Text.Contains("⭐⭐")),
       Arg.Any<CancellationToken>());
   }
 
@@ -111,7 +112,7 @@ public class TasksCommandHandlerTests
       new(
         Guid.NewGuid(),
         "Overdue task",
-        10,
+        new TaskPoints(2),
         TaskStatus.Active,
         DateTime.UtcNow.AddHours(-2), // Overdue
         Guid.NewGuid(),
@@ -144,9 +145,11 @@ public class TasksCommandHandlerTests
 
     var tasks = new List<TaskDto>
     {
-      new(Guid.NewGuid(), "Active task", 10, TaskStatus.Active, DateTime.UtcNow.AddHours(2), Guid.NewGuid(), "Pet1",
+      new(Guid.NewGuid(), "Active task", new TaskPoints(2), TaskStatus.Active, DateTime.UtcNow.AddHours(2),
+        Guid.NewGuid(), "Pet1",
         null, null, false),
-      new(Guid.NewGuid(), "In progress task", 15, TaskStatus.InProgress, DateTime.UtcNow.AddHours(1), Guid.NewGuid(),
+      new(Guid.NewGuid(), "In progress task", new TaskPoints(3), TaskStatus.InProgress, DateTime.UtcNow.AddHours(1),
+        Guid.NewGuid(),
         "Pet2", null, null, false)
     };
 

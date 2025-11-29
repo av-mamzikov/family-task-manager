@@ -3,7 +3,7 @@ namespace FamilyTaskManager.UseCases.Tasks;
 public record TaskDto(
   Guid Id,
   string Title,
-  int Points,
+  TaskPoints Points,
   TaskStatus Status,
   DateTime DueAt,
   Guid PetId,

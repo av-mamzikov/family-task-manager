@@ -49,7 +49,7 @@ public class PetMoodCalculatorTests
 
     var tasks = new List<TaskInstance>
     {
-      CreateCompletedTask(familyId, petId, 10, dueAt, completedAt)
+      CreateCompletedTask(familyId, petId, new TaskPoints(2), dueAt, completedAt)
     };
 
     _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>()).Returns(pet);
@@ -78,7 +78,7 @@ public class PetMoodCalculatorTests
 
     var tasks = new List<TaskInstance>
     {
-      CreateCompletedTask(familyId, petId, 10, dueAt, completedAt)
+      CreateCompletedTask(familyId, petId, new TaskPoints(2), dueAt, completedAt)
     };
 
     _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>()).Returns(pet);
@@ -107,7 +107,7 @@ public class PetMoodCalculatorTests
 
     var tasks = new List<TaskInstance>
     {
-      CreateOverdueTask(familyId, petId, 10, dueAt)
+      CreateOverdueTask(familyId, petId, new TaskPoints(2), dueAt)
     };
 
     _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>()).Returns(pet);
@@ -146,9 +146,9 @@ public class PetMoodCalculatorTests
 
     var tasks = new List<TaskInstance>
     {
-      CreateCompletedTask(familyId, petId, 10, task1DueAt, task1CompletedAt),
-      CreateCompletedTask(familyId, petId, 10, task2DueAt, task2CompletedAt),
-      CreateOverdueTask(familyId, petId, 10, task3DueAt)
+      CreateCompletedTask(familyId, petId, new TaskPoints(2), task1DueAt, task1CompletedAt),
+      CreateCompletedTask(familyId, petId, new TaskPoints(2), task2DueAt, task2CompletedAt),
+      CreateOverdueTask(familyId, petId, new TaskPoints(2), task3DueAt)
     };
 
     _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>()).Returns(pet);
@@ -167,13 +167,14 @@ public class PetMoodCalculatorTests
   }
 
   // Helper methods
-  private TaskInstance CreateCompletedTask(Guid familyId, Guid petId, int points, DateTime dueAt, DateTime completedAt)
+  private TaskInstance CreateCompletedTask(Guid familyId, Guid petId, TaskPoints points, DateTime dueAt,
+    DateTime completedAt)
   {
     var task = new TaskInstance(familyId, petId, "Test Task", points, TaskType.OneTime, dueAt);
     task.Complete(Guid.NewGuid(), completedAt);
     return task;
   }
 
-  private TaskInstance CreateOverdueTask(Guid familyId, Guid petId, int points, DateTime dueAt) =>
+  private TaskInstance CreateOverdueTask(Guid familyId, Guid petId, TaskPoints points, DateTime dueAt) =>
     new(familyId, petId, "Overdue Task", points, TaskType.OneTime, dueAt);
 }

@@ -12,7 +12,7 @@ public record CreateTaskCommand(
   Guid FamilyId,
   Guid PetId,
   string Title,
-  int Points,
+  TaskPoints Points,
   DateTime DueAt,
   Guid CreatedBy) : ICommand<Result<Guid>>;
 
@@ -48,12 +48,6 @@ public class CreateTaskHandler(
     if (command.Title.Length < 3 || command.Title.Length > 100)
     {
       return Result<Guid>.Invalid(new ValidationError("Название должно быть длиной от 3 до 100 символов"));
-    }
-
-    // Validate points range
-    if (command.Points < 1 || command.Points > 100)
-    {
-      return Result<Guid>.Invalid(new ValidationError("Очки должны быть в диапазоне от 1 до 100"));
     }
 
     // Convert DueAt from family timezone to UTC for storage
