@@ -18,27 +18,20 @@ public class TaskInstanceCreatorJob(IMediator mediator, ILogger<TaskInstanceCrea
     try
     {
       var now = DateTime.UtcNow;
+      var lastExecutionTime = context.PreviousFireTimeUtc?.UtcDateTime ?? now.AddMinutes(-2);
 
-      // Check last 2 minutes with small overlap for reliability
-      // Job runs every minute, so we don't need to check full hour
-      var checkFrom = now.AddMinutes(-2);
-      var checkTo = now;
+      logger.LogInformation(
+        "Checking scheduled tasks from {CheckFrom} to {CheckTo}", lastExecutionTime, now);
 
       var result = await mediator.Send(
-        new ProcessScheduledTaskCommand(checkFrom, checkTo),
+        new ProcessScheduledTaskCommand(lastExecutionTime, now),
         context.CancellationToken);
 
       if (result.IsSuccess)
-      {
         logger.LogInformation(
-          "TaskInstanceCreatorJob completed. Created {CreatedCount} new task instances",
-          result.Value);
-      }
+          "TaskInstanceCreatorJob completed. Created {CreatedCount} new task instances", result.Value);
       else
-      {
-        logger.LogWarning("Failed to process scheduled tasks: {Error}",
-          string.Join(", ", result.Errors));
-      }
+        logger.LogWarning("Failed to process scheduled tasks: {Error}", string.Join(", ", result.Errors));
     }
     catch (Exception ex)
     {
