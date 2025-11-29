@@ -106,6 +106,10 @@ public class ConversationRouter(
         templateCreationHandler.HandleTemplateScheduleMonthDayInputAsync(botClient, message, session, text,
           cancellationToken),
 
+      ConversationState.AwaitingTemplateDueDuration =>
+        templateCreationHandler.HandleTemplateDueDurationInputAsync(botClient, message, session, text,
+          cancellationToken),
+
       ConversationState.AwaitingTemplateEditTitle =>
         templateEditHandler.HandleTemplateEditTitleInputAsync(botClient, message, session, text, cancellationToken),
 
@@ -175,6 +179,9 @@ public class ConversationRouter(
       ConversationState.AwaitingTemplatePoints => (ConversationState.AwaitingTemplateTitle, false),
       ConversationState.AwaitingTemplatePetSelection => (ConversationState.AwaitingTemplatePoints, false),
       ConversationState.AwaitingTemplateSchedule => (ConversationState.AwaitingTemplatePoints, false),
+      ConversationState.AwaitingTemplateScheduleTime => (ConversationState.AwaitingTemplateScheduleType, false),
+      ConversationState.AwaitingTemplateScheduleMonthDay => (ConversationState.AwaitingTemplateScheduleType, false),
+      ConversationState.AwaitingTemplateDueDuration => (ConversationState.AwaitingTemplateScheduleMonthDay, false),
 
       // Template editing flow
       ConversationState.AwaitingTemplateEditTitle => (ConversationState.None, true),

@@ -5,6 +5,7 @@ using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.TaskTemplates;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
@@ -135,8 +136,17 @@ public class TemplateCreationHandler(
         cancellationToken: cancellationToken);
     }
     else
-      // For daily, workdays, weekends - we have all data, create template
-      await CreateTemplateAsync(botClient, message, session, cancellationToken);
+    {
+      // For daily, workdays, weekends - ask for DueDuration
+      session.State = ConversationState.AwaitingTemplateDueDuration;
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateDueDuration);
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        BotConstants.Templates.EnterDueDuration +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateDueDuration),
+        replyMarkup: keyboard,
+        cancellationToken: cancellationToken);
+    }
   }
 
   public async Task HandleTemplateScheduleMonthDayInputAsync(
@@ -146,9 +156,10 @@ public class TemplateCreationHandler(
     string dayText,
     CancellationToken cancellationToken)
   {
+    IReplyMarkup? keyboard;
     if (!int.TryParse(dayText, out var dayOfMonth) || dayOfMonth < 1 || dayOfMonth > 31)
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateScheduleMonthDay);
+      keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateScheduleMonthDay);
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
@@ -160,6 +171,39 @@ public class TemplateCreationHandler(
     }
 
     session.Data["scheduleDayOfMonth"] = dayOfMonth;
+
+    // Ask for DueDuration
+    session.State = ConversationState.AwaitingTemplateDueDuration;
+    keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateDueDuration);
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      BotConstants.Templates.EnterDueDuration +
+      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateDueDuration),
+      replyMarkup: keyboard,
+      cancellationToken: cancellationToken);
+  }
+
+  public async Task HandleTemplateDueDurationInputAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    string dueDurationText,
+    CancellationToken cancellationToken)
+  {
+    if (!int.TryParse(dueDurationText, out var dueDurationHours) || dueDurationHours < 0 || dueDurationHours > 24)
+    {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateDueDuration);
+      await SendValidationErrorAsync(
+        botClient,
+        message.Chat.Id,
+        "❌ Срок выполнения должен быть числом от 0 до 24 часов. Попробуйте снова:",
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateDueDuration),
+        keyboard,
+        cancellationToken);
+      return;
+    }
+
+    session.Data["dueDuration"] = TimeSpan.FromHours(dueDurationHours);
     await CreateTemplateAsync(botClient, message, session, cancellationToken);
   }
 
@@ -174,7 +218,8 @@ public class TemplateCreationHandler(
         !TryGetSessionData<Guid>(session, "petId", out var petId) ||
         !TryGetSessionData<string>(session, "title", out var title) ||
         !TryGetSessionData<int>(session, "points", out var points) ||
-        !TryGetSessionData<string>(session, "scheduleType", out var scheduleTypeStr))
+        !TryGetSessionData<string>(session, "scheduleType", out var scheduleTypeStr) ||
+        !TryGetSessionData<TimeSpan>(session, "dueDuration", out var dueDuration))
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -249,7 +294,7 @@ public class TemplateCreationHandler(
       scheduleTime,
       scheduleDayOfWeek == default ? null : scheduleDayOfWeek,
       scheduleDayOfMonth == default ? null : scheduleDayOfMonth,
-      TimeSpan.FromHours(12),
+      dueDuration,
       userResult.Value);
 
     var result = await Mediator.Send(createTemplateCommand, cancellationToken);

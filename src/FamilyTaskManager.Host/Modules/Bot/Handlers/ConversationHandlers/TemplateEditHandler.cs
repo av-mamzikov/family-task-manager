@@ -155,8 +155,16 @@ public class TemplateEditHandler(
 
     if (scheduleType == "manual")
     {
-      // For manual schedule type, we don't need time - update template immediately
-      await UpdateTemplateScheduleAsync(botClient, message, session, cancellationToken);
+      // For manual schedule type, we don't need time - ask for DueDuration
+      session.State = ConversationState.AwaitingTemplateEditDueDuration;
+      var dueDurationKeyboard =
+        StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditDueDuration);
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        BotConstants.Templates.EnterDueDuration +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditDueDuration),
+        replyMarkup: dueDurationKeyboard,
+        cancellationToken: cancellationToken);
     }
     else if (scheduleType == "weekly")
     {
@@ -181,8 +189,18 @@ public class TemplateEditHandler(
         cancellationToken: cancellationToken);
     }
     else
-      // For daily, workdays, weekends - we have all data, update template
-      await UpdateTemplateScheduleAsync(botClient, message, session, cancellationToken);
+    {
+      // For daily, workdays, weekends - ask for DueDuration
+      session.State = ConversationState.AwaitingTemplateEditDueDuration;
+      var dueDurationKeyboard =
+        StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditDueDuration);
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        BotConstants.Templates.EnterDueDuration +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditDueDuration),
+        replyMarkup: dueDurationKeyboard,
+        cancellationToken: cancellationToken);
+    }
   }
 
   public async Task HandleTemplateEditScheduleMonthDayInputAsync(
@@ -206,7 +224,17 @@ public class TemplateEditHandler(
     }
 
     session.Data["scheduleDayOfMonth"] = dayOfMonth;
-    await UpdateTemplateScheduleAsync(botClient, message, session, cancellationToken);
+
+    // Ask for DueDuration
+    session.State = ConversationState.AwaitingTemplateEditDueDuration;
+    var dueDurationKeyboard =
+      StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditDueDuration);
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      BotConstants.Templates.EnterDueDuration +
+      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditDueDuration),
+      replyMarkup: dueDurationKeyboard,
+      cancellationToken: cancellationToken);
   }
 
   public async Task UpdateTemplateScheduleAsync(
@@ -267,6 +295,7 @@ public class TemplateEditHandler(
     // Get optional schedule parameters
     TryGetSessionData<DayOfWeek>(session, "scheduleDayOfWeek", out var scheduleDayOfWeek);
     TryGetSessionData<int>(session, "scheduleDayOfMonth", out var scheduleDayOfMonth);
+    TryGetSessionData<TimeSpan>(session, "dueDuration", out var dueDuration);
 
     var updateCommand = new UpdateTaskTemplateCommand(
       templateId,
@@ -277,7 +306,7 @@ public class TemplateEditHandler(
       scheduleTime,
       scheduleDayOfWeek == default ? null : scheduleDayOfWeek,
       scheduleDayOfMonth == default ? null : scheduleDayOfMonth,
-      null);
+      dueDuration == default ? null : dueDuration);
 
     var result = await Mediator.Send(updateCommand, cancellationToken);
 
@@ -333,26 +362,38 @@ public class TemplateEditHandler(
     }
 
     var dueDuration = TimeSpan.FromHours(dueDurationHours);
-    var updateCommand =
-      new UpdateTaskTemplateCommand(templateId, familyId, null, null, null, null, null, null, dueDuration);
-    var result = await Mediator.Send(updateCommand, cancellationToken);
 
-    if (!result.IsSuccess)
+    // Check if we're in schedule edit flow (scheduleType is set in session)
+    if (TryGetSessionData<string>(session, "scheduleType", out _))
     {
-      await SendErrorAndClearStateAsync(
-        botClient,
-        message.Chat.Id,
-        session,
-        $"❌ Ошибка обновления: {result.Errors.FirstOrDefault()}",
-        cancellationToken);
-      return;
+      // We're editing schedule, store dueDuration and call UpdateTemplateScheduleAsync
+      session.Data["dueDuration"] = dueDuration;
+      await UpdateTemplateScheduleAsync(botClient, message, session, cancellationToken);
     }
+    else
+    {
+      // We're only editing DueDuration field
+      var updateCommand =
+        new UpdateTaskTemplateCommand(templateId, familyId, null, null, null, null, null, null, dueDuration);
+      var result = await Mediator.Send(updateCommand, cancellationToken);
 
-    session.ClearState();
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      BotConstants.Templates.TemplateUpdated,
-      replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
-      cancellationToken: cancellationToken);
+      if (!result.IsSuccess)
+      {
+        await SendErrorAndClearStateAsync(
+          botClient,
+          message.Chat.Id,
+          session,
+          $"❌ Ошибка обновления: {result.Errors.FirstOrDefault()}",
+          cancellationToken);
+        return;
+      }
+
+      session.ClearState();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        BotConstants.Templates.TemplateUpdated,
+        replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
+        cancellationToken: cancellationToken);
+    }
   }
 }

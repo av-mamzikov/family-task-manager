@@ -28,6 +28,7 @@ public static class StateKeyboardHelper
       ConversationState.AwaitingTemplateScheduleTime => GetBackOrCancelKeyboard(),
       ConversationState.AwaitingTemplateScheduleWeekday => null, // Используются inline кнопки
       ConversationState.AwaitingTemplateScheduleMonthDay => GetBackOrCancelKeyboard(),
+      ConversationState.AwaitingTemplateDueDuration => GetBackOrCancelKeyboard(),
       ConversationState.AwaitingTemplatePetSelection => null, // Используются inline кнопки
       ConversationState.AwaitingTemplateEditTitle => GetBackOrCancelKeyboard(),
       ConversationState.AwaitingTemplateEditPoints => GetBackOrCancelKeyboard(),
@@ -96,6 +97,9 @@ public static class StateKeyboardHelper
 
       ConversationState.AwaitingTemplateScheduleMonthDay =>
         "\n\n💡 Доступные действия:\n• Введите день месяца (1-31)\n• ⬅️ Назад - К типу расписания\n• /cancel - Отменить создание",
+
+      ConversationState.AwaitingTemplateDueDuration =>
+        "\n\n💡 Доступные действия:\n• Введите срок выполнения в часах (0-24)\n• ⬅️ Назад - К расписанию\n• /cancel - Отменить создание",
 
       ConversationState.AwaitingTemplateEditTitle =>
         "\n\n💡 Доступные действия:\n• Введите новое название\n• ⬅️ Назад - Отменить редактирование\n• /cancel - Выйти из режима редактирования",

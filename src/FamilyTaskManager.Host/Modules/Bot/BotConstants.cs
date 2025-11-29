@@ -133,6 +133,7 @@ public static class BotConstants
     public const string EnterScheduleTime = "⏰ Введите время в формате HH:mm (например, 09:00 или 15:30):";
     public const string ChooseWeekday = "📅 Выберите день недели:";
     public const string EnterMonthDay = "📅 Введите день месяца (от 1 до 31):";
+    public const string EnterDueDuration = "⏰ Введите срок выполнения задачи в часах (от 0 до 24):";
   }
 
   public static class Roles

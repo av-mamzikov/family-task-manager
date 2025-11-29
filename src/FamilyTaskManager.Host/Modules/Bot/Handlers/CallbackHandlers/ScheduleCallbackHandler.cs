@@ -1,18 +1,15 @@
-using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
 using Telegram.Bot;
-using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
 
 public class ScheduleCallbackHandler(
   ILogger<ScheduleCallbackHandler> logger,
   IMediator mediator,
-  IUserRegistrationService userRegistrationService,
-  TemplateEditHandler templateEditHandler,
-  TemplateCreationHandler templateCreationHandler)
+  IUserRegistrationService userRegistrationService)
   : BaseCallbackHandler(logger, mediator, userRegistrationService)
 {
   /// <summary>
@@ -65,7 +62,8 @@ public class ScheduleCallbackHandler(
     // Delete the inline keyboard message
     await botClient.DeleteMessageAsync(chatId, messageId, cancellationToken);
 
-    // For Manual schedule type, skip time input and proceed directly to creation/update
+    // For Manual schedule type, skip time input but ask for DueDuration
+    IReplyMarkup? keyboard;
     if (scheduleType == "manual")
     {
       // Determine if we're in template creation or editing flow
@@ -77,27 +75,29 @@ public class ScheduleCallbackHandler(
         "✅ Выбран тип расписания: Вручную",
         cancellationToken: cancellationToken);
 
-      // For editing, trigger the update immediately
+      // For editing, ask for DueDuration
       if (isEditing)
       {
-        var fakeMessage = new Message
-        {
-          Chat = new Chat { Id = chatId },
-          From = new User { Id = chatId }
-        };
-
-        await templateEditHandler.UpdateTemplateScheduleAsync(botClient, fakeMessage, session, cancellationToken);
+        session.State = ConversationState.AwaitingTemplateEditDueDuration;
+        keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditDueDuration);
+        await botClient.SendTextMessageAsync(
+          chatId,
+          BotConstants.Templates.EnterDueDuration +
+          StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditDueDuration),
+          replyMarkup: keyboard,
+          cancellationToken: cancellationToken);
       }
       else if (!isTask)
       {
-        // For template creation, trigger the creation
-        var fakeMessage = new Message
-        {
-          Chat = new Chat { Id = chatId },
-          From = new User { Id = chatId }
-        };
-
-        await templateCreationHandler.CreateTemplateAsync(botClient, fakeMessage, session, cancellationToken);
+        // For template creation, ask for DueDuration
+        session.State = ConversationState.AwaitingTemplateDueDuration;
+        keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateDueDuration);
+        await botClient.SendTextMessageAsync(
+          chatId,
+          BotConstants.Templates.EnterDueDuration +
+          StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateDueDuration),
+          replyMarkup: keyboard,
+          cancellationToken: cancellationToken);
       }
       else
         // For task creation flows, keep state for now (will be implemented later)
@@ -121,7 +121,7 @@ public class ScheduleCallbackHandler(
     session.State = nextState;
 
     // Ask for time
-    var keyboard = StateKeyboardHelper.GetKeyboardForState(nextState);
+    keyboard = StateKeyboardHelper.GetKeyboardForState(nextState);
     await botClient.SendTextMessageAsync(
       chatId,
       BotConstants.Templates.EnterScheduleTime +
@@ -163,28 +163,29 @@ public class ScheduleCallbackHandler(
       $"✅ Выбран день недели: {weekdayName}",
       cancellationToken: cancellationToken);
 
-    // For editing, we need to trigger the update immediately
+    // For editing, ask for DueDuration
     if (isEditing)
     {
-      // Create a fake message for the handler
-      var fakeMessage = new Message
-      {
-        Chat = new Chat { Id = chatId },
-        From = new User { Id = chatId }
-      };
-
-      await templateEditHandler.UpdateTemplateScheduleAsync(botClient, fakeMessage, session, cancellationToken);
+      session.State = ConversationState.AwaitingTemplateEditDueDuration;
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditDueDuration);
+      await botClient.SendTextMessageAsync(
+        chatId,
+        BotConstants.Templates.EnterDueDuration +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditDueDuration),
+        replyMarkup: keyboard,
+        cancellationToken: cancellationToken);
     }
     else if (!isTask)
     {
-      // For template creation, trigger the creation
-      var fakeMessage = new Message
-      {
-        Chat = new Chat { Id = chatId },
-        From = new User { Id = chatId }
-      };
-
-      await templateCreationHandler.CreateTemplateAsync(botClient, fakeMessage, session, cancellationToken);
+      // For template creation, ask for DueDuration
+      session.State = ConversationState.AwaitingTemplateDueDuration;
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateDueDuration);
+      await botClient.SendTextMessageAsync(
+        chatId,
+        BotConstants.Templates.EnterDueDuration +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateDueDuration),
+        replyMarkup: keyboard,
+        cancellationToken: cancellationToken);
     }
     else
       // For task creation flows, keep state for now (will be implemented later)

@@ -179,9 +179,7 @@ public class TemplateCommandHandler(IMediator mediator)
                       $"🐾 Питомец: {template.PetName}\n" +
                       $"💯 Очки: {template.Points}\n" +
                       $"🔄 Расписание: {ScheduleFormatter.Format(template.ScheduleType, template.ScheduleTime, template.ScheduleDayOfWeek, template.ScheduleDayOfMonth)}\n" +
-                      $"🔄 Срок выполнения: `{template.DueDuration}`\n" +
-                      $"📅 Создан: {template.CreatedAt:dd.MM.yyyy}\n" +
-                      $"✅ Активен: {(template.IsActive ? "Да" : "Нет")}";
+                      $"🔄 Срок выполнения: `{template.DueDuration}`\n";
 
     var keyboard = new InlineKeyboardMarkup(new[]
     {
