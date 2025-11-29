@@ -192,7 +192,7 @@ public class PetCallbackHandler(
       messageText += $"📝 *{pet.Name} хочет чтобы вы ему помогли:*\n";
       foreach (var task in tasksResult.Value)
       {
-        messageText += $"• {task.Title} (+{task.Points} {task.DueAt}💖)\n";
+        messageText += $"• {task.Title} {task.Points.ToStars()} до {task.DueAt}💖\n";
       }
     }
     else

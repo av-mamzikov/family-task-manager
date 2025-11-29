@@ -98,12 +98,17 @@ public class TasksCommandHandler(IMediator mediator)
     {
       // Only show complete button if current user is the one who started the task
       if (task.CanBeCompletedByCurrentUser)
+      {
         buttons.Add(new[]
         {
           InlineKeyboardButton.WithCallbackData(
             $"✅ Выполнить: {task.Title}",
-            $"task_complete_{task.Id}")
+            $"task_complete_{task.Id}"),
+          InlineKeyboardButton.WithCallbackData(
+            "❌ Отказаться",
+            $"task_cancel_{task.Id}")
         });
+      }
     }
 
     await botClient.SendTextMessageAsync(

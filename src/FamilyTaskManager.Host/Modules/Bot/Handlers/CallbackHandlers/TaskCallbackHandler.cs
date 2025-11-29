@@ -147,6 +147,10 @@ public class TaskCallbackHandler(
       case "complete":
         await HandleCompleteTaskAsync(botClient, chatId, messageId, taskId, session, fromUser, cancellationToken);
         break;
+
+      case "cancel":
+        await HandleCancelTaskAsync(botClient, chatId, messageId, taskId, session, fromUser, cancellationToken);
+        break;
     }
   }
 
@@ -221,6 +225,43 @@ public class TaskCallbackHandler(
       chatId,
       messageId,
       "🎉 Задача выполнена!\n\n⭐ Очки начислены!",
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleCancelTaskAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    Guid taskId,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken)
+  {
+    var userId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
+    if (userId == null)
+    {
+      await SendErrorAsync(botClient, chatId, BotConstants.Errors.UnknownError, cancellationToken);
+      return;
+    }
+
+    // Cancel task
+    var cancelTaskCommand = new CancelTaskCommand(taskId, userId.Value);
+    var result = await Mediator.Send(cancelTaskCommand, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      await SendErrorAsync(
+        botClient,
+        chatId,
+        $"❌ Ошибка: {result.Errors.FirstOrDefault()}",
+        cancellationToken);
+      return;
+    }
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      "✅ Вы отказались от задачи.\n\nЗадача снова доступна для всех участников семьи.",
       cancellationToken: cancellationToken);
   }
 

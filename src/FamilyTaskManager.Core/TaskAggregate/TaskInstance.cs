@@ -80,6 +80,14 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     RegisterDomainEvent(new TaskCompletedEvent(this));
   }
 
+  public void Release()
+  {
+    if (Status != TaskStatus.InProgress) return;
+
+    Status = TaskStatus.Active;
+    StartedByMemberId = null;
+  }
+
   /// <summary>
   ///   Triggers a reminder for this task
   /// </summary>
