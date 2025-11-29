@@ -2,6 +2,7 @@ using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Pets;
+using FamilyTaskManager.UseCases.Tasks;
 using FamilyTaskManager.UseCases.TaskTemplates;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -183,6 +184,7 @@ public class TemplateCommandHandler(IMediator mediator)
 
     var keyboard = new InlineKeyboardMarkup(new[]
     {
+      new[] { InlineKeyboardButton.WithCallbackData("➕ Создать задачу сейчас", $"tpl_ct_{templateId}") },
       new[] { InlineKeyboardButton.WithCallbackData("✏️ Редактировать", $"tpl_e_{templateId}") },
       new[] { InlineKeyboardButton.WithCallbackData("🗑️ Удалить", $"tpl_d_{templateId}") },
       new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", $"tpl_vp_{template.PetId}") }
@@ -327,6 +329,72 @@ public class TemplateCommandHandler(IMediator mediator)
       "Выберите поле для редактирования:",
       ParseMode.Markdown,
       replyMarkup: keyboard,
+      cancellationToken: cancellationToken);
+  }
+
+  public virtual async Task HandleCreateTaskNowAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    Guid templateId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (session.CurrentFamilyId == null)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        BotConstants.Errors.NoFamily,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    // Get template details to show in confirmation
+    var getTemplateQuery = new GetTaskTemplateByIdQuery(templateId, session.CurrentFamilyId.Value);
+    var templateResult = await mediator.Send(getTemplateQuery, cancellationToken);
+
+    if (!templateResult.IsSuccess)
+    {
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        "❌ Шаблон не найден",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var template = templateResult.Value;
+
+    // Create task instance with current time
+    var now = DateTime.UtcNow;
+    var dueAt = now.Add(template.DueDuration);
+    var createCommand = new CreateTaskInstanceFromTemplateCommand(templateId, dueAt);
+    var result = await mediator.Send(createCommand, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        $"❌ Ошибка создания задачи: {result.Errors.FirstOrDefault()}",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      $"✅ *Задача создана!*\n\n" +
+      $"📝 Название: {template.Title}\n" +
+      $"🐾 Питомец: {template.PetName}\n" +
+      $"💯 Очки: {template.Points}\n" +
+      $"⏰ Срок выполнения: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
+      "Задача добавлена в список активных задач питомца.",
+      ParseMode.Markdown,
+      replyMarkup: new InlineKeyboardMarkup(new[]
+      {
+        new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад к шаблону", $"tpl_v_{templateId}") }
+      }),
       cancellationToken: cancellationToken);
   }
 

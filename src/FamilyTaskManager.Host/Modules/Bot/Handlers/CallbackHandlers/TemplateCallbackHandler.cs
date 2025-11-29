@@ -1,5 +1,4 @@
 using FamilyTaskManager.Core.PetAggregate;
-using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
@@ -79,6 +78,11 @@ public class TemplateCallbackHandler(
 
       case "cf" when parts.Length >= 3 && Guid.TryParse(parts[2], out var petId):
         await HandleTemplateCreateForPetAsync(botClient, chatId, messageId, petId, session, fromUser,
+          cancellationToken);
+        break;
+
+      case "ct" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
+        await templateCommandHandler.HandleCreateTaskNowAsync(botClient, chatId, messageId, templateId, session,
           cancellationToken);
         break;
 
