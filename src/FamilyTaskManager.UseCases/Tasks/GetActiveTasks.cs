@@ -1,16 +1,6 @@
-namespace FamilyTaskManager.UseCases.Tasks;
+using FamilyTaskManager.Core.TaskAggregate.DTOs;
 
-public record TaskDto(
-  Guid Id,
-  string Title,
-  TaskPoints Points,
-  TaskStatus Status,
-  DateTime DueAt,
-  Guid PetId,
-  string PetName,
-  Guid? StartedByMemberId,
-  string? StartedByUserName,
-  bool CanBeCompletedByCurrentUser);
+namespace FamilyTaskManager.UseCases.Tasks;
 
 public record GetActiveTasksQuery(Guid FamilyId, Guid UserId) : IQuery<Result<List<TaskDto>>>;
 
@@ -29,11 +19,12 @@ public class GetActiveTasksHandler(
     var pets = await petRepository.ListAsync(petSpec, cancellationToken);
     var petDict = pets.ToDictionary(p => p.Id, p => p.Name);
 
-    // Get current user's member ID
+    // Get current user's member ID and family timezone
     var familySpec = new GetFamilyWithMembersSpec(query.FamilyId);
     var family = await familyRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
     var currentMember = family?.Members.FirstOrDefault(m => m.UserId == query.UserId && m.IsActive);
     var currentMemberId = currentMember?.Id;
+    var familyTimezone = family?.Timezone ?? "UTC";
 
     var result = tasks.Select(t => new TaskDto(
       t.Id,
@@ -44,6 +35,7 @@ public class GetActiveTasksHandler(
       t.PetId,
       petDict.GetValueOrDefault(t.PetId, "Unknown"),
       t.StartedByMemberId,
+      familyTimezone,
       t.StartedByMember?.User?.Name,
       t.StartedByMemberId.HasValue && t.StartedByMemberId.Value == currentMemberId
     )).ToList();

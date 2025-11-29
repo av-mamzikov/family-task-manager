@@ -61,10 +61,10 @@ public class TasksCommandHandler(IMediator mediator)
       messageText += "*Доступные задачи:*\n";
       foreach (var task in activeTasks)
       {
-        var overdueMarker = task.DueAt < DateTime.UtcNow ? "⚠️" : "";
+        var overdueMarker = task.DueAtLocal < DateTime.Now ? "⚠️" : "";
         messageText += $"{overdueMarker} *{task.Title}*\n";
         messageText += $"   🐾 {task.PetName} | {task.Points.ToStars()}\n";
-        messageText += $"   📅 До: {task.DueAt:dd.MM.yyyy HH:mm}\n\n";
+        messageText += $"   📅 До: {task.DueAtLocal:dd.MM.yyyy HH:mm}\n\n";
       }
     }
 

@@ -1,5 +1,6 @@
 using Ardalis.Result;
 using FamilyTaskManager.Core.TaskAggregate;
+using FamilyTaskManager.Core.TaskAggregate.DTOs;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Tasks;
@@ -81,6 +82,7 @@ public class TasksCommandHandlerTests
         Guid.NewGuid(),
         "Fluffy",
         null,
+        "UTC",
         null,
         false)
     };
@@ -118,6 +120,7 @@ public class TasksCommandHandlerTests
         Guid.NewGuid(),
         "Pet",
         null,
+        "UTC",
         null,
         false)
     };
@@ -147,10 +150,10 @@ public class TasksCommandHandlerTests
     {
       new(Guid.NewGuid(), "Active task", new TaskPoints(2), TaskStatus.Active, DateTime.UtcNow.AddHours(2),
         Guid.NewGuid(), "Pet1",
-        null, null, false),
+        null, "UTC", null, false),
       new(Guid.NewGuid(), "In progress task", new TaskPoints(3), TaskStatus.InProgress, DateTime.UtcNow.AddHours(1),
         Guid.NewGuid(),
-        "Pet2", null, null, false)
+        "Pet2", null, "UTC", null, false)
     };
 
     _mediator.Send(Arg.Any<GetActiveTasksQuery>(), Arg.Any<CancellationToken>())
