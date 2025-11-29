@@ -1,11 +1,11 @@
 using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
+using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Pets;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
@@ -139,12 +139,14 @@ public class TemplateCallbackHandler(
         break;
 
       case "schedule":
-        session.State = ConversationState.AwaitingTemplateEditSchedule;
+        session.State = ConversationState.AwaitingTemplateEditScheduleType;
+        var scheduleTypeKeyboard = ScheduleKeyboardHelper.GetScheduleTypeKeyboard();
         await botClient.EditMessageTextAsync(
           chatId,
           messageId,
-          BotConstants.Templates.EnterTemplateSchedule,
-          ParseMode.Markdown,
+          BotConstants.Templates.ChooseScheduleType +
+          StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditScheduleType),
+          replyMarkup: scheduleTypeKeyboard,
           cancellationToken: cancellationToken);
         break;
 

@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.TaskTemplates;
@@ -118,28 +119,30 @@ public class TemplateEditHandler(
       cancellationToken: cancellationToken);
   }
 
-  public async Task HandleTemplateEditScheduleInputAsync(
+  public async Task HandleTemplateEditScheduleTimeInputAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
-    string schedule,
+    string timeText,
     CancellationToken cancellationToken)
   {
-    if (string.IsNullOrWhiteSpace(schedule))
+    if (!TimeOnly.TryParse(timeText, out var time))
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditSchedule);
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditScheduleTime);
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
-        "❌ Расписание не может быть пустым. Попробуйте снова:",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditSchedule),
+        "❌ Неверный формат времени. Используйте формат HH:mm (например, 09:00):",
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditScheduleTime),
         keyboard,
         cancellationToken);
       return;
     }
 
-    if (!TryGetSessionData<Guid>(session, "templateId", out var templateId) ||
-        !TryGetSessionData<Guid>(session, "familyId", out var familyId))
+    session.Data["scheduleTime"] = time;
+
+    // Check if we need additional input based on schedule type
+    if (!TryGetSessionData<string>(session, "scheduleType", out var scheduleType))
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -150,25 +153,114 @@ public class TemplateEditHandler(
       return;
     }
 
-    // Parse schedule
-    var parseResult = ScheduleParser.Parse(schedule);
-    if (!parseResult.IsSuccess)
+    if (scheduleType == "weekly")
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditSchedule);
+      session.State = ConversationState.AwaitingTemplateEditScheduleWeekday;
+      var weekdayKeyboard = ScheduleKeyboardHelper.GetWeekdayKeyboard();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        BotConstants.Templates.ChooseWeekday +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditScheduleWeekday),
+        replyMarkup: weekdayKeyboard,
+        cancellationToken: cancellationToken);
+    }
+    else if (scheduleType == "monthly")
+    {
+      session.State = ConversationState.AwaitingTemplateEditScheduleMonthDay;
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditScheduleMonthDay);
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        BotConstants.Templates.EnterMonthDay +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditScheduleMonthDay),
+        replyMarkup: keyboard,
+        cancellationToken: cancellationToken);
+    }
+    else
+      // For daily, workdays, weekends - we have all data, update template
+      await UpdateTemplateScheduleAsync(botClient, message, session, cancellationToken);
+  }
+
+  public async Task HandleTemplateEditScheduleMonthDayInputAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    string dayText,
+    CancellationToken cancellationToken)
+  {
+    if (!int.TryParse(dayText, out var dayOfMonth) || dayOfMonth < 1 || dayOfMonth > 31)
+    {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditScheduleMonthDay);
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
-        $"❌ {parseResult.Errors.FirstOrDefault()}",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditSchedule),
+        "❌ День месяца должен быть числом от 1 до 31. Попробуйте снова:",
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditScheduleMonthDay),
         keyboard,
         cancellationToken);
       return;
     }
 
-    var (scheduleType, scheduleTime, scheduleDayOfWeek, scheduleDayOfMonth) = parseResult.Value;
+    session.Data["scheduleDayOfMonth"] = dayOfMonth;
+    await UpdateTemplateScheduleAsync(botClient, message, session, cancellationToken);
+  }
 
-    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, null, scheduleType, scheduleTime,
-      scheduleDayOfWeek, scheduleDayOfMonth, null);
+  public async Task UpdateTemplateScheduleAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (!TryGetSessionData<Guid>(session, "templateId", out var templateId) ||
+        !TryGetSessionData<Guid>(session, "familyId", out var familyId) ||
+        !TryGetSessionData<string>(session, "scheduleType", out var scheduleTypeStr) ||
+        !TryGetSessionData<TimeOnly>(session, "scheduleTime", out var scheduleTime))
+    {
+      await SendErrorAndClearStateAsync(
+        botClient,
+        message.Chat.Id,
+        session,
+        "❌ Ошибка. Попробуйте снова.",
+        cancellationToken);
+      return;
+    }
+
+    // Map schedule type string to ScheduleType
+    var scheduleType = scheduleTypeStr switch
+    {
+      "daily" => ScheduleType.Daily,
+      "workdays" => ScheduleType.Workdays,
+      "weekends" => ScheduleType.Weekends,
+      "weekly" => ScheduleType.Weekly,
+      "monthly" => ScheduleType.Monthly,
+      _ => null
+    };
+
+    if (scheduleType == null)
+    {
+      await SendErrorAndClearStateAsync(
+        botClient,
+        message.Chat.Id,
+        session,
+        "❌ Неизвестный тип расписания.",
+        cancellationToken);
+      return;
+    }
+
+    // Get optional schedule parameters
+    TryGetSessionData<DayOfWeek>(session, "scheduleDayOfWeek", out var scheduleDayOfWeek);
+    TryGetSessionData<int>(session, "scheduleDayOfMonth", out var scheduleDayOfMonth);
+
+    var updateCommand = new UpdateTaskTemplateCommand(
+      templateId,
+      familyId,
+      null,
+      null,
+      scheduleType,
+      scheduleTime,
+      scheduleDayOfWeek == default ? null : scheduleDayOfWeek,
+      scheduleDayOfMonth == default ? null : scheduleDayOfMonth,
+      null);
+
     var result = await Mediator.Send(updateCommand, cancellationToken);
 
     if (!result.IsSuccess)

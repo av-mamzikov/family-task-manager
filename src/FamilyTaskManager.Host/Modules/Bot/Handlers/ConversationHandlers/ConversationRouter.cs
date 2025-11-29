@@ -92,8 +92,19 @@ public class ConversationRouter(
       ConversationState.AwaitingTemplatePoints =>
         templateCreationHandler.HandleTemplatePointsInputAsync(botClient, message, session, text, cancellationToken),
 
-      ConversationState.AwaitingTemplateSchedule =>
-        templateCreationHandler.HandleTemplateScheduleInputAsync(botClient, message, session, text, cancellationToken),
+      ConversationState.AwaitingTemplateScheduleType =>
+        HandleInlineButtonOnlyState(botClient, message, cancellationToken),
+
+      ConversationState.AwaitingTemplateScheduleTime =>
+        templateCreationHandler.HandleTemplateScheduleTimeInputAsync(botClient, message, session, text,
+          cancellationToken),
+
+      ConversationState.AwaitingTemplateScheduleWeekday =>
+        HandleInlineButtonOnlyState(botClient, message, cancellationToken),
+
+      ConversationState.AwaitingTemplateScheduleMonthDay =>
+        templateCreationHandler.HandleTemplateScheduleMonthDayInputAsync(botClient, message, session, text,
+          cancellationToken),
 
       ConversationState.AwaitingTemplateEditTitle =>
         templateEditHandler.HandleTemplateEditTitleInputAsync(botClient, message, session, text, cancellationToken),
@@ -101,8 +112,19 @@ public class ConversationRouter(
       ConversationState.AwaitingTemplateEditPoints =>
         templateEditHandler.HandleTemplateEditPointsInputAsync(botClient, message, session, text, cancellationToken),
 
-      ConversationState.AwaitingTemplateEditSchedule =>
-        templateEditHandler.HandleTemplateEditScheduleInputAsync(botClient, message, session, text, cancellationToken),
+      ConversationState.AwaitingTemplateEditScheduleType =>
+        HandleInlineButtonOnlyState(botClient, message, cancellationToken),
+
+      ConversationState.AwaitingTemplateEditScheduleTime =>
+        templateEditHandler.HandleTemplateEditScheduleTimeInputAsync(botClient, message, session, text,
+          cancellationToken),
+
+      ConversationState.AwaitingTemplateEditScheduleWeekday =>
+        HandleInlineButtonOnlyState(botClient, message, cancellationToken),
+
+      ConversationState.AwaitingTemplateEditScheduleMonthDay =>
+        templateEditHandler.HandleTemplateEditScheduleMonthDayInputAsync(botClient, message, session, text,
+          cancellationToken),
 
       ConversationState.AwaitingTemplateEditDueDuration =>
         templateEditHandler.HandleTemplateEditDueDurationInputAsync(botClient, message, session, text,
@@ -222,6 +244,15 @@ public class ConversationRouter(
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       "❌ Пожалуйста, используйте кнопки для выбора временной зоны.",
+      cancellationToken: cancellationToken);
+
+  private static async Task HandleInlineButtonOnlyState(
+    ITelegramBotClient botClient,
+    Message message,
+    CancellationToken cancellationToken) =>
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      "❌ Пожалуйста, используйте кнопки выше для выбора.",
       cancellationToken: cancellationToken);
 
   private async Task HandleLocationTextInput(

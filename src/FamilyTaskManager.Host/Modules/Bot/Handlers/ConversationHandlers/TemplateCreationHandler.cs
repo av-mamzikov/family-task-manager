@@ -1,10 +1,10 @@
+using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.TaskTemplates;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
@@ -67,43 +67,115 @@ public class TemplateCreationHandler(
     }
 
     session.Data["points"] = points;
-    session.State = ConversationState.AwaitingTemplateSchedule;
+    session.State = ConversationState.AwaitingTemplateScheduleType;
 
-    var scheduleKeyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateSchedule);
+    var scheduleTypeKeyboard = ScheduleKeyboardHelper.GetScheduleTypeKeyboard();
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Templates.EnterTemplateSchedule +
-      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateSchedule),
-      parseMode: ParseMode.Markdown,
-      replyMarkup: scheduleKeyboard,
+      BotConstants.Templates.ChooseScheduleType +
+      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateScheduleType),
+      replyMarkup: scheduleTypeKeyboard,
       cancellationToken: cancellationToken);
   }
 
-  public async Task HandleTemplateScheduleInputAsync(
+  public async Task HandleTemplateScheduleTimeInputAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
-    string schedule,
+    string timeText,
     CancellationToken cancellationToken)
   {
-    if (string.IsNullOrWhiteSpace(schedule))
+    if (!TimeOnly.TryParse(timeText, out var time))
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateSchedule);
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateScheduleTime);
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
-        "❌ Расписание не может быть пустым. Попробуйте снова:",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateSchedule),
+        "❌ Неверный формат времени. Используйте формат HH:mm (например, 09:00):",
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateScheduleTime),
         keyboard,
         cancellationToken);
       return;
     }
 
+    session.Data["scheduleTime"] = time;
+
+    // Check if we need additional input based on schedule type
+    if (!TryGetSessionData<string>(session, "scheduleType", out var scheduleType))
+    {
+      await SendErrorAndClearStateAsync(
+        botClient,
+        message.Chat.Id,
+        session,
+        "❌ Ошибка. Попробуйте создать шаблон заново.",
+        cancellationToken);
+      return;
+    }
+
+    if (scheduleType == "weekly")
+    {
+      session.State = ConversationState.AwaitingTemplateScheduleWeekday;
+      var weekdayKeyboard = ScheduleKeyboardHelper.GetWeekdayKeyboard();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        BotConstants.Templates.ChooseWeekday +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateScheduleWeekday),
+        replyMarkup: weekdayKeyboard,
+        cancellationToken: cancellationToken);
+    }
+    else if (scheduleType == "monthly")
+    {
+      session.State = ConversationState.AwaitingTemplateScheduleMonthDay;
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateScheduleMonthDay);
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        BotConstants.Templates.EnterMonthDay +
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateScheduleMonthDay),
+        replyMarkup: keyboard,
+        cancellationToken: cancellationToken);
+    }
+    else
+      // For daily, workdays, weekends - we have all data, create template
+      await CreateTemplateAsync(botClient, message, session, cancellationToken);
+  }
+
+  public async Task HandleTemplateScheduleMonthDayInputAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    string dayText,
+    CancellationToken cancellationToken)
+  {
+    if (!int.TryParse(dayText, out var dayOfMonth) || dayOfMonth < 1 || dayOfMonth > 31)
+    {
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateScheduleMonthDay);
+      await SendValidationErrorAsync(
+        botClient,
+        message.Chat.Id,
+        "❌ День месяца должен быть числом от 1 до 31. Попробуйте снова:",
+        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateScheduleMonthDay),
+        keyboard,
+        cancellationToken);
+      return;
+    }
+
+    session.Data["scheduleDayOfMonth"] = dayOfMonth;
+    await CreateTemplateAsync(botClient, message, session, cancellationToken);
+  }
+
+  public async Task CreateTemplateAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
     // Get all required data from session
     if (!TryGetSessionData<Guid>(session, "familyId", out var familyId) ||
         !TryGetSessionData<Guid>(session, "petId", out var petId) ||
         !TryGetSessionData<string>(session, "title", out var title) ||
-        !TryGetSessionData<int>(session, "points", out var points))
+        !TryGetSessionData<int>(session, "points", out var points) ||
+        !TryGetSessionData<string>(session, "scheduleType", out var scheduleTypeStr) ||
+        !TryGetSessionData<TimeOnly>(session, "scheduleTime", out var scheduleTime))
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -128,27 +200,45 @@ public class TemplateCreationHandler(
       return;
     }
 
-    // Parse schedule
-    var parseResult = ScheduleParser.Parse(schedule);
-    if (!parseResult.IsSuccess)
+    // Map schedule type string to ScheduleType
+    var scheduleType = scheduleTypeStr switch
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateSchedule);
-      await SendValidationErrorAsync(
+      "daily" => ScheduleType.Daily,
+      "workdays" => ScheduleType.Workdays,
+      "weekends" => ScheduleType.Weekends,
+      "weekly" => ScheduleType.Weekly,
+      "monthly" => ScheduleType.Monthly,
+      _ => null
+    };
+
+    if (scheduleType == null)
+    {
+      await SendErrorAndClearStateAsync(
         botClient,
         message.Chat.Id,
-        $"❌ {parseResult.Errors.FirstOrDefault()}",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateSchedule),
-        keyboard,
+        session,
+        "❌ Неизвестный тип расписания.",
         cancellationToken);
       return;
     }
 
-    var (scheduleType, scheduleTime, scheduleDayOfWeek, scheduleDayOfMonth) = parseResult.Value;
+    // Get optional schedule parameters
+    TryGetSessionData<DayOfWeek>(session, "scheduleDayOfWeek", out var scheduleDayOfWeek);
+    TryGetSessionData<int>(session, "scheduleDayOfMonth", out var scheduleDayOfMonth);
 
     // Create template
-    var createTemplateCommand =
-      new CreateTaskTemplateCommand(familyId, petId, title, points, scheduleType, scheduleTime, scheduleDayOfWeek,
-        scheduleDayOfMonth, TimeSpan.FromHours(12), userResult.Value);
+    var createTemplateCommand = new CreateTaskTemplateCommand(
+      familyId,
+      petId,
+      title,
+      points,
+      scheduleType,
+      scheduleTime,
+      scheduleDayOfWeek == default ? null : scheduleDayOfWeek,
+      scheduleDayOfMonth == default ? null : scheduleDayOfMonth,
+      TimeSpan.FromHours(12),
+      userResult.Value);
+
     var result = await Mediator.Send(createTemplateCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -164,14 +254,36 @@ public class TemplateCreationHandler(
 
     session.ClearState();
 
+    // Build schedule description
+    var scheduleDescription = BuildScheduleDescription(scheduleTypeStr, scheduleTime, scheduleDayOfWeek,
+      scheduleDayOfMonth);
+
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       $"{BotConstants.Templates.TemplateCreated}\n\n" +
       $"✅ Шаблон \"{title}\" успешно создан!\n\n" +
       $"💯 Очки: {points}\n" +
-      $"🔄 Расписание: {schedule}\n\n" +
+      $"🔄 Расписание: {scheduleDescription}\n\n" +
       BotConstants.Messages.ScheduledTask,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
+  }
+
+  private static string BuildScheduleDescription(
+    string scheduleType,
+    TimeOnly time,
+    DayOfWeek? dayOfWeek,
+    int? dayOfMonth)
+  {
+    var typeName = ScheduleKeyboardHelper.GetScheduleTypeName(scheduleType);
+    var timeStr = time.ToString("HH:mm");
+
+    return scheduleType switch
+    {
+      "weekly" when dayOfWeek.HasValue =>
+        $"{typeName}, {ScheduleKeyboardHelper.GetWeekdayName(dayOfWeek.Value)} в {timeStr}",
+      "monthly" when dayOfMonth.HasValue => $"{typeName}, {dayOfMonth}-го числа в {timeStr}",
+      _ => $"{typeName} в {timeStr}"
+    };
   }
 }

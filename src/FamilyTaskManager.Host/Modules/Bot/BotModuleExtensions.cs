@@ -71,6 +71,7 @@ public static class BotModuleExtensions
     services.AddScoped<TaskCallbackHandler>();
     services.AddScoped<TemplateCallbackHandler>();
     services.AddScoped<TimezoneCallbackHandler>();
+    services.AddScoped<ScheduleCallbackHandler>();
 
     logger?.LogInformation("Bot Module registered: Telegram Bot with Long Polling");
 

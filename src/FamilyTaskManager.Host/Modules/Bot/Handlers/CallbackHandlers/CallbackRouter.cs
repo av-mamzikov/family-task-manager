@@ -18,7 +18,8 @@ public class CallbackRouter(
   PetCallbackHandler petCallbackHandler,
   TaskCallbackHandler taskCallbackHandler,
   TemplateCallbackHandler templateCallbackHandler,
-  TimezoneCallbackHandler timezoneCallbackHandler)
+  TimezoneCallbackHandler timezoneCallbackHandler,
+  ScheduleCallbackHandler scheduleCallbackHandler)
   : ICallbackRouter
 {
   public async Task RouteCallbackAsync(
@@ -51,6 +52,8 @@ public class CallbackRouter(
       "invite" => familyCallbackHandler.HandleInviteActionAsync(botClient, chatId, messageId, parts, session,
         fromUser, cancellationToken),
       "timezone" => timezoneCallbackHandler.HandleTimezoneSelectionAsync(botClient, chatId, messageId, parts, session,
+        cancellationToken),
+      "schedule" => scheduleCallbackHandler.HandleScheduleCallbackAsync(botClient, chatId, messageId, parts, session,
         cancellationToken),
       "tpl" => templateCallbackHandler.HandleTemplateActionAsync(botClient, chatId, messageId, parts, session,
         fromUser, cancellationToken),
