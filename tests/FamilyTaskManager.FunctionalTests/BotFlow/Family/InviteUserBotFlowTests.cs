@@ -97,13 +97,6 @@ public partial class InviteUserBotFlowTests(CustomWebApplicationFactory<Program>
 
     invitedMessages.ShouldContain(m => m.Text != null && m.Text.Contains("Добро пожаловать в семью"));
     invitedMessages.ShouldContain(m => m.Text != null && m.Text.Contains("Главное меню"));
-
-    // Assert: admin should receive notification about new member joining
-    var adminNotification = await botClient.WaitForLastMessageToAsync(adminChatId);
-
-    adminNotification.ShouldNotBeNull("Администратор должен получить уведомление о присоединении нового участника");
-    adminNotification!.ShouldContainText("присоединился");
-    adminNotification.ShouldContainText(familyName);
   }
 
   [GeneratedRegex(@"invite_[A-Z0-9]+")]

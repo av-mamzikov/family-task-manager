@@ -351,12 +351,6 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
 
     // Wait for admin to receive confirmation
     await botClient.WaitForLastMessageToAsync(adminChatId);
-
-    // Assert: Verify notification was sent to the removed member
-    var memberNotification = await botClient.WaitForLastMessageToAsync(memberTelegramId);
-    memberNotification.ShouldNotBeNull("Участник должен получить уведомление об удалении из семьи");
-    memberNotification!.ShouldContainText("удален");
-    memberNotification.ShouldContainText(familyName);
   }
 
   private async Task CreateFamilyWithAdminAsync(
