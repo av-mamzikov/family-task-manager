@@ -153,7 +153,12 @@ public class TemplateEditHandler(
       return;
     }
 
-    if (scheduleType == "weekly")
+    if (scheduleType == "manual")
+    {
+      // For manual schedule type, we don't need time - update template immediately
+      await UpdateTemplateScheduleAsync(botClient, message, session, cancellationToken);
+    }
+    else if (scheduleType == "weekly")
     {
       session.State = ConversationState.AwaitingTemplateEditScheduleWeekday;
       var weekdayKeyboard = ScheduleKeyboardHelper.GetWeekdayKeyboard();
@@ -212,8 +217,20 @@ public class TemplateEditHandler(
   {
     if (!TryGetSessionData<Guid>(session, "templateId", out var templateId) ||
         !TryGetSessionData<Guid>(session, "familyId", out var familyId) ||
-        !TryGetSessionData<string>(session, "scheduleType", out var scheduleTypeStr) ||
-        !TryGetSessionData<TimeOnly>(session, "scheduleTime", out var scheduleTime))
+        !TryGetSessionData<string>(session, "scheduleType", out var scheduleTypeStr))
+    {
+      await SendErrorAndClearStateAsync(
+        botClient,
+        message.Chat.Id,
+        session,
+        "❌ Ошибка. Попробуйте снова.",
+        cancellationToken);
+      return;
+    }
+
+    // For Manual schedule type, time is not required
+    var scheduleTime = TimeOnly.MinValue;
+    if (scheduleTypeStr != "manual" && !TryGetSessionData(session, "scheduleTime", out scheduleTime))
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -232,6 +249,7 @@ public class TemplateEditHandler(
       "weekends" => ScheduleType.Weekends,
       "weekly" => ScheduleType.Weekly,
       "monthly" => ScheduleType.Monthly,
+      "manual" => ScheduleType.Manual,
       _ => null
     };
 

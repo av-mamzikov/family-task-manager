@@ -54,6 +54,7 @@ public class CreateTaskTemplateHandler(
         : Result<Schedule>.Error("DayOfMonth is required for Monthly schedule"),
       nameof(ScheduleType.Workdays) => Schedule.CreateWorkdays(command.ScheduleTime),
       nameof(ScheduleType.Weekends) => Schedule.CreateWeekends(command.ScheduleTime),
+      nameof(ScheduleType.Manual) => Schedule.CreateManual(),
       _ => Result<Schedule>.Error("Invalid schedule type")
     };
 

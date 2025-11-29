@@ -32,6 +32,10 @@ public static class ScheduleKeyboardHelper
       new[]
       {
         InlineKeyboardButton.WithCallbackData("🗓️ Ежемесячно", "schedule_type_monthly")
+      },
+      new[]
+      {
+        InlineKeyboardButton.WithCallbackData("✋ Вручную", "schedule_type_manual")
       }
     });
 
@@ -86,6 +90,7 @@ public static class ScheduleKeyboardHelper
       "weekends" => "По выходным",
       "weekly" => "Еженедельно",
       "monthly" => "Ежемесячно",
+      "manual" => "Вручную",
       _ => "Неизвестно"
     };
 

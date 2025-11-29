@@ -60,6 +60,12 @@ public class Schedule : ValueObject
     Result.Success(new Schedule(ScheduleType.Weekends, time, null, null));
 
   /// <summary>
+  ///   Creates a weekends schedule that triggers Saturday and Sunday at the specified time.
+  /// </summary>
+  public static Result<Schedule> CreateManual() =>
+    Result.Success(new Schedule(ScheduleType.Manual, TimeOnly.MinValue, null, null));
+
+  /// <summary>
   ///   Calculates the next occurrence of this schedule after the specified time.
   /// </summary>
   /// <param name="after">The time after which to find the next occurrence (in UTC)</param>

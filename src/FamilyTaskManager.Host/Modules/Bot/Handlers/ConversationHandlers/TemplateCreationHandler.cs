@@ -174,8 +174,20 @@ public class TemplateCreationHandler(
         !TryGetSessionData<Guid>(session, "petId", out var petId) ||
         !TryGetSessionData<string>(session, "title", out var title) ||
         !TryGetSessionData<int>(session, "points", out var points) ||
-        !TryGetSessionData<string>(session, "scheduleType", out var scheduleTypeStr) ||
-        !TryGetSessionData<TimeOnly>(session, "scheduleTime", out var scheduleTime))
+        !TryGetSessionData<string>(session, "scheduleType", out var scheduleTypeStr))
+    {
+      await SendErrorAndClearStateAsync(
+        botClient,
+        message.Chat.Id,
+        session,
+        "❌ Ошибка. Попробуйте создать шаблон заново.",
+        cancellationToken);
+      return;
+    }
+
+    // For Manual schedule type, time is not required
+    var scheduleTime = TimeOnly.MinValue;
+    if (scheduleTypeStr != "manual" && !TryGetSessionData(session, "scheduleTime", out scheduleTime))
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -208,6 +220,7 @@ public class TemplateCreationHandler(
       "weekends" => ScheduleType.Weekends,
       "weekly" => ScheduleType.Weekly,
       "monthly" => ScheduleType.Monthly,
+      "manual" => ScheduleType.Manual,
       _ => null
     };
 
@@ -276,14 +289,14 @@ public class TemplateCreationHandler(
     int? dayOfMonth)
   {
     var typeName = ScheduleKeyboardHelper.GetScheduleTypeName(scheduleType);
-    var timeStr = time.ToString("HH:mm");
 
     return scheduleType switch
     {
+      "manual" => typeName,
       "weekly" when dayOfWeek.HasValue =>
-        $"{typeName}, {ScheduleKeyboardHelper.GetWeekdayName(dayOfWeek.Value)} в {timeStr}",
-      "monthly" when dayOfMonth.HasValue => $"{typeName}, {dayOfMonth}-го числа в {timeStr}",
-      _ => $"{typeName} в {timeStr}"
+        $"{typeName}, {ScheduleKeyboardHelper.GetWeekdayName(dayOfWeek.Value)} в {time:HH:mm}",
+      "monthly" when dayOfMonth.HasValue => $"{typeName}, {dayOfMonth}-го числа в {time:HH:mm}",
+      _ => $"{typeName} в {time:HH:mm}"
     };
   }
 }

@@ -62,23 +62,65 @@ public class ScheduleCallbackHandler(
     // Store schedule type in session
     session.Data["scheduleType"] = scheduleType;
 
+    // Delete the inline keyboard message
+    await botClient.DeleteMessageAsync(chatId, messageId, cancellationToken);
+
+    // For Manual schedule type, skip time input and proceed directly to creation/update
+    if (scheduleType == "manual")
+    {
+      // Determine if we're in template creation or editing flow
+      var isEditing = session.State == ConversationState.AwaitingTemplateEditScheduleType;
+      var isTask = session.State == ConversationState.AwaitingTaskScheduleType;
+
+      await botClient.SendTextMessageAsync(
+        chatId,
+        "✅ Выбран тип расписания: Вручную",
+        cancellationToken: cancellationToken);
+
+      // For editing, trigger the update immediately
+      if (isEditing)
+      {
+        var fakeMessage = new Message
+        {
+          Chat = new Chat { Id = chatId },
+          From = new User { Id = chatId }
+        };
+
+        await templateEditHandler.UpdateTemplateScheduleAsync(botClient, fakeMessage, session, cancellationToken);
+      }
+      else if (!isTask)
+      {
+        // For template creation, trigger the creation
+        var fakeMessage = new Message
+        {
+          Chat = new Chat { Id = chatId },
+          From = new User { Id = chatId }
+        };
+
+        await templateCreationHandler.CreateTemplateAsync(botClient, fakeMessage, session, cancellationToken);
+      }
+      else
+        // For task creation flows, keep state for now (will be implemented later)
+        session.State = ConversationState.None;
+
+      return;
+    }
+
     // Determine next state based on current conversation state
-    var isEditing = session.State == ConversationState.AwaitingTemplateEditScheduleType;
-    var isTask = session.State == ConversationState.AwaitingTaskScheduleType;
+    var isEditingFlow = session.State == ConversationState.AwaitingTemplateEditScheduleType;
+    var isTaskFlow = session.State == ConversationState.AwaitingTaskScheduleType;
 
     ConversationState nextState;
-    if (isEditing)
+    if (isEditingFlow)
       nextState = ConversationState.AwaitingTemplateEditScheduleTime;
-    else if (isTask)
+    else if (isTaskFlow)
       nextState = ConversationState.AwaitingTaskScheduleTime;
     else
       nextState = ConversationState.AwaitingTemplateScheduleTime;
 
     session.State = nextState;
 
-    // Delete the inline keyboard message and ask for time
-    await botClient.DeleteMessageAsync(chatId, messageId, cancellationToken);
-
+    // Ask for time
     var keyboard = StateKeyboardHelper.GetKeyboardForState(nextState);
     await botClient.SendTextMessageAsync(
       chatId,

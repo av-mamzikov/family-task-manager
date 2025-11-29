@@ -52,6 +52,7 @@ public class UpdateTaskTemplateHandler(IRepository<TaskTemplate> templateReposit
           : Result<Schedule>.Error("DayOfMonth is required for Monthly schedule"),
         nameof(ScheduleType.Workdays) => Schedule.CreateWorkdays(command.ScheduleTime.Value),
         nameof(ScheduleType.Weekends) => Schedule.CreateWeekends(command.ScheduleTime.Value),
+        nameof(ScheduleType.Manual) => Schedule.CreateManual(),
         _ => Result<Schedule>.Error("Invalid schedule type")
       };
 
