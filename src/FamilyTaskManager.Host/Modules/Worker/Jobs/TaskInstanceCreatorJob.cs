@@ -19,7 +19,9 @@ public class TaskInstanceCreatorJob(IMediator mediator, ILogger<TaskInstanceCrea
     {
       var now = DateTime.UtcNow;
 
-      var checkFrom = now.AddMinutes(-60);
+      // Check last 2 minutes with small overlap for reliability
+      // Job runs every minute, so we don't need to check full hour
+      var checkFrom = now.AddMinutes(-2);
       var checkTo = now;
 
       var result = await mediator.Send(

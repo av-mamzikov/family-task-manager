@@ -83,9 +83,8 @@ public class ProcessScheduledTasksHandler(
         }
         catch (Exception ex)
         {
-          logger.LogError(ex,
-            "Error processing template {TemplateId} with schedule {Schedule}",
-            template.Id, template.Schedule);
+          logger.LogError(ex, "Error processing template {TemplateId} with schedule {Schedule}", template.Id,
+            template.Schedule);
         }
       }
 
