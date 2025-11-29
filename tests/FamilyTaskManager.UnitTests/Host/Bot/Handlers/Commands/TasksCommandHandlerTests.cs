@@ -78,7 +78,10 @@ public class TasksCommandHandlerTests
         TaskStatus.Active,
         DateTime.UtcNow.AddHours(2),
         Guid.NewGuid(),
-        "Fluffy")
+        "Fluffy",
+        null,
+        null,
+        false)
     };
 
     _mediator.Send(Arg.Any<GetActiveTasksQuery>(), Arg.Any<CancellationToken>())
@@ -112,7 +115,10 @@ public class TasksCommandHandlerTests
         TaskStatus.Active,
         DateTime.UtcNow.AddHours(-2), // Overdue
         Guid.NewGuid(),
-        "Pet")
+        "Pet",
+        null,
+        null,
+        false)
     };
 
     _mediator.Send(Arg.Any<GetActiveTasksQuery>(), Arg.Any<CancellationToken>())
@@ -138,9 +144,10 @@ public class TasksCommandHandlerTests
 
     var tasks = new List<TaskDto>
     {
-      new(Guid.NewGuid(), "Active task", 10, TaskStatus.Active, DateTime.UtcNow.AddHours(2), Guid.NewGuid(), "Pet1"),
+      new(Guid.NewGuid(), "Active task", 10, TaskStatus.Active, DateTime.UtcNow.AddHours(2), Guid.NewGuid(), "Pet1",
+        null, null, false),
       new(Guid.NewGuid(), "In progress task", 15, TaskStatus.InProgress, DateTime.UtcNow.AddHours(1), Guid.NewGuid(),
-        "Pet2")
+        "Pet2", null, null, false)
     };
 
     _mediator.Send(Arg.Any<GetActiveTasksQuery>(), Arg.Any<CancellationToken>())

@@ -23,7 +23,7 @@ public class GetTasksByPetHandler(IRepository<TaskInstance> taskRepository, IRep
       return Result<List<TaskDto>>.NotFound("Pet not found");
     }
 
-    var spec = new TasksByPetSpec(request.PetId, request.Status);
+    var spec = new TasksByPetWithMembersSpec(request.PetId, request.Status);
     var tasks = await taskRepository.ListAsync(spec, cancellationToken);
 
     if (tasks.Count == 0)
@@ -38,7 +38,10 @@ public class GetTasksByPetHandler(IRepository<TaskInstance> taskRepository, IRep
       t.Status,
       t.DueAt,
       t.PetId,
-      pet.Name)).ToList();
+      pet.Name,
+      t.StartedByMemberId,
+      t.StartedByMember?.User?.Name,
+      false)).ToList(); // Cannot determine if current user can complete without userId
 
     return Result<List<TaskDto>>.Success(result);
   }

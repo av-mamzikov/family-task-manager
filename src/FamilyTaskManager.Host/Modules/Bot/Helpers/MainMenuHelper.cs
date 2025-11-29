@@ -13,7 +13,7 @@ public static class MainMenuHelper
   public static ReplyKeyboardMarkup GetMainMenuKeyboard() =>
     new(new[]
     {
-      new KeyboardButton[] { "🏠 Семья", "✅ Мои задачи" },
+      new KeyboardButton[] { "🏠 Семья", "✅ Наши задачи" },
       new KeyboardButton[] { "🐾 Питомец", "⭐ Мои очки" },
       new KeyboardButton[] { "📊 Статистика" }
     })

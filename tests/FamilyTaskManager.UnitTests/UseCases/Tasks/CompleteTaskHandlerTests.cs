@@ -52,7 +52,7 @@ public class CompleteTaskHandlerTests
     // Assert
     result.IsSuccess.ShouldBeTrue();
     task.Status.ShouldBe(TaskStatus.Completed);
-    task.CompletedBy.ShouldBe(userId);
+    task.CompletedByMember?.UserId.ShouldBe(userId);
     task.CompletedAt.ShouldNotBeNull();
 
     var member = family.Members.First();

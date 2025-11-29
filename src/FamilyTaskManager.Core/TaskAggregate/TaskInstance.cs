@@ -1,7 +1,6 @@
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.TaskAggregate.Events;
-using FamilyTaskManager.Core.UserAggregate;
 
 namespace FamilyTaskManager.Core.TaskAggregate;
 
@@ -39,7 +38,8 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public TaskType Type { get; private set; }
   public Guid? TemplateId { get; private set; }
   public TaskStatus Status { get; private set; }
-  public Guid? CompletedBy { get; private set; }
+  public Guid? StartedByMemberId { get; private set; }
+  public Guid? CompletedByMemberId { get; private set; }
   public DateTime? CompletedAt { get; private set; }
   public DateTime CreatedAt { get; private set; }
   public DateTime DueAt { get; private set; }
@@ -48,29 +48,33 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public Family Family { get; private set; } = null!;
   public Pet Pet { get; private set; } = null!;
   public TaskTemplate? Template { get; private set; }
-  public User? CompletedByUser { get; private set; }
+  public FamilyMember? StartedByMember { get; private set; }
+  public FamilyMember? CompletedByMember { get; private set; }
 
-  public void Start()
+  public void Start(Guid familyMemberId)
   {
     if (Status != TaskStatus.Active)
     {
       return;
     }
 
+    Guard.Against.Default(familyMemberId);
+
     Status = TaskStatus.InProgress;
+    StartedByMemberId = familyMemberId;
   }
 
-  public void Complete(Guid completedBy, DateTime completedAtUtc)
+  public void Complete(Guid completedByMemberId, DateTime completedAtUtc)
   {
     if (Status == TaskStatus.Completed)
     {
       return;
     }
 
-    Guard.Against.Default(completedBy);
+    Guard.Against.Default(completedByMemberId);
 
     Status = TaskStatus.Completed;
-    CompletedBy = completedBy;
+    CompletedByMemberId = completedByMemberId;
     CompletedAt = completedAtUtc;
 
     RegisterDomainEvent(new TaskCompletedEvent(this));

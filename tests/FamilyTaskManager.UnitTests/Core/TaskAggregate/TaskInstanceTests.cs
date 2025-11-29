@@ -29,7 +29,7 @@ public class TaskInstanceTests
     task.DueAt.ShouldBe(dueAt);
     task.Status.ShouldBe(TaskStatus.Active);
     task.TemplateId.ShouldBeNull();
-    task.CompletedBy.ShouldBeNull();
+    task.CompletedByMember.ShouldBeNull();
     task.CompletedAt.ShouldBeNull();
     task.CreatedAt.ShouldBeInRange(DateTime.UtcNow.AddSeconds(-1), DateTime.UtcNow.AddSeconds(1));
   }
@@ -204,13 +204,15 @@ public class TaskInstanceTests
     // Arrange
     var task = new TaskInstance(
       Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, TaskType.OneTime, DateTime.UtcNow.AddHours(2));
+    var memberId = Guid.NewGuid();
     task.Status.ShouldBe(TaskStatus.Active);
 
     // Act
-    task.Start();
+    task.Start(memberId);
 
     // Assert
     task.Status.ShouldBe(TaskStatus.InProgress);
+    task.StartedByMemberId.ShouldBe(memberId);
   }
 
   [Fact]
@@ -219,10 +221,11 @@ public class TaskInstanceTests
     // Arrange
     var task = new TaskInstance(
       Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, TaskType.OneTime, DateTime.UtcNow.AddHours(2));
-    task.Start();
+    var memberId = Guid.NewGuid();
+    task.Start(memberId);
 
     // Act
-    task.Start();
+    task.Start(memberId);
 
     // Assert
     task.Status.ShouldBe(TaskStatus.InProgress);
@@ -234,11 +237,12 @@ public class TaskInstanceTests
     // Arrange
     var task = new TaskInstance(
       Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, TaskType.OneTime, DateTime.UtcNow.AddHours(2));
+    var memberId = Guid.NewGuid();
     var completedBy = Guid.NewGuid();
     task.Complete(completedBy, DateTime.UtcNow);
 
     // Act
-    task.Start();
+    task.Start(memberId);
 
     // Assert
     task.Status.ShouldBe(TaskStatus.Completed);
@@ -258,7 +262,7 @@ public class TaskInstanceTests
 
     // Assert
     task.Status.ShouldBe(TaskStatus.Completed);
-    task.CompletedBy.ShouldBe(completedBy);
+    task.CompletedByMemberId.ShouldBe(completedBy);
     task.CompletedAt.ShouldBe(completedAt);
   }
 
@@ -268,7 +272,8 @@ public class TaskInstanceTests
     // Arrange
     var task = new TaskInstance(
       Guid.NewGuid(), Guid.NewGuid(), "Feed the pet", 10, TaskType.OneTime, DateTime.UtcNow.AddHours(2));
-    task.Start();
+    var memberId = Guid.NewGuid();
+    task.Start(memberId);
     var completedBy = Guid.NewGuid();
     var completedAt = DateTime.UtcNow;
 
@@ -277,7 +282,7 @@ public class TaskInstanceTests
 
     // Assert
     task.Status.ShouldBe(TaskStatus.Completed);
-    task.CompletedBy.ShouldBe(completedBy);
+    task.CompletedByMemberId.ShouldBe(completedBy);
     task.CompletedAt.ShouldBe(completedAt);
   }
 
@@ -315,7 +320,7 @@ public class TaskInstanceTests
 
     // Assert
     task.Status.ShouldBe(TaskStatus.Completed);
-    task.CompletedBy.ShouldBe(firstCompletedBy);
+    task.CompletedByMemberId.ShouldBe(firstCompletedBy);
     task.CompletedAt.ShouldBe(firstCompletedAt);
   }
 
@@ -343,17 +348,18 @@ public class TaskInstanceTests
 
     // Act & Assert - Initial state
     task.Status.ShouldBe(TaskStatus.Active);
-    task.CompletedBy.ShouldBeNull();
+    task.CompletedByMember.ShouldBeNull();
     task.CompletedAt.ShouldBeNull();
 
     // Act & Assert - Start
-    task.Start();
+    var memberId = Guid.NewGuid();
+    task.Start(memberId);
     task.Status.ShouldBe(TaskStatus.InProgress);
 
     // Act & Assert - Complete
     task.Complete(completedBy, completedAt);
     task.Status.ShouldBe(TaskStatus.Completed);
-    task.CompletedBy.ShouldBe(completedBy);
+    task.CompletedByMemberId.ShouldBe(completedBy);
     task.CompletedAt.ShouldBe(completedAt);
   }
 
@@ -371,7 +377,7 @@ public class TaskInstanceTests
 
     // Assert
     task.Status.ShouldBe(TaskStatus.Completed);
-    task.CompletedBy.ShouldBe(completedBy);
+    task.CompletedByMemberId.ShouldBe(completedBy);
     task.CompletedAt.ShouldBe(completedAt);
   }
 }

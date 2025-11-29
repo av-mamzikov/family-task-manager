@@ -337,7 +337,7 @@ public class MessageHandler(
     await (text switch
     {
       "🏠 Семья" => HandleFamilyCommandAsync(botClient, message, session, cancellationToken),
-      "✅ Мои задачи" => HandleTasksCommandAsync(botClient, message, session, cancellationToken),
+      "✅ Наши задачи" => HandleTasksCommandAsync(botClient, message, session, cancellationToken),
       "🐾 Питомец" => HandlePetCommandAsync(botClient, message, session, cancellationToken),
       "⭐ Мои очки" => HandleMyPointsAsync(botClient, message, session, cancellationToken),
       "📊 Статистика" => HandleStatsCommandAsync(botClient, message, session, cancellationToken),

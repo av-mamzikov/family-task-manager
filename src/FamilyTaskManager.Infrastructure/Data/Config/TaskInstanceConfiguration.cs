@@ -36,7 +36,10 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
       .HasConversion<string>()
       .HasMaxLength(20);
 
-    builder.Property(t => t.CompletedBy)
+    builder.Property(t => t.StartedByMemberId)
+      .IsRequired(false);
+
+    builder.Property(t => t.CompletedByMemberId)
       .IsRequired(false);
 
     builder.Property(t => t.CompletedAt)
@@ -52,6 +55,8 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
     builder.HasIndex(t => t.FamilyId);
     builder.HasIndex(t => t.PetId);
     builder.HasIndex(t => t.TemplateId);
+    builder.HasIndex(t => t.StartedByMemberId);
+    builder.HasIndex(t => t.CompletedByMemberId);
     builder.HasIndex(t => new { t.FamilyId, t.Status });
     builder.HasIndex(t => new { t.Status, t.DueAt });
 
@@ -73,10 +78,16 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
       .HasForeignKey(t => t.TemplateId)
       .OnDelete(DeleteBehavior.NoAction);
 
-    // Foreign key relationship to User (CompletedBy)
-    builder.HasOne(t => t.CompletedByUser)
+    // Foreign key relationship to FamilyMember (StartedBy)
+    builder.HasOne(t => t.StartedByMember)
       .WithMany()
-      .HasForeignKey(t => t.CompletedBy)
+      .HasForeignKey(t => t.StartedByMemberId)
+      .OnDelete(DeleteBehavior.NoAction);
+
+    // Foreign key relationship to FamilyMember (CompletedBy)
+    builder.HasOne(t => t.CompletedByMember)
+      .WithMany()
+      .HasForeignKey(t => t.CompletedByMemberId)
       .OnDelete(DeleteBehavior.NoAction);
   }
 }

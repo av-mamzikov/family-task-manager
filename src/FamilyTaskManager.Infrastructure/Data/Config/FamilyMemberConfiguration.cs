@@ -10,6 +10,9 @@ public class FamilyMemberConfiguration : IEntityTypeConfiguration<FamilyMember>
 
     builder.HasKey(m => m.Id);
 
+    builder.Property(m => m.Id)
+      .ValueGeneratedNever(); // ID is set in constructor, not by database
+
     builder.Property(m => m.UserId)
       .IsRequired();
 

@@ -39,8 +39,13 @@ public class CompleteTaskHandler(
       return Result.Error("User is not a member of this family");
     }
 
+    // Check if task is in progress and if current user is the one who started it
+    if (task.Status == TaskStatus.InProgress && task.StartedByMemberId.HasValue &&
+        task.StartedByMemberId.Value != member.Id)
+      return Result.Error("Only the user who started this task can complete it");
+
     // Complete task (registers TaskCompletedEvent)
-    task.Complete(command.UserId, DateTime.UtcNow);
+    task.Complete(member.Id, DateTime.UtcNow);
 
     // Add points to member
     member.AddPoints(task.Points);

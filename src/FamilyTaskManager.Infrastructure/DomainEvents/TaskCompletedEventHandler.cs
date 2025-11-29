@@ -1,5 +1,7 @@
+using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.Core.Specifications;
 using FamilyTaskManager.Core.TaskAggregate.Events;
-using FamilyTaskManager.Core.UserAggregate;
 using FamilyTaskManager.Infrastructure.Notifications;
 using Mediator;
 
@@ -8,7 +10,7 @@ namespace FamilyTaskManager.Infrastructure.DomainEvents;
 public class TaskCompletedEventHandler(
   ILogger<TaskCompletedEventHandler> logger,
   ITelegramNotificationService notificationService,
-  IRepository<User> userRepository)
+  IReadOnlyEntityRepository<FamilyMember> memberRepository)
   : INotificationHandler<TaskCompletedEvent>
 {
   public async ValueTask Handle(TaskCompletedEvent notification, CancellationToken cancellationToken)
@@ -18,25 +20,26 @@ public class TaskCompletedEventHandler(
     logger.LogInformation("Task completed: {TaskId} - {TaskTitle}",
       task.Id, task.Title);
 
-    // Get user who completed the task
-    if (task.CompletedBy.HasValue)
+    // Get member who completed the task
+    if (task.CompletedByMemberId.HasValue)
     {
-      var user = await userRepository.GetByIdAsync(task.CompletedBy.Value, cancellationToken);
-      if (user != null)
+      var memberSpec = new GetFamilyMemberByIdWithUserSpec(task.CompletedByMemberId.Value);
+      var member = await memberRepository.FirstOrDefaultAsync(memberSpec, cancellationToken);
+      if (member?.User != null)
       {
         try
         {
           // Send notification to all family members
           await notificationService.SendTaskCompletedAsync(
             task.FamilyId,
-            user.Name,
+            member.User.Name,
             task.Title,
             task.Points,
             cancellationToken);
 
           logger.LogInformation(
             "Task completion notification sent for task {TaskId} by user {UserName}",
-            task.Id, user.Name);
+            task.Id, member.User.Name);
         }
         catch (Exception ex)
         {

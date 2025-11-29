@@ -11,7 +11,8 @@ public class GetTaskByIdHandler(
   public async ValueTask<Result<TaskDto>> Handle(GetTaskByIdQuery request,
     CancellationToken cancellationToken)
   {
-    var task = await taskRepository.GetByIdAsync(request.Id, cancellationToken);
+    var spec = new GetTaskByIdWithMembersSpec(request.Id);
+    var task = await taskRepository.FirstOrDefaultAsync(spec, cancellationToken);
 
     if (task == null)
     {
@@ -35,7 +36,10 @@ public class GetTaskByIdHandler(
       task.Status,
       task.DueAt,
       task.PetId,
-      petName);
+      petName,
+      task.StartedByMemberId,
+      task.StartedByMember?.User?.Name,
+      false); // Cannot determine if current user can complete without userId
 
     return Result<TaskDto>.Success(result);
   }

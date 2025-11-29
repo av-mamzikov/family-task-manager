@@ -27,7 +27,7 @@ public class TasksCommandHandler(IMediator mediator)
     }
 
     // Get active tasks
-    var getTasksQuery = new GetActiveTasksQuery(session.CurrentFamilyId.Value);
+    var getTasksQuery = new GetActiveTasksQuery(session.CurrentFamilyId.Value, userId);
     var tasksResult = await mediator.Send(getTasksQuery, cancellationToken);
 
     if (!tasksResult.IsSuccess)
@@ -74,7 +74,10 @@ public class TasksCommandHandler(IMediator mediator)
       foreach (var task in inProgressTasks)
       {
         messageText += $"🔄 *{task.Title}*\n";
-        messageText += $"   🐾 {task.PetName} | ⭐ {task.Points} очков\n\n";
+        messageText += $"   🐾 {task.PetName} | ⭐ {task.Points} очков\n";
+        if (!string.IsNullOrEmpty(task.StartedByUserName)) messageText += $"   👤 Взял: {task.StartedByUserName}\n";
+
+        messageText += "\n";
       }
     }
 
@@ -93,12 +96,14 @@ public class TasksCommandHandler(IMediator mediator)
 
     foreach (var task in inProgressTasks.Take(5))
     {
-      buttons.Add(new[]
-      {
-        InlineKeyboardButton.WithCallbackData(
-          $"✅ Выполнить: {task.Title}",
-          $"task_complete_{task.Id}")
-      });
+      // Only show complete button if current user is the one who started the task
+      if (task.CanBeCompletedByCurrentUser)
+        buttons.Add(new[]
+        {
+          InlineKeyboardButton.WithCallbackData(
+            $"✅ Выполнить: {task.Title}",
+            $"task_complete_{task.Id}")
+        });
     }
 
     await botClient.SendTextMessageAsync(

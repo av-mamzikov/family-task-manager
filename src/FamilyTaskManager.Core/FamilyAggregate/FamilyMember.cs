@@ -13,6 +13,7 @@ public class FamilyMember : EntityBase<FamilyMember, Guid>
     Guard.Against.Default(userId);
     Guard.Against.Default(familyId);
 
+    Id = Guid.NewGuid();
     UserId = userId;
     FamilyId = familyId;
     Role = role;

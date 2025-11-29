@@ -34,7 +34,7 @@ public class TakeTaskHandler(
       return Result.Error("User is not a member of this family");
     }
 
-    task.Start();
+    task.Start(member.Id);
     await taskRepository.UpdateAsync(task, cancellationToken);
 
     return Result.Success();
