@@ -205,4 +205,47 @@ public class TelegramNotificationServiceTests
     message.ShouldNotBeNull();
     message.Text!.ShouldContain("Test Task");
   }
+
+  [Fact]
+  public async Task SendTaskStartedAsync_WithValidParameters_SendsFormattedMessage()
+  {
+    // Arrange
+    const long telegramId1 = 12345L;
+    const long telegramId2 = 67890L;
+
+    var family = new Family("Test Family", "Europe/Moscow");
+    var user1 = new User(telegramId1, "User1");
+    var user2 = new User(telegramId2, "User2");
+
+    var member1 = family.AddMember(user1.Id, FamilyRole.Adult);
+    var member2 = family.AddMember(user2.Id, FamilyRole.Child);
+    family.ClearDomainEvents();
+
+    // Setup mocks
+    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+      .Returns(family);
+    _userRepository.GetByIdAsync(user1.Id, Arg.Any<CancellationToken>()).Returns(user1);
+    _userRepository.GetByIdAsync(user2.Id, Arg.Any<CancellationToken>()).Returns(user2);
+
+    // Act
+    await _service.SendTaskStartedAsync(family.Id, "User1", "Test Task", new TaskPoints(3),
+      CancellationToken.None);
+
+    // Assert
+    _botClient.SentMessages.Count.ShouldBe(2);
+
+    var message1 = _botClient.GetLastMessageTo(telegramId1)!;
+    message1.ShouldNotBeNull();
+    message1.Text!.ShouldContain("Задача взята в работу");
+    message1.Text!.ShouldContain("User1");
+    message1.Text!.ShouldContain("Test Task");
+    message1.Text!.ShouldContain("⭐⭐⭐ очков");
+
+    var message2 = _botClient.GetLastMessageTo(telegramId2)!;
+    message2.ShouldNotBeNull();
+    message2.Text!.ShouldContain("Задача взята в работу");
+    message2.Text!.ShouldContain("User1");
+    message2.Text!.ShouldContain("Test Task");
+    message2.Text!.ShouldContain("⭐⭐⭐ очков");
+  }
 }

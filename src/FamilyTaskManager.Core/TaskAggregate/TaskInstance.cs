@@ -62,6 +62,8 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
 
     Status = TaskStatus.InProgress;
     StartedByMemberId = familyMemberId;
+
+    RegisterDomainEvent(new TaskStartedEvent(this));
   }
 
   public void Complete(Guid completedByMemberId, DateTime completedAtUtc)

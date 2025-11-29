@@ -121,6 +121,32 @@ public class TelegramNotificationService(
     }
   }
 
+  public async Task SendTaskStartedAsync(Guid familyId, string userName, string taskTitle, TaskPoints points,
+    CancellationToken cancellationToken = default)
+  {
+    try
+    {
+      var message = $"🚀 <b>Задача взята в работу!</b>\n\n" +
+                    $"👤 {EscapeHtml(userName)}\n" +
+                    $"📝 {EscapeHtml(taskTitle)}\n" +
+                    $"{points} очков\n\n" +
+                    $"Удачи в выполнении! 💪";
+
+      await SendToFamilyMembersAsync(familyId, message, cancellationToken);
+
+      logger.LogInformation(
+        "Task started notification sent to family {FamilyId}: user '{UserName}' started '{TaskTitle}'",
+        familyId, userName, taskTitle);
+    }
+    catch (Exception ex)
+    {
+      logger.LogError(ex,
+        "Failed to send task started notification to family {FamilyId}",
+        familyId);
+      throw;
+    }
+  }
+
   public async Task SendTaskCompletedAsync(Guid familyId, string userName, string taskTitle, TaskPoints points,
     CancellationToken cancellationToken = default)
   {
