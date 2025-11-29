@@ -323,15 +323,9 @@ public class MessageHandler(
     Message message,
     CancellationToken cancellationToken)
   {
-    var helpText = @"📖 Справка по командам:
-
-" + BotConstants.Help.Commands + @"
-
-🔹 Используйте кнопки меню для быстрого доступа к функциям.";
-
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      helpText,
+      BotConstants.Help.Commands,
       cancellationToken: cancellationToken);
   }
 

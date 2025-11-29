@@ -54,7 +54,7 @@ public class TasksCommandHandler(IMediator mediator)
     var activeTasks = tasks.Where(t => t.Status == TaskStatus.Active).ToList();
     var inProgressTasks = tasks.Where(t => t.Status == TaskStatus.InProgress).ToList();
 
-    var messageText = "✅ *Активные задачи:*\n\n";
+    var messageText = "✅ *Наши задачи*\n\n";
 
     if (activeTasks.Any())
     {
