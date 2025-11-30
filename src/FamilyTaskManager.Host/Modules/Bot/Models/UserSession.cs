@@ -3,6 +3,7 @@ namespace FamilyTaskManager.Host.Modules.Bot.Models;
 public class UserSession
 {
   public Guid? CurrentFamilyId { get; set; }
+
   public ConversationState State { get; set; } = ConversationState.None;
   public Dictionary<string, object> Data { get; set; } = new();
   public DateTime LastActivity { get; set; } = DateTime.UtcNow;

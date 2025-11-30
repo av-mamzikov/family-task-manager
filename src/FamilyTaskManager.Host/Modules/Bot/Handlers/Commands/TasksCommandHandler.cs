@@ -89,20 +89,10 @@ public class TasksCommandHandler(IMediator mediator)
       buttons.Add([InlineKeyboardButton.WithCallbackData($"✋ Взять: {task.Title}", $"task_take_{task.Id}")]);
     }
 
-    foreach (var task in inProgressTasks.Take(5))
+    foreach (var task in inProgressTasks.Where(t => t.StartedByUserId == userId).Take(5))
     {
-      // Only show complete button if current user is the one who started the task
-      if (task.StartedByMemberId == userId)
-      {
-        buttons.Add([
-          InlineKeyboardButton.WithCallbackData(
-            $"✅ Выполнить: {task.Title}",
-            $"task_complete_{task.Id}"),
-          InlineKeyboardButton.WithCallbackData(
-            "❌ Отказаться",
-            $"task_cancel_{task.Id}")
-        ]);
-      }
+      buttons.Add([InlineKeyboardButton.WithCallbackData($"✅ Выполнить: {task.Title}", $"task_complete_{task.Id}")]);
+      buttons.Add([InlineKeyboardButton.WithCallbackData($"❌ Отказаться: {task.Title}", $"task_cancel_{task.Id}")]);
     }
 
     await botClient.SendTextMessageAsync(

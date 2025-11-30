@@ -13,7 +13,7 @@ public record TaskDto(
   DateTime DueAtUtc,
   Guid PetId,
   string PetName,
-  Guid? StartedByMemberId,
+  Guid? StartedByUserId,
   string FamilyTimezone,
   string? StartedByUserName = null)
 {
@@ -47,7 +47,7 @@ public record TaskDto(
       t.DueAt,
       t.PetId,
       t.Pet.Name,
-      t.StartedByMemberId,
+      t.StartedByMember!.UserId,
       t.Family.Timezone,
       t.StartedByMember != null ? t.StartedByMember.User!.Name : null);
   }
