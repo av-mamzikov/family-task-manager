@@ -85,12 +85,12 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
     builder.HasOne(t => t.StartedByMember)
       .WithMany()
       .HasForeignKey(t => t.StartedByMemberId)
-      .OnDelete(DeleteBehavior.NoAction);
+      .OnDelete(DeleteBehavior.SetNull);
 
     // Foreign key relationship to FamilyMember (CompletedBy)
     builder.HasOne(t => t.CompletedByMember)
       .WithMany()
       .HasForeignKey(t => t.CompletedByMemberId)
-      .OnDelete(DeleteBehavior.NoAction);
+      .OnDelete(DeleteBehavior.SetNull);
   }
 }
