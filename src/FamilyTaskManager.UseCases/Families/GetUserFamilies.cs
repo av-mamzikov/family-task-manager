@@ -1,13 +1,5 @@
 namespace FamilyTaskManager.UseCases.Families;
 
-public record FamilyDto(
-  Guid Id,
-  string Name,
-  string Timezone,
-  bool LeaderboardEnabled,
-  FamilyRole UserRole,
-  int UserPoints);
-
 public record GetUserFamiliesQuery(Guid UserId) : IQuery<Result<List<FamilyDto>>>;
 
 public class GetUserFamiliesHandler(IRepository<Family> familyRepository)

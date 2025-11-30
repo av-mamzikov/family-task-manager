@@ -1,7 +1,5 @@
 namespace FamilyTaskManager.UseCases.Users;
 
-public record UserDto(Guid Id, long TelegramId, string Name);
-
 public record GetUserByIdQuery(Guid UserId) : IQuery<Result<UserDto?>>;
 
 public class GetUserByIdHandler(IRepository<User> repository)

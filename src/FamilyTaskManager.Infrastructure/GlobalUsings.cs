@@ -4,6 +4,7 @@ global using Ardalis.GuardClauses;
 global using Ardalis.SharedKernel;
 global using Ardalis.Specification.EntityFrameworkCore;
 global using MailKit.Net.Smtp;
+global using FamilyTaskManager.UseCases.Contracts.Tasks;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.EntityFrameworkCore.Metadata.Builders;
 global using Microsoft.Extensions.Configuration;

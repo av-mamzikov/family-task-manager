@@ -1,5 +1,10 @@
 global using System.Runtime.CompilerServices;
 global using Ardalis.SharedKernel;
+global using FamilyTaskManager.UseCases.Contracts.Families;
+global using FamilyTaskManager.UseCases.Contracts.Pets;
+global using FamilyTaskManager.UseCases.Contracts.Statistics;
+global using FamilyTaskManager.UseCases.Contracts.TaskTemplates;
+global using FamilyTaskManager.UseCases.Contracts.Tasks;
 global using Mediator;
 global using Microsoft.Extensions.Logging;
 global using NSubstitute;

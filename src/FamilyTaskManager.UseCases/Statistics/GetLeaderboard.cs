@@ -1,7 +1,5 @@
 namespace FamilyTaskManager.UseCases.Statistics;
 
-public record LeaderboardEntryDto(Guid UserId, string UserName, int Points, FamilyRole Role);
-
 public record GetLeaderboardQuery(Guid FamilyId) : IQuery<Result<List<LeaderboardEntryDto>>>;
 
 public class GetLeaderboardHandler(

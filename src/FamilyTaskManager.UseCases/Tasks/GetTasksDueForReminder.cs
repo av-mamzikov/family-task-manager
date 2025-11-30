@@ -1,12 +1,5 @@
 namespace FamilyTaskManager.UseCases.Tasks;
 
-public record TaskReminderDto(
-  Guid TaskId,
-  Guid FamilyId,
-  string Title,
-  DateTime DueAt,
-  List<Guid> FamilyMemberIds);
-
 public record GetTasksDueForReminderQuery(DateTime FromTime, DateTime ToTime) : IQuery<Result<List<TaskReminderDto>>>;
 
 public class GetTasksDueForReminderHandler(

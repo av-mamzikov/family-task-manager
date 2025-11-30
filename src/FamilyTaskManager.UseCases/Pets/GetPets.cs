@@ -1,7 +1,5 @@
 namespace FamilyTaskManager.UseCases.Pets;
 
-public record PetDto(Guid Id, Guid FamilyId, string Name, PetType Type, int MoodScore);
-
 public record GetPetsQuery(Guid FamilyId) : IQuery<Result<List<PetDto>>>;
 
 public class GetPetsHandler(IRepository<Pet> petRepository)
