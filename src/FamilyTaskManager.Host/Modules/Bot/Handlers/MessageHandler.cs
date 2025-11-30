@@ -29,7 +29,7 @@ public class MessageHandler(
     CancellationToken cancellationToken)
   {
     var telegramId = message.From!.Id;
-    var session = sessionManager.GetSession(telegramId);
+    var session = await sessionManager.GetSessionAsync(telegramId, cancellationToken);
     session.UpdateActivity();
 
     var messageText = message.Text ?? string.Empty;
