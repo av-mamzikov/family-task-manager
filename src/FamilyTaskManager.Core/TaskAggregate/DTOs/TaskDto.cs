@@ -15,8 +15,7 @@ public record TaskDto(
   string PetName,
   Guid? StartedByMemberId,
   string FamilyTimezone,
-  string? StartedByUserName = null,
-  bool CanBeCompletedByCurrentUser = false)
+  string? StartedByUserName = null)
 {
   /// <summary>
   ///   DueAt converted to family's local timezone
@@ -50,7 +49,6 @@ public record TaskDto(
       t.Pet.Name,
       t.StartedByMemberId,
       t.Family.Timezone,
-      t.StartedByMember != null ? t.StartedByMember.User!.Name : null,
-      false);
+      t.StartedByMember != null ? t.StartedByMember.User!.Name : null);
   }
 }

@@ -75,7 +75,7 @@ public class TasksCommandHandler(IMediator mediator)
       {
         messageText += $"🔄 *{task.Title}*\n";
         messageText += $"   🐾 {task.PetName} | {task.Points.ToStars()}\n";
-        if (!string.IsNullOrEmpty(task.StartedByUserName)) messageText += $"   👤 Взял: {task.StartedByUserName}\n";
+        if (!string.IsNullOrEmpty(task.StartedByUserName)) messageText += $"   👤 Взял(а): {task.StartedByUserName}\n";
 
         messageText += "\n";
       }
@@ -86,28 +86,22 @@ public class TasksCommandHandler(IMediator mediator)
 
     foreach (var task in activeTasks.Take(10)) // Limit to 10 tasks
     {
-      buttons.Add(new[]
-      {
-        InlineKeyboardButton.WithCallbackData(
-          $"✋ Взять: {task.Title}",
-          $"task_take_{task.Id}")
-      });
+      buttons.Add([InlineKeyboardButton.WithCallbackData($"✋ Взять: {task.Title}", $"task_take_{task.Id}")]);
     }
 
     foreach (var task in inProgressTasks.Take(5))
     {
       // Only show complete button if current user is the one who started the task
-      if (task.CanBeCompletedByCurrentUser)
+      if (task.StartedByMemberId == userId)
       {
-        buttons.Add(new[]
-        {
+        buttons.Add([
           InlineKeyboardButton.WithCallbackData(
             $"✅ Выполнить: {task.Title}",
             $"task_complete_{task.Id}"),
           InlineKeyboardButton.WithCallbackData(
             "❌ Отказаться",
             $"task_cancel_{task.Id}")
-        });
+        ]);
       }
     }
 

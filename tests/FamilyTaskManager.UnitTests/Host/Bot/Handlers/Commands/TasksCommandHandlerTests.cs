@@ -83,8 +83,7 @@ public class TasksCommandHandlerTests
         "Fluffy",
         null,
         "UTC",
-        null,
-        false)
+        null)
     };
 
     _mediator.Send(Arg.Any<GetActiveTasksQuery>(), Arg.Any<CancellationToken>())
@@ -121,8 +120,7 @@ public class TasksCommandHandlerTests
         "Pet",
         null,
         "UTC",
-        null,
-        false)
+        null)
     };
 
     _mediator.Send(Arg.Any<GetActiveTasksQuery>(), Arg.Any<CancellationToken>())
@@ -150,10 +148,10 @@ public class TasksCommandHandlerTests
     {
       new(Guid.NewGuid(), "Active task", new TaskPoints(2), TaskStatus.Active, DateTime.UtcNow.AddHours(2),
         Guid.NewGuid(), "Pet1",
-        null, "UTC", null, false),
+        null, "UTC", null),
       new(Guid.NewGuid(), "In progress task", new TaskPoints(3), TaskStatus.InProgress, DateTime.UtcNow.AddHours(1),
         Guid.NewGuid(),
-        "Pet2", null, "UTC", null, false)
+        "Pet2", null, "UTC", null)
     };
 
     _mediator.Send(Arg.Any<GetActiveTasksQuery>(), Arg.Any<CancellationToken>())
