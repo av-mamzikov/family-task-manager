@@ -1,3 +1,4 @@
+global using Ardalis.SharedKernel;
 global using Mediator;
 global using FamilyTaskManager.UseCases.Contracts.Families;
 global using FamilyTaskManager.UseCases.Contracts.Pets;

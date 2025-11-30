@@ -8,7 +8,13 @@ public class UserSession
   public Dictionary<string, object> Data { get; set; } = new();
   public DateTime LastActivity { get; set; } = DateTime.UtcNow;
 
-  public void UpdateActivity() => LastActivity = DateTime.UtcNow;
+  public bool IsDirty { get; set; }
+
+  public void UpdateActivity()
+  {
+    LastActivity = DateTime.UtcNow;
+    IsDirty = true;
+  }
 
   public void SetState(ConversationState state, Dictionary<string, object>? data = null)
   {
@@ -19,6 +25,7 @@ public class UserSession
     }
 
     UpdateActivity();
+    IsDirty = true;
   }
 
   public void ClearState()
@@ -26,7 +33,10 @@ public class UserSession
     State = ConversationState.None;
     Data.Clear();
     UpdateActivity();
+    IsDirty = true;
   }
+
+  public void MarkClean() => IsDirty = false;
 }
 
 public enum ConversationState

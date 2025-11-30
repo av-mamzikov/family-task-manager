@@ -1,3 +1,4 @@
+using FamilyTaskManager.Host.Modules.Bot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -7,7 +8,8 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
 public class UpdateHandler(
   ILogger<UpdateHandler> logger,
-  IServiceProvider serviceProvider)
+  IServiceProvider serviceProvider,
+  ISessionManager sessionManager)
   : IUpdateHandler
 {
   public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
@@ -41,6 +43,7 @@ public class UpdateHandler(
     CancellationToken cancellationToken)
   {
     var chatId = message.Chat.Id;
+    var telegramId = message.From?.Id;
 
     // Handle location messages
     if (message.Location is not null)
@@ -62,6 +65,13 @@ public class UpdateHandler(
     var commandHandler = scope.ServiceProvider.GetRequiredService<IMessageHandler>();
 
     await commandHandler.HandleCommandAsync(botClient, message, cancellationToken);
+
+    // Auto-save session if it was modified
+    if (telegramId.HasValue)
+    {
+      var session = await sessionManager.GetSessionAsync(telegramId.Value, cancellationToken);
+      if (session.IsDirty) await sessionManager.SaveSessionAsync(telegramId.Value, session, cancellationToken);
+    }
   }
 
   private async Task HandleCallbackQueryAsync(ITelegramBotClient botClient, CallbackQuery callbackQuery,
@@ -72,11 +82,16 @@ public class UpdateHandler(
       return;
     }
 
+    var telegramId = callbackQuery.From.Id;
     logger.LogInformation("Received callback from {ChatId}: {Data}", callbackQuery.Message?.Chat.Id, data);
 
     using var scope = serviceProvider.CreateScope();
     var callbackHandler = scope.ServiceProvider.GetRequiredService<ICallbackQueryHandler>();
 
     await callbackHandler.HandleCallbackAsync(botClient, callbackQuery, cancellationToken);
+
+    // Auto-save session if it was modified
+    var session = await sessionManager.GetSessionAsync(telegramId, cancellationToken);
+    if (session.IsDirty) await sessionManager.SaveSessionAsync(telegramId, session, cancellationToken);
   }
 }

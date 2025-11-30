@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Pets;
 using Telegram.Bot;
@@ -91,23 +92,9 @@ public class PetCommandHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
-  private string GetPetEmoji(PetType type) =>
-    type switch
-    {
-      PetType.Cat => "🐱",
-      PetType.Dog => "🐶",
-      PetType.Hamster => "🐹",
-      _ => "🐾"
-    };
+  private string GetPetEmoji(PetType type) => PetTypeHelper.GetEmoji(type);
 
-  private string GetPetTypeText(PetType type) =>
-    type switch
-    {
-      PetType.Cat => "Кот",
-      PetType.Dog => "Собака",
-      PetType.Hamster => "Хомяк",
-      _ => "Неизвестно"
-    };
+  private string GetPetTypeText(PetType type) => PetTypeHelper.GetDisplayText(type);
 
   private string GetMoodEmoji(int moodScore) =>
     moodScore switch

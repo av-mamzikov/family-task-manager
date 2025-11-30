@@ -17,7 +17,7 @@ public class CallbackQueryHandler(
     CancellationToken cancellationToken)
   {
     var telegramId = callbackQuery.From.Id;
-    var session = sessionManager.GetSession(telegramId);
+    var session = await sessionManager.GetSessionAsync(telegramId, cancellationToken);
     session.UpdateActivity();
 
     var data = callbackQuery.Data!;

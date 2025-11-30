@@ -91,6 +91,7 @@ public class CreatePetHandlerTests
   [InlineData(PetType.Cat)]
   [InlineData(PetType.Dog)]
   [InlineData(PetType.Hamster)]
+  [InlineData(PetType.Parrot)]
   public async Task Handle_DifferentPetTypes_CreatesCorrectType(PetType petType)
   {
     // Arrange
@@ -115,6 +116,7 @@ public class CreatePetHandlerTests
   [InlineData(PetType.Cat, 8)] // Cat has 8 default templates
   [InlineData(PetType.Dog, 6)] // Dog has 6 default templates
   [InlineData(PetType.Hamster, 5)] // Hamster has 5 default templates
+  [InlineData(PetType.Parrot, 6)] // Parrot has 6 default templates
   public async Task Handle_ValidCommand_CreatesDefaultTaskTemplates(PetType petType, int expectedTemplateCount)
   {
     // Arrange
@@ -225,5 +227,34 @@ public class CreatePetHandlerTests
     capturedTemplates.ShouldContain(t => t.Title == "Насыпать корм хомяку" && t.Points.Value == 2);
     capturedTemplates.ShouldContain(t => t.Title == "Убрать клетку хомяка" && t.Points.Value == 3);
     capturedTemplates.ShouldContain(t => t.Title == "Полностью помыть клетку хомяка" && t.Points.Value == 3);
+  }
+
+  [Fact]
+  public async Task Handle_CreatesParrotPet_CreatesCorrectTaskTemplates()
+  {
+    // Arrange
+    var familyId = Guid.NewGuid();
+    var family = new Family("Smith Family", "UTC");
+    var command = new CreatePetCommand(familyId, PetType.Parrot, "Polly");
+
+    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+      .Returns(family);
+
+    var capturedTemplates = new List<TaskTemplate>();
+    await _taskTemplateRepository.AddAsync(
+      Arg.Do<TaskTemplate>(t => capturedTemplates.Add(t)),
+      Arg.Any<CancellationToken>());
+
+    // Act
+    var result = await _handler.Handle(command, CancellationToken.None);
+
+    // Assert
+    result.IsSuccess.ShouldBeTrue();
+    capturedTemplates.Count.ShouldBe(6);
+
+    // Verify some key templates
+    capturedTemplates.ShouldContain(t => t.Title == "Покормить попугая" && t.Points.Value == 2);
+    capturedTemplates.ShouldContain(t => t.Title == "Поменять воду попугаю" && t.Points.Value == 2);
+    capturedTemplates.ShouldContain(t => t.Title == "Полностью помыть клетку попугая" && t.Points.Value == 3);
   }
 }

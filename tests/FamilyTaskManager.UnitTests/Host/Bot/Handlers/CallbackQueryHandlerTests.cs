@@ -30,7 +30,7 @@ public class CallbackQueryHandlerTests
     // Arrange
     var callbackQuery = CreateCallbackQuery("create_family");
     var session = new UserSession();
-    _sessionManager.GetSession(Arg.Any<long>()).Returns(session);
+    _sessionManager.GetSessionAsync(Arg.Any<long>(), Arg.Any<CancellationToken>()).Returns(session);
 
     // Act
     await _handler.HandleCallbackAsync(_botClient, callbackQuery, CancellationToken.None);
@@ -46,7 +46,7 @@ public class CallbackQueryHandlerTests
     var callbackQuery = CreateCallbackQuery("create_family");
     var session = new UserSession();
 
-    _sessionManager.GetSession(Arg.Any<long>()).Returns(session);
+    _sessionManager.GetSessionAsync(Arg.Any<long>(), Arg.Any<CancellationToken>()).Returns(session);
 
     // Act
     await _handler.HandleCallbackAsync(_botClient, callbackQuery, CancellationToken.None);
@@ -65,7 +65,7 @@ public class CallbackQueryHandlerTests
     // Arrange
     var callbackQuery = CreateCallbackQuery("create_family");
     var session = Substitute.For<UserSession>();
-    _sessionManager.GetSession(Arg.Any<long>()).Returns(session);
+    _sessionManager.GetSessionAsync(Arg.Any<long>(), Arg.Any<CancellationToken>()).Returns(session);
 
     // Act
     await _handler.HandleCallbackAsync(_botClient, callbackQuery, CancellationToken.None);
@@ -80,7 +80,7 @@ public class CallbackQueryHandlerTests
     // Arrange
     var callbackQuery = CreateCallbackQuery("unknown_action_123");
     var session = new UserSession();
-    _sessionManager.GetSession(Arg.Any<long>()).Returns(session);
+    _sessionManager.GetSessionAsync(Arg.Any<long>(), Arg.Any<CancellationToken>()).Returns(session);
 
     // Act
     await _handler.HandleCallbackAsync(_botClient, callbackQuery, CancellationToken.None);

@@ -142,12 +142,56 @@ public static class PetTaskTemplateData
     )
   };
 
+  private static readonly IReadOnlyList<TaskTemplateData> ParrotTemplates = new[]
+  {
+    // Ежедневные задачи
+    new TaskTemplateData(
+      "Покормить попугая",
+      2,
+      Schedule.CreateDaily(new TimeOnly(8, 0)).Value, // каждый день в 8:00, перед уходом из дома
+      TimeSpan.FromHours(2)
+    ),
+    new TaskTemplateData(
+      "Поменять воду попугаю",
+      2,
+      Schedule.CreateDaily(new TimeOnly(8, 0)).Value, // каждый день в 8:00, вместе с кормлением
+      TimeSpan.FromHours(2)
+    ),
+    new TaskTemplateData(
+      "Поиграть и пообщаться с попугаем",
+      2,
+      Schedule.CreateDaily(new TimeOnly(18, 0)).Value, // каждый день в 18:00, после работы
+      TimeSpan.FromHours(3)
+    ),
+
+    // Периодические задачи
+    new TaskTemplateData(
+      "Убрать поддон клетки попугая",
+      3,
+      Schedule.CreateWeekly(new TimeOnly(10, 0), DayOfWeek.Saturday).Value, // раз в неделю, в субботу утром
+      TimeSpan.FromHours(6)
+    ),
+    new TaskTemplateData(
+      "Проверить игрушки и жердочки попугая",
+      2,
+      Schedule.CreateWeekly(new TimeOnly(19, 0), DayOfWeek.Wednesday).Value, // раз в неделю, в среду вечером
+      TimeSpan.FromHours(4)
+    ),
+    new TaskTemplateData(
+      "Полностью помыть клетку попугая",
+      3,
+      Schedule.CreateMonthly(new TimeOnly(12, 0), 1).Value, // раз в месяц, 1-го числа в 12:00
+      TimeSpan.FromHours(12)
+    )
+  };
+
   public static IReadOnlyList<TaskTemplateData> GetDefaultTemplates(PetType petType) =>
     petType switch
     {
       PetType.Cat => CatTemplates,
       PetType.Dog => DogTemplates,
       PetType.Hamster => HamsterTemplates,
+      PetType.Parrot => ParrotTemplates,
       _ => throw new ArgumentOutOfRangeException(nameof(petType), petType, "Unknown pet type")
     };
 

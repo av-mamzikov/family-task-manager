@@ -1,20 +1,46 @@
+using FamilyTaskManager.Core.UserAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
+using FamilyTaskManager.UseCases.Users.Specifications;
 
 namespace FamilyTaskManager.UnitTests.Host.Bot.Services;
 
 public class SessionManagerTests
 {
-  private readonly SessionManager _sessionManager = new();
+  private readonly IServiceScopeFactory _serviceScopeFactory;
+  private readonly SessionManager _sessionManager;
+  private readonly IRepository<TelegramSession> _sessionRepository;
+  private readonly IRepository<User> _userRepository;
+
+  public SessionManagerTests()
+  {
+    _userRepository = Substitute.For<IRepository<User>>();
+    _sessionRepository = Substitute.For<IRepository<TelegramSession>>();
+
+    // Setup service scope factory
+    var serviceProvider = Substitute.For<IServiceProvider>();
+    serviceProvider.GetService(typeof(IRepository<User>)).Returns(_userRepository);
+    serviceProvider.GetService(typeof(IRepository<TelegramSession>)).Returns(_sessionRepository);
+
+    var scope = Substitute.For<IServiceScope>();
+    scope.ServiceProvider.Returns(serviceProvider);
+
+    _serviceScopeFactory = Substitute.For<IServiceScopeFactory>();
+    _serviceScopeFactory.CreateScope().Returns(scope);
+
+    _sessionManager = new SessionManager(_serviceScopeFactory);
+  }
 
   [Fact]
-  public void GetSession_ShouldCreateNewSession_WhenNotExists()
+  public async Task GetSessionAsync_ShouldCreateNewSession_WhenUserNotExists()
   {
     // Arrange
     var telegramId = 12345L;
+    _userRepository.FirstOrDefaultAsync(Arg.Any<GetUserByTelegramIdSpec>(), Arg.Any<CancellationToken>())
+      .Returns((User?)null);
 
     // Act
-    var session = _sessionManager.GetSession(telegramId);
+    var session = await _sessionManager.GetSessionAsync(telegramId);
 
     // Assert
     session.ShouldNotBeNull();
@@ -24,16 +50,18 @@ public class SessionManagerTests
   }
 
   [Fact]
-  public void GetSession_ShouldReturnSameSession_WhenCalledMultipleTimes()
+  public async Task GetSessionAsync_ShouldReturnCachedSession_WhenCalledMultipleTimes()
   {
     // Arrange
     var telegramId = 12345L;
+    _userRepository.FirstOrDefaultAsync(Arg.Any<GetUserByTelegramIdSpec>(), Arg.Any<CancellationToken>())
+      .Returns((User?)null);
 
     // Act
-    var session1 = _sessionManager.GetSession(telegramId);
+    var session1 = await _sessionManager.GetSessionAsync(telegramId);
     session1.CurrentFamilyId = Guid.NewGuid();
 
-    var session2 = _sessionManager.GetSession(telegramId);
+    var session2 = await _sessionManager.GetSessionAsync(telegramId);
 
     // Assert
     session1.ShouldBe(session2);
@@ -41,33 +69,38 @@ public class SessionManagerTests
   }
 
   [Fact]
-  public void GetSession_ShouldReturnDifferentSessions_ForDifferentUsers()
+  public async Task GetSessionAsync_ShouldReturnDifferentSessions_ForDifferentUsers()
   {
     // Arrange
     var telegramId1 = 12345L;
     var telegramId2 = 67890L;
+    _userRepository.FirstOrDefaultAsync(Arg.Any<GetUserByTelegramIdSpec>(), Arg.Any<CancellationToken>())
+      .Returns((User?)null);
 
     // Act
-    var session1 = _sessionManager.GetSession(telegramId1);
-    var session2 = _sessionManager.GetSession(telegramId2);
+    var session1 = await _sessionManager.GetSessionAsync(telegramId1);
+    var session2 = await _sessionManager.GetSessionAsync(telegramId2);
 
     // Assert
     session1.ShouldNotBe(session2);
   }
 
   [Fact]
-  public void ClearInactiveSessions_ShouldRemoveOldSessions()
+  public async Task ClearInactiveSessions_ShouldRemoveOldSessions()
   {
     // Arrange
     var telegramId = 12345L;
-    var session = _sessionManager.GetSession(telegramId);
+    _userRepository.FirstOrDefaultAsync(Arg.Any<GetUserByTelegramIdSpec>(), Arg.Any<CancellationToken>())
+      .Returns((User?)null);
+
+    var session = await _sessionManager.GetSessionAsync(telegramId);
 
     // Simulate old session (>24 hours)
     session.LastActivity = DateTime.UtcNow.AddHours(-25);
 
     // Act
     _sessionManager.ClearInactiveSessions();
-    var newSession = _sessionManager.GetSession(telegramId);
+    var newSession = await _sessionManager.GetSessionAsync(telegramId);
 
     // Assert
     newSession.ShouldNotBe(session);
@@ -75,17 +108,20 @@ public class SessionManagerTests
   }
 
   [Fact]
-  public void ClearInactiveSessions_ShouldKeepActiveSessions()
+  public async Task ClearInactiveSessions_ShouldKeepActiveSessions()
   {
     // Arrange
     var telegramId = 12345L;
-    var session = _sessionManager.GetSession(telegramId);
+    _userRepository.FirstOrDefaultAsync(Arg.Any<GetUserByTelegramIdSpec>(), Arg.Any<CancellationToken>())
+      .Returns((User?)null);
+
+    var session = await _sessionManager.GetSessionAsync(telegramId);
     var familyId = Guid.NewGuid();
     session.CurrentFamilyId = familyId;
 
     // Act
     _sessionManager.ClearInactiveSessions();
-    var sameSession = _sessionManager.GetSession(telegramId);
+    var sameSession = await _sessionManager.GetSessionAsync(telegramId);
 
     // Assert
     sameSession.CurrentFamilyId.ShouldBe(familyId);

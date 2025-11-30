@@ -3,6 +3,7 @@ using System;
 using FamilyTaskManager.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FamilyTaskManager.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251130095758_FamilyHardDelete")]
+    partial class FamilyHardDelete
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -280,37 +283,6 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
                     b.ToTable("TaskTemplates", (string)null);
                 });
 
-            modelBuilder.Entity("FamilyTaskManager.Core.UserAggregate.TelegramSession", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("ConversationState")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<Guid?>("CurrentFamilyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("LastActivity")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("SessionData")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("TelegramSessions", (string)null);
-                });
-
             modelBuilder.Entity("FamilyTaskManager.Core.UserAggregate.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -474,17 +446,6 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
 
                     b.Navigation("Schedule")
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("FamilyTaskManager.Core.UserAggregate.TelegramSession", b =>
-                {
-                    b.HasOne("FamilyTaskManager.Core.UserAggregate.User", "User")
-                        .WithOne()
-                        .HasForeignKey("FamilyTaskManager.Core.UserAggregate.TelegramSession", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("FamilyTaskManager.Core.FamilyAggregate.Family", b =>

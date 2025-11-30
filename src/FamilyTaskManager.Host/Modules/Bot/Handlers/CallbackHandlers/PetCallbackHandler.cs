@@ -31,12 +31,7 @@ public class PetCallbackHandler(
       return;
     }
 
-    var keyboard = new InlineKeyboardMarkup(new[]
-    {
-      new[] { InlineKeyboardButton.WithCallbackData("🐱 Кот", "select_pettype_cat") },
-      new[] { InlineKeyboardButton.WithCallbackData("🐶 Собака", "select_pettype_dog") },
-      new[] { InlineKeyboardButton.WithCallbackData("🐹 Хомяк", "select_pettype_hamster") }
-    });
+    var keyboard = new InlineKeyboardMarkup(PetTypeHelper.GetPetTypeSelectionButtons(true));
 
     await botClient.EditMessageTextAsync(
       chatId,
@@ -57,13 +52,7 @@ public class PetCallbackHandler(
     session.SetState(ConversationState.AwaitingPetName,
       new Dictionary<string, object> { ["petType"] = petType, ["familyId"] = session.CurrentFamilyId! });
 
-    var petTypeEmoji = petType switch
-    {
-      "cat" => "🐱",
-      "dog" => "🐶",
-      "hamster" => "🐹",
-      _ => "🐾"
-    };
+    var petTypeEmoji = PetTypeHelper.GetEmojiFromString(petType);
 
     var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingPetName);
 
@@ -410,13 +399,7 @@ public class PetCallbackHandler(
   }
 
   private static (string emoji, string text) GetPetTypeInfo(PetType petType) =>
-    petType switch
-    {
-      PetType.Cat => ("🐱", "Кот"),
-      PetType.Dog => ("🐶", "Собака"),
-      PetType.Hamster => ("🐹", "Хомяк"),
-      _ => ("🐾", "Неизвестно")
-    };
+    PetTypeHelper.GetInfo(petType);
 
   private static (string emoji, string text) GetMoodInfo(int moodScore) =>
     moodScore switch
