@@ -1,4 +1,3 @@
-using FamilyTaskManager.Core.ActionHistoryAggregate;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
@@ -15,7 +14,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
   public DbSet<Pet> Pets => Set<Pet>();
   public DbSet<TaskTemplate> TaskTemplates => Set<TaskTemplate>();
   public DbSet<TaskInstance> TaskInstances => Set<TaskInstance>();
-  public DbSet<ActionHistory> ActionHistory => Set<ActionHistory>();
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {

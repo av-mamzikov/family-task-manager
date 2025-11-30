@@ -1,14 +1,12 @@
 global using Ardalis.Result;
 global using Ardalis.SharedKernel;
 global using Ardalis.Specification;
-global using FamilyTaskManager.Core.ActionHistoryAggregate;
 global using FamilyTaskManager.Core.FamilyAggregate;
 global using FamilyTaskManager.Core.PetAggregate;
 global using FamilyTaskManager.Core.TaskAggregate;
 global using FamilyTaskManager.Core.UserAggregate;
 global using FamilyTaskManager.UseCases.Families.Specifications;
 global using FamilyTaskManager.UseCases.Pets.Specifications;
-global using FamilyTaskManager.UseCases.Statistics.Specifications;
 global using FamilyTaskManager.UseCases.Tasks.Specifications;
 global using FamilyTaskManager.UseCases.Users.Specifications;
 global using Mediator;
