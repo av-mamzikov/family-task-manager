@@ -7,7 +7,8 @@ public enum PetType
 {
   Cat = 0,
   Dog = 1,
-  Hamster = 2
+  Hamster = 2,
+  Parrot = 3
 }
 
 public class Pet : EntityBase<Pet, Guid>, IAggregateRoot

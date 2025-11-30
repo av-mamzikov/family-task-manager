@@ -73,13 +73,7 @@ public class PetCreationHandler(
 
     session.ClearState();
 
-    var petEmoji = petType switch
-    {
-      PetType.Cat => "🐱",
-      PetType.Dog => "🐶",
-      PetType.Hamster => "🐹",
-      _ => "🐾"
-    };
+    var petEmoji = PetTypeHelper.GetEmoji(petType);
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
