@@ -1,5 +1,3 @@
-using FamilyTaskManager.UseCases.TaskTemplates;
-
 namespace FamilyTaskManager.UseCases.Tasks.Specifications;
 
 /// <summary>
@@ -9,8 +7,6 @@ public class ActiveTaskTemplatesWithTimeZoneSpec : Specification<TaskTemplate, T
 {
   public ActiveTaskTemplatesWithTimeZoneSpec()
   {
-    Query
-      .Where(t => !t.Pet.IsDeleted)
-      .Select(TaskTemplateDto.Projections.FromTaskTemplate);
+    Query.Select(TaskTemplateDto.Projections.FromTaskTemplate);
   }
 }
