@@ -35,6 +35,7 @@ public class ActionHistoryConfiguration : IEntityTypeConfiguration<ActionHistory
     // Indexes for optimization
     builder.HasIndex(a => a.FamilyId);
     builder.HasIndex(a => new { a.FamilyId, a.CreatedAt });
+    builder.HasIndex(a => new { a.FamilyId, a.UserId, a.CreatedAt });
 
     // Foreign key relationship to Family
     builder.HasOne(a => a.Family)

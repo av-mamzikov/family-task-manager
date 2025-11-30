@@ -73,13 +73,13 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
     builder.HasOne(t => t.Pet)
       .WithMany()
       .HasForeignKey(t => t.PetId)
-      .OnDelete(DeleteBehavior.ClientCascade);
+      .OnDelete(DeleteBehavior.Cascade);
 
     // Foreign key relationship to TaskTemplate
     builder.HasOne(t => t.Template)
       .WithMany()
       .HasForeignKey(t => t.TemplateId)
-      .OnDelete(DeleteBehavior.NoAction);
+      .OnDelete(DeleteBehavior.SetNull);
 
     // Foreign key relationship to FamilyMember (StartedBy)
     builder.HasOne(t => t.StartedByMember)

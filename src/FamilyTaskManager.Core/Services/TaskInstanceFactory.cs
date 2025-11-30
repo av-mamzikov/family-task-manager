@@ -12,8 +12,6 @@ public class TaskInstanceFactory : ITaskInstanceFactory
   public Result<TaskInstance> CreateFromTemplate(TaskTemplate template, DateTime dueAt,
     IEnumerable<TaskInstance> existingInstances)
   {
-    if (!template.IsActive) return Result.Error("TaskTemplate is not active.");
-
     // Check if there's already an active TaskInstance for this template
     var existingInstancesList = existingInstances?.ToList() ?? new List<TaskInstance>();
     var activeInstance = existingInstancesList.FirstOrDefault(t => t.Status != TaskStatus.Completed);

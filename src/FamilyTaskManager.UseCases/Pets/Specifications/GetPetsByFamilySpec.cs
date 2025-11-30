@@ -4,6 +4,6 @@ public class GetPetsByFamilySpec : Specification<Pet>
 {
   public GetPetsByFamilySpec(Guid familyId)
   {
-    Query.Where(p => p.FamilyId == familyId);
+    Query.Where(p => !p.IsDeleted).Where(p => p.FamilyId == familyId);
   }
 }

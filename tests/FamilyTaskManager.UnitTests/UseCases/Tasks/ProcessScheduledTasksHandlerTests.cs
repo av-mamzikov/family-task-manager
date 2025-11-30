@@ -82,7 +82,6 @@ public class ProcessScheduledTasksHandlerTests
       schedule.DayOfMonth,
       petId,
       "Test Pet",
-      true,
       DateTime.UtcNow,
       TimeSpan.FromHours(24));
 
@@ -131,7 +130,6 @@ public class ProcessScheduledTasksHandlerTests
       schedule.DayOfMonth,
       petId,
       "Test Pet",
-      true,
       DateTime.UtcNow,
       TimeSpan.FromHours(24));
 
@@ -189,7 +187,6 @@ public class ProcessScheduledTasksHandlerTests
       schedule.DayOfMonth,
       petId,
       "Test Pet",
-      true,
       DateTime.UtcNow,
       TimeSpan.FromHours(24));
 
@@ -242,10 +239,8 @@ public class ProcessScheduledTasksHandlerTests
     var templateDtos = new List<TaskTemplateDto>
     {
       new(template1.Id, familyId, "Task 1", new TaskPoints(2), schedule1.Type, schedule1.Time, null, null, petId, "Pet",
-        true,
         DateTime.UtcNow, TimeSpan.FromHours(24)),
       new(template2.Id, familyId, "Task 2", new TaskPoints(2), schedule2.Type, schedule2.Time, null, null, petId, "Pet",
-        true,
         DateTime.UtcNow, TimeSpan.FromHours(24))
     };
 

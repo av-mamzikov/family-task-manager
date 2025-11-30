@@ -38,11 +38,10 @@ public class DeletePetHandler(
       return Result.Forbidden("Only family administrators can delete pets");
     }
 
-    // Mark pet for deletion (this will register the deletion event)
-    pet.MarkForDeletion();
+    // Soft delete the pet (registers the deletion event and keeps data)
+    pet.SoftDelete();
 
-    // Delete the pet (this will cascade delete related entities like task templates and tasks)
-    await petRepository.DeleteAsync(pet, cancellationToken);
+    await petRepository.UpdateAsync(pet, cancellationToken);
     await petRepository.SaveChangesAsync(cancellationToken);
 
     return Result.Success();

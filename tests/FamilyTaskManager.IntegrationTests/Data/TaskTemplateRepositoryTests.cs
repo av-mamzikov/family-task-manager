@@ -47,7 +47,6 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
     retrieved.Points.Value.ShouldBe(2);
     retrieved.Schedule.Type.ShouldBe(ScheduleType.Daily);
     retrieved.Schedule.Time.ShouldBe(new TimeOnly(8, 0));
-    retrieved.IsActive.ShouldBeTrue();
   }
 
   [Fact]
@@ -72,25 +71,6 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
     retrieved.Points.Value.ShouldBe(3);
     retrieved.Schedule.Type.ShouldBe(ScheduleType.Daily);
     retrieved.Schedule.Time.ShouldBe(new TimeOnly(10, 0));
-  }
-
-  [Fact]
-  public async Task Deactivate_ShouldSetIsActiveToFalse()
-  {
-    // Arrange
-    var taskTemplate = await CreateTaskTemplateWithDependencies("Task to Deactivate");
-    await Repository.AddAsync(taskTemplate);
-    await DbContext.SaveChangesAsync();
-
-    // Act
-    taskTemplate.Deactivate();
-    await Repository.UpdateAsync(taskTemplate);
-    await DbContext.SaveChangesAsync();
-
-    // Assert
-    var retrieved = await Repository.GetByIdAsync(taskTemplate.Id);
-    retrieved.ShouldNotBeNull();
-    retrieved.IsActive.ShouldBeFalse();
   }
 
   [Fact]

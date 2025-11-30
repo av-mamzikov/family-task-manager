@@ -252,7 +252,7 @@ public class TemplateCommandHandler(IMediator mediator)
     }
 
     // Deactivate template
-    var deactivateCommand = new DeactivateTaskTemplateCommand(templateId, session.CurrentFamilyId.Value);
+    var deactivateCommand = new DeleteTaskTemplateCommand(templateId, session.CurrentFamilyId.Value);
     var result = await mediator.Send(deactivateCommand, cancellationToken);
 
     if (!result.IsSuccess)

@@ -14,7 +14,6 @@ public record TaskTemplateDto(
   int? ScheduleDayOfMonth,
   Guid PetId,
   string PetName,
-  bool IsActive,
   DateTime CreatedAt,
   TimeSpan DueDuration)
 {
@@ -32,7 +31,6 @@ public record TaskTemplateDto(
         t.Schedule.DayOfMonth,
         t.PetId,
         t.Pet.Name,
-        t.IsActive,
         t.CreatedAt,
         t.DueDuration);
   }

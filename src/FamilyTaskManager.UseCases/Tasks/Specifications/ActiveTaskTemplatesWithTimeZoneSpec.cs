@@ -10,7 +10,7 @@ public class ActiveTaskTemplatesWithTimeZoneSpec : Specification<TaskTemplate, T
   public ActiveTaskTemplatesWithTimeZoneSpec()
   {
     Query
-      .Where(t => t.IsActive)
+      .Where(t => !t.Pet.IsDeleted)
       .Select(TaskTemplateDto.Projections.FromTaskTemplate);
   }
 }

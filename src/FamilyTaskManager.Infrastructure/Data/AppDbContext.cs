@@ -21,6 +21,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
   {
     base.OnModelCreating(modelBuilder);
     modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+    modelBuilder.Entity<Pet>()
+      .HasQueryFilter(p => !p.IsDeleted);
   }
 
   public override int SaveChanges() => SaveChangesAsync().GetAwaiter().GetResult();

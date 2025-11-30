@@ -1,5 +1,6 @@
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Core.TaskAggregate;
 
 namespace FamilyTaskManager.IntegrationTests.Data;
 
@@ -68,5 +69,39 @@ public class PetRepositoryTests : RepositoryTestsBase<Pet>
     var retrieved = await Repository.GetByIdAsync(pet.Id);
     retrieved.ShouldNotBeNull();
     retrieved.MoodScore.ShouldBe(100);
+  }
+
+  [Fact]
+  public async Task DeleteAsync_ShouldRemovePet_WhenTasksExist()
+  {
+    // Arrange
+    var family = new Family("Family With Tasks", "UTC");
+    var familyRepository = GetRepository<Family>();
+    await familyRepository.AddAsync(family);
+    await DbContext.SaveChangesAsync();
+
+    var pet = new Pet(family.Id, PetType.Cat, "Busy Cat");
+    await Repository.AddAsync(pet);
+    await DbContext.SaveChangesAsync();
+
+    var task = new TaskInstance(
+      family.Id,
+      pet.Id,
+      "Feed Busy Cat",
+      new TaskPoints(2),
+      TaskType.OneTime,
+      DateTime.UtcNow.AddDays(1));
+
+    var taskRepository = GetRepository<TaskInstance>();
+    await taskRepository.AddAsync(task);
+    await DbContext.SaveChangesAsync();
+
+    // Act
+    await Repository.DeleteAsync(pet);
+    await DbContext.SaveChangesAsync();
+
+    // Assert
+    (await Repository.GetByIdAsync(pet.Id)).ShouldBeNull();
+    (await taskRepository.GetByIdAsync(task.Id)).ShouldBeNull();
   }
 }

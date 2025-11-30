@@ -165,7 +165,6 @@ public class CreatePetHandlerTests
 
     // All templates should belong to the same family and pet
     capturedTemplates.ShouldAllBe(t => t.FamilyId == familyId);
-    capturedTemplates.ShouldAllBe(t => t.IsActive);
     capturedTemplates.ShouldAllBe(t =>
       t.CreatedBy == new Guid("00000000-0000-0000-0000-000000000001")); // System-created
   }

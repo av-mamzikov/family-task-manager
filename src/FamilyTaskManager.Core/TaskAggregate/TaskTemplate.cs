@@ -29,7 +29,6 @@ public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
     DueDuration = dueDuration;
     CreatedBy = createdBy;
     CreatedAt = DateTime.UtcNow;
-    IsActive = true;
   }
 
   public Guid FamilyId { get; private set; }
@@ -42,7 +41,6 @@ public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
   public TimeSpan DueDuration { get; private set; }
   public Guid CreatedBy { get; private set; }
   public DateTime CreatedAt { get; private set; }
-  public bool IsActive { get; private set; }
 
   public void Update(string title, TaskPoints points, Schedule schedule, TimeSpan dueDuration)
   {
@@ -56,6 +54,4 @@ public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
     Schedule = schedule;
     DueDuration = dueDuration;
   }
-
-  public void Deactivate() => IsActive = false;
 }

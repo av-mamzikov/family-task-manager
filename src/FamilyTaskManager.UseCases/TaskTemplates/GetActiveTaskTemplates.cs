@@ -1,5 +1,3 @@
-using FamilyTaskManager.UseCases.TaskTemplates.Specifications;
-
 namespace FamilyTaskManager.UseCases.TaskTemplates;
 
 public record GetActiveTaskTemplatesQuery : IQuery<Result<List<TaskTemplate>>>;
@@ -10,8 +8,7 @@ public class GetActiveTaskTemplatesHandler(IRepository<TaskTemplate> repository)
   public async ValueTask<Result<List<TaskTemplate>>> Handle(GetActiveTaskTemplatesQuery request,
     CancellationToken cancellationToken)
   {
-    var spec = new ActiveTaskTemplatesSpec();
-    var templates = await repository.ListAsync(spec, cancellationToken);
+    var templates = await repository.ListAsync(cancellationToken);
     return Result.Success(templates);
   }
 }

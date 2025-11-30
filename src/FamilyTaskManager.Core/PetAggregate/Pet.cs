@@ -45,6 +45,8 @@ public class Pet : EntityBase<Pet, Guid>, IAggregateRoot
 
   public DateTime CreatedAt { get; private set; }
 
+  public bool IsDeleted { get; private set; }
+
   public void UpdateName(string name)
   {
     Guard.Against.NullOrWhiteSpace(name);
@@ -65,7 +67,13 @@ public class Pet : EntityBase<Pet, Guid>, IAggregateRoot
     }
   }
 
-  public void MarkForDeletion() => RegisterDomainEvent(new PetDeletedEvent(this));
+  public void SoftDelete()
+  {
+    if (IsDeleted)
+      return;
+    IsDeleted = true;
+    RegisterDomainEvent(new PetDeletedEvent(this));
+  }
 
   /// <summary>
   ///   Determines if a mood change is significant enough to send a notification.

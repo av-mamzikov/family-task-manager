@@ -28,11 +28,6 @@ public class UpdateTaskTemplateHandler(IRepository<TaskTemplate> templateReposit
       return Result.NotFound("Шаблон задачи не найден");
     }
 
-    if (!template.IsActive)
-    {
-      return Result.Error("Нельзя изменить неактивный шаблон");
-    }
-
     // Get current values or use new ones
     var newTitle = command.Title ?? template.Title;
     var newPoints = command.Points ?? template.Points;

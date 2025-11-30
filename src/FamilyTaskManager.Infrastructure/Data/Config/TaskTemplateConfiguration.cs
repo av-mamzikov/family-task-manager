@@ -54,14 +54,9 @@ public class TaskTemplateConfiguration : IEntityTypeConfiguration<TaskTemplate>
     builder.Property(t => t.CreatedAt)
       .IsRequired();
 
-    builder.Property(t => t.IsActive)
-      .IsRequired()
-      .HasDefaultValue(true);
-
     // Indexes for optimization
     builder.HasIndex(t => t.FamilyId);
     builder.HasIndex(t => t.PetId);
-    builder.HasIndex(t => new { t.FamilyId, t.IsActive });
 
     // Foreign key relationship to Family
     builder.HasOne(t => t.Family)
