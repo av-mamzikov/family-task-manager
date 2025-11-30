@@ -139,7 +139,7 @@ public static class BotConstants
     public const string TemplateUpdated = "✅ Шаблон задачи успешно обновлён!";
     public const string TemplateDeleted = "✅ Шаблон задачи успешно удалён!";
     public const string EnterTemplateTitle = "📝 Введите название шаблона задачи (от 3 до 100 символов):";
-    public const string EnterTemplatePoints = "💯 Выберите количество очков за выполнение:";
+    public const string EnterTemplatePoints = "⭐ Выберите сложность задачи:";
 
     public const string ChooseScheduleType = "🔄 Выберите тип расписания для шаблона задачи:";
     public const string EnterScheduleTime = "⏰ Введите время в формате HH:mm (например, 09:00 или 15:30):";

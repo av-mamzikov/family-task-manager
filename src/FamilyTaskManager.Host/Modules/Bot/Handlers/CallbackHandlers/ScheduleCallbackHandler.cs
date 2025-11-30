@@ -66,74 +66,61 @@ public class ScheduleCallbackHandler(
     // Store schedule type in session
     session.Data["scheduleType"] = scheduleType;
 
-    // Delete the inline keyboard message
-    await botClient.DeleteMessageAsync(chatId, messageId, cancellationToken);
+    // Determine if we're in template creation or editing flow
+    var isEditing = session.State == ConversationState.AwaitingTemplateEditScheduleType;
+    var isTask = session.State == ConversationState.AwaitingTaskScheduleType;
 
     // For Manual schedule type, skip time input but ask for DueDuration
-    IReplyMarkup? keyboard;
     if (scheduleType == "manual")
     {
-      // Determine if we're in template creation or editing flow
-      var isEditing = session.State == ConversationState.AwaitingTemplateEditScheduleType;
-      var isTask = session.State == ConversationState.AwaitingTaskScheduleType;
-
-      await botClient.SendTextMessageAsync(
-        chatId,
-        "✅ Выбран тип расписания: Вручную",
-        cancellationToken: cancellationToken);
-
-      // For editing, ask for DueDuration
+      ConversationState nextState;
       if (isEditing)
-      {
-        session.State = ConversationState.AwaitingTemplateEditDueDuration;
-        keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditDueDuration);
-        await botClient.SendTextMessageAsync(
-          chatId,
-          BotConstants.Templates.EnterDueDuration +
-          StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditDueDuration),
-          replyMarkup: keyboard,
-          cancellationToken: cancellationToken);
-      }
+        nextState = ConversationState.AwaitingTemplateEditDueDuration;
       else if (!isTask)
-      {
-        // For template creation, ask for DueDuration
-        session.State = ConversationState.AwaitingTemplateDueDuration;
-        keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateDueDuration);
-        await botClient.SendTextMessageAsync(
-          chatId,
-          BotConstants.Templates.EnterDueDuration +
-          StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateDueDuration),
-          replyMarkup: keyboard,
-          cancellationToken: cancellationToken);
-      }
+        nextState = ConversationState.AwaitingTemplateDueDuration;
       else
+      {
         // For task creation flows, keep state for now (will be implemented later)
         session.State = ConversationState.None;
+        await botClient.EditMessageTextAsync(
+          chatId,
+          messageId,
+          "✅ Тип расписания: Вручную",
+          cancellationToken: cancellationToken);
+        return;
+      }
 
+      session.State = nextState;
+      var keyboard = StateKeyboardHelper.GetKeyboardForState(nextState) as InlineKeyboardMarkup;
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        BotConstants.Templates.EnterDueDuration +
+        StateKeyboardHelper.GetHintForState(nextState),
+        replyMarkup: keyboard,
+        cancellationToken: cancellationToken);
       return;
     }
 
     // Determine next state based on current conversation state
-    var isEditingFlow = session.State == ConversationState.AwaitingTemplateEditScheduleType;
-    var isTaskFlow = session.State == ConversationState.AwaitingTaskScheduleType;
-
-    ConversationState nextState;
-    if (isEditingFlow)
-      nextState = ConversationState.AwaitingTemplateEditScheduleTime;
-    else if (isTaskFlow)
-      nextState = ConversationState.AwaitingTaskScheduleTime;
+    ConversationState nextStateForTime;
+    if (isEditing)
+      nextStateForTime = ConversationState.AwaitingTemplateEditScheduleTime;
+    else if (isTask)
+      nextStateForTime = ConversationState.AwaitingTaskScheduleTime;
     else
-      nextState = ConversationState.AwaitingTemplateScheduleTime;
+      nextStateForTime = ConversationState.AwaitingTemplateScheduleTime;
 
-    session.State = nextState;
+    session.State = nextStateForTime;
 
     // Ask for time
-    keyboard = StateKeyboardHelper.GetKeyboardForState(nextState);
-    await botClient.SendTextMessageAsync(
+    var timeKeyboard = StateKeyboardHelper.GetKeyboardForState(nextStateForTime) as InlineKeyboardMarkup;
+    await botClient.EditMessageTextAsync(
       chatId,
+      messageId,
       BotConstants.Templates.EnterScheduleTime +
-      StateKeyboardHelper.GetHintForState(nextState),
-      replyMarkup: keyboard,
+      StateKeyboardHelper.GetHintForState(nextStateForTime),
+      replyMarkup: timeKeyboard,
       cancellationToken: cancellationToken);
   }
 
@@ -156,47 +143,37 @@ public class ScheduleCallbackHandler(
     // Store weekday in session
     session.Data["scheduleDayOfWeek"] = dayOfWeek.Value;
 
-    // Delete the inline keyboard message
-    await botClient.DeleteMessageAsync(chatId, messageId, cancellationToken);
-
     // Determine if we're in template creation or editing flow
     var isEditing = session.State == ConversationState.AwaitingTemplateEditScheduleWeekday;
     var isTask = session.State == ConversationState.AwaitingTaskScheduleWeekday;
 
-    // Send confirmation message
-    var weekdayName = ScheduleKeyboardHelper.GetWeekdayName(dayOfWeek.Value);
-    await botClient.SendTextMessageAsync(
-      chatId,
-      $"✅ Выбран день недели: {weekdayName}",
-      cancellationToken: cancellationToken);
-
-    // For editing, ask for DueDuration
+    ConversationState nextState;
     if (isEditing)
-    {
-      session.State = ConversationState.AwaitingTemplateEditDueDuration;
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditDueDuration);
-      await botClient.SendTextMessageAsync(
-        chatId,
-        BotConstants.Templates.EnterDueDuration +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditDueDuration),
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-    }
+      nextState = ConversationState.AwaitingTemplateEditDueDuration;
     else if (!isTask)
-    {
-      // For template creation, ask for DueDuration
-      session.State = ConversationState.AwaitingTemplateDueDuration;
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateDueDuration);
-      await botClient.SendTextMessageAsync(
-        chatId,
-        BotConstants.Templates.EnterDueDuration +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateDueDuration),
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-    }
+      nextState = ConversationState.AwaitingTemplateDueDuration;
     else
+    {
       // For task creation flows, keep state for now (will be implemented later)
       session.State = ConversationState.None;
+      var weekdayName = ScheduleKeyboardHelper.GetWeekdayName(dayOfWeek.Value);
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        $"✅ День недели: {weekdayName}",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    session.State = nextState;
+    var keyboard = StateKeyboardHelper.GetKeyboardForState(nextState) as InlineKeyboardMarkup;
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      BotConstants.Templates.EnterDueDuration +
+      StateKeyboardHelper.GetHintForState(nextState),
+      replyMarkup: keyboard,
+      cancellationToken: cancellationToken);
   }
 
   private async Task HandleBackFromScheduleTypeAsync(
@@ -206,9 +183,6 @@ public class ScheduleCallbackHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    // Delete the inline keyboard message
-    await botClient.DeleteMessageAsync(chatId, messageId, cancellationToken);
-
     // Determine previous state based on current state
     var isEditing = session.State == ConversationState.AwaitingTemplateEditScheduleType;
     var isTask = session.State == ConversationState.AwaitingTaskScheduleType;
@@ -219,25 +193,26 @@ public class ScheduleCallbackHandler(
     if (isEditing)
     {
       previousState = ConversationState.AwaitingTemplateEditPoints;
-      messageText = "💯 Введите количество очков (от 1 до 100):";
+      messageText = "⭐ Выберите сложность задачи:";
     }
     else if (isTask)
     {
       previousState = ConversationState.AwaitingTaskPoints;
-      messageText = "💯 Введите количество очков за выполнение задачи (от 1 до 100):";
+      messageText = "⭐ Выберите сложность задачи:";
     }
     else
     {
       previousState = ConversationState.AwaitingTemplatePoints;
-      messageText = "💯 Введите количество очков (от 1 до 100):";
+      messageText = BotConstants.Templates.EnterTemplatePoints;
     }
 
     session.State = previousState;
 
-    var keyboard = StateKeyboardHelper.GetKeyboardForState(previousState);
-    await botClient.SendTextMessageAsync(
+    var keyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
+    await botClient.EditMessageTextAsync(
       chatId,
-      messageText + StateKeyboardHelper.GetHintForState(previousState),
+      messageId,
+      messageText,
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
   }

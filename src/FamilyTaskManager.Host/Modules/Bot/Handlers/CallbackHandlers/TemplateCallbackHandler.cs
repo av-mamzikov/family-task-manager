@@ -136,10 +136,12 @@ public class TemplateCallbackHandler(
 
       case "points":
         session.State = ConversationState.AwaitingTemplateEditPoints;
+        var pointsKeyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
         await botClient.EditMessageTextAsync(
           chatId,
           messageId,
-          "💯 Введите новое количество очков (от 1 до 100):",
+          "⭐ Выберите новую сложность задачи:",
+          replyMarkup: pointsKeyboard,
           cancellationToken: cancellationToken);
         break;
 

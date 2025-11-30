@@ -18,12 +18,12 @@ public static class StateKeyboardHelper
       ConversationState.AwaitingFamilyLocation => GetLocationOrBackKeyboard(),
       ConversationState.AwaitingPetName => GetCancelKeyboard(),
       ConversationState.AwaitingTaskTitle => GetCancelKeyboard(),
-      ConversationState.AwaitingTaskPoints => GetBackOrCancelKeyboard(),
+      ConversationState.AwaitingTaskPoints => null, // Используются inline кнопки
       ConversationState.AwaitingTaskPetSelection => null, // Используются inline кнопки
       ConversationState.AwaitingTaskSchedule => GetBackOrCancelKeyboard(),
       ConversationState.AwaitingTaskDueDate => GetBackOrCancelKeyboard(),
       ConversationState.AwaitingTemplateTitle => GetCancelKeyboard(),
-      ConversationState.AwaitingTemplatePoints => GetBackOrCancelKeyboard(),
+      ConversationState.AwaitingTemplatePoints => null, // Используются inline кнопки
       ConversationState.AwaitingTemplateScheduleType => null, // Используются inline кнопки
       ConversationState.AwaitingTemplateScheduleTime => GetBackOrCancelKeyboard(),
       ConversationState.AwaitingTemplateScheduleWeekday => null, // Используются inline кнопки
@@ -31,7 +31,7 @@ public static class StateKeyboardHelper
       ConversationState.AwaitingTemplateDueDuration => GetBackOrCancelKeyboard(),
       ConversationState.AwaitingTemplatePetSelection => null, // Используются inline кнопки
       ConversationState.AwaitingTemplateEditTitle => GetBackOrCancelKeyboard(),
-      ConversationState.AwaitingTemplateEditPoints => GetBackOrCancelKeyboard(),
+      ConversationState.AwaitingTemplateEditPoints => null, // Используются inline кнопки
       ConversationState.AwaitingTemplateEditScheduleType => null, // Используются inline кнопки
       ConversationState.AwaitingTemplateEditScheduleTime => GetBackOrCancelKeyboard(),
       ConversationState.AwaitingTemplateEditScheduleWeekday => null, // Используются inline кнопки
@@ -60,7 +60,7 @@ public static class StateKeyboardHelper
         "\n\n💡 Доступные действия:\n• Введите название задачи (3-100 символов)\n• /cancel - Отменить создание",
 
       ConversationState.AwaitingTaskPoints =>
-        "\n\n💡 Доступные действия:\n• Введите количество очков (1-100)\n• ⬅️ Назад - К названию\n• /cancel - Отменить создание",
+        "\n\n💡 Выберите сложность с помощью кнопок выше",
 
       ConversationState.AwaitingTaskScheduleType =>
         "\n\n💡 Выберите тип расписания с помощью кнопок выше",
@@ -84,7 +84,7 @@ public static class StateKeyboardHelper
         "\n\n💡 Доступные действия:\n• Введите название шаблона (3-100 символов)\n• /cancel - Отменить создание",
 
       ConversationState.AwaitingTemplatePoints =>
-        "\n\n💡 Доступные действия:\n• Введите количество очков (1-100)\n• ⬅️ Назад - К названию\n• /cancel - Отменить создание",
+        "\n\n💡 Выберите сложность с помощью кнопок выше",
 
       ConversationState.AwaitingTemplateScheduleType =>
         "\n\n💡 Выберите тип расписания с помощью кнопок выше",
@@ -105,7 +105,7 @@ public static class StateKeyboardHelper
         "\n\n💡 Доступные действия:\n• Введите новое название\n• ⬅️ Назад - Отменить редактирование\n• /cancel - Выйти из режима редактирования",
 
       ConversationState.AwaitingTemplateEditPoints =>
-        "\n\n💡 Доступные действия:\n• Введите новое количество очков\n• ⬅️ Назад - Отменить редактирование\n• /cancel - Выйти из режима редактирования",
+        "\n\n💡 Выберите новую сложность с помощью кнопок выше",
 
       ConversationState.AwaitingTemplateEditScheduleType =>
         "\n\n💡 Выберите новый тип расписания с помощью кнопок выше",

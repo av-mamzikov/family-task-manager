@@ -42,11 +42,10 @@ public class TaskCreationHandler(
     session.Data["title"] = title;
     session.State = ConversationState.AwaitingTaskPoints;
 
-    var pointsKeyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskPoints);
+    var pointsKeyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      "💯 Введите количество очков за выполнение задачи (от 1 до 100):" +
-      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskPoints),
+      "⭐ Выберите сложность задачи:",
       replyMarkup: pointsKeyboard,
       cancellationToken: cancellationToken);
   }
@@ -58,16 +57,14 @@ public class TaskCreationHandler(
     string pointsText,
     CancellationToken cancellationToken)
   {
-    if (!int.TryParse(pointsText, out var points) || points < 1 || points > 100)
+    if (!int.TryParse(pointsText, out var points) || points < 1 || points > 3)
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskPoints);
-      await SendValidationErrorAsync(
-        botClient,
+      var keyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
+      await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Количество очков должно быть числом от 1 до 100. Попробуйте снова:",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskPoints),
-        keyboard,
-        cancellationToken);
+        "❌ Пожалуйста, выберите сложность с помощью кнопок:",
+        replyMarkup: keyboard,
+        cancellationToken: cancellationToken);
       return;
     }
 

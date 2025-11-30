@@ -24,6 +24,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     modelBuilder.Entity<Pet>()
       .HasQueryFilter(p => !p.IsDeleted);
 
+    modelBuilder.Entity<TaskTemplate>()
+      .HasQueryFilter(t => !t.Pet.IsDeleted);
+
     // Для удалённого питомца показываем только завершённые задачи
     modelBuilder.Entity<TaskInstance>()
       .HasQueryFilter(t => t.Status != TaskStatus.Completed || !t.Pet.IsDeleted);

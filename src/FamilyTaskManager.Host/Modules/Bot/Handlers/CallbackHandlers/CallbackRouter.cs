@@ -19,7 +19,8 @@ public class CallbackRouter(
   TaskCallbackHandler taskCallbackHandler,
   TemplateCallbackHandler templateCallbackHandler,
   TimezoneCallbackHandler timezoneCallbackHandler,
-  ScheduleCallbackHandler scheduleCallbackHandler)
+  ScheduleCallbackHandler scheduleCallbackHandler,
+  PointsCallbackHandler pointsCallbackHandler)
   : ICallbackRouter
 {
   public async Task RouteCallbackAsync(
@@ -57,6 +58,8 @@ public class CallbackRouter(
         cancellationToken),
       "tpl" => templateCallbackHandler.HandleTemplateActionAsync(botClient, chatId, messageId, parts, session,
         fromUser, cancellationToken),
+      "points" => pointsCallbackHandler.HandlePointsSelectionAsync(botClient, chatId, messageId, parts, session,
+        cancellationToken),
       "confirm" => HandleConfirmActionAsync(botClient, chatId, messageId, parts, session, fromUser, cancellationToken),
       "cancel" => HandleCancelActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
       _ => HandleUnknownCallbackAsync(botClient, chatId, cancellationToken)

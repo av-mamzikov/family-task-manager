@@ -25,6 +25,7 @@ public class TemplateCommandHandler(IMediator mediator)
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         BotConstants.Errors.NoFamily,
+        parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -38,6 +39,7 @@ public class TemplateCommandHandler(IMediator mediator)
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         BotConstants.Errors.NoPets,
+        parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -75,6 +77,7 @@ public class TemplateCommandHandler(IMediator mediator)
       await botClient.SendTextMessageAsync(
         chatId,
         BotConstants.Errors.NoFamily,
+        parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -89,6 +92,7 @@ public class TemplateCommandHandler(IMediator mediator)
         chatId,
         messageId,
         "❌ Ошибка загрузки шаблонов",
+        ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -155,6 +159,7 @@ public class TemplateCommandHandler(IMediator mediator)
       await botClient.SendTextMessageAsync(
         chatId,
         BotConstants.Errors.NoFamily,
+        parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -169,6 +174,7 @@ public class TemplateCommandHandler(IMediator mediator)
         chatId,
         messageId,
         "❌ Шаблон не найден",
+        ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -212,6 +218,7 @@ public class TemplateCommandHandler(IMediator mediator)
       await botClient.SendTextMessageAsync(
         chatId,
         BotConstants.Errors.NoFamily,
+        parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -247,6 +254,7 @@ public class TemplateCommandHandler(IMediator mediator)
       await botClient.SendTextMessageAsync(
         chatId,
         BotConstants.Errors.NoFamily,
+        parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -261,6 +269,7 @@ public class TemplateCommandHandler(IMediator mediator)
         chatId,
         messageId,
         $"❌ Ошибка удаления шаблона: {result.Errors.FirstOrDefault()}",
+        ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -270,6 +279,7 @@ public class TemplateCommandHandler(IMediator mediator)
       messageId,
       "✅ Шаблон успешно удалён!\n\n" +
       "Задачи по этому шаблону больше не будут создаваться автоматически.",
+      ParseMode.Markdown,
       cancellationToken: cancellationToken);
   }
 
@@ -300,6 +310,7 @@ public class TemplateCommandHandler(IMediator mediator)
         chatId,
         messageId,
         "❌ Шаблон не найден",
+        ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -359,6 +370,7 @@ public class TemplateCommandHandler(IMediator mediator)
         chatId,
         messageId,
         "❌ Шаблон не найден",
+        ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -377,6 +389,7 @@ public class TemplateCommandHandler(IMediator mediator)
         chatId,
         messageId,
         $"❌ Ошибка создания задачи: {result.Errors.FirstOrDefault()}",
+        ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }

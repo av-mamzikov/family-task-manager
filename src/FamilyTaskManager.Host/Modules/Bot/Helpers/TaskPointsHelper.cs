@@ -12,9 +12,13 @@ public static class TaskPointsHelper
     {
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("⭐", "points:1"),
-        InlineKeyboardButton.WithCallbackData("⭐⭐", "points:2"),
-        InlineKeyboardButton.WithCallbackData("⭐⭐⭐", "points:3")
+        InlineKeyboardButton.WithCallbackData("⭐", "points_1"),
+        InlineKeyboardButton.WithCallbackData("⭐⭐", "points_2"),
+        InlineKeyboardButton.WithCallbackData("⭐⭐⭐", "points_3")
+      },
+      new[]
+      {
+        InlineKeyboardButton.WithCallbackData("⬅️ Назад", "points_back")
       }
     });
 

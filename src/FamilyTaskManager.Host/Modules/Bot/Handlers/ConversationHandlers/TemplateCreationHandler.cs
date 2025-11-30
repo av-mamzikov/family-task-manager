@@ -38,11 +38,10 @@ public class TemplateCreationHandler(
     session.Data["title"] = title;
     session.State = ConversationState.AwaitingTemplatePoints;
 
-    var pointsKeyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplatePoints);
+    var pointsKeyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Templates.EnterTemplatePoints +
-      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplatePoints),
+      BotConstants.Templates.EnterTemplatePoints,
       replyMarkup: pointsKeyboard,
       cancellationToken: cancellationToken);
   }
@@ -54,16 +53,14 @@ public class TemplateCreationHandler(
     string pointsText,
     CancellationToken cancellationToken)
   {
-    if (!int.TryParse(pointsText, out var points) || points < 1 || points > 100)
+    if (!int.TryParse(pointsText, out var points) || points < 1 || points > 3)
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplatePoints);
-      await SendValidationErrorAsync(
-        botClient,
+      var keyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
+      await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Количество очков должно быть числом от 1 до 100. Попробуйте снова:",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplatePoints),
-        keyboard,
-        cancellationToken);
+        "❌ Пожалуйста, выберите сложность с помощью кнопок:",
+        replyMarkup: keyboard,
+        cancellationToken: cancellationToken);
       return;
     }
 

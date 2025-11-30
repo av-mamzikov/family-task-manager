@@ -217,9 +217,9 @@ public class ConversationRouter(
     var messageText = previousState switch
     {
       ConversationState.AwaitingTaskTitle => "📝 Введите название задачи (от 3 до 100 символов):" + hint,
-      ConversationState.AwaitingTaskPoints => "💯 Введите количество очков за выполнение задачи (от 1 до 100):" + hint,
+      ConversationState.AwaitingTaskPoints => "⭐ Выберите сложность задачи:",
       ConversationState.AwaitingTemplateTitle => "📝 Введите название шаблона (от 3 до 100 символов):" + hint,
-      ConversationState.AwaitingTemplatePoints => "💯 Введите количество очков (от 1 до 100):" + hint,
+      ConversationState.AwaitingTemplatePoints => "⭐ Выберите сложность задачи:",
       ConversationState.AwaitingFamilyTimezone => "🌍 Выберите способ определения временной зоны:",
       _ => "⬅️ Возврат к предыдущему шагу."
     };
@@ -231,6 +231,16 @@ public class ConversationRouter(
         message.Chat.Id,
         messageText,
         replyMarkup: timezoneKeyboard,
+        cancellationToken: cancellationToken);
+    }
+    else if (previousState == ConversationState.AwaitingTaskPoints ||
+             previousState == ConversationState.AwaitingTemplatePoints)
+    {
+      var pointsKeyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        messageText,
+        replyMarkup: pointsKeyboard,
         cancellationToken: cancellationToken);
     }
     else

@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.TaskAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.TaskTemplates;
@@ -9,7 +10,8 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
 public class TemplateEditHandler(
   ILogger<TemplateEditHandler> logger,
-  IMediator mediator) : BaseConversationHandler(logger, mediator)
+  IMediator mediator,
+  TemplateCommandHandler templateCommandHandler) : BaseConversationHandler(logger, mediator)
 {
   public async Task HandleTemplateEditTitleInputAsync(
     ITelegramBotClient botClient,
@@ -72,16 +74,14 @@ public class TemplateEditHandler(
     string pointsText,
     CancellationToken cancellationToken)
   {
-    if (!int.TryParse(pointsText, out var points))
+    if (!int.TryParse(pointsText, out var points) || points < 1 || points > 3)
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditPoints);
-      await SendValidationErrorAsync(
-        botClient,
+      var keyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
+      await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        "❌ Количество очков должно быть числом. Попробуйте снова:",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditPoints),
-        keyboard,
-        cancellationToken);
+        "❌ Пожалуйста, выберите сложность с помощью кнопок:",
+        replyMarkup: keyboard,
+        cancellationToken: cancellationToken);
       return;
     }
 
@@ -103,21 +103,23 @@ public class TemplateEditHandler(
 
     if (!result.IsSuccess)
     {
-      await SendErrorAndClearStateAsync(
-        botClient,
+      await botClient.EditMessageTextAsync(
         message.Chat.Id,
-        session,
+        message.MessageId,
         $"❌ Ошибка обновления: {result.Errors.FirstOrDefault()}",
-        cancellationToken);
+        cancellationToken: cancellationToken);
       return;
     }
 
+    // Return to template edit screen
     session.ClearState();
-    await botClient.SendTextMessageAsync(
+    await templateCommandHandler.HandleEditTemplateAsync(
+      botClient,
       message.Chat.Id,
-      BotConstants.Templates.TemplateUpdated,
-      replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
-      cancellationToken: cancellationToken);
+      message.MessageId,
+      templateId,
+      session,
+      cancellationToken);
   }
 
   public async Task HandleTemplateEditScheduleTimeInputAsync(
