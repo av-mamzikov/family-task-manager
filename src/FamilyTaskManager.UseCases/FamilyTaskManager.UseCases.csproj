@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Ardalis.Result"/>
+    <PackageReference Include="Ardalis.Specification"/>
+    <PackageReference Include="Mediator.Abstractions"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FamilyTaskManager.Core\FamilyTaskManager.Core.csproj"/>
+  </ItemGroup>
+
+</Project>

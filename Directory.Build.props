@@ -1,0 +1,34 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- Warnings that should NOT be errors -->
+    <WarningsNotAsErrors>
+      <!-- XML Documentation warnings -->
+      CS1591; <!-- Missing XML comment for publicly visible type or member -->
+
+      <!-- NuGet/Package warnings -->
+      NU1901;NU1902;NU1903;NU1904; <!-- Package vulnerabilities (moderate/high/critical) -->
+      NU5104; <!-- Package version downgrade -->
+      NETSDK1206; <!-- Runtime identifier warnings -->
+
+      <!-- Obsolete API warnings (allow gradual migration) -->
+      CS0618; <!-- Type or member is obsolete -->
+      CS0619; <!-- Type or member is obsolete (with message) -->
+
+      <!-- Nullable reference warnings (can be noisy during migration) -->
+      <!-- CS8600;CS8601;CS8602;CS8603;CS8604; --> <!-- Uncomment if nullable is too strict -->
+    </WarningsNotAsErrors>
+
+    <!-- Explicitly suppress some warnings globally -->
+    <NoWarn>
+      1591; <!-- Missing XML comments -->
+    </NoWarn>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,5 @@
+is_global = true
+
+# Allow Mediator notifications without handlers (domain events)
+# MSG0005: MediatorGenerator found message without any registered handler
+dotnet_diagnostic.MSG0005.severity = none

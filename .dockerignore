@@ -1,0 +1,70 @@
+# .NET build artifacts
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.suo
+*.cache
+*.docstates
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+
+# Visual Studio 2015 cache/options directory
+.vs/
+
+# MSTest test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# NuGet packages
+*.nupkg
+packages/
+
+# Docker files
+docker-compose.override.yml
+.dockerignore
+
+# Git
+.git/
+.gitignore
+
+# Tests
+tests/
+**/*.Tests.csproj
+**/*.Test.csproj
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Documentation
+docs/
+*.md
+
+# Scripts
+scripts/
+
+# Configuration files with secrets
+appsettings.Development.json
+appsettings.Local.json
+*.pfx
+*.p12
+*.key
+*.pem

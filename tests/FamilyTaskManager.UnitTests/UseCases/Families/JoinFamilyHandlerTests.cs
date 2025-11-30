@@ -1,0 +1,115 @@
+using Ardalis.Result;
+using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.UserAggregate;
+using FamilyTaskManager.UseCases.Families;
+using FamilyTaskManager.UseCases.Families.Specifications;
+
+namespace FamilyTaskManager.UnitTests.UseCases.Families;
+
+public class JoinFamilyHandlerTests
+{
+  private readonly IRepository<Family> _familyRepository;
+  private readonly JoinFamilyHandler _handler;
+  private readonly IRepository<User> _userRepository;
+
+  public JoinFamilyHandlerTests()
+  {
+    _familyRepository = Substitute.For<IRepository<Family>>();
+    _userRepository = Substitute.For<IRepository<User>>();
+    _handler = new JoinFamilyHandler(_familyRepository, _userRepository);
+  }
+
+  [Fact]
+  public async Task Handle_ValidCommand_AddsMemberToFamily()
+  {
+    // Arrange
+    var userId = Guid.NewGuid();
+    var familyId = Guid.NewGuid();
+    var user = new User(123456789, "John Doe");
+    var family = new Family("Smith Family", "UTC");
+    var command = new JoinFamilyCommand(userId, familyId, FamilyRole.Child);
+
+    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+      .Returns(user);
+    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+      .Returns(family);
+
+    // Act
+    var result = await _handler.Handle(command, CancellationToken.None);
+
+    // Assert
+    result.IsSuccess.ShouldBeTrue();
+    family.Members.Count.ShouldBe(1);
+    var member = family.Members.First();
+    result.Value.ShouldBe(member.Id);
+    member.UserId.ShouldBe(userId);
+    member.Role.ShouldBe(FamilyRole.Child);
+    await _familyRepository.Received(1).UpdateAsync(family, Arg.Any<CancellationToken>());
+  }
+
+  [Fact]
+  public async Task Handle_NonExistentUser_ReturnsNotFound()
+  {
+    // Arrange
+    var userId = Guid.NewGuid();
+    var familyId = Guid.NewGuid();
+    var command = new JoinFamilyCommand(userId, familyId, FamilyRole.Child);
+
+    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+      .Returns((User?)null);
+
+    // Act
+    var result = await _handler.Handle(command, CancellationToken.None);
+
+    // Assert
+    result.IsSuccess.ShouldBeFalse();
+    result.Status.ShouldBe(ResultStatus.NotFound);
+  }
+
+  [Fact]
+  public async Task Handle_NonExistentFamily_ReturnsNotFound()
+  {
+    // Arrange
+    var userId = Guid.NewGuid();
+    var familyId = Guid.NewGuid();
+    var user = new User(123456789, "John Doe");
+    var command = new JoinFamilyCommand(userId, familyId, FamilyRole.Child);
+
+    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+      .Returns(user);
+    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+      .Returns((Family?)null);
+
+    // Act
+    var result = await _handler.Handle(command, CancellationToken.None);
+
+    // Assert
+    result.IsSuccess.ShouldBeFalse();
+    result.Status.ShouldBe(ResultStatus.NotFound);
+  }
+
+  [Fact]
+  public async Task Handle_UserAlreadyMember_ReturnsError()
+  {
+    // Arrange
+    var userId = Guid.NewGuid();
+    var familyId = Guid.NewGuid();
+    var user = new User(123456789, "John Doe");
+    var family = new Family("Smith Family", "UTC");
+    family.AddMember(userId, FamilyRole.Adult);
+    var command = new JoinFamilyCommand(userId, familyId, FamilyRole.Child);
+
+    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+      .Returns(user);
+    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+      .Returns(family);
+
+    // Act
+    var result = await _handler.Handle(command, CancellationToken.None);
+
+    // Assert
+    result.IsSuccess.ShouldBeFalse();
+    result.Status.ShouldBe(ResultStatus.Error);
+    family.Members.Count.ShouldBe(1); // Still only one member
+  }
+}
