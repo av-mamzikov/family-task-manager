@@ -49,6 +49,7 @@ public class MessageHandler(
         await botClient.SendTextMessageAsync(
           message.Chat.Id,
           "❌ Предыдущее действие отменено.",
+          parseMode: ParseMode.Markdown,
           replyMarkup: new ReplyKeyboardRemove(),
           cancellationToken: cancellationToken);
         // Continue to handle the button/command
@@ -122,6 +123,7 @@ public class MessageHandler(
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         "❌ Ошибка регистрации. Попробуйте позже.",
+        parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -155,6 +157,7 @@ public class MessageHandler(
         message.Chat.Id,
         BotConstants.Messages.WelcomeMessage +
         BotConstants.Messages.NoFamiliesJoin,
+        parseMode: ParseMode.Markdown,
         replyMarkup: new InlineKeyboardMarkup(new[]
         {
           InlineKeyboardButton.WithCallbackData("➕ Создать семью", "create_family")
@@ -183,6 +186,7 @@ public class MessageHandler(
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         $"❌ Не удалось присоединиться к семье:\n{errorMessage}",
+        parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -209,6 +213,7 @@ public class MessageHandler(
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         "✅ Вы присоединились к семье!",
+        parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
     }
   }
@@ -226,6 +231,7 @@ public class MessageHandler(
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         "❌ Ошибка. Попробуйте /start",
+        parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -247,6 +253,7 @@ public class MessageHandler(
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         "❌ Ошибка. Попробуйте /start",
+        parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -268,6 +275,7 @@ public class MessageHandler(
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         "❌ Ошибка. Попробуйте /start",
+        parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -289,6 +297,7 @@ public class MessageHandler(
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         "❌ Ошибка. Попробуйте /start",
+        parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -326,6 +335,7 @@ public class MessageHandler(
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       BotConstants.Help.Commands,
+      parseMode: ParseMode.Markdown,
       cancellationToken: cancellationToken);
   }
 
@@ -336,6 +346,7 @@ public class MessageHandler(
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       BotConstants.Errors.UnknownCommand,
+      parseMode: ParseMode.Markdown,
       cancellationToken: cancellationToken);
 
   private async Task HandleKeyboardButtonAsync(
@@ -368,6 +379,7 @@ public class MessageHandler(
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         "❌ Сначала выберите активную семью через /family",
+        parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
@@ -375,6 +387,7 @@ public class MessageHandler(
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       "⭐ Мои очки\n(В разработке)",
+      parseMode: ParseMode.Markdown,
       cancellationToken: cancellationToken);
   }
 
@@ -386,6 +399,7 @@ public class MessageHandler(
     await botClient.SendTextMessageAsync(
       chatId,
       welcomeMessage + "🏠 Главное меню",
+      parseMode: ParseMode.Markdown,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
 }
