@@ -16,9 +16,6 @@ public interface ITelegramNotificationService
   Task SendTaskCreatedAsync(Guid familyId, string taskTitle, TaskPoints points, string petName, DateTime dueAt,
     CancellationToken cancellationToken = default);
 
-  Task SendTaskStartedAsync(Guid familyId, Guid userId, string userName, string taskTitle, TaskPoints points,
-    CancellationToken cancellationToken = default);
-
   Task SendTaskCompletedAsync(Guid familyId, Guid userId, string userName, string taskTitle, TaskPoints points,
     CancellationToken cancellationToken = default);
 

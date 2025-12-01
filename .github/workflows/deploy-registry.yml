@@ -305,6 +305,13 @@ jobs:
             # Переход в директорию деплоя
             cd "$DEPLOY_DIR"
             
+            # Определяем порт проброса PostgreSQL на хосте
+            if [ "$IS_PR_PREVIEW" == "true" ]; then
+              POSTGRES_HOST_PORT=5433
+            else
+              POSTGRES_HOST_PORT=5432
+            fi
+
             # docker-compose.yml уже скопирован на предыдущем шаге
             echo "✓ docker-compose.yml is ready"
             
@@ -319,6 +326,7 @@ jobs:
             POSTGRES_USER=$POSTGRES_USER
             POSTGRES_PASSWORD=$POSTGRES_PASSWORD
             POSTGRES_DB=$([ "$IS_PRODUCTION" == "true" ] && echo "FamilyTaskManager" || echo "FamilyTaskManager_PR_$PR_NUMBER")
+            POSTGRES_HOST_PORT=$POSTGRES_HOST_PORT
             
             # Telegram Bot
             TELEGRAM_BOT_TOKEN=$BOT_TOKEN

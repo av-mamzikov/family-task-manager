@@ -45,7 +45,15 @@ public class TaskReminderOutboxHandler(
           Title = p.TaskTitle,
           DueAt = p.DueAtFamilyTz
         })
+        .GroupBy(r => r.TaskId) // Deduplicate by TaskId
+        .Select(g => g.First()) // Take first occurrence
         .ToList();
+
+      var duplicateCount = familyGroup.Count() - reminders.Count;
+      if (duplicateCount > 0)
+        logger.LogWarning(
+          "Removed {DuplicateCount} duplicate task reminder notifications for family {FamilyId}",
+          duplicateCount, familyId);
 
       try
       {

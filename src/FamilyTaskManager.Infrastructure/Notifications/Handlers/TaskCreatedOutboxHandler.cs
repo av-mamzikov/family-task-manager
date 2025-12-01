@@ -36,14 +36,24 @@ public class TaskCreatedOutboxHandler(
     foreach (var familyGroup in groupedByFamily)
     {
       var familyId = familyGroup.Key;
-      var tasks = familyGroup.Select(x => new TaskCreatedNotificationDto
-      {
-        TaskId = x.Payload!.TaskId,
-        TaskTitle = x.Payload.TaskTitle,
-        Points = x.Payload.Points,
-        PetName = x.Payload.PetName,
-        DueAtFamilyTz = x.Payload.DueAtFamilyTz
-      }).ToList();
+      var tasks = familyGroup
+        .Select(x => new TaskCreatedNotificationDto
+        {
+          TaskId = x.Payload!.TaskId,
+          TaskTitle = x.Payload.TaskTitle,
+          Points = x.Payload.Points,
+          PetName = x.Payload.PetName,
+          DueAtFamilyTz = x.Payload.DueAtFamilyTz
+        })
+        .GroupBy(t => t.TaskId) // Deduplicate by TaskId
+        .Select(g => g.First()) // Take first occurrence
+        .ToList();
+
+      var duplicateCount = familyGroup.Count() - tasks.Count;
+      if (duplicateCount > 0)
+        logger.LogWarning(
+          "Removed {DuplicateCount} duplicate task notifications for family {FamilyId}",
+          duplicateCount, familyId);
 
       try
       {
