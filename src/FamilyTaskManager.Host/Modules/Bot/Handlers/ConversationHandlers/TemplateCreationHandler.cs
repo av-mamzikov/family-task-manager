@@ -139,8 +139,7 @@ public class TemplateCreationHandler(
       var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateDueDuration);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Templates.EnterDueDuration +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateDueDuration),
+        BotConstants.Templates.EnterDueDuration,
         replyMarkup: keyboard,
         cancellationToken: cancellationToken);
     }
@@ -174,8 +173,7 @@ public class TemplateCreationHandler(
     keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateDueDuration);
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Templates.EnterDueDuration +
-      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateDueDuration),
+      BotConstants.Templates.EnterDueDuration,
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
   }
@@ -315,7 +313,6 @@ public class TemplateCreationHandler(
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      $"{BotConstants.Templates.TemplateCreated}\n\n" +
       $"✅ Шаблон \"{title}\" успешно создан!\n\n" +
       $"💯 Очки: {TaskPointsHelper.ToStars(points)}\n" +
       $"🔄 Расписание: {scheduleDescription}\n\n" +

@@ -95,8 +95,7 @@ public class ScheduleCallbackHandler(
       await botClient.EditMessageTextAsync(
         chatId,
         messageId,
-        BotConstants.Templates.EnterDueDuration +
-        StateKeyboardHelper.GetHintForState(nextState),
+        BotConstants.Templates.EnterDueDuration,
         replyMarkup: keyboard,
         cancellationToken: cancellationToken);
       return;
@@ -169,8 +168,7 @@ public class ScheduleCallbackHandler(
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      BotConstants.Templates.EnterDueDuration +
-      StateKeyboardHelper.GetHintForState(nextState),
+      BotConstants.Templates.EnterDueDuration,
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
   }
