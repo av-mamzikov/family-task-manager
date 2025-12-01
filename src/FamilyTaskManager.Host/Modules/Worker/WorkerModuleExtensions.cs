@@ -52,16 +52,16 @@ public static class WorkerModuleExtensions
         .WithIdentity("PetMoodCalculatorJob-trigger")
         .WithCronSchedule("0 */30 * * * ?") // Every 30 minutes
         .WithDescription("Recalculates mood scores for all pets"));
+
+      // Register infrastructure jobs (OutboxDispatcherJob)
+      q.AddInfrastructureJobs(logger);
     });
 
     // Add Quartz hosted service
-    services.AddQuartzHostedService(options =>
-    {
-      options.WaitForJobsToComplete = true;
-    });
+    services.AddQuartzHostedService(options => { options.WaitForJobsToComplete = true; });
 
     logger?.LogInformation(
-      "Worker Module registered: Quartz.NET Jobs (TaskInstanceCreator, TaskReminder, PetMoodCalculator)");
+      "Worker Module registered: Quartz.NET Jobs (TaskInstanceCreator, TaskReminder, PetMoodCalculator, NotificationBatch)");
 
     return services;
   }

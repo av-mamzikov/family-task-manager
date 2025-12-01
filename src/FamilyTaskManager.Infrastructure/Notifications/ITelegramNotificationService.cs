@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.TaskAggregate;
+using FamilyTaskManager.Infrastructure.Notifications.Handlers;
 
 namespace FamilyTaskManager.Infrastructure.Notifications;
 
@@ -30,4 +31,7 @@ public interface ITelegramNotificationService
   Task SendPetDeletedAsync(Guid familyId, string petName, CancellationToken cancellationToken = default);
 
   Task SendMemberJoinedAsync(Guid familyId, string userName, CancellationToken cancellationToken = default);
+
+  Task SendTaskCreatedBatchAsync(Guid familyId, List<TaskCreatedNotificationDto> tasks,
+    CancellationToken cancellationToken = default);
 }

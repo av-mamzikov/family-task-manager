@@ -2,22 +2,14 @@ using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Add PostgreSQL container
-var postgres = builder.AddPostgres("postgres")
-  .WithLifetime(ContainerLifetime.Persistent);
+// Add PostgreSQL container with exposed port
+var postgresPassword = builder.AddParameter("postgres-password");
+var postgres = builder.AddPostgres("postgres", password: postgresPassword)
+  .WithLifetime(ContainerLifetime.Persistent)
+  .WithPgAdmin();
 
 // Add the database
 var cleanArchDb = postgres.AddDatabase("FamilyTaskManager");
-
-// Add pgAdmin for database management
-var pgAdmin = builder.AddContainer("pgadmin", "dpage/pgadmin4")
-  .WithEnvironment("PGADMIN_DEFAULT_EMAIL", "admin@familytask.com")
-  .WithEnvironment("PGADMIN_DEFAULT_PASSWORD", "admin123")
-  .WithEnvironment("PGADMIN_SERVER_JSON_FILE", "/pgadmin4/servers.json")
-  .WithHttpEndpoint(targetPort: 80, port: 5050)
-  .WithReference(postgres)
-  .WithBindMount("servers.json", "/pgadmin4/servers.json")
-  .WaitFor(postgres);
 
 // Add the host project with the database connection
 builder.AddProject<FamilyTaskManager_Host>("host")

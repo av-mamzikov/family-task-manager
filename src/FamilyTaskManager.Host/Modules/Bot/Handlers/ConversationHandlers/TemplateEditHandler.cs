@@ -164,8 +164,7 @@ public class TemplateEditHandler(
         StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditDueDuration);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Templates.EnterDueDuration +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditDueDuration),
+        BotConstants.Templates.EnterDueDuration,
         replyMarkup: dueDurationKeyboard,
         cancellationToken: cancellationToken);
     }
@@ -199,8 +198,7 @@ public class TemplateEditHandler(
         StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditDueDuration);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Templates.EnterDueDuration +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditDueDuration),
+        BotConstants.Templates.EnterDueDuration,
         replyMarkup: dueDurationKeyboard,
         cancellationToken: cancellationToken);
     }
@@ -234,8 +232,7 @@ public class TemplateEditHandler(
       StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditDueDuration);
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Templates.EnterDueDuration +
-      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditDueDuration),
+      BotConstants.Templates.EnterDueDuration,
       replyMarkup: dueDurationKeyboard,
       cancellationToken: cancellationToken);
   }

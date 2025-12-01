@@ -8,8 +8,7 @@
     <PackageReference Include="GeoTimeZone"/>
     <PackageReference Include="MailKit"/>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design"
-                      ExcludeAssets="contentFiles" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" ExcludeAssets="contentFiles" PrivateAssets="all"/>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"/>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer"/>
     <PackageReference Include="Microsoft.Extensions.Configuration"/>
@@ -18,6 +17,7 @@
     <PackageReference Include="NimblePros.Metronome"/>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"/>
     <PackageReference Include="Quartz"/>
+    <PackageReference Include="Quartz.Extensions.DependencyInjection"/>
     <PackageReference Include="SQLite"/>
     <PackageReference Include="Telegram.Bot"/>
     <PackageReference Include="Vogen"/>

@@ -31,7 +31,7 @@ public static class PetTaskTemplateData
       "Насыпать корм коту",
       2,
       Schedule.CreateDaily(new TimeOnly(6, 0)).Value, // каждый день в 6:00, сразу после подъёта
-      TimeSpan.FromHours(2)
+      TimeSpan.FromHours(1)
     ),
 
     // Периодические задачи
