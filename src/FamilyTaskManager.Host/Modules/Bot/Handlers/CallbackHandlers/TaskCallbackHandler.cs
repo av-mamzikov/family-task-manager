@@ -184,10 +184,21 @@ public class TaskCallbackHandler(
       return;
     }
 
+    var getTaskResult = await Mediator.Send(
+      new GetTaskByIdQuery(taskId, session.CurrentFamilyId ?? Guid.Empty), cancellationToken);
+    var task = getTaskResult.IsSuccess ? getTaskResult.Value : null;
+
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      "✅ Задача взята в работу!\n\nТеперь вы можете её выполнить.",
+      $" ✅ Задача взята в работу!\n\n{task?.Title} {task?.Points.ToStars()}\n",
+      replyMarkup: new InlineKeyboardMarkup([
+        [
+          InlineKeyboardButton.WithCallbackData("✅ Выполнить", $"task_complete_{task?.Id}"),
+          InlineKeyboardButton.WithCallbackData("❌ Отказаться", $"task_cancel_{task?.Id}")
+        ]
+      ]),
+      parseMode: ParseMode.Markdown,
       cancellationToken: cancellationToken);
   }
 

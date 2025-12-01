@@ -118,8 +118,7 @@ public class ScheduleCallbackHandler(
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      BotConstants.Templates.EnterScheduleTime +
-      StateKeyboardHelper.GetHintForState(nextStateForTime),
+      BotConstants.Templates.EnterScheduleTime,
       replyMarkup: timeKeyboard,
       cancellationToken: cancellationToken);
   }

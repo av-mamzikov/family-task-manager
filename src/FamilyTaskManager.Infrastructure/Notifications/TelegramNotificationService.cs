@@ -100,12 +100,11 @@ public class TelegramNotificationService(
     {
       var message = $"📝 <b>Новая задача создана!</b>\n\n" +
                     $"🐾 {EscapeHtml(petName)}\n" +
-                    $"📋 {EscapeHtml(taskTitle)}\n" +
-                    $"{points}\n" +
+                    $"📋 {EscapeHtml(taskTitle)} {points}\n" +
                     $"⏳ Срок: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
                     $"Время приступать к работе! 🎯";
 
-      await SendToFamilyMembersAsync(familyId, message, cancellationToken);
+      await SendToFamilyMembersAsync(familyId, message, [], cancellationToken);
 
       logger.LogInformation(
         "Task created notification sent to family {FamilyId}: '{TaskTitle}' for pet '{PetName}'",
@@ -120,18 +119,18 @@ public class TelegramNotificationService(
     }
   }
 
-  public async Task SendTaskStartedAsync(Guid familyId, string userName, string taskTitle, TaskPoints points,
+  public async Task SendTaskStartedAsync(Guid familyId, Guid userId, string userName, string taskTitle,
+    TaskPoints points,
     CancellationToken cancellationToken = default)
   {
     try
     {
       var message = $"🚀 <b>Задача взята в работу!</b>\n\n" +
                     $"👤 {EscapeHtml(userName)}\n" +
-                    $"📝 {EscapeHtml(taskTitle)}\n" +
-                    $"{points}\n\n" +
+                    $"📝 {EscapeHtml(taskTitle)} {points}\n" +
                     $"Удачи в выполнении! 💪";
 
-      await SendToFamilyMembersAsync(familyId, message, cancellationToken);
+      await SendToFamilyMembersAsync(familyId, message, [userId], cancellationToken);
 
       logger.LogInformation(
         "Task started notification sent to family {FamilyId}: user '{UserName}' started '{TaskTitle}'",
@@ -146,7 +145,8 @@ public class TelegramNotificationService(
     }
   }
 
-  public async Task SendTaskCompletedAsync(Guid familyId, string userName, string taskTitle, TaskPoints points,
+  public async Task SendTaskCompletedAsync(Guid familyId, Guid userId, string userName, string taskTitle,
+    TaskPoints points,
     CancellationToken cancellationToken = default)
   {
     try
@@ -157,7 +157,7 @@ public class TelegramNotificationService(
                     $"{points}\n\n" +
                     $"Отличная работа! 🎉";
 
-      await SendToFamilyMembersAsync(familyId, message, cancellationToken);
+      await SendToFamilyMembersAsync(familyId, message, [userId], cancellationToken);
 
       logger.LogInformation(
         "Task completed notification sent to family {FamilyId}: user '{UserName}' completed '{TaskTitle}'",
@@ -218,7 +218,7 @@ public class TelegramNotificationService(
         message += "🎉 Питомец очень доволен! Продолжайте в том же духе!";
       }
 
-      await SendToFamilyMembersAsync(familyId, message, cancellationToken);
+      await SendToFamilyMembersAsync(familyId, message, [], cancellationToken);
 
       logger.LogInformation(
         "Pet mood changed notification sent to family {FamilyId}: pet '{PetName}' mood is {MoodScore}",
@@ -258,7 +258,7 @@ public class TelegramNotificationService(
                     $"🐾 Имя: {EscapeHtml(petName)}\n" +
                     $"Добро пожаловать в семью! 🎉";
 
-      await SendToFamilyMembersAsync(familyId, message, cancellationToken);
+      await SendToFamilyMembersAsync(familyId, message, [], cancellationToken);
 
       logger.LogInformation(
         "Pet created notification sent to family {FamilyId}: pet '{PetName}' ({PetType})",
@@ -281,7 +281,7 @@ public class TelegramNotificationService(
                     $"🐾 {EscapeHtml(petName)}\n\n" +
                     $"Мы будем скучать! 💔";
 
-      await SendToFamilyMembersAsync(familyId, message, cancellationToken);
+      await SendToFamilyMembersAsync(familyId, message, [], cancellationToken);
 
       logger.LogInformation(
         "Pet deleted notification sent to family {FamilyId}: pet '{PetName}'",
@@ -304,7 +304,7 @@ public class TelegramNotificationService(
                     $"👤 {EscapeHtml(userName)}\n\n" +
                     $"Добро пожаловать в семью! 🎉";
 
-      await SendToFamilyMembersAsync(familyId, message, cancellationToken);
+      await SendToFamilyMembersAsync(familyId, message, [], cancellationToken);
 
       logger.LogInformation(
         "Member joined notification sent to family {FamilyId}: user '{UserName}' joined",
@@ -322,7 +322,8 @@ public class TelegramNotificationService(
   /// <summary>
   ///   Send message to all active members of a family
   /// </summary>
-  private async Task SendToFamilyMembersAsync(Guid familyId, string message, CancellationToken cancellationToken)
+  private async Task SendToFamilyMembersAsync(Guid familyId, string message, Guid[] excludeUserId,
+    CancellationToken cancellationToken)
   {
     // Get family with members
     var spec = new GetFamilyWithMembersSpec(familyId);
@@ -344,7 +345,7 @@ public class TelegramNotificationService(
 
     // Send to each member
     var tasks = new List<Task>();
-    foreach (var member in activeMembers)
+    foreach (var member in activeMembers.Where(m => !excludeUserId.Contains(m.UserId)))
     {
       tasks.Add(SendToUserAsync(member.UserId, message, cancellationToken));
     }

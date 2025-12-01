@@ -227,19 +227,12 @@ public class TelegramNotificationServiceTests
     _userRepository.GetByIdAsync(user2.Id, Arg.Any<CancellationToken>()).Returns(user2);
 
     // Act
-    await _service.SendTaskStartedAsync(family.Id, "User1", "Test Task", new TaskPoints(3),
+    await _service.SendTaskStartedAsync(family.Id, user1.Id, "User1", "Test Task", new TaskPoints(3),
       CancellationToken.None);
 
     // Assert
-    _botClient.SentMessages.Count.ShouldBe(2);
-
-    var message1 = _botClient.GetLastMessageTo(telegramId1)!;
-    message1.ShouldNotBeNull();
-    message1.Text!.ShouldContain("Задача взята в работу");
-    message1.Text!.ShouldContain("User1");
-    message1.Text!.ShouldContain("Test Task");
-    message1.Text!.ShouldContain("⭐⭐⭐");
-
+    // Уведомление должно быть доставлено только другим членам семьи, исключая того, кто взял задачу
+    _botClient.SentMessages.Count.ShouldBe(1);
     var message2 = _botClient.GetLastMessageTo(telegramId2)!;
     message2.ShouldNotBeNull();
     message2.Text!.ShouldContain("Задача взята в работу");
