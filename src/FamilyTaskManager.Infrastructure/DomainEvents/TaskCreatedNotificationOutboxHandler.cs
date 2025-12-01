@@ -63,7 +63,8 @@ public class TaskCreatedNotificationOutboxHandler(
       };
 
       await outboxRepository.AddAsync(outboxEntry, cancellationToken);
-      await outboxRepository.SaveChangesAsync(cancellationToken);
+      // Note: SaveChangesAsync will be called by the main UseCase/Command handler
+      // to ensure all changes (including outbox entries) are saved in a single transaction
 
       logger.LogInformation(
         "Task creation notification queued in outbox for task {TaskId}",
