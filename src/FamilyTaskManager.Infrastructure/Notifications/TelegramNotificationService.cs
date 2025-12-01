@@ -2,7 +2,6 @@ using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Core.UserAggregate;
 using FamilyTaskManager.UseCases.Families.Specifications;
-using FamilyTaskManager.UseCases.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 
@@ -102,7 +101,7 @@ public class TelegramNotificationService(
       var message = $"📝 <b>Новая задача создана!</b>\n\n" +
                     $"🐾 {EscapeHtml(petName)}\n" +
                     $"📋 {EscapeHtml(taskTitle)}\n" +
-                    $"{points} очков\n" +
+                    $"{points}\n" +
                     $"⏳ Срок: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
                     $"Время приступать к работе! 🎯";
 
@@ -129,7 +128,7 @@ public class TelegramNotificationService(
       var message = $"🚀 <b>Задача взята в работу!</b>\n\n" +
                     $"👤 {EscapeHtml(userName)}\n" +
                     $"📝 {EscapeHtml(taskTitle)}\n" +
-                    $"{points} очков\n\n" +
+                    $"{points}\n\n" +
                     $"Удачи в выполнении! 💪";
 
       await SendToFamilyMembersAsync(familyId, message, cancellationToken);
@@ -155,7 +154,7 @@ public class TelegramNotificationService(
       var message = $"✅ <b>Задача выполнена!</b>\n\n" +
                     $"👤 {EscapeHtml(userName)}\n" +
                     $"📝 {EscapeHtml(taskTitle)}\n" +
-                    $"{points} очков\n\n" +
+                    $"{points}\n\n" +
                     $"Отличная работа! 🎉";
 
       await SendToFamilyMembersAsync(familyId, message, cancellationToken);
@@ -257,7 +256,6 @@ public class TelegramNotificationService(
 
       var message = $"{emoji} <b>Новый питомец в семье!</b>\n\n" +
                     $"🐾 Имя: {EscapeHtml(petName)}\n" +
-                    $"📋 Тип: {petTypeRu}\n\n" +
                     $"Добро пожаловать в семью! 🎉";
 
       await SendToFamilyMembersAsync(familyId, message, cancellationToken);

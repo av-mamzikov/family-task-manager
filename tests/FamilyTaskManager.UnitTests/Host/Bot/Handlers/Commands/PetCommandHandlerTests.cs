@@ -167,9 +167,9 @@ public class PetCommandHandlerTests
     // Assert
     await _botClient.Received(1).MakeRequestAsync(
       Arg.Is<SendMessageRequest>(req =>
-        req.Text.Contains("Кот") &&
-        req.Text.Contains("Собака") &&
-        req.Text.Contains("Хомяк")),
+        req.Text.Contains("🐱") &&
+        req.Text.Contains("🐶") &&
+        req.Text.Contains("🐹")),
       Arg.Any<CancellationToken>());
   }
 

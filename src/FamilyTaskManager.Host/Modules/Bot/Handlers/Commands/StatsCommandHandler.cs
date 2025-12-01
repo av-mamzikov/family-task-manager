@@ -4,7 +4,6 @@ using FamilyTaskManager.UseCases.Statistics;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 
@@ -57,27 +56,17 @@ public class StatsCommandHandler(IMediator mediator)
         var isCurrentUser = entry.UserId == userId;
         var marker = isCurrentUser ? "➡️ " : "";
 
-        messageText += $"{marker}{medal} *{entry.UserName}* - ⭐ {entry.Points} очков\n";
+        messageText += $"{marker}{medal} *{entry.UserName}* - ⭐ {entry.Points}\n";
         messageText += $"   Роль: {GetRoleText(entry.Role)}\n\n";
 
         position++;
       }
     }
 
-    // Build inline keyboard
-    var buttons = new List<InlineKeyboardButton[]>
-    {
-      new[]
-      {
-        InlineKeyboardButton.WithCallbackData("📜 История действий", $"stats_history_{session.CurrentFamilyId}")
-      }
-    };
-
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       messageText,
       parseMode: ParseMode.Markdown,
-      replyMarkup: new InlineKeyboardMarkup(buttons),
       cancellationToken: cancellationToken);
   }
 

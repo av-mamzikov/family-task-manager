@@ -3,7 +3,6 @@ using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Infrastructure.Notifications;
 using FamilyTaskManager.TestInfrastructure;
 using FamilyTaskManager.UseCases.Families.Specifications;
-using FamilyTaskManager.UseCases.Tasks;
 using User = FamilyTaskManager.Core.UserAggregate.User;
 
 namespace FamilyTaskManager.UnitTests.Infrastructure.Notifications;
@@ -105,14 +104,14 @@ public class TelegramNotificationServiceTests
     message1.Text!.ShouldContain("Новая задача создана");
     message1.Text!.ShouldContain("Test Task");
     message1.Text!.ShouldContain("Fluffy");
-    message1.Text!.ShouldContain("⭐⭐ очков");
+    message1.Text!.ShouldContain("⭐⭐");
 
     var message2 = _botClient.GetLastMessageTo(telegramId2)!;
     message2.ShouldNotBeNull();
     message2.Text!.ShouldContain("Новая задача создана");
     message2.Text!.ShouldContain("Test Task");
     message2.Text!.ShouldContain("Fluffy");
-    message2.Text!.ShouldContain("⭐⭐ очков");
+    message2.Text!.ShouldContain("⭐⭐");
   }
 
   [Fact]
@@ -239,13 +238,13 @@ public class TelegramNotificationServiceTests
     message1.Text!.ShouldContain("Задача взята в работу");
     message1.Text!.ShouldContain("User1");
     message1.Text!.ShouldContain("Test Task");
-    message1.Text!.ShouldContain("⭐⭐⭐ очков");
+    message1.Text!.ShouldContain("⭐⭐⭐");
 
     var message2 = _botClient.GetLastMessageTo(telegramId2)!;
     message2.ShouldNotBeNull();
     message2.Text!.ShouldContain("Задача взята в работу");
     message2.Text!.ShouldContain("User1");
     message2.Text!.ShouldContain("Test Task");
-    message2.Text!.ShouldContain("⭐⭐⭐ очков");
+    message2.Text!.ShouldContain("⭐⭐⭐");
   }
 }
