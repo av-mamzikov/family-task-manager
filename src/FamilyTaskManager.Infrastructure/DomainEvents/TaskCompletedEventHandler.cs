@@ -32,6 +32,7 @@ public class TaskCompletedEventHandler(
           // Send notification to all family members
           await notificationService.SendTaskCompletedAsync(
             task.FamilyId,
+            member.UserId,
             member.User.Name,
             task.Title,
             task.Points,

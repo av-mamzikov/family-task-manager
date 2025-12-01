@@ -65,7 +65,6 @@ public class PetCommandHandler(IMediator mediator)
 
       messageText += $"{petEmoji} *{pet.Name}*\n";
       messageText += $"   Настроение: {moodEmoji} - {moodText}\n";
-      messageText += $"   Тип: {GetPetTypeText(pet.Type)}\n\n";
     }
 
     // Build inline keyboard with pet actions

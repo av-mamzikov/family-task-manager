@@ -362,33 +362,9 @@ public class MessageHandler(
       "🏠 Семья" => HandleFamilyCommandAsync(botClient, message, session, cancellationToken),
       "✅ Наши задачи" => HandleTasksCommandAsync(botClient, message, session, cancellationToken),
       "🐾 Питомец" => HandlePetCommandAsync(botClient, message, session, cancellationToken),
-      "⭐ Мои очки" => HandleMyPointsAsync(botClient, message, session, cancellationToken),
       "📊 Статистика" => HandleStatsCommandAsync(botClient, message, session, cancellationToken),
       _ => HandleUnknownCommandAsync(botClient, message, cancellationToken)
     });
-  }
-
-  private async Task HandleMyPointsAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    if (session.CurrentFamilyId == null)
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Сначала выберите активную семью через /family",
-        parseMode: ParseMode.Markdown,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      "⭐ Мои очки\n(В разработке)",
-      parseMode: ParseMode.Markdown,
-      cancellationToken: cancellationToken);
   }
 
   private async Task SendMainMenuAsync(

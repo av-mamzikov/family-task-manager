@@ -31,6 +31,7 @@ public class TaskStartedEventHandler(
           // Send notification to all family members
           await notificationService.SendTaskStartedAsync(
             task.FamilyId,
+            member.UserId,
             member.User.Name,
             task.Title,
             task.Points,
