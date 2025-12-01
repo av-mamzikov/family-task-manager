@@ -6,8 +6,8 @@ namespace FamilyTaskManager.Infrastructure.Jobs;
 
 /// <summary>
 ///   Job that processes batched domain event notifications from outbox.
-///   Only processes Batched delivery mode events (currently TaskCreated).
-///   Runs every 5 minutes.
+///   Only processes Batched delivery mode events (TaskCreated, TaskReminder).
+///   Runs every 1 minute.
 /// </summary>
 [DisallowConcurrentExecution]
 public class OutboxDispatcherJob(

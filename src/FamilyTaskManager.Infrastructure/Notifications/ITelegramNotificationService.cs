@@ -34,4 +34,7 @@ public interface ITelegramNotificationService
 
   Task SendTaskCreatedBatchAsync(Guid familyId, List<TaskCreatedNotificationDto> tasks,
     CancellationToken cancellationToken = default);
+
+  Task SendTaskReminderBatchAsync(Guid familyId, List<TaskReminderBatchDto> reminders,
+    CancellationToken cancellationToken = default);
 }

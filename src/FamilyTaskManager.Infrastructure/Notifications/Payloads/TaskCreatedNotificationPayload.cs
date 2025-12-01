@@ -13,3 +13,15 @@ public class TaskCreatedNotificationPayload
   public string PetName { get; set; } = string.Empty;
   public DateTime DueAtFamilyTz { get; set; }
 }
+
+/// <summary>
+///   Payload for task reminder notification events.
+///   Serialized to JSON and stored in DomainEventOutbox.
+/// </summary>
+public class TaskReminderNotificationPayload
+{
+  public Guid FamilyId { get; set; }
+  public Guid TaskId { get; set; }
+  public string TaskTitle { get; set; } = string.Empty;
+  public DateTime DueAtFamilyTz { get; set; }
+}

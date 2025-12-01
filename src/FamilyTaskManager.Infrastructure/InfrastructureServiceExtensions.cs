@@ -67,9 +67,14 @@ public static class InfrastructureServiceExtensions
     services.AddScoped<INotificationHandler<TaskCreatedEvent>,
       TaskCreatedNotificationOutboxHandler>();
 
-    // Register outbox event handler for processing batched TaskCreated notifications
+    // Register TaskReminder notification outbox handler for batched delivery
+    services.AddScoped<INotificationHandler<TaskReminderDueEvent>,
+      TaskReminderNotificationOutboxHandler>();
+
+    // Register outbox event handlers for processing batched notifications
     services.AddScoped<IOutboxEventHandler, TaskCreatedOutboxHandler>();
-    logger.LogInformation("TaskCreated outbox handlers registered");
+    services.AddScoped<IOutboxEventHandler, TaskReminderOutboxHandler>();
+    logger.LogInformation("Outbox handlers registered (TaskCreated, TaskReminder)");
 
     // Register TimeZone Service
     services.AddScoped<ITimeZoneService, TimeZoneService>();
@@ -92,14 +97,14 @@ public static class InfrastructureServiceExtensions
   {
     logger?.LogInformation("Registering Infrastructure jobs...");
 
-    // OutboxDispatcherJob - runs every 5 minutes
-    // Processes batched notifications (currently only TaskCreated)
+    // OutboxDispatcherJob - runs every 1 minute
+    // Processes batched notifications (TaskCreated, TaskReminder)
     var outboxJobKey = new JobKey("OutboxDispatcherJob");
     quartz.AddJob<OutboxDispatcherJob>(opts => opts.WithIdentity(outboxJobKey));
     quartz.AddTrigger(opts => opts
       .ForJob(outboxJobKey)
       .WithIdentity("OutboxDispatcherJob-trigger")
-      .WithCronSchedule("0 */1 * * * ?") // Every 5 minutes
+      .WithCronSchedule("0 */1 * * * ?") // Every 1 minute
       .WithDescription("Processes batched notifications from outbox"));
 
     logger?.LogInformation("Infrastructure jobs registered: OutboxDispatcherJob");
