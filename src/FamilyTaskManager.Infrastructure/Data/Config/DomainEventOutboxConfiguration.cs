@@ -17,11 +17,6 @@ public class DomainEventOutboxConfiguration : IEntityTypeConfiguration<DomainEve
     builder.Property(o => o.Payload)
       .IsRequired();
 
-    builder.Property(o => o.DeliveryMode)
-      .IsRequired()
-      .HasConversion<string>()
-      .HasMaxLength(20);
-
     builder.Property(o => o.OccurredAtUtc)
       .IsRequired();
 
@@ -38,7 +33,7 @@ public class DomainEventOutboxConfiguration : IEntityTypeConfiguration<DomainEve
       .HasMaxLength(20);
 
     // Indexes for efficient querying
-    builder.HasIndex(o => new { o.Status, o.DeliveryMode, o.OccurredAtUtc });
+    builder.HasIndex(o => new { o.Status, o.OccurredAtUtc });
     builder.HasIndex(o => new { o.EventType, o.Status });
     builder.HasIndex(o => o.ProcessedAtUtc);
   }

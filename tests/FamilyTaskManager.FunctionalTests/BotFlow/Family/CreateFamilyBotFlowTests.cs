@@ -49,6 +49,10 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     var botClient = factory.TelegramBotClient;
     botClient.Clear();
 
+    // Initialize user with /start command
+    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(chatId, userId, "/start"));
+    await botClient.WaitForLastMessageToAsync(chatId);
+
     // Act & Assert - Step 1: Click "Create Family"
     var createFamilyCallback = UpdateFactory.CreateCallbackUpdate(chatId, userId, "create_family");
     botClient.EnqueueUpdate(createFamilyCallback);
@@ -82,11 +86,11 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     var timezoneSelection = UpdateFactory.CreateCallbackUpdate(chatId, userId, "timezone_Europe/Moscow");
     botClient.EnqueueUpdate(timezoneSelection);
 
-    var messages = (await botClient.WaitForMessagesToAsync(chatId, 1))
+    var messages = (await botClient.WaitForMessagesToAsync(chatId, 2))
       .ToList();
-    var successMessage = messages.LastOrDefault(m => m.Text?.Contains("Временная зона: Europe/Moscow") == true);
+    var successMessage = messages.FirstOrDefault(m => m.Text?.Contains("Семья Ивановых") == true);
     successMessage.ShouldNotBeNull("Должно быть сообщение с подтверждением создания семьи");
-    successMessage!.ShouldContainText("Семья Ивановых");
+    successMessage!.ShouldContainText("Europe/Moscow");
 
     var menuMessage = messages.Last();
     menuMessage.ShouldContainText("Главное меню");

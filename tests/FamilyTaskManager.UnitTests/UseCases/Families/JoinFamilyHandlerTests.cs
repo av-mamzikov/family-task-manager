@@ -1,6 +1,7 @@
 using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.UserAggregate;
+using FamilyTaskManager.UnitTests.Helpers;
 using FamilyTaskManager.UseCases.Families;
 using FamilyTaskManager.UseCases.Families.Specifications;
 
@@ -42,7 +43,7 @@ public class JoinFamilyHandlerTests
     family.Members.Count.ShouldBe(1);
     var member = family.Members.First();
     result.Value.ShouldBe(member.Id);
-    member.UserId.ShouldBe(userId);
+    member.UserId.ShouldBe(user.Id);
     member.Role.ShouldBe(FamilyRole.Child);
     await _familyRepository.Received(1).UpdateAsync(family, Arg.Any<CancellationToken>());
   }
@@ -96,7 +97,9 @@ public class JoinFamilyHandlerTests
     var familyId = Guid.NewGuid();
     var user = new User(123456789, "John Doe");
     var family = new Family("Smith Family", "UTC");
-    family.AddMember(userId, FamilyRole.Adult);
+    var existingUser = TestHelpers.CreateUser();
+    family.AddMember(existingUser, FamilyRole.Adult);
+    userId = existingUser.Id;
     var command = new JoinFamilyCommand(userId, familyId, FamilyRole.Child);
 
     _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())

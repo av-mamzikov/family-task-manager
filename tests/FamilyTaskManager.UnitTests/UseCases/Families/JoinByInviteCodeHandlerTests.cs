@@ -1,6 +1,7 @@
 using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.UserAggregate;
+using FamilyTaskManager.UnitTests.Helpers;
 using FamilyTaskManager.UseCases.Families;
 using FamilyTaskManager.UseCases.Families.Specifications;
 
@@ -48,7 +49,7 @@ public class JoinByInviteCodeHandlerTests
     // Assert
     result.IsSuccess.ShouldBeTrue();
     family.Members.Count.ShouldBe(1);
-    family.Members.First().UserId.ShouldBe(userId);
+    family.Members.First().UserId.ShouldBe(user.Id);
     family.Members.First().Role.ShouldBe(FamilyRole.Adult);
     invitation.IsActive.ShouldBeFalse();
     await _familyRepository.Received(1).UpdateAsync(family, Arg.Any<CancellationToken>());
@@ -156,7 +157,9 @@ public class JoinByInviteCodeHandlerTests
     var familyId = Guid.NewGuid();
     var user = new User(123456789, "John Doe");
     var family = new Family("Test Family", "UTC");
-    family.AddMember(userId, FamilyRole.Child); // User already in family
+    var existingUser = TestHelpers.CreateUser();
+    family.AddMember(existingUser, FamilyRole.Child); // User already in family
+    userId = existingUser.Id;
     var invitation = new Invitation(familyId, FamilyRole.Adult, Guid.NewGuid());
 
     var command = new JoinByInviteCodeCommand(userId, invitation.Code);

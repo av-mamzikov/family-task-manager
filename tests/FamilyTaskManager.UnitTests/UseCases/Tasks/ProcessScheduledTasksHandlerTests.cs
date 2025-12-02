@@ -1,11 +1,12 @@
 using Ardalis.Result;
 using Ardalis.Specification;
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.TaskAggregate;
+using FamilyTaskManager.UseCases.Pets.Specifications;
 using FamilyTaskManager.UseCases.Tasks;
 using FamilyTaskManager.UseCases.Tasks.Specifications;
-using FamilyTaskManager.UseCases.TaskTemplates;
 using FamilyTaskManager.UseCases.TaskTemplates.Specifications;
 
 namespace FamilyTaskManager.UnitTests.UseCases.Tasks;
@@ -14,6 +15,7 @@ public class ProcessScheduledTasksHandlerTests
 {
   private readonly ProcessScheduledTasksHandler _handler;
   private readonly ILogger<ProcessScheduledTasksHandler> _logger;
+  private readonly IRepository<Pet> _petRepository;
   private readonly ITaskInstanceFactory _taskInstanceFactory;
   private readonly IRepository<TaskInstance> _taskRepository;
   private readonly IReadRepository<TaskTemplate> _templateRepository;
@@ -22,12 +24,14 @@ public class ProcessScheduledTasksHandlerTests
   {
     _templateRepository = Substitute.For<IReadRepository<TaskTemplate>>();
     _taskRepository = Substitute.For<IRepository<TaskInstance>>();
+    _petRepository = Substitute.For<IRepository<Pet>>();
     _taskInstanceFactory = Substitute.For<ITaskInstanceFactory>();
     _logger = Substitute.For<ILogger<ProcessScheduledTasksHandler>>();
 
     _handler = new ProcessScheduledTasksHandler(
       _templateRepository,
       _taskRepository,
+      _petRepository,
       _taskInstanceFactory,
       _logger);
   }
@@ -133,7 +137,9 @@ public class ProcessScheduledTasksHandlerTests
       DateTime.UtcNow,
       TimeSpan.FromHours(24));
 
-    var newInstance = new TaskInstance(familyId, petId, "Daily Task", new TaskPoints(2), TaskType.Recurring,
+    var pet = new Pet(familyId, PetType.Cat, "Test Pet");
+    typeof(Pet).GetProperty("Family")!.SetValue(pet, family);
+    var newInstance = new TaskInstance(pet, "Daily Task", new TaskPoints(2), TaskType.Recurring,
       DateTime.UtcNow.AddHours(24), templateId);
 
     _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
@@ -142,10 +148,14 @@ public class ProcessScheduledTasksHandlerTests
     _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template });
 
+    _petRepository.FirstOrDefaultAsync(Arg.Any<GetPetByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
+      .Returns(pet);
+
     _taskRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance>());
 
-    _taskInstanceFactory.CreateFromTemplate(template, Arg.Any<DateTime>(), Arg.Any<List<TaskInstance>>())
+    _taskInstanceFactory
+      .CreateFromTemplate(template, Arg.Any<Pet>(), Arg.Any<DateTime>(), Arg.Any<IEnumerable<TaskInstance>>())
       .Returns(Result<TaskInstance>.Success(newInstance));
 
     // Act
@@ -190,17 +200,24 @@ public class ProcessScheduledTasksHandlerTests
       DateTime.UtcNow,
       TimeSpan.FromHours(24));
 
+    var pet = new Pet(familyId, PetType.Cat, "Test Pet");
+    typeof(Pet).GetProperty("Family")!.SetValue(pet, family);
+
     _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplateDto> { templateDto });
 
     _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template });
 
+    _petRepository.FirstOrDefaultAsync(Arg.Any<GetPetByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
+      .Returns(pet);
+
     _taskRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance>());
 
     // Factory returns error (e.g., already has active instance)
-    _taskInstanceFactory.CreateFromTemplate(template, Arg.Any<DateTime>(), Arg.Any<List<TaskInstance>>())
+    _taskInstanceFactory
+      .CreateFromTemplate(template, Arg.Any<Pet>(), Arg.Any<DateTime>(), Arg.Any<IEnumerable<TaskInstance>>())
       .Returns(Result<TaskInstance>.Error("Already has active instance"));
 
     // Act
@@ -227,6 +244,9 @@ public class ProcessScheduledTasksHandlerTests
     var schedule2 = Schedule.CreateDaily(new TimeOnly(10, 30)).Value;
 
     var family = new Family("Test Family", "UTC", false);
+    var pet = new Pet(familyId, PetType.Cat, "Test Pet");
+    // Set Family navigation property for test
+    typeof(Pet).GetProperty("Family")!.SetValue(pet, family);
 
     var template1 = new TaskTemplate(familyId, petId, "Task 1", new TaskPoints(2), schedule1, TimeSpan.FromHours(24),
       Guid.NewGuid());
@@ -250,16 +270,20 @@ public class ProcessScheduledTasksHandlerTests
     _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template1, template2 });
 
+    _petRepository.FirstOrDefaultAsync(Arg.Any<GetPetByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
+      .Returns(pet);
+
     _taskRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance>());
 
-    _taskInstanceFactory.CreateFromTemplate(Arg.Any<TaskTemplate>(), Arg.Any<DateTime>(),
-        Arg.Any<List<TaskInstance>>())
+    _taskInstanceFactory.CreateFromTemplate(Arg.Any<TaskTemplate>(), Arg.Any<Pet>(), Arg.Any<DateTime>(),
+        Arg.Any<IEnumerable<TaskInstance>>())
       .Returns(x =>
       {
         var template = x.ArgAt<TaskTemplate>(0);
-        var dueAt = x.ArgAt<DateTime>(1);
-        var instance = new TaskInstance(template.FamilyId, template.PetId, template.Title, template.Points,
+        var pet = x.ArgAt<Pet>(1);
+        var dueAt = x.ArgAt<DateTime>(2);
+        var instance = new TaskInstance(pet, template.Title, template.Points,
           TaskType.Recurring, dueAt, template.Id);
         return Result<TaskInstance>.Success(instance);
       });

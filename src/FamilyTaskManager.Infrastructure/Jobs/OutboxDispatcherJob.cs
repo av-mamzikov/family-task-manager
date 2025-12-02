@@ -1,18 +1,20 @@
+using System.Text.Json;
 using FamilyTaskManager.Infrastructure.Data;
 using FamilyTaskManager.Infrastructure.Notifications;
+using Mediator;
 using Quartz;
 
 namespace FamilyTaskManager.Infrastructure.Jobs;
 
 /// <summary>
-///   Job that processes batched domain event notifications from outbox.
-///   Only processes Batched delivery mode events (TaskCreated, TaskReminder).
+///   Job that processes domain event notifications from outbox.
+///   Deserializes task snapshots, reconstructs domain events, and publishes via Mediator.
 ///   Runs every 1 minute.
 /// </summary>
 [DisallowConcurrentExecution]
 public class OutboxDispatcherJob(
   AppDbContext dbContext,
-  IEnumerable<IOutboxEventHandler> eventHandlers,
+  IMediator mediator,
   ILogger<OutboxDispatcherJob> logger) : IJob
 {
   private const int MaxRetryAttempts = 30;
@@ -23,10 +25,9 @@ public class OutboxDispatcherJob(
 
     try
     {
-      // Get all pending batched notifications
+      // Get all pending notifications
       var pendingNotifications = await dbContext.DomainEventOutbox
         .Where(n => n.Status == NotificationStatus.Pending
-                    && n.DeliveryMode == DeliveryMode.Batched
                     && n.Attempts < MaxRetryAttempts)
         .OrderBy(n => n.OccurredAtUtc)
         .ToListAsync(context.CancellationToken);
@@ -40,68 +41,43 @@ public class OutboxDispatcherJob(
       logger.LogInformation("Processing {Count} pending notifications",
         pendingNotifications.Count);
 
-      // Group by EventType
-      var notificationsByEventType = pendingNotifications
-        .GroupBy(n => n.EventType)
-        .ToList();
-
       var successCount = 0;
       var failureCount = 0;
 
-      foreach (var eventTypeGroup in notificationsByEventType)
+      // Process each notification individually
+      foreach (var entry in pendingNotifications)
       {
-        var eventType = eventTypeGroup.Key;
-        var entries = eventTypeGroup.ToList();
-
-        // Find handler for this event type
-        var handler = eventHandlers.FirstOrDefault(h =>
-          h.EventType == eventType && h.DeliveryMode == DeliveryMode.Batched);
-
-        if (handler == null)
-        {
-          logger.LogWarning(
-            "No handler found for batched event type {EventType}",
-            eventType);
-          continue;
-        }
-
         try
         {
-          // Process batched events
-          await handler.HandleBatchAsync(entries, context.CancellationToken);
+          // Reconstruct domain event from snapshot and publish via Mediator
+          await ProcessOutboxEntry(entry, context.CancellationToken);
 
           // Mark as sent
-          foreach (var entry in entries)
-          {
-            entry.Status = NotificationStatus.Sent;
-            entry.ProcessedAtUtc = DateTime.UtcNow;
-            entry.Attempts++;
-          }
+          entry.Status = NotificationStatus.Sent;
+          entry.ProcessedAtUtc = DateTime.UtcNow;
+          entry.Attempts++;
 
-          successCount += entries.Count;
+          successCount++;
 
-          logger.LogInformation(
-            "Successfully processed {Count} {EventType} notifications",
-            entries.Count, eventType);
+          logger.LogDebug(
+            "Successfully processed {EventType} notification for entry {EntryId}",
+            entry.EventType, entry.Id);
         }
         catch (Exception ex)
         {
           logger.LogError(ex,
-            "Failed to process {Count} {EventType} notifications",
-            entries.Count, eventType);
+            "Failed to process {EventType} notification for entry {EntryId}",
+            entry.EventType, entry.Id);
 
           // Mark as failed and increment attempts
-          foreach (var entry in entries)
+          entry.Attempts++;
+          if (entry.Attempts >= MaxRetryAttempts)
           {
-            entry.Attempts++;
-            if (entry.Attempts >= MaxRetryAttempts)
-            {
-              entry.Status = NotificationStatus.Failed;
-              entry.ProcessedAtUtc = DateTime.UtcNow;
-            }
+            entry.Status = NotificationStatus.Failed;
+            entry.ProcessedAtUtc = DateTime.UtcNow;
           }
 
-          failureCount += entries.Count;
+          failureCount++;
         }
       }
 
@@ -115,6 +91,45 @@ public class OutboxDispatcherJob(
     catch (Exception ex)
     {
       logger.LogError(ex, "OutboxDispatcherJob failed");
+      throw;
+    }
+  }
+
+  /// <summary>
+  ///   Processes a single outbox entry by deserializing the domain event and publishing it.
+  ///   Events now contain all data, no need to load entities from DB.
+  /// </summary>
+  private async Task ProcessOutboxEntry(DomainEventOutbox entry, CancellationToken cancellationToken)
+  {
+    try
+    {
+      // Get event type from Core assembly
+      var eventType =
+        Type.GetType($"FamilyTaskManager.Core.TaskAggregate.Events.{entry.EventType}, FamilyTaskManager.Core") ??
+        Type.GetType($"FamilyTaskManager.Core.PetAggregate.Events.{entry.EventType}, FamilyTaskManager.Core") ??
+        Type.GetType($"FamilyTaskManager.Core.FamilyAggregate.Events.{entry.EventType}, FamilyTaskManager.Core") ??
+        Type.GetType($"FamilyTaskManager.Core.Points.{entry.EventType}, FamilyTaskManager.Core");
+
+      if (eventType == null)
+      {
+        logger.LogWarning("Unknown event type {EventType} for entry {EntryId}", entry.EventType, entry.Id);
+        return;
+      }
+
+      // Deserialize event directly
+      var domainEvent = JsonSerializer.Deserialize(entry.Payload, eventType) as IDomainEvent;
+      if (domainEvent == null)
+      {
+        logger.LogWarning("Failed to deserialize event {EventType} for entry {EntryId}", entry.EventType, entry.Id);
+        return;
+      }
+
+      // Publish via Mediator - Telegram notifiers will handle it
+      await mediator.Publish(domainEvent, cancellationToken);
+    }
+    catch (Exception ex)
+    {
+      logger.LogError(ex, "Error processing outbox entry {EntryId}", entry.Id);
       throw;
     }
   }

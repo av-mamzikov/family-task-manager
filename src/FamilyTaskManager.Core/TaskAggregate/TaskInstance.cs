@@ -10,16 +10,15 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   {
   }
 
-  public TaskInstance(Guid familyId, Guid petId, string title, TaskPoints points, TaskType type, DateTime dueAt,
+  public TaskInstance(Pet pet, string title, TaskPoints points, TaskType type, DateTime dueAt,
     Guid? templateId = null)
   {
-    Guard.Against.Default(familyId);
-    Guard.Against.Default(petId);
+    Guard.Against.Null(pet);
     Guard.Against.NullOrWhiteSpace(title);
     Guard.Against.Null(points);
 
-    FamilyId = familyId;
-    PetId = petId;
+    FamilyId = pet.FamilyId;
+    PetId = pet.Id;
     Title = title.Trim();
     Points = points;
     Type = type;
@@ -28,7 +27,17 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     CreatedAt = DateTime.UtcNow;
     DueAt = dueAt;
 
-    RegisterDomainEvent(new TaskCreatedEvent(this));
+    RegisterDomainEvent(new TaskCreatedEvent
+    {
+      TaskId = Id,
+      FamilyId = pet.FamilyId,
+      PetId = pet.Id,
+      Title = title.Trim(),
+      PetName = pet.Name,
+      Points = points.ToString(),
+      DueAt = dueAt,
+      Timezone = pet.Family.Timezone
+    });
   }
 
   public Guid FamilyId { get; private set; }
@@ -66,20 +75,28 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     RegisterDomainEvent(new TaskStartedEvent(this));
   }
 
-  public void Complete(Guid completedByMemberId, DateTime completedAtUtc)
+  public void Complete(FamilyMember completedByMember, DateTime completedAtUtc)
   {
     if (Status == TaskStatus.Completed)
     {
       return;
     }
 
-    Guard.Against.Default(completedByMemberId);
+    Guard.Against.Null(completedByMember);
 
     Status = TaskStatus.Completed;
-    CompletedByMemberId = completedByMemberId;
+    CompletedByMemberId = completedByMember.Id;
     CompletedAt = completedAtUtc;
 
-    RegisterDomainEvent(new TaskCompletedEvent(this));
+    RegisterDomainEvent(new TaskCompletedEvent
+    {
+      TaskId = Id,
+      FamilyId = FamilyId,
+      Title = Title,
+      Points = Points.ToString(),
+      CompletedByUserId = completedByMember.UserId,
+      CompletedByUserName = completedByMember.User.Name
+    });
   }
 
   public void Release()
@@ -101,6 +118,13 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
       return;
     }
 
-    RegisterDomainEvent(new TaskReminderDueEvent(this));
+    RegisterDomainEvent(new TaskReminderDueEvent
+    {
+      TaskId = Id,
+      FamilyId = FamilyId,
+      Title = Title,
+      DueAt = DueAt,
+      Timezone = Family.Timezone
+    });
   }
 }

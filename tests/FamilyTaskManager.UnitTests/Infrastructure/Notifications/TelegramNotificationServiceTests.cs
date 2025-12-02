@@ -35,8 +35,8 @@ public class TelegramNotificationServiceTests
     var user1 = new User(telegramId1, "User1");
     var user2 = new User(telegramId2, "User2");
 
-    var member1 = family.AddMember(user1.Id, FamilyRole.Adult);
-    var member2 = family.AddMember(user2.Id, FamilyRole.Child);
+    var member1 = family.AddMember(user1, FamilyRole.Adult);
+    var member2 = family.AddMember(user2, FamilyRole.Child);
     family.ClearDomainEvents();
 
     var taskReminder = new TaskReminderDto(
@@ -80,8 +80,8 @@ public class TelegramNotificationServiceTests
     var user1 = new User(telegramId1, "User1");
     var user2 = new User(telegramId2, "User2");
 
-    var member1 = family.AddMember(user1.Id, FamilyRole.Adult);
-    var member2 = family.AddMember(user2.Id, FamilyRole.Child);
+    var member1 = family.AddMember(user1, FamilyRole.Adult);
+    var member2 = family.AddMember(user2, FamilyRole.Child);
     family.ClearDomainEvents();
 
     var dueAt = DateTime.UtcNow.AddHours(1);
@@ -144,7 +144,7 @@ public class TelegramNotificationServiceTests
     var family = new Family("Test Family", "Europe/Moscow");
     var user = new User(12345L, "InactiveUser");
 
-    var inactiveMember = family.AddMember(user.Id, FamilyRole.Adult);
+    var inactiveMember = family.AddMember(user, FamilyRole.Adult);
     family.ClearDomainEvents();
 
     var taskReminder = new TaskReminderDto(
@@ -175,8 +175,8 @@ public class TelegramNotificationServiceTests
     var user1 = new User(12345L, "User1");
     var user2 = new User(telegramId2, "User2");
 
-    var member1 = family.AddMember(user1.Id, FamilyRole.Adult);
-    var member2 = family.AddMember(user2.Id, FamilyRole.Child);
+    var member1 = family.AddMember(user1, FamilyRole.Adult);
+    var member2 = family.AddMember(user2, FamilyRole.Child);
     family.ClearDomainEvents();
 
     var taskReminder = new TaskReminderDto(

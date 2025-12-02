@@ -24,8 +24,8 @@ public class CompleteTaskHandler(
       return Result.Error("Task is already completed");
     }
 
-    // Get family with members
-    var familySpec = new GetFamilyWithMembersSpec(task.FamilyId);
+    // Get family with members (including User for event)
+    var familySpec = new GetFamilyWithMembersAndUsersSpec(task.FamilyId);
     var family = await familyRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
     if (family == null)
     {
@@ -44,8 +44,8 @@ public class CompleteTaskHandler(
         task.StartedByMemberId.Value != member.Id)
       return Result.Error("Only the user who started this task can complete it");
 
-    // Complete task (registers TaskCompletedEvent)
-    task.Complete(member.Id, DateTime.UtcNow);
+    // Complete task (registers TaskCompletedEvent with member.User.Name)
+    task.Complete(member, DateTime.UtcNow);
 
     // Add points to member
     member.AddPoints(task.Points);

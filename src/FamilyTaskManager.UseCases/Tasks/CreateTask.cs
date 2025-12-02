@@ -19,14 +19,14 @@ public record CreateTaskCommand(
 public class CreateTaskHandler(
   IRepository<TaskInstance> taskRepository,
   IRepository<Pet> petRepository,
-  IRepository<Family> familyRepository,
   ITimeZoneService timeZoneService,
   IPetMoodCalculator moodCalculator) : ICommandHandler<CreateTaskCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreateTaskCommand command, CancellationToken cancellationToken)
   {
-    // Verify pet exists and belongs to family
-    var pet = await petRepository.GetByIdAsync(command.PetId, cancellationToken);
+    // Load pet with family (needed for TaskCreatedEvent)
+    var petSpec = new GetPetByIdWithFamilySpec(command.PetId);
+    var pet = await petRepository.FirstOrDefaultAsync(petSpec, cancellationToken);
     if (pet == null)
     {
       return Result<Guid>.NotFound("Питомец не найден");
@@ -35,13 +35,6 @@ public class CreateTaskHandler(
     if (pet.FamilyId != command.FamilyId)
     {
       return Result<Guid>.Error("Питомец не принадлежит этой семье");
-    }
-
-    // Get family for timezone conversion
-    var family = await familyRepository.GetByIdAsync(command.FamilyId, cancellationToken);
-    if (family == null)
-    {
-      return Result<Guid>.NotFound("Семья не найдена");
     }
 
     // Validate title length
@@ -54,17 +47,16 @@ public class CreateTaskHandler(
     DateTime dueAtUtc;
     try
     {
-      dueAtUtc = timeZoneService.ConvertToUtc(command.DueAt, family.Timezone);
+      dueAtUtc = timeZoneService.ConvertToUtc(command.DueAt, pet.Family.Timezone);
     }
     catch (ArgumentException ex)
     {
       return Result<Guid>.Invalid(new ValidationError($"Ошибка преобразования часового пояса: {ex.Message}"));
     }
 
-    // Create one-time task
+    // Create one-time task (pet has Family loaded for event)
     var task = new TaskInstance(
-      command.FamilyId,
-      command.PetId,
+      pet,
       command.Title,
       command.Points,
       TaskType.OneTime,

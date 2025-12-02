@@ -1,5 +1,6 @@
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.FamilyAggregate.Events;
+using FamilyTaskManager.UnitTests.Helpers;
 
 namespace FamilyTaskManager.UnitTests.Core.FamilyAggregate;
 
@@ -97,15 +98,15 @@ public class FamilyTests
   {
     // Arrange
     var family = new Family("Smith Family", "UTC");
-    var userId = Guid.NewGuid();
+    var user = TestHelpers.CreateUser();
     var role = FamilyRole.Admin;
 
     // Act
-    var member = family.AddMember(userId, role);
+    var member = family.AddMember(user, role);
 
     // Assert
     member.ShouldNotBeNull();
-    member.UserId.ShouldBe(userId);
+    member.UserId.ShouldBe(user.Id);
     member.FamilyId.ShouldBe(family.Id);
     member.Role.ShouldBe(role);
     family.Members.ShouldContain(member);
@@ -117,12 +118,11 @@ public class FamilyTests
   {
     // Arrange
     var family = new Family("Smith Family", "UTC");
-    var userId = Guid.NewGuid();
-    var familyId = Guid.NewGuid();
+    var user = TestHelpers.CreateUser();
     var role = FamilyRole.Admin;
 
     // Act
-    family.AddMember(userId, role);
+    family.AddMember(user, role);
 
     // Assert
     family.DomainEvents.ShouldContain(e => e is MemberAddedEvent);
@@ -133,13 +133,12 @@ public class FamilyTests
   {
     // Arrange
     var family = new Family("Smith Family", "UTC");
-    var userId1 = Guid.NewGuid();
-    var userId2 = Guid.NewGuid();
-    var familyId = Guid.NewGuid();
+    var user1 = TestHelpers.CreateUser("User1");
+    var user2 = TestHelpers.CreateUser("User2");
 
     // Act
-    var member1 = family.AddMember(userId1, FamilyRole.Admin);
-    var member2 = family.AddMember(userId2, FamilyRole.Child);
+    var member1 = family.AddMember(user1, FamilyRole.Admin);
+    var member2 = family.AddMember(user2, FamilyRole.Child);
 
     // Assert
     family.Members.Count.ShouldBe(2);

@@ -1,10 +1,10 @@
 using FamilyTaskManager.Core.TaskAggregate;
-using FamilyTaskManager.Infrastructure.Notifications.Handlers;
 
 namespace FamilyTaskManager.Infrastructure.Notifications;
 
 /// <summary>
-///   Service for sending Telegram notifications to family members
+///   Service for sending Telegram notifications to family members.
+///   Used by domain event handlers that send notifications immediately (not via Outbox).
 /// </summary>
 public interface ITelegramNotificationService
 {
@@ -28,10 +28,4 @@ public interface ITelegramNotificationService
   Task SendPetDeletedAsync(Guid familyId, string petName, CancellationToken cancellationToken = default);
 
   Task SendMemberJoinedAsync(Guid familyId, string userName, CancellationToken cancellationToken = default);
-
-  Task SendTaskCreatedBatchAsync(Guid familyId, List<TaskCreatedNotificationDto> tasks,
-    CancellationToken cancellationToken = default);
-
-  Task SendTaskReminderBatchAsync(Guid familyId, List<TaskReminderBatchDto> reminders,
-    CancellationToken cancellationToken = default);
 }

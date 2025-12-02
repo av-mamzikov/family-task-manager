@@ -51,8 +51,8 @@ public class JoinByInviteCodeHandler(
       return Result<Guid>.Error("User is already a member of this family");
     }
 
-    // Add member with the role specified in the invitation
-    var member = family.AddMember(command.UserId, invitation.Role);
+    // Add member with the role specified in the invitation (user entity needed for event)
+    var member = family.AddMember(user, invitation.Role);
 
     // Deactivate the invitation (one-time use)
     invitation.Deactivate();

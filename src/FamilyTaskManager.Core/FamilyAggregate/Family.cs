@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.FamilyAggregate.Events;
+using FamilyTaskManager.Core.UserAggregate;
 
 namespace FamilyTaskManager.Core.FamilyAggregate;
 
@@ -6,7 +7,9 @@ public class Family : EntityBase<Family, Guid>, IAggregateRoot
 {
   private readonly List<FamilyMember> _members = [];
 
-  private Family() { }
+  private Family()
+  {
+  }
 
   public Family(string name, string timezone, bool leaderboardEnabled = true)
   {
@@ -28,12 +31,20 @@ public class Family : EntityBase<Family, Guid>, IAggregateRoot
   public bool LeaderboardEnabled { get; private set; }
   public IReadOnlyCollection<FamilyMember> Members => _members.AsReadOnly();
 
-  public FamilyMember AddMember(Guid userId, FamilyRole role)
+  public FamilyMember AddMember(User user, FamilyRole role)
   {
-    var member = new FamilyMember(userId, Id, role);
+    Guard.Against.Null(user);
+
+    var member = new FamilyMember(user.Id, Id, role);
     _members.Add(member);
 
-    RegisterDomainEvent(new MemberAddedEvent(this, member));
+    RegisterDomainEvent(new MemberAddedEvent
+    {
+      FamilyId = Id,
+      MemberId = member.Id,
+      UserId = user.Id,
+      UserName = user.Name
+    });
 
     return member;
   }

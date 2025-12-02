@@ -3,6 +3,7 @@ using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.TaskAggregate;
+using FamilyTaskManager.UnitTests.Helpers;
 using FamilyTaskManager.UseCases.Families.Specifications;
 using FamilyTaskManager.UseCases.Tasks;
 using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
@@ -35,16 +36,21 @@ public class CompleteTaskHandlerTests
     var taskId = Guid.NewGuid();
     var petId = Guid.NewGuid();
 
-    var task = new TaskInstance(familyId, petId, "Feed the cat", new TaskPoints(2), TaskType.OneTime,
+    var pet = TestHelpers.CreatePetWithFamily();
+    var task = new TaskInstance(pet, "Feed the cat", new TaskPoints(2), TaskType.OneTime,
       DateTime.UtcNow.AddDays(1));
     var family = new Family("Smith Family", "UTC");
-    family.AddMember(userId, FamilyRole.Child);
+    var user = TestHelpers.CreateUser();
+    var member = family.AddMember(user, FamilyRole.Child);
+    // Set User navigation property for test
+    typeof(FamilyMember).GetProperty("User")!.SetValue(member, user);
+    userId = user.Id;
 
     var command = new CompleteTaskCommand(taskId, userId);
 
     _taskRepository.GetByIdAsync(taskId, Arg.Any<CancellationToken>())
       .Returns(task);
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersAndUsersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act
@@ -56,8 +62,8 @@ public class CompleteTaskHandlerTests
     task.CompletedByMember?.UserId.ShouldBe(userId);
     task.CompletedAt.ShouldNotBeNull();
 
-    var member = family.Members.First();
-    member.Points.ShouldBe(2);
+    var familyMember = family.Members.First();
+    familyMember.Points.ShouldBe(2);
 
     await _taskRepository.Received(1).UpdateAsync(task, Arg.Any<CancellationToken>());
     await _familyRepository.Received(1).UpdateAsync(family, Arg.Any<CancellationToken>());
@@ -89,9 +95,11 @@ public class CompleteTaskHandlerTests
     var taskId = Guid.NewGuid();
     var petId = Guid.NewGuid();
 
-    var task = new TaskInstance(familyId, petId, "Feed the cat", new TaskPoints(2), TaskType.OneTime,
+    var pet = TestHelpers.CreatePetWithFamily();
+    var task = new TaskInstance(pet, "Feed the cat", new TaskPoints(2), TaskType.OneTime,
       DateTime.UtcNow.AddDays(1));
-    task.Complete(userId, DateTime.UtcNow);
+    var member = TestHelpers.CreateMemberWithUser();
+    task.Complete(member, DateTime.UtcNow);
 
     var command = new CompleteTaskCommand(taskId, userId);
 
@@ -116,16 +124,19 @@ public class CompleteTaskHandlerTests
     var taskId = Guid.NewGuid();
     var petId = Guid.NewGuid();
 
-    var task = new TaskInstance(familyId, petId, "Feed the cat", new TaskPoints(2), TaskType.OneTime,
+    var pet = TestHelpers.CreatePetWithFamily();
+    var task = new TaskInstance(pet, "Feed the cat", new TaskPoints(2), TaskType.OneTime,
       DateTime.UtcNow.AddDays(1));
     var family = new Family("Smith Family", "UTC");
-    family.AddMember(differentUserId, FamilyRole.Child); // Different user
+    var differentUser = TestHelpers.CreateUser();
+    family.AddMember(differentUser, FamilyRole.Child); // Different user
+    differentUserId = differentUser.Id;
 
     var command = new CompleteTaskCommand(taskId, userId);
 
     _taskRepository.GetByIdAsync(taskId, Arg.Any<CancellationToken>())
       .Returns(task);
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersAndUsersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act

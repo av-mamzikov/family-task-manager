@@ -47,7 +47,7 @@ public class CreateFamilyHandlerTests
     capturedFamily.Timezone.ShouldBe("Europe/Moscow");
     capturedFamily.LeaderboardEnabled.ShouldBeTrue();
     capturedFamily.Members.Count.ShouldBe(1);
-    capturedFamily.Members.First().UserId.ShouldBe(userId);
+    capturedFamily.Members.First().UserId.ShouldBe(user.Id);
     capturedFamily.Members.First().Role.ShouldBe(FamilyRole.Admin);
   }
 

@@ -1,6 +1,13 @@
 namespace FamilyTaskManager.Core.TaskAggregate.Events;
 
-public sealed class TaskCreatedEvent(TaskInstance task) : DomainEventBase
+public sealed class TaskCreatedEvent : DomainEventBase
 {
-  public TaskInstance Task { get; init; } = task;
+  public Guid TaskId { get; init; }
+  public Guid FamilyId { get; init; }
+  public Guid PetId { get; init; }
+  public string Title { get; init; } = string.Empty;
+  public string PetName { get; init; } = string.Empty;
+  public string Points { get; init; } = string.Empty;
+  public DateTime DueAt { get; init; }
+  public string Timezone { get; init; } = string.Empty;
 }

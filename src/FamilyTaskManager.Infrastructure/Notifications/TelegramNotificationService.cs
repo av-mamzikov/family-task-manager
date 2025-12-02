@@ -1,7 +1,6 @@
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Core.UserAggregate;
-using FamilyTaskManager.Infrastructure.Notifications.Handlers;
 using FamilyTaskManager.UseCases.Families.Specifications;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
@@ -289,80 +288,6 @@ public class TelegramNotificationService(
     {
       logger.LogError(ex,
         "Failed to send member joined notification to family {FamilyId}",
-        familyId);
-      throw;
-    }
-  }
-
-  public async Task SendTaskCreatedBatchAsync(Guid familyId, List<TaskCreatedNotificationDto> tasks,
-    CancellationToken cancellationToken = default)
-  {
-    try
-    {
-      if (tasks.Count == 0)
-      {
-        logger.LogWarning("No tasks to send in batch for family {FamilyId}", familyId);
-        return;
-      }
-
-      var message = "📝 <b>Новые задачи</b>\n\n";
-
-      for (var i = 0; i < tasks.Count; i++)
-      {
-        var task = tasks[i];
-        message += $"{i + 1}. {EscapeHtml(task.PetName)}: {EscapeHtml(task.TaskTitle)} {task.Points}\n" +
-                   $"   ⏳ До: {task.DueAtFamilyTz:dd.MM.yyyy HH:mm}\n";
-      }
-
-      message += "\nВремя приступать к работе! 🎯";
-
-      await SendToFamilyMembersAsync(familyId, message, [], cancellationToken);
-
-      logger.LogInformation(
-        "Batched task creation notification sent to family {FamilyId}: {TaskCount} tasks",
-        familyId, tasks.Count);
-    }
-    catch (Exception ex)
-    {
-      logger.LogError(ex,
-        "Failed to send batched task creation notification to family {FamilyId}",
-        familyId);
-      throw;
-    }
-  }
-
-  public async Task SendTaskReminderBatchAsync(Guid familyId, List<TaskReminderBatchDto> reminders,
-    CancellationToken cancellationToken = default)
-  {
-    try
-    {
-      if (reminders.Count == 0)
-      {
-        logger.LogWarning("No reminders to send in batch for family {FamilyId}", familyId);
-        return;
-      }
-
-      var message = "⏰ <b>Напоминания о задачах</b>\n\n";
-
-      for (var i = 0; i < reminders.Count; i++)
-      {
-        var reminder = reminders[i];
-        message += $"{i + 1}. {EscapeHtml(reminder.Title)}\n" +
-                   $"   ⏳ Срок: {reminder.DueAt:dd.MM.yyyy HH:mm}\n";
-      }
-
-      message += "\nНе забудьте выполнить задачи вовремя! 🎯";
-
-      await SendToFamilyMembersAsync(familyId, message, [], cancellationToken);
-
-      logger.LogInformation(
-        "Batched task reminder notification sent to family {FamilyId}: {ReminderCount} reminders",
-        familyId, reminders.Count);
-    }
-    catch (Exception ex)
-    {
-      logger.LogError(ex,
-        "Failed to send batched task reminder notification to family {FamilyId}",
         familyId);
       throw;
     }

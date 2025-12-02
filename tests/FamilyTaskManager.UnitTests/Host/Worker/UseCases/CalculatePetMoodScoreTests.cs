@@ -1,7 +1,6 @@
 using Ardalis.Result;
 using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.Services;
-using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.UseCases.Pets;
 
 namespace FamilyTaskManager.UnitTests.Host.Worker.UseCases;
@@ -156,16 +155,4 @@ public class CalculatePetMoodScoreTests
     await _petRepository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     pet.MoodScore.ShouldBe(100);
   }
-
-  // Helper methods
-  private TaskInstance CreateCompletedTask(Guid familyId, Guid petId, TaskPoints points, DateTime dueAt,
-    DateTime completedAt)
-  {
-    var task = new TaskInstance(familyId, petId, "Test Task", points, TaskType.OneTime, dueAt);
-    task.Complete(Guid.NewGuid(), completedAt);
-    return task;
-  }
-
-  private TaskInstance CreateOverdueTask(Guid familyId, Guid petId, TaskPoints points, DateTime dueAt) =>
-    new(familyId, petId, "Overdue Task", points, TaskType.OneTime, dueAt);
 }

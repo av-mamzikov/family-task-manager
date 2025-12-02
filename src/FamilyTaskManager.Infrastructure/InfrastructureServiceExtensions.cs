@@ -1,13 +1,13 @@
+using FamilyTaskManager.Core.FamilyAggregate.Events;
 using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.Core.PetAggregate.Events;
 using FamilyTaskManager.Core.TaskAggregate.Events;
 using FamilyTaskManager.Infrastructure.Behaviors;
 using FamilyTaskManager.Infrastructure.Data;
 using FamilyTaskManager.Infrastructure.Database;
-using FamilyTaskManager.Infrastructure.DomainEvents;
 using FamilyTaskManager.Infrastructure.Interfaces;
 using FamilyTaskManager.Infrastructure.Jobs;
 using FamilyTaskManager.Infrastructure.Notifications;
-using FamilyTaskManager.Infrastructure.Notifications.Handlers;
 using FamilyTaskManager.Infrastructure.Services;
 using Mediator;
 using Quartz;
@@ -27,11 +27,13 @@ public static class InfrastructureServiceExtensions
     var connectionString = config.GetDatabaseConnectionString();
 
     services.AddScoped<EventDispatchInterceptor>();
+    services.AddScoped<OutboxInterceptor>();
     services.AddScoped<IDomainEventDispatcher, MediatorDomainEventDispatcher>();
 
     services.AddDbContext<AppDbContext>((provider, options) =>
     {
       var eventDispatchInterceptor = provider.GetRequiredService<EventDispatchInterceptor>();
+      var outboxInterceptor = provider.GetRequiredService<OutboxInterceptor>();
 
       // Use PostgreSQL if DefaultConnection is available, otherwise use SQLite
       if (config.GetConnectionString("DefaultConnection") != null)
@@ -43,7 +45,7 @@ public static class InfrastructureServiceExtensions
         options.UseSqlite(connectionString);
       }
 
-      options.AddInterceptors(eventDispatchInterceptor);
+      options.AddInterceptors(eventDispatchInterceptor, outboxInterceptor);
     });
 
     services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>))
@@ -63,18 +65,16 @@ public static class InfrastructureServiceExtensions
     services.AddScoped<ITelegramNotificationService, TelegramNotificationService>();
     logger.LogInformation("Telegram notification service registered");
 
-    // Register TaskCreated notification outbox handler for batched delivery
-    services.AddScoped<INotificationHandler<TaskCreatedEvent>,
-      TaskCreatedNotificationOutboxHandler>();
-
-    // Register TaskReminder notification outbox handler for batched delivery
-    services.AddScoped<INotificationHandler<TaskReminderDueEvent>,
-      TaskReminderNotificationOutboxHandler>();
-
-    // Register outbox event handlers for processing batched notifications
-    services.AddScoped<IOutboxEventHandler, TaskCreatedOutboxHandler>();
-    services.AddScoped<IOutboxEventHandler, TaskReminderOutboxHandler>();
-    logger.LogInformation("Outbox handlers registered (TaskCreated, TaskReminder)");
+    // Register Telegram notifiers for all domain events
+    // These send notifications directly via Telegram when domain events are published from outbox
+    services.AddScoped<INotificationHandler<TaskCreatedEvent>, TaskCreatedTelegramNotifier>();
+    services.AddScoped<INotificationHandler<TaskReminderDueEvent>, TaskReminderTelegramNotifier>();
+    services.AddScoped<INotificationHandler<TaskCompletedEvent>, TaskCompletedTelegramNotifier>();
+    services.AddScoped<INotificationHandler<PetCreatedEvent>, PetCreatedTelegramNotifier>();
+    services.AddScoped<INotificationHandler<PetDeletedEvent>, PetDeletedTelegramNotifier>();
+    services.AddScoped<INotificationHandler<PetMoodChangedEvent>, PetMoodChangedTelegramNotifier>();
+    services.AddScoped<INotificationHandler<MemberAddedEvent>, MemberAddedTelegramNotifier>();
+    logger.LogInformation("Telegram notifiers registered for all domain events");
 
     // Register TimeZone Service
     services.AddScoped<ITimeZoneService, TimeZoneService>();
@@ -97,8 +97,6 @@ public static class InfrastructureServiceExtensions
   {
     logger?.LogInformation("Registering Infrastructure jobs...");
 
-    // OutboxDispatcherJob - runs every 1 minute
-    // Processes batched notifications (TaskCreated, TaskReminder)
     var outboxJobKey = new JobKey("OutboxDispatcherJob");
     quartz.AddJob<OutboxDispatcherJob>(opts => opts.WithIdentity(outboxJobKey));
     quartz.AddTrigger(opts => opts

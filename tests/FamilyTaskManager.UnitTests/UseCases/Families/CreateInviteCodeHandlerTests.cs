@@ -1,5 +1,6 @@
 using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.UnitTests.Helpers;
 using FamilyTaskManager.UseCases.Families;
 using FamilyTaskManager.UseCases.Families.Specifications;
 
@@ -25,7 +26,9 @@ public class CreateInviteCodeHandlerTests
     var familyId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     var family = new Family("Test Family", "UTC");
-    family.AddMember(userId, FamilyRole.Admin);
+    var user = TestHelpers.CreateUser();
+    family.AddMember(user, FamilyRole.Admin);
+    userId = user.Id;
 
     var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId);
 
@@ -77,7 +80,8 @@ public class CreateInviteCodeHandlerTests
     var userId = Guid.NewGuid();
     var otherUserId = Guid.NewGuid();
     var family = new Family("Test Family", "UTC");
-    family.AddMember(otherUserId, FamilyRole.Admin);
+    var otherUser = TestHelpers.CreateUser();
+    family.AddMember(otherUser, FamilyRole.Admin);
 
     var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId);
 
@@ -100,7 +104,9 @@ public class CreateInviteCodeHandlerTests
     var familyId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     var family = new Family("Test Family", "UTC");
-    family.AddMember(userId, FamilyRole.Adult); // Not Admin
+    var user = TestHelpers.CreateUser();
+    family.AddMember(user, FamilyRole.Adult); // Not Admin
+    userId = user.Id;
 
     var command = new CreateInviteCodeCommand(familyId, FamilyRole.Child, userId);
 
@@ -123,7 +129,9 @@ public class CreateInviteCodeHandlerTests
     var familyId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     var family = new Family("Test Family", "UTC");
-    family.AddMember(userId, FamilyRole.Admin);
+    var user = TestHelpers.CreateUser();
+    family.AddMember(user, FamilyRole.Admin);
+    userId = user.Id;
 
     var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId, 14);
 
