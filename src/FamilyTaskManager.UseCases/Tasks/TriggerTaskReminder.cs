@@ -5,12 +5,12 @@ namespace FamilyTaskManager.UseCases.Tasks;
 /// </summary>
 public record TriggerTaskReminderCommand(Guid TaskId) : ICommand<Result>;
 
-public class TriggerTaskReminderHandler(IRepository<TaskInstance> taskRepository)
+public class TriggerTaskReminderHandler(IAppRepository<TaskInstance> taskAppRepository)
   : ICommandHandler<TriggerTaskReminderCommand, Result>
 {
   public async ValueTask<Result> Handle(TriggerTaskReminderCommand command, CancellationToken cancellationToken)
   {
-    var task = await taskRepository.GetByIdAsync(command.TaskId, cancellationToken);
+    var task = await taskAppRepository.GetByIdAsync(command.TaskId, cancellationToken);
 
     if (task == null)
     {
@@ -21,7 +21,7 @@ public class TriggerTaskReminderHandler(IRepository<TaskInstance> taskRepository
     task.TriggerReminder();
 
     // Save changes (will dispatch domain events)
-    await taskRepository.UpdateAsync(task, cancellationToken);
+    await taskAppRepository.UpdateAsync(task, cancellationToken);
 
     return Result.Success();
   }

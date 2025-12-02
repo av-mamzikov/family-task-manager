@@ -1,7 +1,10 @@
-global using Ardalis.GuardClauses;
-global using Ardalis.Result;
-global using Ardalis.SharedKernel;
-global using Ardalis.SmartEnum;
-global using Ardalis.Specification;
 global using Mediator;
 global using Microsoft.Extensions.Logging;
+global using DomainEventBase = Ardalis.SharedKernel.DomainEventBase;
+global using IAggregateRoot = Ardalis.SharedKernel.IAggregateRoot;
+global using Ardalis.Specification;
+global using Ardalis.SmartEnum;
+global using Ardalis.Result;
+global using Ardalis.GuardClauses;
+global using Ardalis.SharedKernel;
+global using FamilyTaskManager.Core.Interfaces;

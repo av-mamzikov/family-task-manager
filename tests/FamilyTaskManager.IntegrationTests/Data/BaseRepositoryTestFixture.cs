@@ -25,9 +25,10 @@ public abstract class BaseRepositoryTestFixture : IAsyncLifetime
     // Создаём DbContext
     var options = new DbContextOptionsBuilder<AppDbContext>()
       .UseNpgsql(_pooledContainer.GetConnectionString())
+      .EnableSensitiveDataLogging()
       .Options;
 
-    DbContext = new AppDbContext(options);
+    DbContext = new(options);
   }
 
   /// <summary>
@@ -46,12 +47,13 @@ public abstract class BaseRepositoryTestFixture : IAsyncLifetime
   /// <summary>
   ///   Создает репозиторий для указанного типа агрегата
   /// </summary>
-  protected IRepository<T> GetRepository<T>() where T : class, IAggregateRoot => new EfRepository<T>(DbContext);
+  protected IRepository<T> GetRepository<T>() where T : class, IAggregateRoot => new EfAppRepository<T>(DbContext);
 
   /// <summary>
   ///   Создает read-only репозиторий для указанного типа агрегата
   /// </summary>
-  protected IReadRepository<T> GetReadRepository<T>() where T : class, IAggregateRoot => new EfRepository<T>(DbContext);
+  protected IReadRepository<T> GetReadRepository<T>() where T : class, IAggregateRoot =>
+    new EfAppRepository<T>(DbContext);
 
   /// <summary>
   ///   Очищает все данные из БД между тестами (опционально)

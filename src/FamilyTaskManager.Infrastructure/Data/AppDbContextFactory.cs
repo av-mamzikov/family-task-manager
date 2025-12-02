@@ -13,8 +13,10 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 
     // Use PostgreSQL for migrations
     // Connection string will be provided at runtime, this is just for design-time
-    optionsBuilder.UseNpgsql("Host=localhost;Database=FamilyTaskManager;Username=postgres;Password=postgres");
+    optionsBuilder
+      .UseNpgsql("Host=localhost;Database=FamilyTaskManager;Username=postgres;Password=postgres")
+      .EnableSensitiveDataLogging();
 
-    return new AppDbContext(optionsBuilder.Options);
+    return new(optionsBuilder.Options);
   }
 }

@@ -11,8 +11,8 @@ public static class UpdateFactory
   /// <summary>
   ///   Create a text message update
   /// </summary>
-  public static Update CreateTextUpdate(long chatId, long userId, string text, string? username = null,
-    string? firstName = null) =>
+  public static Update CreateTextUpdate(long chatId, long userId, string text, string? userName = null,
+    string? firstName = null, string? lastName = null) =>
     new()
     {
       Id = Random.Shared.Next(1, int.MaxValue),
@@ -20,11 +20,21 @@ public static class UpdateFactory
       {
         MessageId = Random.Shared.Next(1, int.MaxValue),
         Chat = new Chat { Id = chatId, Type = ChatType.Private },
-        From = new User { Id = userId, Username = username ?? "", FirstName = firstName ?? "", IsBot = false },
+        From = CreateUser(userId, userName, firstName, lastName),
         Text = text,
         Date = DateTime.UtcNow
       }
     };
+
+  private static User CreateUser(long userId, string? userName = null, string? firstName = null,
+    string? lastName = null) => new()
+  {
+    Id = userId,
+    Username = userName ?? $"user{userId}",
+    FirstName = firstName ?? $"firstName{userId}",
+    LastName = lastName ?? $"lastName{userId}",
+    IsBot = false
+  };
 
   /// <summary>
   ///   Create a callback query update (inline button press)
@@ -34,14 +44,16 @@ public static class UpdateFactory
     long userId,
     string callbackData,
     int messageId = 1,
-    string? username = null) =>
+    string? username = null,
+    string? firstName = null,
+    string? lastName = null) =>
     new()
     {
       Id = Random.Shared.Next(1, int.MaxValue),
       CallbackQuery = new CallbackQuery
       {
         Id = Guid.NewGuid().ToString(),
-        From = new User { Id = userId, Username = username, IsBot = false },
+        From = CreateUser(userId, username, firstName, lastName),
         Message = new Message
         {
           MessageId = messageId,
@@ -61,7 +73,9 @@ public static class UpdateFactory
     long userId,
     double latitude,
     double longitude,
-    string? username = null) =>
+    string? username = null,
+    string? firstName = null,
+    string? lastName = null) =>
     new()
     {
       Id = Random.Shared.Next(1, int.MaxValue),
@@ -69,7 +83,7 @@ public static class UpdateFactory
       {
         MessageId = Random.Shared.Next(1, int.MaxValue),
         Chat = new Chat { Id = chatId, Type = ChatType.Private },
-        From = new User { Id = userId, Username = username, IsBot = false },
+        From = CreateUser(userId, username, firstName, lastName),
         Location = new Location { Latitude = latitude, Longitude = longitude },
         Date = DateTime.UtcNow
       }
@@ -83,7 +97,8 @@ public static class UpdateFactory
     long userId,
     string phoneNumber,
     string firstName,
-    string? username = null) =>
+    string? username = null,
+    string? lastName = null) =>
     new()
     {
       Id = Random.Shared.Next(1, int.MaxValue),
@@ -91,7 +106,7 @@ public static class UpdateFactory
       {
         MessageId = Random.Shared.Next(1, int.MaxValue),
         Chat = new Chat { Id = chatId, Type = ChatType.Private },
-        From = new User { Id = userId, Username = username, IsBot = false },
+        From = CreateUser(userId, username, firstName, lastName),
         Contact = new Contact
         {
           PhoneNumber = phoneNumber,

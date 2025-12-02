@@ -9,14 +9,14 @@ namespace FamilyTaskManager.UnitTests.Services;
 public class PetMoodCalculatorTests
 {
   private readonly PetMoodCalculator _calculator;
-  private readonly IRepository<Pet> _petRepository;
-  private readonly IRepository<TaskInstance> _taskRepository;
+  private readonly IAppRepository<Pet> _petAppRepository;
+  private readonly IAppRepository<TaskInstance> _taskAppRepository;
 
   public PetMoodCalculatorTests()
   {
-    _petRepository = Substitute.For<IRepository<Pet>>();
-    _taskRepository = Substitute.For<IRepository<TaskInstance>>();
-    _calculator = new PetMoodCalculator(_petRepository, _taskRepository);
+    _petAppRepository = Substitute.For<IAppRepository<Pet>>();
+    _taskAppRepository = Substitute.For<IAppRepository<TaskInstance>>();
+    _calculator = new(_petAppRepository, _taskAppRepository);
   }
 
   [Fact]
@@ -26,8 +26,8 @@ public class PetMoodCalculatorTests
     var petId = Guid.NewGuid();
     var pet = new Pet(Guid.NewGuid(), PetType.Cat, "Мурзик");
 
-    _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>()).Returns(pet);
-    _taskRepository.ListAsync(Arg.Any<TasksByPetSpec>(), Arg.Any<CancellationToken>()).Returns([]);
+    _petAppRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>()).Returns(pet);
+    _taskAppRepository.ListAsync(Arg.Any<TasksByPetSpec>(), Arg.Any<CancellationToken>()).Returns([]);
 
     // Act
     var result = await _calculator.CalculateMoodScoreAsync(petId, CancellationToken.None);
@@ -53,8 +53,8 @@ public class PetMoodCalculatorTests
       CreateCompletedTask(familyId, petId, new TaskPoints(2), dueAt, completedAt)
     };
 
-    _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>()).Returns(pet);
-    _taskRepository.ListAsync(Arg.Any<TasksByPetSpec>(), Arg.Any<CancellationToken>()).Returns(tasks);
+    _petAppRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>()).Returns(pet);
+    _taskAppRepository.ListAsync(Arg.Any<TasksByPetSpec>(), Arg.Any<CancellationToken>()).Returns(tasks);
 
     // Act
     var result = await _calculator.CalculateMoodScoreAsync(petId, CancellationToken.None);
@@ -82,8 +82,8 @@ public class PetMoodCalculatorTests
       CreateCompletedTask(familyId, petId, new TaskPoints(2), dueAt, completedAt)
     };
 
-    _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>()).Returns(pet);
-    _taskRepository.ListAsync(Arg.Any<TasksByPetSpec>(), Arg.Any<CancellationToken>()).Returns(tasks);
+    _petAppRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>()).Returns(pet);
+    _taskAppRepository.ListAsync(Arg.Any<TasksByPetSpec>(), Arg.Any<CancellationToken>()).Returns(tasks);
 
     // Act
     var result = await _calculator.CalculateMoodScoreAsync(petId, CancellationToken.None);
@@ -111,8 +111,8 @@ public class PetMoodCalculatorTests
       CreateOverdueTask(familyId, petId, new TaskPoints(2), dueAt)
     };
 
-    _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>()).Returns(pet);
-    _taskRepository.ListAsync(Arg.Any<TasksByPetSpec>(), Arg.Any<CancellationToken>()).Returns(tasks);
+    _petAppRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>()).Returns(pet);
+    _taskAppRepository.ListAsync(Arg.Any<TasksByPetSpec>(), Arg.Any<CancellationToken>()).Returns(tasks);
 
     // Act
     var result = await _calculator.CalculateMoodScoreAsync(petId, CancellationToken.None);
@@ -152,8 +152,8 @@ public class PetMoodCalculatorTests
       CreateOverdueTask(familyId, petId, new TaskPoints(2), task3DueAt)
     };
 
-    _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>()).Returns(pet);
-    _taskRepository.ListAsync(Arg.Any<TasksByPetSpec>(), Arg.Any<CancellationToken>()).Returns(tasks);
+    _petAppRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>()).Returns(pet);
+    _taskAppRepository.ListAsync(Arg.Any<TasksByPetSpec>(), Arg.Any<CancellationToken>()).Returns(tasks);
 
     // Act
     var result = await _calculator.CalculateMoodScoreAsync(petId, CancellationToken.None);

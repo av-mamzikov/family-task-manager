@@ -36,20 +36,8 @@ public class FamilyCreationHandler(
       return;
     }
 
-    // Get userId from session data
-    if (!TryGetSessionData<Guid>(session, "userId", out var userId))
-    {
-      await SendErrorAndClearStateAsync(
-        botClient,
-        message.Chat.Id,
-        session,
-        BotConstants.Errors.SessionError,
-        cancellationToken);
-      return;
-    }
-
     // Store family name and ask for timezone
-    session.Data["familyName"] = familyName;
+    session.Data.FamilyName = familyName;
     session.State = ConversationState.AwaitingFamilyTimezone;
 
     var timezoneKeyboard = GetTimezoneChoiceKeyboard();
@@ -106,8 +94,7 @@ public class FamilyCreationHandler(
         location.Latitude, location.Longitude, detectedTimezone);
 
       // Get required data from session
-      if (!TryGetSessionData<Guid>(session, "userId", out var userId) ||
-          !TryGetSessionData<string>(session, "familyName", out var familyName))
+      if (session.Data.FamilyName == null)
       {
         await SendErrorAndClearStateAsync(
           botClient,
@@ -133,7 +120,7 @@ public class FamilyCreationHandler(
       }
 
       // Create family with detected timezone
-      var createFamilyCommand = new CreateFamilyCommand(userId, familyName, detectedTimezone);
+      var createFamilyCommand = new CreateFamilyCommand(session.UserId, session.Data.FamilyName, detectedTimezone);
       var result = await Mediator.Send(createFamilyCommand, cancellationToken);
 
       if (!result.IsSuccess)
@@ -148,11 +135,10 @@ public class FamilyCreationHandler(
       }
 
       session.CurrentFamilyId = result.Value;
-      session.ClearState();
 
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Messages.FamilyCreatedWithTimezone(familyName, detectedTimezone),
+        BotConstants.Messages.FamilyCreatedWithTimezone(session.Data.FamilyName, detectedTimezone),
         parseMode: ParseMode.Markdown,
         replyMarkup: new ReplyKeyboardRemove(),
         cancellationToken: cancellationToken);
@@ -162,6 +148,8 @@ public class FamilyCreationHandler(
         "🏠 Главное меню",
         replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
         cancellationToken: cancellationToken);
+
+      session.ClearState();
     }
     catch (Exception ex)
     {
@@ -188,9 +176,7 @@ public class FamilyCreationHandler(
 
     var keyboard = GetTimezoneChoiceKeyboard();
 
-    var familyName = session.Data.TryGetValue("familyName", out var nameObj) && nameObj is string name
-      ? name
-      : "ваша семья";
+    var familyName = session.Data.FamilyName ?? "ваша семья";
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,

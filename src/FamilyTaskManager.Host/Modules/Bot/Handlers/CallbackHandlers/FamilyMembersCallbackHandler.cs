@@ -1,6 +1,6 @@
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
-using FamilyTaskManager.Host.Modules.Bot.Services;
+using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Families;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -10,9 +10,8 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
 public class FamilyMembersCallbackHandler(
   ILogger<FamilyMembersCallbackHandler> logger,
   IMediator mediator,
-  IUserRegistrationService userRegistrationService,
   FamilyMembersHandler familyMembersHandler)
-  : BaseCallbackHandler(logger, mediator, userRegistrationService)
+  : BaseCallbackHandler(logger, mediator)
 {
   private readonly FamilyMembersHandler _familyMembersHandler = familyMembersHandler;
 
@@ -21,6 +20,7 @@ public class FamilyMembersCallbackHandler(
     long chatId,
     int messageId,
     string[] parts,
+    UserSession session,
     User fromUser,
     CancellationToken cancellationToken)
   {
@@ -64,10 +64,8 @@ public class FamilyMembersCallbackHandler(
           return;
         }
 
-        var member = memberResult.Value;
-
         await HandleMemberRoleUpdateAsync(
-          botClient, chatId, messageId, member.FamilyId, memberId, newRole, fromUser, cancellationToken);
+          botClient, chatId, messageId, session, memberId, newRole, cancellationToken);
         break;
 
       case "mdel":
@@ -83,10 +81,8 @@ public class FamilyMembersCallbackHandler(
           return;
         }
 
-        var memberForRemoval = memberForRemovalResult.Value;
-
         await HandleMemberRemovalAsync(
-          botClient, chatId, messageId, memberForRemoval.FamilyId, memberId, fromUser, cancellationToken);
+          botClient, chatId, messageId, session, memberId, cancellationToken);
         break;
 
       default:
@@ -105,20 +101,14 @@ public class FamilyMembersCallbackHandler(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
-    Guid familyId,
+    UserSession session,
     Guid memberId,
     FamilyRole newRole,
-    User fromUser,
     CancellationToken cancellationToken)
   {
-    var requesterId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-    if (requesterId == null)
-    {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.UnknownError, cancellationToken);
+    if (session.CurrentFamilyId == null)
       return;
-    }
-
-    var command = new UpdateFamilyMemberRoleCommand(familyId, memberId, requesterId.Value, newRole);
+    var command = new UpdateFamilyMemberRoleCommand(session.CurrentFamilyId.Value, memberId, session.UserId, newRole);
     var result = await Mediator.Send(command, cancellationToken);
 
     if (!result.IsSuccess)
@@ -139,19 +129,16 @@ public class FamilyMembersCallbackHandler(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
-    Guid familyId,
+    UserSession session,
     Guid memberId,
-    User fromUser,
     CancellationToken cancellationToken)
   {
-    var requesterId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-    if (requesterId == null)
+    if (session.CurrentFamilyId == null)
     {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.UnknownError, cancellationToken);
       return;
     }
 
-    var command = new RemoveFamilyMemberCommand(familyId, memberId, requesterId.Value);
+    var command = new RemoveFamilyMemberCommand(session.CurrentFamilyId.Value, memberId, session.UserId);
     var result = await Mediator.Send(command, cancellationToken);
 
     if (!result.IsSuccess)
@@ -165,6 +152,7 @@ public class FamilyMembersCallbackHandler(
       return;
     }
 
-    await _familyMembersHandler.ShowFamilyMembersAsync(botClient, chatId, messageId, familyId, cancellationToken);
+    await _familyMembersHandler.ShowFamilyMembersAsync(botClient, chatId, messageId, session.CurrentFamilyId.Value,
+      cancellationToken);
   }
 }

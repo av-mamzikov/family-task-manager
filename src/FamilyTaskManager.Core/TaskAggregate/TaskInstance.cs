@@ -40,10 +40,10 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     });
   }
 
-  public Guid FamilyId { get; private set; }
+  public Guid FamilyId { get; }
   public Guid PetId { get; private set; }
-  public string Title { get; private set; } = null!;
-  public TaskPoints Points { get; private set; } = null!;
+  public string Title { get; } = null!;
+  public TaskPoints Points { get; } = null!;
   public TaskType Type { get; private set; }
   public Guid? TemplateId { get; private set; }
   public TaskStatus Status { get; private set; }
@@ -51,10 +51,10 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public Guid? CompletedByMemberId { get; private set; }
   public DateTime? CompletedAt { get; private set; }
   public DateTime CreatedAt { get; private set; }
-  public DateTime DueAt { get; private set; }
+  public DateTime DueAt { get; }
 
   // Navigation properties
-  public Family Family { get; private set; } = null!;
+  public Family Family { get; } = null!;
   public Pet Pet { get; private set; } = null!;
   public TaskTemplate? Template { get; private set; }
   public FamilyMember? StartedByMember { get; private set; }
@@ -62,25 +62,19 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
 
   public void Start(Guid familyMemberId)
   {
-    if (Status != TaskStatus.Active)
-    {
-      return;
-    }
+    if (Status != TaskStatus.Active) return;
 
     Guard.Against.Default(familyMemberId);
 
     Status = TaskStatus.InProgress;
     StartedByMemberId = familyMemberId;
 
-    RegisterDomainEvent(new TaskStartedEvent(this));
+    RegisterDomainEvent(new TaskStartedEvent { TaskId = Id });
   }
 
   public void Complete(FamilyMember completedByMember, DateTime completedAtUtc)
   {
-    if (Status == TaskStatus.Completed)
-    {
-      return;
-    }
+    if (Status == TaskStatus.Completed) return;
 
     Guard.Against.Null(completedByMember);
 
@@ -113,10 +107,7 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public void TriggerReminder()
   {
     // Only send reminders for active or in-progress tasks
-    if (Status != TaskStatus.Active && Status != TaskStatus.InProgress)
-    {
-      return;
-    }
+    if (Status != TaskStatus.Active && Status != TaskStatus.InProgress) return;
 
     RegisterDomainEvent(new TaskReminderDueEvent
     {

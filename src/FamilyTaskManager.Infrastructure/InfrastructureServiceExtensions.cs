@@ -1,7 +1,4 @@
-using FamilyTaskManager.Core.FamilyAggregate.Events;
-using FamilyTaskManager.Core.Interfaces;
-using FamilyTaskManager.Core.PetAggregate.Events;
-using FamilyTaskManager.Core.TaskAggregate.Events;
+using Ardalis.SharedKernel;
 using FamilyTaskManager.Infrastructure.Behaviors;
 using FamilyTaskManager.Infrastructure.Data;
 using FamilyTaskManager.Infrastructure.Database;
@@ -26,36 +23,25 @@ public static class InfrastructureServiceExtensions
     // Get database connection string using shared logic
     var connectionString = config.GetDatabaseConnectionString();
 
-    services.AddScoped<EventDispatchInterceptor>();
     services.AddScoped<OutboxInterceptor>();
     services.AddScoped<IDomainEventDispatcher, MediatorDomainEventDispatcher>();
 
     services.AddDbContext<AppDbContext>((provider, options) =>
     {
-      var eventDispatchInterceptor = provider.GetRequiredService<EventDispatchInterceptor>();
-      var outboxInterceptor = provider.GetRequiredService<OutboxInterceptor>();
-
       // Use PostgreSQL if DefaultConnection is available, otherwise use SQLite
       if (config.GetConnectionString("DefaultConnection") != null)
-      {
         options.UseNpgsql(connectionString);
-      }
       else
-      {
         options.UseSqlite(connectionString);
-      }
 
-      options.AddInterceptors(eventDispatchInterceptor, outboxInterceptor);
+      options.AddInterceptors(provider.GetRequiredService<OutboxInterceptor>());
     });
 
-    services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>))
-      .AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
+    services.AddScoped(typeof(IAppRepository<>), typeof(EfAppRepository<>))
+      .AddScoped(typeof(Core.Interfaces.IReadRepository<>), typeof(EfAppRepository<>));
 
     // Register universal read-only repository for any entity
     services.AddScoped(typeof(IReadOnlyEntityRepository<>), typeof(EfReadOnlyEntityRepository<>));
-
-    // Register infrastructure repository for non-domain entities (outbox, audit logs, etc.)
-    services.AddScoped(typeof(IInfrastructureRepository<>), typeof(EfInfrastructureRepository<>));
 
     // Register Mediator Pipeline Behaviors
     services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(MediatorLoggingBehavior<,>));
@@ -64,17 +50,6 @@ public static class InfrastructureServiceExtensions
     // Telegram Bot Client (from configuration)
     services.AddScoped<ITelegramNotificationService, TelegramNotificationService>();
     logger.LogInformation("Telegram notification service registered");
-
-    // Register Telegram notifiers for all domain events
-    // These send notifications directly via Telegram when domain events are published from outbox
-    services.AddScoped<INotificationHandler<TaskCreatedEvent>, TaskCreatedTelegramNotifier>();
-    services.AddScoped<INotificationHandler<TaskReminderDueEvent>, TaskReminderTelegramNotifier>();
-    services.AddScoped<INotificationHandler<TaskCompletedEvent>, TaskCompletedTelegramNotifier>();
-    services.AddScoped<INotificationHandler<PetCreatedEvent>, PetCreatedTelegramNotifier>();
-    services.AddScoped<INotificationHandler<PetDeletedEvent>, PetDeletedTelegramNotifier>();
-    services.AddScoped<INotificationHandler<PetMoodChangedEvent>, PetMoodChangedTelegramNotifier>();
-    services.AddScoped<INotificationHandler<MemberAddedEvent>, MemberAddedTelegramNotifier>();
-    logger.LogInformation("Telegram notifiers registered for all domain events");
 
     // Register TimeZone Service
     services.AddScoped<ITimeZoneService, TimeZoneService>();
@@ -102,7 +77,7 @@ public static class InfrastructureServiceExtensions
     quartz.AddTrigger(opts => opts
       .ForJob(outboxJobKey)
       .WithIdentity("OutboxDispatcherJob-trigger")
-      .WithCronSchedule("0 */1 * * * ?") // Every 1 minute
+      .WithCronSchedule("*/10 * * * * ?")
       .WithDescription("Processes batched notifications from outbox"));
 
     logger?.LogInformation("Infrastructure jobs registered: OutboxDispatcherJob");

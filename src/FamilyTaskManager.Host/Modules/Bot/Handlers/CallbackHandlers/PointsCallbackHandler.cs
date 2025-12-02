@@ -126,7 +126,7 @@ public class PointsCallbackHandler(
 
       case ConversationState.AwaitingTemplateEditPoints:
         // For edit mode, edit existing message to show template edit screen
-        if (session.Data.TryGetValue("templateId", out var templateIdObj) && templateIdObj is Guid templateId)
+        if (session.Data.TemplateId is Guid templateId)
         {
           session.ClearState();
           await templateCommandHandler.HandleEditTemplateAsync(

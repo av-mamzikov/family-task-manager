@@ -3,15 +3,15 @@ namespace FamilyTaskManager.UseCases.Statistics;
 public record GetLeaderboardQuery(Guid FamilyId) : IQuery<Result<List<LeaderboardEntryDto>>>;
 
 public class GetLeaderboardHandler(
-  IRepository<Family> familyRepository,
-  IRepository<User> userRepository) : IQueryHandler<GetLeaderboardQuery, Result<List<LeaderboardEntryDto>>>
+  IAppRepository<Family> familyAppRepository,
+  IAppRepository<User> userAppRepository) : IQueryHandler<GetLeaderboardQuery, Result<List<LeaderboardEntryDto>>>
 {
   public async ValueTask<Result<List<LeaderboardEntryDto>>> Handle(GetLeaderboardQuery query,
     CancellationToken cancellationToken)
   {
     // Get family with members
     var spec = new GetFamilyWithMembersSpec(query.FamilyId);
-    var family = await familyRepository.FirstOrDefaultAsync(spec, cancellationToken);
+    var family = await familyAppRepository.FirstOrDefaultAsync(spec, cancellationToken);
 
     if (family == null)
     {
@@ -32,7 +32,7 @@ public class GetLeaderboardHandler(
     // Get user names
     var userIds = activeMembers.Select(m => m.UserId).ToList();
     var userSpec = new GetUsersByIdsSpec(userIds);
-    var users = await userRepository.ListAsync(userSpec, cancellationToken);
+    var users = await userAppRepository.ListAsync(userSpec, cancellationToken);
     var userDict = users.ToDictionary(u => u.Id, u => u.Name);
 
     // Build result

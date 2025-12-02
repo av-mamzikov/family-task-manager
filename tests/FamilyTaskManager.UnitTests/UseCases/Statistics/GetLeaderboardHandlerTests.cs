@@ -10,15 +10,15 @@ namespace FamilyTaskManager.UnitTests.UseCases.Statistics;
 
 public class GetLeaderboardHandlerTests
 {
-  private readonly IRepository<Family> _familyRepository;
+  private readonly IAppRepository<Family> _familyAppRepository;
   private readonly GetLeaderboardHandler _handler;
-  private readonly IRepository<User> _userRepository;
+  private readonly IAppRepository<User> _userAppRepository;
 
   public GetLeaderboardHandlerTests()
   {
-    _familyRepository = Substitute.For<IRepository<Family>>();
-    _userRepository = Substitute.For<IRepository<User>>();
-    _handler = new GetLeaderboardHandler(_familyRepository, _userRepository);
+    _familyAppRepository = Substitute.For<IAppRepository<Family>>();
+    _userAppRepository = Substitute.For<IAppRepository<User>>();
+    _handler = new(_familyAppRepository, _userAppRepository);
   }
 
   [Fact]
@@ -42,9 +42,9 @@ public class GetLeaderboardHandlerTests
 
     var query = new GetLeaderboardQuery(familyId);
 
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
-    _userRepository.ListAsync(Arg.Any<GetUsersByIdsSpec>(), Arg.Any<CancellationToken>())
+    _userAppRepository.ListAsync(Arg.Any<GetUsersByIdsSpec>(), Arg.Any<CancellationToken>())
       .Returns(users);
 
     // Act
@@ -69,7 +69,7 @@ public class GetLeaderboardHandlerTests
     // Arrange
     var query = new GetLeaderboardQuery(Guid.NewGuid());
 
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns((Family?)null);
 
     // Act
@@ -88,7 +88,7 @@ public class GetLeaderboardHandlerTests
     var family = new Family("Smith Family", "UTC", false); // Leaderboard disabled
     var query = new GetLeaderboardQuery(familyId);
 
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act
@@ -118,9 +118,9 @@ public class GetLeaderboardHandlerTests
 
     var query = new GetLeaderboardQuery(familyId);
 
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
-    _userRepository.ListAsync(Arg.Any<GetUsersByIdsSpec>(), Arg.Any<CancellationToken>())
+    _userAppRepository.ListAsync(Arg.Any<GetUsersByIdsSpec>(), Arg.Any<CancellationToken>())
       .Returns(users);
 
     // Act

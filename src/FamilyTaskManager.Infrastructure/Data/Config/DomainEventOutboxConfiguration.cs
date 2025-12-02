@@ -1,4 +1,4 @@
-using FamilyTaskManager.Infrastructure.Notifications;
+using FamilyTaskManager.Infrastructure.Data.Entities;
 
 namespace FamilyTaskManager.Infrastructure.Data.Config;
 

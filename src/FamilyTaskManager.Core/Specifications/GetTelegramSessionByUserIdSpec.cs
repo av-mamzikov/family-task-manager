@@ -2,8 +2,10 @@ using FamilyTaskManager.Core.UserAggregate;
 
 namespace FamilyTaskManager.Core.Specifications;
 
-public class GetTelegramSessionByUserIdSpec(Guid userId) : Specification<TelegramSession>
+public class GetTelegramSessionByUserIdSpec : Specification<TelegramSession>
 {
-  public void Configure() =>
+  public GetTelegramSessionByUserIdSpec(Guid userId)
+  {
     Query.Where(s => s.UserId == userId);
+  }
 }

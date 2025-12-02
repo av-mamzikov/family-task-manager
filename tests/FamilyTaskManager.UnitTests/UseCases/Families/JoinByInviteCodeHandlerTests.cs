@@ -9,17 +9,17 @@ namespace FamilyTaskManager.UnitTests.UseCases.Families;
 
 public class JoinByInviteCodeHandlerTests
 {
-  private readonly IRepository<Family> _familyRepository;
+  private readonly IAppRepository<Family> _familyAppRepository;
   private readonly JoinByInviteCodeHandler _handler;
-  private readonly IRepository<Invitation> _invitationRepository;
-  private readonly IRepository<User> _userRepository;
+  private readonly IAppRepository<Invitation> _invitationAppRepository;
+  private readonly IAppRepository<User> _userAppRepository;
 
   public JoinByInviteCodeHandlerTests()
   {
-    _familyRepository = Substitute.For<IRepository<Family>>();
-    _userRepository = Substitute.For<IRepository<User>>();
-    _invitationRepository = Substitute.For<IRepository<Invitation>>();
-    _handler = new JoinByInviteCodeHandler(_familyRepository, _userRepository, _invitationRepository);
+    _familyAppRepository = Substitute.For<IAppRepository<Family>>();
+    _userAppRepository = Substitute.For<IAppRepository<User>>();
+    _invitationAppRepository = Substitute.For<IAppRepository<Invitation>>();
+    _handler = new(_familyAppRepository, _userAppRepository, _invitationAppRepository);
   }
 
   [Fact]
@@ -34,13 +34,13 @@ public class JoinByInviteCodeHandlerTests
 
     var command = new JoinByInviteCodeCommand(userId, invitation.Code);
 
-    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+    _userAppRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
 
-    _invitationRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
+    _invitationAppRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
       .Returns(invitation);
 
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act
@@ -52,8 +52,8 @@ public class JoinByInviteCodeHandlerTests
     family.Members.First().UserId.ShouldBe(user.Id);
     family.Members.First().Role.ShouldBe(FamilyRole.Adult);
     invitation.IsActive.ShouldBeFalse();
-    await _familyRepository.Received(1).UpdateAsync(family, Arg.Any<CancellationToken>());
-    await _invitationRepository.Received(1).UpdateAsync(invitation, Arg.Any<CancellationToken>());
+    await _familyAppRepository.Received(1).UpdateAsync(family, Arg.Any<CancellationToken>());
+    await _invitationAppRepository.Received(1).UpdateAsync(invitation, Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -63,7 +63,7 @@ public class JoinByInviteCodeHandlerTests
     var userId = Guid.NewGuid();
     var command = new JoinByInviteCodeCommand(userId, "TESTCODE");
 
-    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+    _userAppRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns((User?)null);
 
     // Act
@@ -82,10 +82,10 @@ public class JoinByInviteCodeHandlerTests
     var user = new User(123456789, "John Doe");
     var command = new JoinByInviteCodeCommand(userId, "INVALID");
 
-    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+    _userAppRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
 
-    _invitationRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
+    _invitationAppRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
       .Returns((Invitation?)null);
 
     // Act
@@ -109,10 +109,10 @@ public class JoinByInviteCodeHandlerTests
 
     var command = new JoinByInviteCodeCommand(userId, invitation.Code);
 
-    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+    _userAppRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
 
-    _invitationRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
+    _invitationAppRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
       .Returns(invitation);
 
     // Act
@@ -135,10 +135,10 @@ public class JoinByInviteCodeHandlerTests
 
     var command = new JoinByInviteCodeCommand(userId, invitation.Code);
 
-    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+    _userAppRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
 
-    _invitationRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
+    _invitationAppRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
       .Returns(invitation);
 
     // Act
@@ -164,13 +164,13 @@ public class JoinByInviteCodeHandlerTests
 
     var command = new JoinByInviteCodeCommand(userId, invitation.Code);
 
-    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+    _userAppRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
 
-    _invitationRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
+    _invitationAppRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
       .Returns(invitation);
 
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act
@@ -192,13 +192,13 @@ public class JoinByInviteCodeHandlerTests
 
     var command = new JoinByInviteCodeCommand(userId, invitation.Code);
 
-    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+    _userAppRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
 
-    _invitationRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
+    _invitationAppRepository.FirstOrDefaultAsync(Arg.Any<GetInvitationByCodeSpec>(), Arg.Any<CancellationToken>())
       .Returns(invitation);
 
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns((Family?)null);
 
     // Act

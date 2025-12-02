@@ -5,49 +5,21 @@ namespace FamilyTaskManager.Host.Modules.Bot.Helpers;
 
 /// <summary>
 ///   Helper class for working with pet types in the bot.
-///   Centralizes pet type information to avoid code duplication.
+///   Delegates pet type metadata to Core (PetTypeDisplay) and contains only Telegram-specific helpers.
 /// </summary>
 public static class PetTypeHelper
 {
-  private static readonly Dictionary<PetType, PetTypeInfo> PetTypeInfoMap = new()
-  {
-    { PetType.Cat, new PetTypeInfo("🐱", "Кот", "cat") },
-    { PetType.Dog, new PetTypeInfo("🐶", "Собака", "dog") },
-    { PetType.Hamster, new PetTypeInfo("🐹", "Хомяк", "hamster") },
-    { PetType.Parrot, new PetTypeInfo("🦜", "Попугай", "parrot") }
-  };
-
-  /// <summary>
-  ///   Gets the emoji for a pet type.
-  /// </summary>
   public static string GetEmoji(PetType petType) =>
-    PetTypeInfoMap.TryGetValue(petType, out var info) ? info.Emoji : "🐾";
+    PetDisplay.GetEmoji(petType);
 
-  /// <summary>
-  ///   Gets the display text for a pet type.
-  /// </summary>
   public static string GetDisplayText(PetType petType) =>
-    PetTypeInfoMap.TryGetValue(petType, out var info) ? info.DisplayText : "Неизвестно";
+    PetDisplay.GetDisplayText(petType);
 
-  /// <summary>
-  ///   Gets both emoji and display text for a pet type.
-  /// </summary>
-  public static (string emoji, string text) GetInfo(PetType petType)
-  {
-    if (PetTypeInfoMap.TryGetValue(petType, out var info)) return (info.Emoji, info.DisplayText);
+  public static (string emoji, string text) GetInfo(PetType petType) =>
+    PetDisplay.GetInfo(petType);
 
-    return ("🐾", "Неизвестно");
-  }
-
-  /// <summary>
-  ///   Gets the emoji for a pet type string (used in callbacks).
-  /// </summary>
-  public static string GetEmojiFromString(string petTypeString)
-  {
-    var info = PetTypeInfoMap.Values.FirstOrDefault(i =>
-      i.CallbackData.Equals(petTypeString, StringComparison.OrdinalIgnoreCase));
-    return info?.Emoji ?? "🐾";
-  }
+  public static string GetEmojiFromString(string petTypeString) =>
+    PetDisplay.GetEmojiFromCode(petTypeString);
 
   /// <summary>
   ///   Creates inline keyboard buttons for pet type selection.
@@ -57,11 +29,20 @@ public static class PetTypeHelper
   {
     var buttons = new List<InlineKeyboardButton[]>();
 
-    foreach (var (petType, info) in PetTypeInfoMap.OrderBy(x => x.Key))
+    foreach (var petType in Enum.GetValues<PetType>().Order())
+    {
+      var (emoji, text) = PetDisplay.GetInfo(petType);
+
+      // Callback data still uses the original lowercase code from Core
+      var callbackCode = petType.ToString().ToLowerInvariant();
+
       buttons.Add(new[]
       {
-        InlineKeyboardButton.WithCallbackData($"{info.Emoji} {info.DisplayText}", $"select_pettype_{info.CallbackData}")
+        InlineKeyboardButton.WithCallbackData(
+          $"{emoji} {text}",
+          $"select_pettype_{callbackCode}")
       });
+    }
 
     if (includeBackButton)
       buttons.Add(new[]
@@ -71,6 +52,4 @@ public static class PetTypeHelper
 
     return buttons.ToArray();
   }
-
-  private record PetTypeInfo(string Emoji, string DisplayText, string CallbackData);
 }

@@ -1,4 +1,4 @@
-namespace FamilyTaskManager.Infrastructure.Notifications;
+namespace FamilyTaskManager.Infrastructure.Data.Entities;
 
 /// <summary>
 ///   Universal outbox for all domain event notifications.

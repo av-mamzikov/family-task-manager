@@ -18,8 +18,8 @@ public record ProcessScheduledTaskCommand(DateTime CheckFrom, DateTime CheckTo) 
 /// </summary>
 public class ProcessScheduledTasksHandler(
   IReadRepository<TaskTemplate> templateRepository,
-  IRepository<TaskInstance> taskRepository,
-  IRepository<Pet> petRepository,
+  IAppRepository<TaskInstance> taskAppRepository,
+  IAppRepository<Pet> petAppRepository,
   ITaskInstanceFactory taskInstanceFactory,
   ILogger<ProcessScheduledTasksHandler> logger)
   : ICommandHandler<ProcessScheduledTaskCommand, Result<int>>
@@ -60,7 +60,7 @@ public class ProcessScheduledTasksHandler(
 
           // Load pet with family (needed for TaskCreatedEvent)
           var petSpec = new GetPetByIdWithFamilySpec(template.PetId);
-          var pet = await petRepository.FirstOrDefaultAsync(petSpec, cancellationToken);
+          var pet = await petAppRepository.FirstOrDefaultAsync(petSpec, cancellationToken);
           if (pet == null)
           {
             logger.LogWarning("Pet {PetId} not found for template {TemplateId}, skipping", template.PetId, template.Id);
@@ -69,13 +69,13 @@ public class ProcessScheduledTasksHandler(
 
           // Get existing instances for this template
           var existingSpec = new TaskInstancesByTemplateSpec(template.Id);
-          var existingInstances = await taskRepository.ListAsync(existingSpec, cancellationToken);
+          var existingInstances = await taskAppRepository.ListAsync(existingSpec, cancellationToken);
           var createResult = taskInstanceFactory.CreateFromTemplate(template, pet, dueAt, existingInstances);
 
           if (createResult.IsSuccess)
           {
-            await taskRepository.AddAsync(createResult.Value, cancellationToken);
-            await taskRepository.SaveChangesAsync(cancellationToken);
+            await taskAppRepository.AddAsync(createResult.Value, cancellationToken);
+            await taskAppRepository.SaveChangesAsync(cancellationToken);
 
             createdCount++;
             logger.LogInformation(

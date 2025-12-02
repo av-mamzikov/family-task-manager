@@ -1,8 +1,5 @@
 global using System.Net.Mail;
 global using System.Reflection;
-global using Ardalis.GuardClauses;
-global using Ardalis.SharedKernel;
-global using Ardalis.Specification.EntityFrameworkCore;
 global using MailKit.Net.Smtp;
 global using FamilyTaskManager.UseCases.Contracts.Tasks;
 global using Microsoft.EntityFrameworkCore;
@@ -12,3 +9,5 @@ global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Logging;
 global using Microsoft.Extensions.Options;
 global using MimeKit;
+global using FamilyTaskManager.Core.Interfaces;
+global using Ardalis.Specification;

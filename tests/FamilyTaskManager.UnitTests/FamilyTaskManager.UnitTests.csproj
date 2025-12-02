@@ -43,16 +43,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FamilyTaskManager.Core\FamilyTaskManager.Core.csproj"/>
-    <ProjectReference Include="..\..\src\FamilyTaskManager.UseCases\FamilyTaskManager.UseCases.csproj"/>
-    <ProjectReference Include="..\..\src\FamilyTaskManager.Infrastructure\FamilyTaskManager.Infrastructure.csproj"/>
+    <ProjectReference Include="..\..\src\FamilyTaskManager.Host\FamilyTaskManager.Host.csproj"/>
     <ProjectReference Include="..\FamilyTaskManager.TestInfrastructure\FamilyTaskManager.TestInfrastructure.csproj"/>
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Include Host modules for testing without Mediator conflicts -->
-    <Compile Include="..\..\src\FamilyTaskManager.Host\Modules\**\*.cs"
-             Exclude="..\..\src\FamilyTaskManager.Host\Modules\**\*ModuleExtensions.cs;..\..\src\FamilyTaskManager.Host\Modules\**\*HostedService.cs"
-             Link="Host\%(RecursiveDir)%(Filename)%(Extension)"/>
-  </ItemGroup>
 
 </Project>

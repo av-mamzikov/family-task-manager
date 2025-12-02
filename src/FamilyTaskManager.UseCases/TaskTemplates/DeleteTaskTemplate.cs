@@ -2,12 +2,12 @@ namespace FamilyTaskManager.UseCases.TaskTemplates;
 
 public record DeleteTaskTemplateCommand(Guid TemplateId, Guid FamilyId) : ICommand<Result>;
 
-public class DeleteTaskTemplateHandler(IRepository<TaskTemplate> templateRepository)
+public class DeleteTaskTemplateHandler(IAppRepository<TaskTemplate> templateAppRepository)
   : ICommandHandler<DeleteTaskTemplateCommand, Result>
 {
   public async ValueTask<Result> Handle(DeleteTaskTemplateCommand command, CancellationToken cancellationToken)
   {
-    var template = await templateRepository.GetByIdAsync(command.TemplateId, cancellationToken);
+    var template = await templateAppRepository.GetByIdAsync(command.TemplateId, cancellationToken);
     if (template == null)
     {
       return Result.NotFound("Task template not found");
@@ -19,7 +19,7 @@ public class DeleteTaskTemplateHandler(IRepository<TaskTemplate> templateReposit
       return Result.NotFound("Task template not found");
     }
 
-    await templateRepository.DeleteAsync(template, cancellationToken);
+    await templateAppRepository.DeleteAsync(template, cancellationToken);
 
     return Result.Success();
   }

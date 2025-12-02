@@ -1,5 +1,6 @@
 using System.Text.Json;
-using FamilyTaskManager.Infrastructure.Notifications;
+using Ardalis.SharedKernel;
+using FamilyTaskManager.Infrastructure.Data.Entities;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace FamilyTaskManager.Infrastructure.Data;
@@ -34,26 +35,32 @@ public class OutboxInterceptor(ILogger<OutboxInterceptor> logger) : SaveChangesI
 
     var entitiesWithEvents = appDbContext.ChangeTracker.Entries<HasDomainEventsBase>()
       .Select(e => e.Entity)
-      .SelectMany(e => e.DomainEvents);
+      .Where(e => e.DomainEvents.Count != 0)
+      .ToArray();
 
-    foreach (var domainEvent in entitiesWithEvents)
+    foreach (var entity in entitiesWithEvents)
     {
-      var payload = CreateOutboxPayload(domainEvent);
-
-      var outboxEntry = new DomainEventOutbox
+      foreach (var domainEvent in entity.DomainEvents)
       {
-        Id = Guid.NewGuid(),
-        EventType = domainEvent.GetType().Name,
-        Payload = payload,
-        OccurredAtUtc = DateTime.UtcNow,
-        Status = NotificationStatus.Pending,
-        Attempts = 0
-      };
+        var payload = CreateOutboxPayload(domainEvent);
 
-      appDbContext.DomainEventOutbox.Add(outboxEntry);
+        var outboxEntry = new DomainEventOutbox
+        {
+          Id = Guid.NewGuid(),
+          EventType = domainEvent.GetType().Name,
+          Payload = payload,
+          OccurredAtUtc = DateTime.UtcNow,
+          Status = NotificationStatus.Pending,
+          Attempts = 0
+        };
 
-      logger.LogDebug(
-        "Domain event {EventType} saved to outbox", domainEvent.GetType().Name);
+        appDbContext.DomainEventOutbox.Add(outboxEntry);
+
+        logger.LogInformation(
+          "Domain event {EventType} saved to outbox", domainEvent.GetType().Name);
+      }
+
+      entity.ClearDomainEvents();
     }
   }
 

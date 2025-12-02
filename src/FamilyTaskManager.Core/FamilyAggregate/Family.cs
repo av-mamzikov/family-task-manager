@@ -22,7 +22,7 @@ public class Family : EntityBase<Family, Guid>, IAggregateRoot
     LeaderboardEnabled = leaderboardEnabled;
     CreatedAt = DateTime.UtcNow;
 
-    RegisterDomainEvent(new FamilyCreatedEvent(this));
+    RegisterDomainEvent(new FamilyCreatedEvent { FamilyId = Id });
   }
 
   public string Name { get; private set; } = null!;

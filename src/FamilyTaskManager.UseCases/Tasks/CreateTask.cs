@@ -1,4 +1,3 @@
-using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.Core.Services;
 
 namespace FamilyTaskManager.UseCases.Tasks;
@@ -17,8 +16,8 @@ public record CreateTaskCommand(
   Guid CreatedBy) : ICommand<Result<Guid>>;
 
 public class CreateTaskHandler(
-  IRepository<TaskInstance> taskRepository,
-  IRepository<Pet> petRepository,
+  IAppRepository<TaskInstance> taskAppRepository,
+  IAppRepository<Pet> petAppRepository,
   ITimeZoneService timeZoneService,
   IPetMoodCalculator moodCalculator) : ICommandHandler<CreateTaskCommand, Result<Guid>>
 {
@@ -26,7 +25,7 @@ public class CreateTaskHandler(
   {
     // Load pet with family (needed for TaskCreatedEvent)
     var petSpec = new GetPetByIdWithFamilySpec(command.PetId);
-    var pet = await petRepository.FirstOrDefaultAsync(petSpec, cancellationToken);
+    var pet = await petAppRepository.FirstOrDefaultAsync(petSpec, cancellationToken);
     if (pet == null)
     {
       return Result<Guid>.NotFound("Питомец не найден");
@@ -62,13 +61,13 @@ public class CreateTaskHandler(
       TaskType.OneTime,
       dueAtUtc);
 
-    await taskRepository.AddAsync(task, cancellationToken);
-    await taskRepository.SaveChangesAsync(cancellationToken);
+    await taskAppRepository.AddAsync(task, cancellationToken);
+    await taskAppRepository.SaveChangesAsync(cancellationToken);
 
     // Trigger immediate mood recalculation for the pet
     var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(command.PetId, cancellationToken);
     pet.UpdateMoodScore(newMoodScore);
-    await petRepository.SaveChangesAsync(cancellationToken);
+    await petAppRepository.SaveChangesAsync(cancellationToken);
 
     return Result<Guid>.Success(task.Id);
   }

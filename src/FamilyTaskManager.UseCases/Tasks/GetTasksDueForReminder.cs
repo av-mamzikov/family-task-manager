@@ -3,15 +3,15 @@ namespace FamilyTaskManager.UseCases.Tasks;
 public record GetTasksDueForReminderQuery(DateTime FromTime, DateTime ToTime) : IQuery<Result<List<TaskReminderDto>>>;
 
 public class GetTasksDueForReminderHandler(
-  IRepository<TaskInstance> taskRepository,
-  IRepository<Family> familyRepository)
+  IAppRepository<TaskInstance> taskAppRepository,
+  IAppRepository<Family> familyAppRepository)
   : IQueryHandler<GetTasksDueForReminderQuery, Result<List<TaskReminderDto>>>
 {
   public async ValueTask<Result<List<TaskReminderDto>>> Handle(GetTasksDueForReminderQuery query,
     CancellationToken cancellationToken)
   {
     var spec = new TasksDueForReminderSpec(query.FromTime, query.ToTime);
-    var tasks = await taskRepository.ListAsync(spec, cancellationToken);
+    var tasks = await taskAppRepository.ListAsync(spec, cancellationToken);
 
     var result = new List<TaskReminderDto>();
 
@@ -22,7 +22,7 @@ public class GetTasksDueForReminderHandler(
     {
       // Get family with members
       var familySpec = new GetFamilyWithMembersSpec(familyGroup.Key);
-      var family = await familyRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
+      var family = await familyAppRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
 
       if (family == null)
       {

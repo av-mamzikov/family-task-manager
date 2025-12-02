@@ -1,6 +1,7 @@
 using System.Text.Json;
+using Ardalis.SharedKernel;
 using FamilyTaskManager.Infrastructure.Data;
-using FamilyTaskManager.Infrastructure.Notifications;
+using FamilyTaskManager.Infrastructure.Data.Entities;
 using Mediator;
 using Quartz;
 
@@ -46,7 +47,6 @@ public class OutboxDispatcherJob(
 
       // Process each notification individually
       foreach (var entry in pendingNotifications)
-      {
         try
         {
           // Reconstruct domain event from snapshot and publish via Mediator
@@ -79,7 +79,6 @@ public class OutboxDispatcherJob(
 
           failureCount++;
         }
-      }
 
       // Save all changes
       await dbContext.SaveChangesAsync(context.CancellationToken);

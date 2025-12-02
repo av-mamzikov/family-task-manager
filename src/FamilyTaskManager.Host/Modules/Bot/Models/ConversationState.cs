@@ -1,0 +1,38 @@
+namespace FamilyTaskManager.Host.Modules.Bot.Models;
+
+public enum ConversationState
+{
+  None,
+  AwaitingFamilyName,
+  AwaitingFamilyTimezone,
+  AwaitingFamilyLocation,
+  AwaitingPetType,
+  AwaitingPetName,
+  AwaitingTaskType,
+  AwaitingTaskTitle,
+  AwaitingTaskPoints,
+  AwaitingTaskPetSelection,
+  AwaitingTaskSchedule,
+  AwaitingTaskDueDate,
+  AwaitingTemplateTitle,
+  AwaitingTemplatePoints,
+  AwaitingTemplateScheduleType,
+  AwaitingTemplateScheduleTime,
+  AwaitingTemplateScheduleWeekday,
+  AwaitingTemplateScheduleMonthDay,
+  AwaitingTemplateDueDuration,
+  AwaitingTemplatePetSelection,
+  AwaitingTemplateEditTitle,
+  AwaitingTemplateEditPoints,
+  AwaitingTemplateEditScheduleType,
+  AwaitingTemplateEditScheduleTime,
+  AwaitingTemplateEditScheduleWeekday,
+  AwaitingTemplateEditScheduleMonthDay,
+  AwaitingTemplateEditDueDuration,
+  AwaitingTaskScheduleType,
+  AwaitingTaskScheduleTime,
+  AwaitingTaskScheduleWeekday,
+  AwaitingTaskScheduleMonthDay,
+  AwaitingTemplateSchedule,
+  AwaitingTemplateEditSchedule
+}

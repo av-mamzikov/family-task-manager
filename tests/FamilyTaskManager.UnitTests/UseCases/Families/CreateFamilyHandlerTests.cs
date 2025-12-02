@@ -1,6 +1,5 @@
 using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
-using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.Core.UserAggregate;
 using FamilyTaskManager.UseCases.Families;
 
@@ -8,17 +7,17 @@ namespace FamilyTaskManager.UnitTests.UseCases.Families;
 
 public class CreateFamilyHandlerTests
 {
-  private readonly IRepository<Family> _familyRepository;
+  private readonly IAppRepository<Family> _familyAppRepository;
   private readonly CreateFamilyHandler _handler;
   private readonly ITimeZoneService _timeZoneService;
-  private readonly IRepository<User> _userRepository;
+  private readonly IAppRepository<User> _userAppRepository;
 
   public CreateFamilyHandlerTests()
   {
-    _familyRepository = Substitute.For<IRepository<Family>>();
-    _userRepository = Substitute.For<IRepository<User>>();
+    _familyAppRepository = Substitute.For<IAppRepository<Family>>();
+    _userAppRepository = Substitute.For<IAppRepository<User>>();
     _timeZoneService = Substitute.For<ITimeZoneService>();
-    _handler = new CreateFamilyHandler(_familyRepository, _userRepository, _timeZoneService);
+    _handler = new(_familyAppRepository, _userAppRepository, _timeZoneService);
   }
 
   [Fact]
@@ -29,12 +28,12 @@ public class CreateFamilyHandlerTests
     var user = new User(123456789, "John Doe");
     var command = new CreateFamilyCommand(userId, "Smith Family", "Europe/Moscow");
 
-    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+    _userAppRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
     _timeZoneService.IsValidTimeZone("Europe/Moscow").Returns(true);
 
     Family? capturedFamily = null;
-    await _familyRepository.AddAsync(Arg.Do<Family>(f => capturedFamily = f), Arg.Any<CancellationToken>());
+    await _familyAppRepository.AddAsync(Arg.Do<Family>(f => capturedFamily = f), Arg.Any<CancellationToken>());
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);
@@ -58,7 +57,7 @@ public class CreateFamilyHandlerTests
     var userId = Guid.NewGuid();
     var command = new CreateFamilyCommand(userId, "Smith Family", "UTC");
 
-    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+    _userAppRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns((User?)null);
 
     // Act
@@ -67,7 +66,7 @@ public class CreateFamilyHandlerTests
     // Assert
     result.IsSuccess.ShouldBeFalse();
     result.Status.ShouldBe(ResultStatus.NotFound);
-    await _familyRepository.DidNotReceive().AddAsync(Arg.Any<Family>(), Arg.Any<CancellationToken>());
+    await _familyAppRepository.DidNotReceive().AddAsync(Arg.Any<Family>(), Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -78,12 +77,12 @@ public class CreateFamilyHandlerTests
     var user = new User(123456789, "John Doe");
     var command = new CreateFamilyCommand(userId, "Smith Family", "UTC");
 
-    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+    _userAppRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
     _timeZoneService.IsValidTimeZone("UTC").Returns(true);
 
     Family? capturedFamily = null;
-    await _familyRepository.AddAsync(Arg.Do<Family>(f => capturedFamily = f), Arg.Any<CancellationToken>());
+    await _familyAppRepository.AddAsync(Arg.Do<Family>(f => capturedFamily = f), Arg.Any<CancellationToken>());
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);

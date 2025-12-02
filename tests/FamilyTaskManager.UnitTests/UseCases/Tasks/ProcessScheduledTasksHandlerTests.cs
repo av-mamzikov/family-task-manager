@@ -4,6 +4,7 @@ using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.TaskAggregate;
+using FamilyTaskManager.UseCases.Contracts.TaskTemplates;
 using FamilyTaskManager.UseCases.Pets.Specifications;
 using FamilyTaskManager.UseCases.Tasks;
 using FamilyTaskManager.UseCases.Tasks.Specifications;
@@ -15,23 +16,23 @@ public class ProcessScheduledTasksHandlerTests
 {
   private readonly ProcessScheduledTasksHandler _handler;
   private readonly ILogger<ProcessScheduledTasksHandler> _logger;
-  private readonly IRepository<Pet> _petRepository;
+  private readonly IAppRepository<Pet> _petAppRepository;
+  private readonly IAppRepository<TaskInstance> _taskAppRepository;
   private readonly ITaskInstanceFactory _taskInstanceFactory;
-  private readonly IRepository<TaskInstance> _taskRepository;
   private readonly IReadRepository<TaskTemplate> _templateRepository;
 
   public ProcessScheduledTasksHandlerTests()
   {
     _templateRepository = Substitute.For<IReadRepository<TaskTemplate>>();
-    _taskRepository = Substitute.For<IRepository<TaskInstance>>();
-    _petRepository = Substitute.For<IRepository<Pet>>();
+    _taskAppRepository = Substitute.For<IAppRepository<TaskInstance>>();
+    _petAppRepository = Substitute.For<IAppRepository<Pet>>();
     _taskInstanceFactory = Substitute.For<ITaskInstanceFactory>();
     _logger = Substitute.For<ILogger<ProcessScheduledTasksHandler>>();
 
     _handler = new ProcessScheduledTasksHandler(
       _templateRepository,
-      _taskRepository,
-      _petRepository,
+      _taskAppRepository,
+      _petAppRepository,
       _taskInstanceFactory,
       _logger);
   }
@@ -101,7 +102,7 @@ public class ProcessScheduledTasksHandlerTests
     // Assert
     result.IsSuccess.ShouldBeTrue();
     result.Value.ShouldBe(0);
-    await _taskRepository.DidNotReceive().AddAsync(Arg.Any<TaskInstance>(), Arg.Any<CancellationToken>());
+    await _taskAppRepository.DidNotReceive().AddAsync(Arg.Any<TaskInstance>(), Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -148,10 +149,10 @@ public class ProcessScheduledTasksHandlerTests
     _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template });
 
-    _petRepository.FirstOrDefaultAsync(Arg.Any<GetPetByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
+    _petAppRepository.FirstOrDefaultAsync(Arg.Any<GetPetByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
       .Returns(pet);
 
-    _taskRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
+    _taskAppRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance>());
 
     _taskInstanceFactory
@@ -164,8 +165,8 @@ public class ProcessScheduledTasksHandlerTests
     // Assert
     result.IsSuccess.ShouldBeTrue();
     result.Value.ShouldBe(1);
-    await _taskRepository.Received(1).AddAsync(Arg.Any<TaskInstance>(), Arg.Any<CancellationToken>());
-    await _taskRepository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    await _taskAppRepository.Received(1).AddAsync(Arg.Any<TaskInstance>(), Arg.Any<CancellationToken>());
+    await _taskAppRepository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -209,10 +210,10 @@ public class ProcessScheduledTasksHandlerTests
     _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template });
 
-    _petRepository.FirstOrDefaultAsync(Arg.Any<GetPetByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
+    _petAppRepository.FirstOrDefaultAsync(Arg.Any<GetPetByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
       .Returns(pet);
 
-    _taskRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
+    _taskAppRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance>());
 
     // Factory returns error (e.g., already has active instance)
@@ -226,7 +227,7 @@ public class ProcessScheduledTasksHandlerTests
     // Assert
     result.IsSuccess.ShouldBeTrue();
     result.Value.ShouldBe(0);
-    await _taskRepository.DidNotReceive().AddAsync(Arg.Any<TaskInstance>(), Arg.Any<CancellationToken>());
+    await _taskAppRepository.DidNotReceive().AddAsync(Arg.Any<TaskInstance>(), Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -270,10 +271,10 @@ public class ProcessScheduledTasksHandlerTests
     _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template1, template2 });
 
-    _petRepository.FirstOrDefaultAsync(Arg.Any<GetPetByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
+    _petAppRepository.FirstOrDefaultAsync(Arg.Any<GetPetByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
       .Returns(pet);
 
-    _taskRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
+    _taskAppRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance>());
 
     _taskInstanceFactory.CreateFromTemplate(Arg.Any<TaskTemplate>(), Arg.Any<Pet>(), Arg.Any<DateTime>(),
@@ -294,7 +295,7 @@ public class ProcessScheduledTasksHandlerTests
     // Assert
     result.IsSuccess.ShouldBeTrue();
     result.Value.ShouldBe(2);
-    await _taskRepository.Received(2).AddAsync(Arg.Any<TaskInstance>(), Arg.Any<CancellationToken>());
-    await _taskRepository.Received(2).SaveChangesAsync(Arg.Any<CancellationToken>());
+    await _taskAppRepository.Received(2).AddAsync(Arg.Any<TaskInstance>(), Arg.Any<CancellationToken>());
+    await _taskAppRepository.Received(2).SaveChangesAsync(Arg.Any<CancellationToken>());
   }
 }

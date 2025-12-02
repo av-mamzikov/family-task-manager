@@ -3,14 +3,14 @@ namespace FamilyTaskManager.UseCases.Pets;
 public record CreatePetCommand(Guid FamilyId, PetType Type, string Name) : ICommand<Result<Guid>>;
 
 public class CreatePetHandler(
-  IRepository<Pet> petRepository,
-  IRepository<Family> familyRepository,
-  IRepository<TaskTemplate> taskTemplateRepository) : ICommandHandler<CreatePetCommand, Result<Guid>>
+  IAppRepository<Pet> petAppRepository,
+  IAppRepository<Family> familyAppRepository,
+  IAppRepository<TaskTemplate> taskTemplateAppRepository) : ICommandHandler<CreatePetCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreatePetCommand command, CancellationToken cancellationToken)
   {
     // Verify family exists
-    var family = await familyRepository.GetByIdAsync(command.FamilyId, cancellationToken);
+    var family = await familyAppRepository.GetByIdAsync(command.FamilyId, cancellationToken);
     if (family == null)
     {
       return Result<Guid>.NotFound("Семья не найдена");
@@ -24,8 +24,8 @@ public class CreatePetHandler(
 
     // Create pet
     var pet = new Pet(command.FamilyId, command.Type, command.Name);
-    await petRepository.AddAsync(pet, cancellationToken);
-    await petRepository.SaveChangesAsync(cancellationToken);
+    await petAppRepository.AddAsync(pet, cancellationToken);
+    await petAppRepository.SaveChangesAsync(cancellationToken);
 
     // Create default task templates for this pet type
     var defaultTemplates = PetTaskTemplateData.GetDefaultTemplates(command.Type);
@@ -43,10 +43,10 @@ public class CreatePetHandler(
         templateData.DueDuration,
         systemUserId);
 
-      await taskTemplateRepository.AddAsync(taskTemplate, cancellationToken);
+      await taskTemplateAppRepository.AddAsync(taskTemplate, cancellationToken);
     }
 
-    await taskTemplateRepository.SaveChangesAsync(cancellationToken);
+    await taskTemplateAppRepository.SaveChangesAsync(cancellationToken);
 
     return Result<Guid>.Success(pet.Id);
   }
