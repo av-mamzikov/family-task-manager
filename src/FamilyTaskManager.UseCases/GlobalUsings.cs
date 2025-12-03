@@ -1,5 +1,4 @@
 global using Ardalis.Result;
-global using Ardalis.SharedKernel;
 global using Ardalis.Specification;
 global using FamilyTaskManager.Core.FamilyAggregate;
 global using FamilyTaskManager.Core.PetAggregate;
@@ -17,3 +16,5 @@ global using FamilyTaskManager.UseCases.Tasks.Specifications;
 global using FamilyTaskManager.UseCases.Users.Specifications;
 global using Mediator;
 global using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
+global using FamilyTaskManager.Core.Interfaces;
+global using FamilyTaskManager.Core.Specifications;

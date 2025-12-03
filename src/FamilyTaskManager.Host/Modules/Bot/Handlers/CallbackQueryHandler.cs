@@ -1,5 +1,5 @@
 using FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
-using FamilyTaskManager.Host.Modules.Bot.Services;
+using FamilyTaskManager.Host.Modules.Bot.Models;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -7,19 +7,15 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
 public class CallbackQueryHandler(
   ILogger<CallbackQueryHandler> logger,
-  ISessionManager sessionManager,
   ICallbackRouter callbackRouter)
   : ICallbackQueryHandler
 {
   public async Task HandleCallbackAsync(
     ITelegramBotClient botClient,
     CallbackQuery callbackQuery,
+    UserSession session,
     CancellationToken cancellationToken)
   {
-    var telegramId = callbackQuery.From.Id;
-    var session = await sessionManager.GetSessionAsync(telegramId, cancellationToken);
-    session.UpdateActivity();
-
     var data = callbackQuery.Data!;
     var chatId = callbackQuery.Message!.Chat.Id;
 

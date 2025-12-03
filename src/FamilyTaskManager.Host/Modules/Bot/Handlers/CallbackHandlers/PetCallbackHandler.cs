@@ -1,7 +1,6 @@
 using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Pets;
 using FamilyTaskManager.UseCases.Tasks;
 using Telegram.Bot;
@@ -14,9 +13,8 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
 
 public class PetCallbackHandler(
   ILogger<PetCallbackHandler> logger,
-  IMediator mediator,
-  IUserRegistrationService userRegistrationService)
-  : BaseCallbackHandler(logger, mediator, userRegistrationService)
+  IMediator mediator)
+  : BaseCallbackHandler(logger, mediator)
 {
   public async Task StartCreatePetAsync(
     ITelegramBotClient botClient,
@@ -49,8 +47,7 @@ public class PetCallbackHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    session.SetState(ConversationState.AwaitingPetName,
-      new Dictionary<string, object> { ["petType"] = petType, ["familyId"] = session.CurrentFamilyId! });
+    session.SetState(ConversationState.AwaitingPetName, new() { PetType = petType });
 
     var petTypeEmoji = PetTypeHelper.GetEmojiFromString(petType);
 
@@ -65,13 +62,11 @@ public class PetCallbackHandler(
 
     // Send keyboard in a separate message
     if (keyboard != null)
-    {
       await botClient.SendTextMessageAsync(
         chatId,
         "Используйте кнопки ниже для управления:",
         replyMarkup: keyboard,
         cancellationToken: cancellationToken);
-    }
   }
 
   public async Task HandlePetActionAsync(
@@ -83,10 +78,7 @@ public class PetCallbackHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    if (parts.Length < 2)
-    {
-      return;
-    }
+    if (parts.Length < 2) return;
 
     var petAction = parts[1];
 
@@ -97,17 +89,11 @@ public class PetCallbackHandler(
       return;
     }
 
-    if (parts.Length < 3)
-    {
-      return;
-    }
+    if (parts.Length < 3) return;
 
     var petIdStr = parts[2];
 
-    if (!Guid.TryParse(petIdStr, out var petId))
-    {
-      return;
-    }
+    if (!Guid.TryParse(petIdStr, out var petId)) return;
 
     switch (petAction)
     {
@@ -169,7 +155,7 @@ public class PetCallbackHandler(
     var tasksResult = await Mediator.Send(getTasksQuery, cancellationToken);
 
     var (petEmoji, petTypeText) = GetPetTypeInfo(pet.Type);
-    var (moodEmoji, moodText) = GetMoodInfo(pet.MoodScore);
+    var (moodEmoji, moodText) = PetDisplay.GetMoodInfo(pet.MoodScore);
 
     var messageText = $"{petEmoji} *{pet.Name}*\n\n" +
                       $"💖 Настроение: {moodEmoji} - {moodText}\n\n";
@@ -179,9 +165,7 @@ public class PetCallbackHandler(
     {
       messageText += $"📝 *{pet.Name} хочет чтобы вы ему помогли:*\n";
       foreach (var task in tasksResult.Value)
-      {
         messageText += $"• {task.Title} {task.Points.ToStars()} до {task.DueAtLocal:dd.MM.yyyy HH:mm}💖\n";
-      }
     }
     else
     {
@@ -269,15 +253,8 @@ public class PetCallbackHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    var userId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-    if (userId == null)
-    {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.UnknownError, cancellationToken);
-      return;
-    }
-
     // Delete the pet
-    var deletePetCommand = new DeletePetCommand(petId, userId.Value);
+    var deletePetCommand = new DeletePetCommand(petId, session.UserId);
     var deleteResult = await Mediator.Send(deletePetCommand, cancellationToken);
 
     if (!deleteResult.IsSuccess)
@@ -313,14 +290,6 @@ public class PetCallbackHandler(
       return;
     }
 
-    var userId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-    if (userId == null)
-    {
-      await EditMessageWithErrorAsync(botClient, chatId, messageId, BotConstants.Errors.UnknownError,
-        cancellationToken);
-      return;
-    }
-
     // Get pets
     var getPetsQuery = new GetPetsQuery(session.CurrentFamilyId.Value);
     var petsResult = await Mediator.Send(getPetsQuery, cancellationToken);
@@ -339,7 +308,7 @@ public class PetCallbackHandler(
         chatId,
         messageId,
         "🐾 У вас пока нет питомцев.\n\nАдминистратор может создать питомца.",
-        replyMarkup: new InlineKeyboardMarkup(new[]
+        replyMarkup: new(new[]
         {
           InlineKeyboardButton.WithCallbackData("➕ Создать питомца", "create_pet")
         }),
@@ -366,7 +335,7 @@ public class PetCallbackHandler(
     foreach (var pet in pets)
     {
       var (petEmoji, petTypeText) = GetPetTypeInfo(pet.Type);
-      var (moodEmoji, moodText) = GetMoodInfo(pet.MoodScore);
+      var (moodEmoji, moodText) = PetDisplay.GetMoodInfo(pet.MoodScore);
 
       messageText += $"{petEmoji} *{pet.Name}*\n";
       messageText += $"   Настроение: {moodEmoji} - {moodText}\n";
@@ -393,19 +362,9 @@ public class PetCallbackHandler(
     // Add create pet button
     buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать питомца", "create_pet") });
 
-    return new InlineKeyboardMarkup(buttons);
+    return new(buttons);
   }
 
   private static (string emoji, string text) GetPetTypeInfo(PetType petType) =>
     PetTypeHelper.GetInfo(petType);
-
-  private static (string emoji, string text) GetMoodInfo(int moodScore) =>
-    moodScore switch
-    {
-      >= 80 => ("😊", "Отлично!"),
-      >= 60 => ("🙂", "Хорошо"),
-      >= 40 => ("😐", "Нормально"),
-      >= 20 => ("😟", "Грустит"),
-      _ => ("😢", "Очень грустно")
-    };
 }

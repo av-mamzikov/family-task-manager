@@ -1,7 +1,6 @@
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.TaskTemplates;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -11,8 +10,7 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
 public class TemplateCreationHandler(
   ILogger<TemplateCreationHandler> logger,
-  IMediator mediator,
-  IUserRegistrationService userRegistrationService)
+  IMediator mediator)
   : BaseConversationHandler(logger, mediator)
 {
   public async Task HandleTemplateTitleInputAsync(
@@ -35,7 +33,7 @@ public class TemplateCreationHandler(
       return;
     }
 
-    session.Data["title"] = title;
+    session.Data.Title = title;
     session.State = ConversationState.AwaitingTemplatePoints;
 
     var pointsKeyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
@@ -64,7 +62,7 @@ public class TemplateCreationHandler(
       return;
     }
 
-    session.Data["points"] = points;
+    session.Data.Points = points;
     session.State = ConversationState.AwaitingTemplateScheduleType;
 
     var scheduleTypeKeyboard = ScheduleKeyboardHelper.GetScheduleTypeKeyboard();
@@ -96,10 +94,11 @@ public class TemplateCreationHandler(
       return;
     }
 
-    session.Data["scheduleTime"] = time;
+    session.Data.ScheduleTime = time;
 
     // Check if we need additional input based on schedule type
-    if (!TryGetSessionData<string>(session, "scheduleType", out var scheduleType))
+    var scheduleType = session.Data.ScheduleType;
+    if (string.IsNullOrWhiteSpace(scheduleType))
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -166,7 +165,7 @@ public class TemplateCreationHandler(
       return;
     }
 
-    session.Data["scheduleDayOfMonth"] = dayOfMonth;
+    session.Data.ScheduleDayOfMonth = dayOfMonth;
 
     // Ask for DueDuration
     session.State = ConversationState.AwaitingTemplateDueDuration;
@@ -198,7 +197,7 @@ public class TemplateCreationHandler(
       return;
     }
 
-    session.Data["dueDuration"] = TimeSpan.FromHours(dueDurationHours);
+    session.Data.DueDuration = TimeSpan.FromHours(dueDurationHours);
     await CreateTemplateAsync(botClient, message, session, cancellationToken);
   }
 
@@ -208,13 +207,15 @@ public class TemplateCreationHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    // Get all required data from session
-    if (!TryGetSessionData<Guid>(session, "familyId", out var familyId) ||
-        !TryGetSessionData<Guid>(session, "petId", out var petId) ||
-        !TryGetSessionData<string>(session, "title", out var title) ||
-        !TryGetSessionData<int>(session, "points", out var points) ||
-        !TryGetSessionData<string>(session, "scheduleType", out var scheduleTypeStr) ||
-        !TryGetSessionData<TimeSpan>(session, "dueDuration", out var dueDuration))
+    // Get all required data from session (strongly-typed)
+    var data = session.Data;
+
+    if (session.CurrentFamilyId is not { } familyId ||
+        data.PetId is not { } petId ||
+        string.IsNullOrWhiteSpace(data.Title) ||
+        data.Points is not { } points ||
+        string.IsNullOrWhiteSpace(data.ScheduleType) ||
+        data.DueDuration is not { } dueDuration)
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -224,32 +225,26 @@ public class TemplateCreationHandler(
         cancellationToken);
       return;
     }
+
+    var title = data.Title;
+    var scheduleTypeStr = data.ScheduleType;
 
     // For Manual schedule type, time is not required
     var scheduleTime = TimeOnly.MinValue;
-    if (scheduleTypeStr != "manual" && !TryGetSessionData(session, "scheduleTime", out scheduleTime))
+    if (scheduleTypeStr != "manual")
     {
-      await SendErrorAndClearStateAsync(
-        botClient,
-        message.Chat.Id,
-        session,
-        "❌ Ошибка. Попробуйте создать шаблон заново.",
-        cancellationToken);
-      return;
-    }
+      if (data.ScheduleTime is null)
+      {
+        await SendErrorAndClearStateAsync(
+          botClient,
+          message.Chat.Id,
+          session,
+          "❌ Ошибка. Попробуйте создать шаблон заново.",
+          cancellationToken);
+        return;
+      }
 
-    // Get user ID
-    var userResult = await userRegistrationService.GetOrRegisterUserAsync(message.From!, cancellationToken);
-
-    if (!userResult.IsSuccess)
-    {
-      await SendErrorAndClearStateAsync(
-        botClient,
-        message.Chat.Id,
-        session,
-        "❌ Ошибка. Попробуйте /start",
-        cancellationToken);
-      return;
+      scheduleTime = data.ScheduleTime.Value;
     }
 
     // Map schedule type string to ScheduleType
@@ -276,21 +271,21 @@ public class TemplateCreationHandler(
     }
 
     // Get optional schedule parameters
-    TryGetSessionData<DayOfWeek>(session, "scheduleDayOfWeek", out var scheduleDayOfWeek);
-    TryGetSessionData<int>(session, "scheduleDayOfMonth", out var scheduleDayOfMonth);
+    var scheduleDayOfWeek = data.ScheduleDayOfWeek;
+    var scheduleDayOfMonth = data.ScheduleDayOfMonth;
 
     // Create template
     var createTemplateCommand = new CreateTaskTemplateCommand(
       familyId,
       petId,
       title,
-      new TaskPoints(points),
+      new(points),
       scheduleType,
       scheduleTime,
       scheduleDayOfWeek == default ? null : scheduleDayOfWeek,
       scheduleDayOfMonth == default ? null : scheduleDayOfMonth,
       dueDuration,
-      userResult.Value);
+      session.UserId);
 
     var result = await Mediator.Send(createTemplateCommand, cancellationToken);
 
@@ -305,8 +300,6 @@ public class TemplateCreationHandler(
       return;
     }
 
-    session.ClearState();
-
     // Build schedule description
     var scheduleDescription = BuildScheduleDescription(scheduleTypeStr, scheduleTime, scheduleDayOfWeek,
       scheduleDayOfMonth);
@@ -319,6 +312,7 @@ public class TemplateCreationHandler(
       BotConstants.Messages.ScheduledTask,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
+    session.ClearState();
   }
 
   private static string BuildScheduleDescription(

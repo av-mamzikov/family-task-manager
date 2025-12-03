@@ -16,14 +16,17 @@ public class UpdateHandler(
   {
     try
     {
-      var handler = update.Type switch
+      switch (update.Type)
       {
-        UpdateType.Message => HandleMessageAsync(botClient, update.Message!, cancellationToken),
-        UpdateType.CallbackQuery => HandleCallbackQueryAsync(botClient, update.CallbackQuery!, cancellationToken),
-        _ => Task.CompletedTask
-      };
-
-      await handler;
+        case UpdateType.Message:
+          await HandleMessageAsync(botClient, update.Message!, cancellationToken);
+          break;
+        case UpdateType.CallbackQuery:
+          await HandleCallbackQueryAsync(botClient, update.CallbackQuery!, cancellationToken);
+          break;
+        default:
+          return;
+      }
     }
     catch (Exception ex)
     {
@@ -43,55 +46,49 @@ public class UpdateHandler(
     CancellationToken cancellationToken)
   {
     var chatId = message.Chat.Id;
-    var telegramId = message.From?.Id;
+    if (message.From == null)
+    {
+      logger.LogError("Message from unknown user is unsupported");
+      return;
+    }
+
+    var session = await sessionManager.GetSessionAsync(message.From, cancellationToken);
+    session.UpdateActivity();
 
     // Handle location messages
     if (message.Location is not null)
-    {
       logger.LogInformation("Received location from {ChatId}: Lat={Latitude}, Lon={Longitude}",
         chatId, message.Location.Latitude, message.Location.Longitude);
-    }
     // Handle text messages
     else if (message.Text is not { } messageText)
-    {
       return;
-    }
     else
-    {
       logger.LogInformation("Received message from {ChatId}: {MessageText}", chatId, messageText);
-    }
 
-    using var scope = serviceProvider.CreateScope();
-    var commandHandler = scope.ServiceProvider.GetRequiredService<IMessageHandler>();
 
-    await commandHandler.HandleCommandAsync(botClient, message, cancellationToken);
+    //using var scope = serviceProvider.CreateScope();
+    var commandHandler = serviceProvider.GetRequiredService<IMessageHandler>();
 
-    // Auto-save session if it was modified
-    if (telegramId.HasValue)
-    {
-      var session = await sessionManager.GetSessionAsync(telegramId.Value, cancellationToken);
-      if (session.IsDirty) await sessionManager.SaveSessionAsync(telegramId.Value, session, cancellationToken);
-    }
+    await commandHandler.HandleCommandAsync(botClient, message, session, cancellationToken);
+
+    await sessionManager.SaveSessionAsync(session, cancellationToken);
   }
 
   private async Task HandleCallbackQueryAsync(ITelegramBotClient botClient, CallbackQuery callbackQuery,
     CancellationToken cancellationToken)
   {
     if (callbackQuery.Data is not { } data)
-    {
       return;
-    }
+    var session = await sessionManager.GetSessionAsync(callbackQuery.From, cancellationToken);
+    session.UpdateActivity();
 
-    var telegramId = callbackQuery.From.Id;
     logger.LogInformation("Received callback from {ChatId}: {Data}", callbackQuery.Message?.Chat.Id, data);
 
     using var scope = serviceProvider.CreateScope();
     var callbackHandler = scope.ServiceProvider.GetRequiredService<ICallbackQueryHandler>();
 
-    await callbackHandler.HandleCallbackAsync(botClient, callbackQuery, cancellationToken);
+    await callbackHandler.HandleCallbackAsync(botClient, callbackQuery, session, cancellationToken);
 
-    // Auto-save session if it was modified
-    var session = await sessionManager.GetSessionAsync(telegramId, cancellationToken);
-    if (session.IsDirty) await sessionManager.SaveSessionAsync(telegramId, session, cancellationToken);
+    await sessionManager.SaveSessionAsync(session, cancellationToken);
   }
 }

@@ -6,6 +6,6 @@ public class GetFamilyWithMembersSpec : Specification<Family>
   {
     Query
       .Where(f => f.Id == familyId)
-      .Include(f => f.Members);
+      .Include(f => f.Members).ThenInclude(m => m.User);
   }
 }

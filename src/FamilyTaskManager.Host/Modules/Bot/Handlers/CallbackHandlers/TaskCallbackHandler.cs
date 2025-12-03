@@ -1,6 +1,6 @@
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.Host.Modules.Bot.Services;
+using FamilyTaskManager.UnitTests.Host.Bot.Models;
 using FamilyTaskManager.UseCases.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -11,9 +11,8 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
 
 public class TaskCallbackHandler(
   ILogger<TaskCallbackHandler> logger,
-  IMediator mediator,
-  IUserRegistrationService userRegistrationService)
-  : BaseCallbackHandler(logger, mediator, userRegistrationService)
+  IMediator mediator)
+  : BaseCallbackHandler(logger, mediator)
 {
   public async Task StartCreateTaskAsync(
     ITelegramBotClient botClient,
@@ -52,9 +51,8 @@ public class TaskCallbackHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    // Store task type in session
-    session.SetState(ConversationState.AwaitingTaskTitle,
-      new Dictionary<string, object> { ["taskType"] = taskType, ["familyId"] = session.CurrentFamilyId! });
+    // Store task type and family in session state
+    session.SetState(ConversationState.AwaitingTaskTitle, new UserSessionData { TaskType = taskType });
 
     var taskTypeText = taskType == "onetime" ? "разовую" : "периодическую";
     var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskTitle);
@@ -68,13 +66,11 @@ public class TaskCallbackHandler(
 
     // Send keyboard in a separate message
     if (keyboard != null)
-    {
       await botClient.SendTextMessageAsync(
         chatId,
         "Используйте кнопки ниже для управления:",
         replyMarkup: keyboard,
         cancellationToken: cancellationToken);
-    }
   }
 
   public async Task HandleTaskPetSelectionAsync(
@@ -85,35 +81,25 @@ public class TaskCallbackHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    if (parts.Length < 2)
-    {
-      return;
-    }
+    if (parts.Length < 2) return;
 
-    if (!Guid.TryParse(parts[1], out var petId))
-    {
-      return;
-    }
+    if (!Guid.TryParse(parts[1], out var petId)) return;
 
     // Store pet ID in session
-    session.Data["petId"] = petId;
+    session.Data.PetId = petId;
 
     // Check task type to determine next step
-    if (!TryGetSessionData<string>(session, "taskType", out var taskType))
+    if (session.Data.TaskType == null)
     {
       session.ClearState();
       await SendErrorAsync(botClient, chatId, "❌ Ошибка. Попробуйте создать задачу заново.", cancellationToken);
       return;
     }
 
-    if (taskType == "onetime")
-    {
+    if (session.Data.TaskType == "onetime")
       await RequestDueDateAsync(botClient, chatId, messageId, session, cancellationToken);
-    }
     else
-    {
       await RequestScheduleAsync(botClient, chatId, messageId, session, cancellationToken);
-    }
   }
 
   public async Task HandleTaskActionAsync(
@@ -125,18 +111,12 @@ public class TaskCallbackHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    if (parts.Length < 3)
-    {
-      return;
-    }
+    if (parts.Length < 3) return;
 
     var taskAction = parts[1];
     var taskIdStr = parts[2];
 
-    if (!Guid.TryParse(taskIdStr, out var taskId))
-    {
-      return;
-    }
+    if (!Guid.TryParse(taskIdStr, out var taskId)) return;
 
     switch (taskAction)
     {
@@ -163,15 +143,8 @@ public class TaskCallbackHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    var userId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-    if (userId == null)
-    {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.UnknownError, cancellationToken);
-      return;
-    }
-
     // Take task
-    var takeTaskCommand = new TakeTaskCommand(taskId, userId.Value);
+    var takeTaskCommand = new TakeTaskCommand(taskId, session.UserId);
     var result = await Mediator.Send(takeTaskCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -211,15 +184,8 @@ public class TaskCallbackHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    var userId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-    if (userId == null)
-    {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.UnknownError, cancellationToken);
-      return;
-    }
-
     // Complete task
-    var completeTaskCommand = new CompleteTaskCommand(taskId, userId.Value);
+    var completeTaskCommand = new CompleteTaskCommand(taskId, session.UserId);
     var result = await Mediator.Send(completeTaskCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -248,15 +214,8 @@ public class TaskCallbackHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    var userId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-    if (userId == null)
-    {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.UnknownError, cancellationToken);
-      return;
-    }
-
     // Cancel task
-    var cancelTaskCommand = new CancelTaskCommand(taskId, userId.Value);
+    var cancelTaskCommand = new CancelTaskCommand(taskId, session.UserId);
     var result = await Mediator.Send(cancelTaskCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -299,13 +258,11 @@ public class TaskCallbackHandler(
       cancellationToken: cancellationToken);
 
     if (dueDateKeyboard != null)
-    {
       await botClient.SendTextMessageAsync(
         chatId,
         "Используйте кнопки ниже для управления:",
         replyMarkup: dueDateKeyboard,
         cancellationToken: cancellationToken);
-    }
   }
 
   private async Task RequestScheduleAsync(
@@ -329,12 +286,10 @@ public class TaskCallbackHandler(
       cancellationToken: cancellationToken);
 
     if (scheduleKeyboard != null)
-    {
       await botClient.SendTextMessageAsync(
         chatId,
         "Используйте кнопки ниже для управления:",
         replyMarkup: scheduleKeyboard,
         cancellationToken: cancellationToken);
-    }
   }
 }

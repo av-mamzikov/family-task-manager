@@ -54,10 +54,8 @@ public class ConversationRouter(
 
     // Handle universal commands
     if (text is "❌ Отменить" or "/cancel" or "⬅️ Назад")
-    {
       // These are handled by CommandHandler
       return;
-    }
 
     // Route to appropriate handler based on state
     await (session.State switch
@@ -145,8 +143,6 @@ public class ConversationRouter(
     Func<Task> sendMainMenuAction,
     CancellationToken cancellationToken)
   {
-    session.ClearState();
-
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       "❌ Действие отменено.",
@@ -155,6 +151,7 @@ public class ConversationRouter(
 
     // Return to main menu
     await sendMainMenuAction();
+    session.ClearState();
   }
 
   public async Task HandleBackInConversationAsync(
@@ -197,14 +194,13 @@ public class ConversationRouter(
 
     if (shouldClear)
     {
-      session.ClearState();
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         "⬅️ Возврат отменён.",
         replyMarkup: new ReplyKeyboardRemove(),
         cancellationToken: cancellationToken);
       await sendMainMenuAction();
-      return;
+      session.ClearState();
     }
 
     // Set previous state
@@ -244,13 +240,11 @@ public class ConversationRouter(
         cancellationToken: cancellationToken);
     }
     else
-    {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         messageText,
         replyMarkup: keyboard ?? new ReplyKeyboardRemove(),
         cancellationToken: cancellationToken);
-    }
   }
 
   private static async Task HandleTimezoneTextInput(
@@ -297,11 +291,11 @@ public class ConversationRouter(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    session.ClearState();
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       "❌ Произошла ошибка. Попробуйте снова.",
       cancellationToken: cancellationToken);
+    session.ClearState();
   }
 
   private static InlineKeyboardMarkup GetTimezoneChoiceKeyboard() =>

@@ -13,11 +13,10 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
 public class FamilyCallbackHandler(
   ILogger<FamilyCallbackHandler> logger,
   IMediator mediator,
-  IUserRegistrationService userRegistrationService,
   BotInfoService botInfoService,
   FamilyMembersHandler familyMembersHandler,
   FamilyMembersCallbackHandler familyMembersCallbackHandler)
-  : BaseCallbackHandler(logger, mediator, userRegistrationService)
+  : BaseCallbackHandler(logger, mediator)
 {
   private readonly FamilyMembersCallbackHandler _familyMembersCallbackHandler = familyMembersCallbackHandler;
   private readonly FamilyMembersHandler _familyMembersHandler = familyMembersHandler;
@@ -30,15 +29,7 @@ public class FamilyCallbackHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    var userId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-    if (userId == null)
-    {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.UnknownError, cancellationToken);
-      return;
-    }
-
-    session.SetState(ConversationState.AwaitingFamilyName,
-      new Dictionary<string, object> { ["userId"] = userId.Value });
+    session.SetState(ConversationState.AwaitingFamilyName, new());
 
     await botClient.EditMessageTextAsync(
       chatId,
@@ -55,10 +46,7 @@ public class FamilyCallbackHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    if (!TryParseGuid(familyIdStr, out var familyId))
-    {
-      return;
-    }
+    if (!TryParseGuid(familyIdStr, out var familyId)) return;
 
     session.CurrentFamilyId = familyId;
 
@@ -79,20 +67,14 @@ public class FamilyCallbackHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    if (parts.Length < 3)
-    {
-      return;
-    }
+    if (parts.Length < 3) return;
 
     var familyAction = parts[1];
 
     // For most actions, parts[2] is familyId; for member-specific actions we may also have userId
     var familyIdStr = parts.Length > 2 ? parts[2] : string.Empty;
 
-    if (!TryParseGuid(familyIdStr, out var familyId))
-    {
-      return;
-    }
+    if (!TryParseGuid(familyIdStr, out var familyId)) return;
 
     switch (familyAction)
     {
@@ -113,7 +95,8 @@ public class FamilyCallbackHandler(
       case "mrpick":
       case "mdel":
       case "mdelok":
-        await _familyMembersCallbackHandler.HandleMemberActionAsync(botClient, chatId, messageId, parts, fromUser,
+        await _familyMembersCallbackHandler.HandleMemberActionAsync(botClient, chatId, messageId, parts, session,
+          fromUser,
           cancellationToken);
         break;
 
@@ -122,7 +105,7 @@ public class FamilyCallbackHandler(
         break;
 
       case "delete":
-        await HandleDeleteFamilyAsync(botClient, chatId, messageId, familyId, session, fromUser, cancellationToken);
+        await HandleDeleteFamilyAsync(botClient, chatId, messageId, familyId, cancellationToken);
         break;
 
       default:
@@ -143,34 +126,18 @@ public class FamilyCallbackHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    if (parts.Length < 4)
-    {
-      return;
-    }
+    if (parts.Length < 4) return;
 
     var inviteAction = parts[1];
     var familyIdStr = parts[2];
     var roleStr = parts[3];
 
-    if (!Guid.TryParse(familyIdStr, out var familyId))
-    {
-      return;
-    }
+    if (!Guid.TryParse(familyIdStr, out var familyId)) return;
 
-    if (!Enum.TryParse<FamilyRole>(roleStr, out var role))
-    {
-      return;
-    }
-
-    var userId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-    if (userId == null)
-    {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.UnknownError, cancellationToken);
-      return;
-    }
+    if (!Enum.TryParse<FamilyRole>(roleStr, out var role)) return;
 
     // Create invite code
-    var createInviteCommand = new CreateInviteCodeCommand(familyId, role, userId.Value);
+    var createInviteCommand = new CreateInviteCodeCommand(familyId, role, session.UserId);
     var result = await Mediator.Send(createInviteCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -186,9 +153,7 @@ public class FamilyCallbackHandler(
     var inviteCode = result.Value;
 
     if (!botInfoService.IsInitialized || string.IsNullOrEmpty(botInfoService.Username))
-    {
       throw new InvalidOperationException("Bot username is not available. Please ensure the bot is fully started.");
-    }
 
     var botUsername = botInfoService.Username;
     var inviteLink = $"https://t.me/{botUsername}?start=invite_{inviteCode}";
@@ -217,15 +182,8 @@ public class FamilyCallbackHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    var userId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-    if (userId == null)
-    {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.UnknownError, cancellationToken);
-      return;
-    }
-
     // Delete the family
-    var deleteFamilyCommand = new DeleteFamilyCommand(familyId, userId.Value);
+    var deleteFamilyCommand = new DeleteFamilyCommand(familyId, session.UserId);
     var deleteResult = await Mediator.Send(deleteFamilyCommand, cancellationToken);
 
     if (!deleteResult.IsSuccess)
@@ -245,13 +203,11 @@ public class FamilyCallbackHandler(
       session.CurrentFamilyId = null;
 
       // Try to select another family if user has any remaining
-      var getFamiliesQuery = new GetUserFamiliesQuery(userId.Value);
+      var getFamiliesQuery = new GetUserFamiliesQuery(session.UserId);
       var familiesResult = await Mediator.Send(getFamiliesQuery, cancellationToken);
 
       if (familiesResult.IsSuccess && familiesResult.Value.Any())
-      {
         session.CurrentFamilyId = familiesResult.Value.First().Id;
-      }
     }
 
     await botClient.EditMessageTextAsync(
@@ -274,13 +230,6 @@ public class FamilyCallbackHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    var userId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-    if (userId == null)
-    {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.UnknownError, cancellationToken);
-      return;
-    }
-
     // Show role selection
     var keyboard = new InlineKeyboardMarkup(new[]
     {
@@ -307,14 +256,7 @@ public class FamilyCallbackHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    var userId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-    if (userId == null)
-    {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.UnknownError, cancellationToken);
-      return;
-    }
-
-    var familiesResult = await Mediator.Send(new GetUserFamiliesQuery(userId.Value), cancellationToken);
+    var familiesResult = await Mediator.Send(new GetUserFamiliesQuery(session.UserId), cancellationToken);
     if (!familiesResult.IsSuccess)
     {
       await EditMessageWithErrorAsync(
@@ -367,17 +309,13 @@ public class FamilyCallbackHandler(
     var buttons = new List<InlineKeyboardButton[]>();
 
     foreach (var family in families)
-    {
       if (family.Id != session.CurrentFamilyId)
-      {
         buttons.Add(new[]
         {
           InlineKeyboardButton.WithCallbackData(
             $"Переключиться на \"{family.Name}\"",
             $"select_family_{family.Id}")
         });
-      }
-    }
 
     buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать новую семью", "create_family") });
 
@@ -431,11 +369,8 @@ public class FamilyCallbackHandler(
     var messageText = "\ud83d\udc65 *Участники семьи*\n\n";
 
     if (!members.Any())
-    {
       messageText += "В этой семье пока нет активных участников.";
-    }
     else
-    {
       foreach (var member in members)
       {
         var roleText = BotConstants.Roles.GetRoleText(member.Role);
@@ -451,7 +386,6 @@ public class FamilyCallbackHandler(
                        $"   Роль: {roleText}\n" +
                        $"   Очки: ⭐ {member.Points}\n\n";
       }
-    }
 
     var keyboard = new InlineKeyboardMarkup(new[]
     {
@@ -486,17 +420,8 @@ public class FamilyCallbackHandler(
     long chatId,
     int messageId,
     Guid familyId,
-    UserSession session,
-    User fromUser,
     CancellationToken cancellationToken)
   {
-    var userId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-    if (userId == null)
-    {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.UnknownError, cancellationToken);
-      return;
-    }
-
     // Show confirmation dialog
     var keyboard = new InlineKeyboardMarkup(new[]
     {

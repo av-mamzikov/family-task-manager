@@ -1,6 +1,7 @@
 using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.UserAggregate;
+using FamilyTaskManager.UnitTests.Helpers;
 using FamilyTaskManager.UseCases.Families;
 using FamilyTaskManager.UseCases.Families.Specifications;
 
@@ -8,15 +9,15 @@ namespace FamilyTaskManager.UnitTests.UseCases.Families;
 
 public class JoinFamilyHandlerTests
 {
-  private readonly IRepository<Family> _familyRepository;
+  private readonly IAppRepository<Family> _familyAppRepository;
   private readonly JoinFamilyHandler _handler;
-  private readonly IRepository<User> _userRepository;
+  private readonly IAppRepository<User> _userAppRepository;
 
   public JoinFamilyHandlerTests()
   {
-    _familyRepository = Substitute.For<IRepository<Family>>();
-    _userRepository = Substitute.For<IRepository<User>>();
-    _handler = new JoinFamilyHandler(_familyRepository, _userRepository);
+    _familyAppRepository = Substitute.For<IAppRepository<Family>>();
+    _userAppRepository = Substitute.For<IAppRepository<User>>();
+    _handler = new(_familyAppRepository, _userAppRepository);
   }
 
   [Fact]
@@ -29,9 +30,9 @@ public class JoinFamilyHandlerTests
     var family = new Family("Smith Family", "UTC");
     var command = new JoinFamilyCommand(userId, familyId, FamilyRole.Child);
 
-    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+    _userAppRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act
@@ -42,9 +43,9 @@ public class JoinFamilyHandlerTests
     family.Members.Count.ShouldBe(1);
     var member = family.Members.First();
     result.Value.ShouldBe(member.Id);
-    member.UserId.ShouldBe(userId);
+    member.UserId.ShouldBe(user.Id);
     member.Role.ShouldBe(FamilyRole.Child);
-    await _familyRepository.Received(1).UpdateAsync(family, Arg.Any<CancellationToken>());
+    await _familyAppRepository.Received(1).UpdateAsync(family, Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -55,7 +56,7 @@ public class JoinFamilyHandlerTests
     var familyId = Guid.NewGuid();
     var command = new JoinFamilyCommand(userId, familyId, FamilyRole.Child);
 
-    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+    _userAppRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns((User?)null);
 
     // Act
@@ -75,9 +76,9 @@ public class JoinFamilyHandlerTests
     var user = new User(123456789, "John Doe");
     var command = new JoinFamilyCommand(userId, familyId, FamilyRole.Child);
 
-    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+    _userAppRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns((Family?)null);
 
     // Act
@@ -96,12 +97,14 @@ public class JoinFamilyHandlerTests
     var familyId = Guid.NewGuid();
     var user = new User(123456789, "John Doe");
     var family = new Family("Smith Family", "UTC");
-    family.AddMember(userId, FamilyRole.Adult);
+    var existingUser = TestHelpers.CreateUser();
+    family.AddMember(existingUser, FamilyRole.Adult);
+    userId = existingUser.Id;
     var command = new JoinFamilyCommand(userId, familyId, FamilyRole.Child);
 
-    _userRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
+    _userAppRepository.GetByIdAsync(userId, Arg.Any<CancellationToken>())
       .Returns(user);
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act

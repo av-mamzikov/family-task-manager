@@ -32,8 +32,7 @@ public class PetCreationHandler(
     }
 
     // Get data from session
-    if (!TryGetSessionData<string>(session, "petType", out var petTypeStr) ||
-        !TryGetSessionData<Guid>(session, "familyId", out var familyId))
+    if (session.Data.PetType == null || session.CurrentFamilyId == null)
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -45,7 +44,7 @@ public class PetCreationHandler(
     }
 
     // Parse pet type
-    if (!Enum.TryParse<PetType>(petTypeStr, true, out var petType))
+    if (!Enum.TryParse<PetType>(session.Data.PetType, true, out var petType))
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -57,7 +56,7 @@ public class PetCreationHandler(
     }
 
     // Create pet
-    var createPetCommand = new CreatePetCommand(familyId, petType, petName);
+    var createPetCommand = new CreatePetCommand(session.CurrentFamilyId.Value, petType, petName);
     var result = await Mediator.Send(createPetCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -71,8 +70,6 @@ public class PetCreationHandler(
       return;
     }
 
-    session.ClearState();
-
     var petEmoji = PetTypeHelper.GetEmoji(petType);
 
     await botClient.SendTextMessageAsync(
@@ -81,5 +78,6 @@ public class PetCreationHandler(
       BotConstants.Messages.PetTasksAvailable,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
+    session.ClearState();
   }
 }

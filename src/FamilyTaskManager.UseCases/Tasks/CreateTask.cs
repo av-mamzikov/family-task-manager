@@ -1,4 +1,3 @@
-using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.Core.Services;
 
 namespace FamilyTaskManager.UseCases.Tasks;
@@ -17,16 +16,16 @@ public record CreateTaskCommand(
   Guid CreatedBy) : ICommand<Result<Guid>>;
 
 public class CreateTaskHandler(
-  IRepository<TaskInstance> taskRepository,
-  IRepository<Pet> petRepository,
-  IRepository<Family> familyRepository,
+  IAppRepository<TaskInstance> taskAppRepository,
+  IAppRepository<Pet> petAppRepository,
   ITimeZoneService timeZoneService,
   IPetMoodCalculator moodCalculator) : ICommandHandler<CreateTaskCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreateTaskCommand command, CancellationToken cancellationToken)
   {
-    // Verify pet exists and belongs to family
-    var pet = await petRepository.GetByIdAsync(command.PetId, cancellationToken);
+    // Load pet with family (needed for TaskCreatedEvent)
+    var petSpec = new GetPetByIdWithFamilySpec(command.PetId);
+    var pet = await petAppRepository.FirstOrDefaultAsync(petSpec, cancellationToken);
     if (pet == null)
     {
       return Result<Guid>.NotFound("Питомец не найден");
@@ -35,13 +34,6 @@ public class CreateTaskHandler(
     if (pet.FamilyId != command.FamilyId)
     {
       return Result<Guid>.Error("Питомец не принадлежит этой семье");
-    }
-
-    // Get family for timezone conversion
-    var family = await familyRepository.GetByIdAsync(command.FamilyId, cancellationToken);
-    if (family == null)
-    {
-      return Result<Guid>.NotFound("Семья не найдена");
     }
 
     // Validate title length
@@ -54,29 +46,28 @@ public class CreateTaskHandler(
     DateTime dueAtUtc;
     try
     {
-      dueAtUtc = timeZoneService.ConvertToUtc(command.DueAt, family.Timezone);
+      dueAtUtc = timeZoneService.ConvertToUtc(command.DueAt, pet.Family.Timezone);
     }
     catch (ArgumentException ex)
     {
       return Result<Guid>.Invalid(new ValidationError($"Ошибка преобразования часового пояса: {ex.Message}"));
     }
 
-    // Create one-time task
+    // Create one-time task (pet has Family loaded for event)
     var task = new TaskInstance(
-      command.FamilyId,
-      command.PetId,
+      pet,
       command.Title,
       command.Points,
       TaskType.OneTime,
       dueAtUtc);
 
-    await taskRepository.AddAsync(task, cancellationToken);
-    await taskRepository.SaveChangesAsync(cancellationToken);
+    await taskAppRepository.AddAsync(task, cancellationToken);
+    await taskAppRepository.SaveChangesAsync(cancellationToken);
 
     // Trigger immediate mood recalculation for the pet
     var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(command.PetId, cancellationToken);
     pet.UpdateMoodScore(newMoodScore);
-    await petRepository.SaveChangesAsync(cancellationToken);
+    await petAppRepository.SaveChangesAsync(cancellationToken);
 
     return Result<Guid>.Success(task.Id);
   }

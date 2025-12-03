@@ -1,13 +1,10 @@
-using FamilyTaskManager.Core.Interfaces;
-using FamilyTaskManager.Core.TaskAggregate.Events;
+using Ardalis.SharedKernel;
 using FamilyTaskManager.Infrastructure.Behaviors;
 using FamilyTaskManager.Infrastructure.Data;
 using FamilyTaskManager.Infrastructure.Database;
-using FamilyTaskManager.Infrastructure.DomainEvents;
 using FamilyTaskManager.Infrastructure.Interfaces;
 using FamilyTaskManager.Infrastructure.Jobs;
 using FamilyTaskManager.Infrastructure.Notifications;
-using FamilyTaskManager.Infrastructure.Notifications.Handlers;
 using FamilyTaskManager.Infrastructure.Services;
 using Mediator;
 using Quartz;
@@ -26,34 +23,25 @@ public static class InfrastructureServiceExtensions
     // Get database connection string using shared logic
     var connectionString = config.GetDatabaseConnectionString();
 
-    services.AddScoped<EventDispatchInterceptor>();
+    services.AddScoped<OutboxInterceptor>();
     services.AddScoped<IDomainEventDispatcher, MediatorDomainEventDispatcher>();
 
     services.AddDbContext<AppDbContext>((provider, options) =>
     {
-      var eventDispatchInterceptor = provider.GetRequiredService<EventDispatchInterceptor>();
-
       // Use PostgreSQL if DefaultConnection is available, otherwise use SQLite
       if (config.GetConnectionString("DefaultConnection") != null)
-      {
         options.UseNpgsql(connectionString);
-      }
       else
-      {
         options.UseSqlite(connectionString);
-      }
 
-      options.AddInterceptors(eventDispatchInterceptor);
+      options.AddInterceptors(provider.GetRequiredService<OutboxInterceptor>());
     });
 
-    services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>))
-      .AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
+    services.AddScoped(typeof(IAppRepository<>), typeof(EfAppRepository<>))
+      .AddScoped(typeof(Core.Interfaces.IReadRepository<>), typeof(EfAppRepository<>));
 
     // Register universal read-only repository for any entity
     services.AddScoped(typeof(IReadOnlyEntityRepository<>), typeof(EfReadOnlyEntityRepository<>));
-
-    // Register infrastructure repository for non-domain entities (outbox, audit logs, etc.)
-    services.AddScoped(typeof(IInfrastructureRepository<>), typeof(EfInfrastructureRepository<>));
 
     // Register Mediator Pipeline Behaviors
     services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(MediatorLoggingBehavior<,>));
@@ -62,19 +50,6 @@ public static class InfrastructureServiceExtensions
     // Telegram Bot Client (from configuration)
     services.AddScoped<ITelegramNotificationService, TelegramNotificationService>();
     logger.LogInformation("Telegram notification service registered");
-
-    // Register TaskCreated notification outbox handler for batched delivery
-    services.AddScoped<INotificationHandler<TaskCreatedEvent>,
-      TaskCreatedNotificationOutboxHandler>();
-
-    // Register TaskReminder notification outbox handler for batched delivery
-    services.AddScoped<INotificationHandler<TaskReminderDueEvent>,
-      TaskReminderNotificationOutboxHandler>();
-
-    // Register outbox event handlers for processing batched notifications
-    services.AddScoped<IOutboxEventHandler, TaskCreatedOutboxHandler>();
-    services.AddScoped<IOutboxEventHandler, TaskReminderOutboxHandler>();
-    logger.LogInformation("Outbox handlers registered (TaskCreated, TaskReminder)");
 
     // Register TimeZone Service
     services.AddScoped<ITimeZoneService, TimeZoneService>();
@@ -97,14 +72,12 @@ public static class InfrastructureServiceExtensions
   {
     logger?.LogInformation("Registering Infrastructure jobs...");
 
-    // OutboxDispatcherJob - runs every 1 minute
-    // Processes batched notifications (TaskCreated, TaskReminder)
     var outboxJobKey = new JobKey("OutboxDispatcherJob");
     quartz.AddJob<OutboxDispatcherJob>(opts => opts.WithIdentity(outboxJobKey));
     quartz.AddTrigger(opts => opts
       .ForJob(outboxJobKey)
       .WithIdentity("OutboxDispatcherJob-trigger")
-      .WithCronSchedule("0 */1 * * * ?") // Every 1 minute
+      .WithCronSchedule("*/10 * * * * ?")
       .WithDescription("Processes batched notifications from outbox"));
 
     logger?.LogInformation("Infrastructure jobs registered: OutboxDispatcherJob");

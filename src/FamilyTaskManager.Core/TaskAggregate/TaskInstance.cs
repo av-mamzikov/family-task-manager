@@ -10,16 +10,15 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   {
   }
 
-  public TaskInstance(Guid familyId, Guid petId, string title, TaskPoints points, TaskType type, DateTime dueAt,
+  public TaskInstance(Pet pet, string title, TaskPoints points, TaskType type, DateTime dueAt,
     Guid? templateId = null)
   {
-    Guard.Against.Default(familyId);
-    Guard.Against.Default(petId);
+    Guard.Against.Null(pet);
     Guard.Against.NullOrWhiteSpace(title);
     Guard.Against.Null(points);
 
-    FamilyId = familyId;
-    PetId = petId;
+    FamilyId = pet.FamilyId;
+    PetId = pet.Id;
     Title = title.Trim();
     Points = points;
     Type = type;
@@ -28,13 +27,23 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     CreatedAt = DateTime.UtcNow;
     DueAt = dueAt;
 
-    RegisterDomainEvent(new TaskCreatedEvent(this));
+    RegisterDomainEvent(new TaskCreatedEvent
+    {
+      TaskId = Id,
+      FamilyId = pet.FamilyId,
+      PetId = pet.Id,
+      Title = title.Trim(),
+      PetName = pet.Name,
+      Points = points.ToString(),
+      DueAt = dueAt,
+      Timezone = pet.Family.Timezone
+    });
   }
 
-  public Guid FamilyId { get; private set; }
+  public Guid FamilyId { get; }
   public Guid PetId { get; private set; }
-  public string Title { get; private set; } = null!;
-  public TaskPoints Points { get; private set; } = null!;
+  public string Title { get; } = null!;
+  public TaskPoints Points { get; } = null!;
   public TaskType Type { get; private set; }
   public Guid? TemplateId { get; private set; }
   public TaskStatus Status { get; private set; }
@@ -42,10 +51,10 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public Guid? CompletedByMemberId { get; private set; }
   public DateTime? CompletedAt { get; private set; }
   public DateTime CreatedAt { get; private set; }
-  public DateTime DueAt { get; private set; }
+  public DateTime DueAt { get; }
 
   // Navigation properties
-  public Family Family { get; private set; } = null!;
+  public Family Family { get; } = null!;
   public Pet Pet { get; private set; } = null!;
   public TaskTemplate? Template { get; private set; }
   public FamilyMember? StartedByMember { get; private set; }
@@ -53,33 +62,35 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
 
   public void Start(Guid familyMemberId)
   {
-    if (Status != TaskStatus.Active)
-    {
-      return;
-    }
+    if (Status != TaskStatus.Active) return;
 
     Guard.Against.Default(familyMemberId);
 
     Status = TaskStatus.InProgress;
     StartedByMemberId = familyMemberId;
 
-    RegisterDomainEvent(new TaskStartedEvent(this));
+    RegisterDomainEvent(new TaskStartedEvent { TaskId = Id });
   }
 
-  public void Complete(Guid completedByMemberId, DateTime completedAtUtc)
+  public void Complete(FamilyMember completedByMember, DateTime completedAtUtc)
   {
-    if (Status == TaskStatus.Completed)
-    {
-      return;
-    }
+    if (Status == TaskStatus.Completed) return;
 
-    Guard.Against.Default(completedByMemberId);
+    Guard.Against.Null(completedByMember);
 
     Status = TaskStatus.Completed;
-    CompletedByMemberId = completedByMemberId;
+    CompletedByMemberId = completedByMember.Id;
     CompletedAt = completedAtUtc;
 
-    RegisterDomainEvent(new TaskCompletedEvent(this));
+    RegisterDomainEvent(new TaskCompletedEvent
+    {
+      TaskId = Id,
+      FamilyId = FamilyId,
+      Title = Title,
+      Points = Points.ToString(),
+      CompletedByUserId = completedByMember.UserId,
+      CompletedByUserName = completedByMember.User.Name
+    });
   }
 
   public void Release()
@@ -96,11 +107,15 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public void TriggerReminder()
   {
     // Only send reminders for active or in-progress tasks
-    if (Status != TaskStatus.Active && Status != TaskStatus.InProgress)
-    {
-      return;
-    }
+    if (Status != TaskStatus.Active && Status != TaskStatus.InProgress) return;
 
-    RegisterDomainEvent(new TaskReminderDueEvent(this));
+    RegisterDomainEvent(new TaskReminderDueEvent
+    {
+      TaskId = Id,
+      FamilyId = FamilyId,
+      Title = Title,
+      DueAt = DueAt,
+      Timezone = Family.Timezone
+    });
   }
 }

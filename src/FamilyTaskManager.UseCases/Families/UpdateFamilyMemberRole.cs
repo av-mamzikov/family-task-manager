@@ -6,13 +6,13 @@ public record UpdateFamilyMemberRoleCommand(
   Guid RequestedBy,
   FamilyRole NewRole) : ICommand<Result>;
 
-public class UpdateFamilyMemberRoleHandler(IRepository<Family> familyRepository)
+public class UpdateFamilyMemberRoleHandler(IAppRepository<Family> familyAppRepository)
   : ICommandHandler<UpdateFamilyMemberRoleCommand, Result>
 {
   public async ValueTask<Result> Handle(UpdateFamilyMemberRoleCommand command, CancellationToken cancellationToken)
   {
     var spec = new GetFamilyWithMembersSpec(command.FamilyId);
-    var family = await familyRepository.FirstOrDefaultAsync(spec, cancellationToken);
+    var family = await familyAppRepository.FirstOrDefaultAsync(spec, cancellationToken);
     if (family == null)
     {
       return Result.NotFound("Семья не найдена");
@@ -46,7 +46,7 @@ public class UpdateFamilyMemberRoleHandler(IRepository<Family> familyRepository)
     }
 
     member.UpdateRole(command.NewRole);
-    await familyRepository.UpdateAsync(family, cancellationToken);
+    await familyAppRepository.UpdateAsync(family, cancellationToken);
 
     return Result.Success();
   }

@@ -108,7 +108,7 @@ public class FamilyRepositoryTests : BaseRepositoryTestFixture
     await DbContext.SaveChangesAsync();
 
     // Act
-    var member = family.AddMember(user.Id, FamilyRole.Admin);
+    var member = family.AddMember(user, FamilyRole.Admin);
     await Repository.UpdateAsync(family);
     await DbContext.SaveChangesAsync();
 

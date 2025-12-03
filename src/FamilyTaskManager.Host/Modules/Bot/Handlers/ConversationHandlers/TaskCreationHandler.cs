@@ -2,7 +2,6 @@ using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Pets;
 using FamilyTaskManager.UseCases.Tasks;
 using FamilyTaskManager.UseCases.TaskTemplates;
@@ -14,8 +13,7 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
 public class TaskCreationHandler(
   ILogger<TaskCreationHandler> logger,
-  IMediator mediator,
-  IUserRegistrationService userRegistrationService)
+  IMediator mediator)
   : BaseConversationHandler(logger, mediator)
 {
   public async Task HandleTaskTitleInputAsync(
@@ -39,7 +37,7 @@ public class TaskCreationHandler(
     }
 
     // Store title and move to points input
-    session.Data["title"] = title;
+    session.Data.Title = title;
     session.State = ConversationState.AwaitingTaskPoints;
 
     var pointsKeyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
@@ -69,11 +67,11 @@ public class TaskCreationHandler(
     }
 
     // Store points and show pet selection
-    session.Data["points"] = points;
+    session.Data.Points = points;
     session.State = ConversationState.AwaitingTaskPetSelection;
 
     // Get family pets
-    if (!TryGetSessionData<Guid>(session, "familyId", out var familyId))
+    if (session.CurrentFamilyId == null)
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -84,7 +82,7 @@ public class TaskCreationHandler(
       return;
     }
 
-    var getPetsQuery = new GetPetsQuery(familyId);
+    var getPetsQuery = new GetPetsQuery(session.CurrentFamilyId.Value);
     var petsResult = await Mediator.Send(getPetsQuery, cancellationToken);
 
     if (!petsResult.IsSuccess || !petsResult.Value.Any())
@@ -143,10 +141,10 @@ public class TaskCreationHandler(
     var dueAt = DateTime.UtcNow.AddDays(days);
 
     // Get all required data from session
-    if (!TryGetSessionData<Guid>(session, "familyId", out var familyId) ||
-        !TryGetSessionData<Guid>(session, "petId", out var petId) ||
-        !TryGetSessionData<string>(session, "title", out var title) ||
-        !TryGetSessionData<int>(session, "points", out var points))
+    if (session.CurrentFamilyId == null ||
+        session.Data.PetId == null ||
+        session.Data.Title == null ||
+        session.Data.Points == null)
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -157,23 +155,11 @@ public class TaskCreationHandler(
       return;
     }
 
-    // Get user ID
-    var userResult = await userRegistrationService.GetOrRegisterUserAsync(message.From!, cancellationToken);
-
-    if (!userResult.IsSuccess)
-    {
-      await SendErrorAndClearStateAsync(
-        botClient,
-        message.Chat.Id,
-        session,
-        "❌ Ошибка. Попробуйте /start",
-        cancellationToken);
-      return;
-    }
-
-    // Create one-time task
+    // Create one-time task (user id not tracked here anymore)
+    var taskPoints = new TaskPoints(session.Data.Points.Value);
     var createTaskCommand =
-      new CreateTaskCommand(familyId, petId, title, new TaskPoints(points), dueAt, userResult.Value);
+      new CreateTaskCommand(session.CurrentFamilyId.Value, session.Data.PetId.Value, session.Data.Title,
+        taskPoints, dueAt, session.UserId);
     var result = await Mediator.Send(createTaskCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -187,16 +173,15 @@ public class TaskCreationHandler(
       return;
     }
 
-    session.ClearState();
-
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      $"✅ Задача \"{title}\" успешно создана!\n\n" +
-      $"💯 Очки: {TaskPointsHelper.ToStars(points)}\n" +
+      $"✅ Задача \"{session.Data.Title}\" успешно создана!\n\n" +
+      $"💯 Очки: {taskPoints.ToStars()}\n" +
       $"📎 Срок: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
       BotConstants.Messages.TaskAvailableToAll,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
+    session.ClearState();
   }
 
   public async Task HandleTaskScheduleInputAsync(
@@ -221,30 +206,16 @@ public class TaskCreationHandler(
     }
 
     // Get all required data from session
-    if (!TryGetSessionData<Guid>(session, "familyId", out var familyId) ||
-        !TryGetSessionData<Guid>(session, "petId", out var petId) ||
-        !TryGetSessionData<string>(session, "title", out var title) ||
-        !TryGetSessionData<int>(session, "points", out var points))
+    if (session.CurrentFamilyId == null ||
+        session.Data.PetId == null ||
+        session.Data.Title == null ||
+        session.Data.Points == null)
     {
       await SendErrorAndClearStateAsync(
         botClient,
         message.Chat.Id,
         session,
         "❌ Ошибка. Попробуйте создать задачу заново.",
-        cancellationToken);
-      return;
-    }
-
-    // Get user ID
-    var userResult = await userRegistrationService.GetOrRegisterUserAsync(message.From!, cancellationToken);
-
-    if (!userResult.IsSuccess)
-    {
-      await SendErrorAndClearStateAsync(
-        botClient,
-        message.Chat.Id,
-        session,
-        "❌ Ошибка. Попробуйте /start",
         cancellationToken);
       return;
     }
@@ -267,10 +238,12 @@ public class TaskCreationHandler(
     var (scheduleType, scheduleTime, scheduleDayOfWeek, scheduleDayOfMonth) = parseResult.Value;
 
     // Create periodic task template
+    var taskPoints = new TaskPoints(session.Data.Points.Value);
     var createTemplateCommand =
-      new CreateTaskTemplateCommand(familyId, petId, title, new TaskPoints(points), scheduleType, scheduleTime,
+      new CreateTaskTemplateCommand(session.CurrentFamilyId.Value, session.Data.PetId.Value,
+        session.Data.Title, taskPoints, scheduleType, scheduleTime,
         scheduleDayOfWeek,
-        scheduleDayOfMonth, TimeSpan.FromHours(12), userResult.Value);
+        scheduleDayOfMonth, TimeSpan.FromHours(12), session.UserId);
     var result = await Mediator.Send(createTemplateCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -284,15 +257,14 @@ public class TaskCreationHandler(
       return;
     }
 
-    session.ClearState();
-
     var scheduleText = ScheduleFormatter.Format(scheduleType, scheduleTime, scheduleDayOfWeek, scheduleDayOfMonth);
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      $"✅ Периодическая задача \"{title}\" успешно создана!\n\n" +
-      $"💯 Очки: {TaskPointsHelper.ToStars(points)}\n" +
+      $"✅ Периодическая задача \"{session.Data.Title}\" успешно создана!\n\n" +
+      $"💯 Очки: {taskPoints.ToStars()}\n" +
       $"🔄 Расписание: {scheduleText}\n\n" +
       BotConstants.Messages.ScheduledTask,
       cancellationToken: cancellationToken);
+    session.ClearState();
   }
 }

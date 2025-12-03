@@ -1,9 +1,9 @@
 namespace FamilyTaskManager.Core.Points;
 
-public sealed class PointsCreditedEvent(Guid familyId, Guid memberId, int points, Guid taskId) : DomainEventBase
+public sealed class PointsCreditedEvent : DomainEventBase
 {
-  public Guid FamilyId { get; init; } = familyId;
-  public Guid MemberId { get; init; } = memberId;
-  public int Points { get; init; } = points;
-  public Guid TaskId { get; init; } = taskId;
+  public required Guid FamilyId { get; init; }
+  public required Guid MemberId { get; init; }
+  public required int Points { get; init; }
+  public required Guid TaskId { get; init; }
 }

@@ -2,9 +2,7 @@ using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Families;
-using FamilyTaskManager.UseCases.Users;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -14,24 +12,19 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 
 public interface IMessageHandler
 {
-  Task HandleCommandAsync(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken);
+  Task HandleCommandAsync(ITelegramBotClient botClient, Message message, UserSession session,
+    CancellationToken cancellationToken);
 }
 
 public class MessageHandler(
-  ISessionManager sessionManager,
   IMediator mediator,
-  IUserRegistrationService userRegistrationService,
   IConversationRouter conversationRouter,
   IServiceProvider serviceProvider)
   : IMessageHandler
 {
-  public async Task HandleCommandAsync(ITelegramBotClient botClient, Message message,
+  public async Task HandleCommandAsync(ITelegramBotClient botClient, Message message, UserSession session,
     CancellationToken cancellationToken)
   {
-    var telegramId = message.From!.Id;
-    var session = await sessionManager.GetSessionAsync(telegramId, cancellationToken);
-    session.UpdateActivity();
-
     var messageText = message.Text ?? string.Empty;
 
     // Check if user pressed main menu button while in conversation
@@ -45,7 +38,6 @@ public class MessageHandler(
       // If user pressed main menu button or command, clear conversation state
       if (isMainMenuButton || isCommand)
       {
-        session.ClearState();
         await botClient.SendTextMessageAsync(
           message.Chat.Id,
           "❌ Предыдущее действие отменено.",
@@ -53,6 +45,7 @@ public class MessageHandler(
           replyMarkup: new ReplyKeyboardRemove(),
           cancellationToken: cancellationToken);
         // Continue to handle the button/command
+        session.ClearState();
       }
       // Handle universal conversation commands
       else if (messageText is "❌ Отменить" or "/cancel")
@@ -88,20 +81,13 @@ public class MessageHandler(
       await (command switch
       {
         "/start" => HandleStartCommandAsync(botClient, message, args, session, cancellationToken),
-        "/family" => HandleFamilyCommandAsync(botClient, message, session, cancellationToken),
-        "/tasks" => HandleTasksCommandAsync(botClient, message, session, cancellationToken),
-        "/pet" => HandlePetCommandAsync(botClient, message, session, cancellationToken),
-        "/templates" => HandleTemplatesCommandAsync(botClient, message, session, cancellationToken),
-        "/stats" => HandleStatsCommandAsync(botClient, message, session, cancellationToken),
         "/help" => HandleHelpCommandAsync(botClient, message, cancellationToken),
         _ => HandleUnknownCommandAsync(botClient, message, cancellationToken)
       });
     }
     else
-    {
       // Handle persistent keyboard buttons
       await HandleKeyboardButtonAsync(botClient, message, session, cancellationToken);
-    }
   }
 
   private async Task HandleStartCommandAsync(
@@ -111,34 +97,15 @@ public class MessageHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var telegramId = message.From!.Id;
-    var userName = message.From.GetDisplayName();
-
-    // Register or update user
-    var registerCommand = new RegisterUserCommand(telegramId, userName);
-    var result = await mediator.Send(registerCommand, cancellationToken);
-
-    if (!result.IsSuccess)
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка регистрации. Попробуйте позже.",
-        parseMode: ParseMode.Markdown,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    var userId = result.Value;
-
     // Check for invite code
     if (args.Length > 0 && args[0].StartsWith("invite_"))
     {
-      await HandleInviteAsync(botClient, message, userId, args[0], cancellationToken);
+      await HandleInviteAsync(botClient, message, session.UserId, args[0], cancellationToken);
       return;
     }
 
     // Get user families
-    var getFamiliesQuery = new GetUserFamiliesQuery(userId);
+    var getFamiliesQuery = new GetUserFamiliesQuery(session.UserId);
     var familiesResult = await mediator.Send(getFamiliesQuery, cancellationToken);
 
     if (familiesResult.IsSuccess && familiesResult.Value.Any())
@@ -151,7 +118,6 @@ public class MessageHandler(
         + BotConstants.Messages.FamilyJoined(family.Name, BotConstants.Roles.GetRoleText(family.UserRole)));
     }
     else
-    {
       // New user - offer to create family
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
@@ -163,7 +129,6 @@ public class MessageHandler(
           InlineKeyboardButton.WithCallbackData("➕ Создать семью", "create_family")
         }),
         cancellationToken: cancellationToken);
-    }
   }
 
   private async Task HandleInviteAsync(
@@ -200,7 +165,7 @@ public class MessageHandler(
       var newFamily = familiesResult.Value.First();
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        $"🎉 *Добро пожаловать в семью!*\n\n" +
+        "🎉 *Добро пожаловать в семью!*\n\n" +
         BotConstants.Messages.FamilyJoined(newFamily.Name, BotConstants.Roles.GetRoleText(newFamily.UserRole)),
         parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
@@ -209,13 +174,11 @@ public class MessageHandler(
       await SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken);
     }
     else
-    {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         "✅ Вы присоединились к семье!",
         parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
-    }
   }
 
   private async Task HandleFamilyCommandAsync(
@@ -224,20 +187,8 @@ public class MessageHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var userResult = await userRegistrationService.GetOrRegisterUserAsync(message.From!, cancellationToken);
-
-    if (!userResult.IsSuccess)
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте /start",
-        parseMode: ParseMode.Markdown,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
     var handler = serviceProvider.GetRequiredService<FamilyCommandHandler>();
-    await handler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
+    await handler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
   }
 
   private async Task HandleTasksCommandAsync(
@@ -246,20 +197,8 @@ public class MessageHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var userResult = await userRegistrationService.GetOrRegisterUserAsync(message.From!, cancellationToken);
-
-    if (!userResult.IsSuccess)
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте /start",
-        parseMode: ParseMode.Markdown,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
     var handler = serviceProvider.GetRequiredService<TasksCommandHandler>();
-    await handler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
+    await handler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
   }
 
   private async Task HandlePetCommandAsync(
@@ -268,20 +207,8 @@ public class MessageHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var userResult = await userRegistrationService.GetOrRegisterUserAsync(message.From!, cancellationToken);
-
-    if (!userResult.IsSuccess)
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте /start",
-        parseMode: ParseMode.Markdown,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
     var handler = serviceProvider.GetRequiredService<PetCommandHandler>();
-    await handler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
+    await handler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
   }
 
   private async Task HandleStatsCommandAsync(
@@ -290,54 +217,19 @@ public class MessageHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var userResult = await userRegistrationService.GetOrRegisterUserAsync(message.From!, cancellationToken);
-
-    if (!userResult.IsSuccess)
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте /start",
-        parseMode: ParseMode.Markdown,
-        cancellationToken: cancellationToken);
-      return;
-    }
-
     var handler = serviceProvider.GetRequiredService<StatsCommandHandler>();
-    await handler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
-  }
-
-  private async Task HandleTemplatesCommandAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    var userResult = await userRegistrationService.GetOrRegisterUserAsync(message.From!, cancellationToken);
-
-    if (!userResult.IsSuccess)
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "❌ Ошибка. Попробуйте /start",
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    var handler = serviceProvider.GetRequiredService<TemplateCommandHandler>();
-    await handler.HandleAsync(botClient, message, session, userResult.Value, cancellationToken);
+    await handler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
   }
 
   private async Task HandleHelpCommandAsync(
     ITelegramBotClient botClient,
     Message message,
-    CancellationToken cancellationToken)
-  {
+    CancellationToken cancellationToken) =>
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       BotConstants.Help.Commands,
       parseMode: ParseMode.Markdown,
       cancellationToken: cancellationToken);
-  }
 
   private async Task HandleUnknownCommandAsync(
     ITelegramBotClient botClient,

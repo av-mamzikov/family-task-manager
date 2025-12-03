@@ -1,6 +1,5 @@
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.Host.Modules.Bot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types.ReplyMarkups;
 
@@ -8,9 +7,8 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
 
 public class ScheduleCallbackHandler(
   ILogger<ScheduleCallbackHandler> logger,
-  IMediator mediator,
-  IUserRegistrationService userRegistrationService)
-  : BaseCallbackHandler(logger, mediator, userRegistrationService)
+  IMediator mediator)
+  : BaseCallbackHandler(logger, mediator)
 {
   /// <summary>
   ///   Handles schedule-related callbacks (type selection, weekday selection).
@@ -64,7 +62,7 @@ public class ScheduleCallbackHandler(
     }
 
     // Store schedule type in session
-    session.Data["scheduleType"] = scheduleType;
+    session.Data.ScheduleType = scheduleType;
 
     // Determine if we're in template creation or editing flow
     var isEditing = session.State == ConversationState.AwaitingTemplateEditScheduleType;
@@ -139,7 +137,7 @@ public class ScheduleCallbackHandler(
     }
 
     // Store weekday in session
-    session.Data["scheduleDayOfWeek"] = dayOfWeek.Value;
+    session.Data.ScheduleDayOfWeek = dayOfWeek.Value;
 
     // Determine if we're in template creation or editing flow
     var isEditing = session.State == ConversationState.AwaitingTemplateEditScheduleWeekday;

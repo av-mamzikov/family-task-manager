@@ -347,11 +347,6 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
-                    b.Property<string>("DeliveryMode")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
                     b.Property<string>("EventType")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -378,7 +373,7 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
 
                     b.HasIndex("EventType", "Status");
 
-                    b.HasIndex("Status", "DeliveryMode", "OccurredAtUtc");
+                    b.HasIndex("Status", "OccurredAtUtc");
 
                     b.ToTable("DomainEventOutbox", (string)null);
                 });

@@ -23,37 +23,14 @@ public partial class InviteUserBotFlowTests(CustomWebApplicationFactory<Program>
     botClient.Clear();
 
     // Arrange: Admin creates family via bot flow
-    var adminTelegramId = TestDataBuilder.GenerateTelegramId();
-    var adminChatId = adminTelegramId;
-    var familyName = "Семья Петровых";
+    var (familyName, adminTelegramId, adminChatId) =
+      await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Петровых");
 
-    // Step 1: start family creation via callback
-    var createFamilyCallback = UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, "create_family");
-    botClient.EnqueueUpdate(createFamilyCallback);
-    await botClient.WaitForLastMessageToAsync(adminChatId);
+    // Step 5: open family menu via main menu button
+    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🏠 Семья"));
 
-    // Step 2: enter family name
-    var nameUpdate = UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, familyName);
-    botClient.EnqueueUpdate(nameUpdate);
-    await botClient.WaitForLastMessageToAsync(adminChatId);
-
-    // Step 3: show timezone list
-    var showTimezoneList = UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, "timezone_showlist");
-    botClient.EnqueueUpdate(showTimezoneList);
-    await botClient.WaitForLastMessageToAsync(adminChatId);
-
-    // Step 4: select timezone
-    var timezoneSelection = UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, "timezone_Europe/Moscow");
-    botClient.EnqueueUpdate(timezoneSelection);
-    await botClient.WaitForLastMessageToAsync(adminChatId);
-
-    // Now admin has a family and main menu is shown
-
-    // Step 5: open family menu via /family
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "/family"));
-
-    var familyMenuMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
-    familyMenuMessage.ShouldNotBeNull("Бот должен показать меню семьи после команды /family");
+    var familyMenuMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    familyMenuMessage.ShouldNotBeNull("Бот должен показать меню семьи после нажатия на кнопку '🏠 Семья'");
     familyMenuMessage!.ShouldContainText(familyName);
     var familyMenuKeyboard = familyMenuMessage.ShouldHaveInlineKeyboard();
     var createInviteButton = familyMenuKeyboard.GetButton("Создать приглашение");
@@ -64,7 +41,7 @@ public partial class InviteUserBotFlowTests(CustomWebApplicationFactory<Program>
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createInviteButton.CallbackData!));
 
     // Step 7: select role for invite (Adult)
-    var inviteRoleMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var inviteRoleMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     inviteRoleMessage.ShouldNotBeNull("Бот должен показать выбор роли для приглашения");
     inviteRoleMessage!.ShouldContainText("Создание приглашения");
     var inviteRoleKeyboard = inviteRoleMessage.ShouldHaveInlineKeyboard();
@@ -75,7 +52,7 @@ public partial class InviteUserBotFlowTests(CustomWebApplicationFactory<Program>
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, adultRoleButton.CallbackData!));
 
     // Step 8: get invite link with payload
-    var inviteMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var inviteMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     inviteMessage.ShouldNotBeNull("Бот должен отправить сообщение о создании приглашения");
     inviteMessage!.ShouldContainText("Приглашение создано");
 
@@ -92,7 +69,7 @@ public partial class InviteUserBotFlowTests(CustomWebApplicationFactory<Program>
     botClient.EnqueueUpdate(
       UpdateFactory.CreateTextUpdate(invitedTelegramId, invitedTelegramId, $"/start {invitePayload}"));
 
-    var invitedMessages = await botClient.WaitForMessagesToAsync(invitedTelegramId, 2);
+    var invitedMessages = await botClient.WaitForMessagesAsync(invitedTelegramId, 1);
     invitedMessages.ShouldNotBeEmpty();
 
     invitedMessages.ShouldContain(m => m.Text != null && m.Text.Contains("Добро пожаловать в семью"));

@@ -3,6 +3,7 @@ using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.TaskAggregate;
+using FamilyTaskManager.UnitTests.Helpers;
 using FamilyTaskManager.UseCases.Families.Specifications;
 using FamilyTaskManager.UseCases.Tasks;
 using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
@@ -11,19 +12,19 @@ namespace FamilyTaskManager.UnitTests.UseCases.Tasks;
 
 public class CompleteTaskHandlerTests
 {
-  private readonly IRepository<Family> _familyRepository;
+  private readonly IAppRepository<Family> _familyAppRepository;
   private readonly CompleteTaskHandler _handler;
   private readonly IPetMoodCalculator _moodCalculator;
-  private readonly IRepository<Pet> _petRepository;
-  private readonly IRepository<TaskInstance> _taskRepository;
+  private readonly IAppRepository<Pet> _petAppRepository;
+  private readonly IAppRepository<TaskInstance> _taskAppRepository;
 
   public CompleteTaskHandlerTests()
   {
-    _taskRepository = Substitute.For<IRepository<TaskInstance>>();
-    _familyRepository = Substitute.For<IRepository<Family>>();
-    _petRepository = Substitute.For<IRepository<Pet>>();
+    _taskAppRepository = Substitute.For<IAppRepository<TaskInstance>>();
+    _familyAppRepository = Substitute.For<IAppRepository<Family>>();
+    _petAppRepository = Substitute.For<IAppRepository<Pet>>();
     _moodCalculator = Substitute.For<IPetMoodCalculator>();
-    _handler = new CompleteTaskHandler(_taskRepository, _familyRepository, _petRepository, _moodCalculator);
+    _handler = new(_taskAppRepository, _familyAppRepository, _petAppRepository, _moodCalculator);
   }
 
   [Fact]
@@ -31,21 +32,28 @@ public class CompleteTaskHandlerTests
   {
     // Arrange
     var userId = Guid.NewGuid();
-    var familyId = Guid.NewGuid();
     var taskId = Guid.NewGuid();
-    var petId = Guid.NewGuid();
 
-    var task = new TaskInstance(familyId, petId, "Feed the cat", new TaskPoints(2), TaskType.OneTime,
+    var pet = TestHelpers.CreatePetWithFamily();
+    var task = new TaskInstance(pet, "Feed the cat", new TaskPoints(2), TaskType.OneTime,
       DateTime.UtcNow.AddDays(1));
     var family = new Family("Smith Family", "UTC");
-    family.AddMember(userId, FamilyRole.Child);
+    var user = TestHelpers.CreateUser();
+    var member = family.AddMember(user, FamilyRole.Child);
+    // Set User navigation property for test
+    typeof(FamilyMember).GetProperty("User")!.SetValue(member, user);
+    userId = user.Id;
 
     var command = new CompleteTaskCommand(taskId, userId);
 
-    _taskRepository.GetByIdAsync(taskId, Arg.Any<CancellationToken>())
+    _taskAppRepository.GetByIdAsync(taskId, Arg.Any<CancellationToken>())
       .Returns(task);
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersAndUsersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
+    _petAppRepository.GetByIdAsync(task.PetId, Arg.Any<CancellationToken>())
+      .Returns(pet);
+    _moodCalculator.CalculateMoodScoreAsync(task.PetId, Arg.Any<CancellationToken>())
+      .Returns(80);
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);
@@ -56,11 +64,17 @@ public class CompleteTaskHandlerTests
     task.CompletedByMember?.UserId.ShouldBe(userId);
     task.CompletedAt.ShouldNotBeNull();
 
-    var member = family.Members.First();
-    member.Points.ShouldBe(2);
+    var familyMember = family.Members.First();
+    familyMember.Points.ShouldBe(2);
 
-    await _taskRepository.Received(1).UpdateAsync(task, Arg.Any<CancellationToken>());
-    await _familyRepository.Received(1).UpdateAsync(family, Arg.Any<CancellationToken>());
+    await _taskAppRepository.Received(1).UpdateAsync(task, Arg.Any<CancellationToken>());
+    await _familyAppRepository.Received(1).UpdateAsync(family, Arg.Any<CancellationToken>());
+    await _taskAppRepository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    await _petAppRepository.Received(1).GetByIdAsync(task.PetId, Arg.Any<CancellationToken>());
+    await _moodCalculator.Received(1)
+      .CalculateMoodScoreAsync(task.PetId, Arg.Any<CancellationToken>());
+    await _petAppRepository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    pet.MoodScore.ShouldBe(80);
   }
 
   [Fact]
@@ -69,7 +83,7 @@ public class CompleteTaskHandlerTests
     // Arrange
     var command = new CompleteTaskCommand(Guid.NewGuid(), Guid.NewGuid());
 
-    _taskRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+    _taskAppRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
       .Returns((TaskInstance?)null);
 
     // Act
@@ -85,17 +99,17 @@ public class CompleteTaskHandlerTests
   {
     // Arrange
     var userId = Guid.NewGuid();
-    var familyId = Guid.NewGuid();
     var taskId = Guid.NewGuid();
-    var petId = Guid.NewGuid();
 
-    var task = new TaskInstance(familyId, petId, "Feed the cat", new TaskPoints(2), TaskType.OneTime,
+    var pet = TestHelpers.CreatePetWithFamily();
+    var task = new TaskInstance(pet, "Feed the cat", new TaskPoints(2), TaskType.OneTime,
       DateTime.UtcNow.AddDays(1));
-    task.Complete(userId, DateTime.UtcNow);
+    var member = TestHelpers.CreateMemberWithUser();
+    task.Complete(member, DateTime.UtcNow);
 
     var command = new CompleteTaskCommand(taskId, userId);
 
-    _taskRepository.GetByIdAsync(taskId, Arg.Any<CancellationToken>())
+    _taskAppRepository.GetByIdAsync(taskId, Arg.Any<CancellationToken>())
       .Returns(task);
 
     // Act
@@ -112,20 +126,20 @@ public class CompleteTaskHandlerTests
     // Arrange
     var userId = Guid.NewGuid();
     var differentUserId = Guid.NewGuid();
-    var familyId = Guid.NewGuid();
     var taskId = Guid.NewGuid();
-    var petId = Guid.NewGuid();
 
-    var task = new TaskInstance(familyId, petId, "Feed the cat", new TaskPoints(2), TaskType.OneTime,
+    var pet = TestHelpers.CreatePetWithFamily();
+    var task = new TaskInstance(pet, "Feed the cat", new TaskPoints(2), TaskType.OneTime,
       DateTime.UtcNow.AddDays(1));
     var family = new Family("Smith Family", "UTC");
-    family.AddMember(differentUserId, FamilyRole.Child); // Different user
+    var differentUser = TestHelpers.CreateUser();
+    family.AddMember(differentUser, FamilyRole.Child); // Different user
 
     var command = new CompleteTaskCommand(taskId, userId);
 
-    _taskRepository.GetByIdAsync(taskId, Arg.Any<CancellationToken>())
+    _taskAppRepository.GetByIdAsync(taskId, Arg.Any<CancellationToken>())
       .Returns(task);
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersAndUsersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act

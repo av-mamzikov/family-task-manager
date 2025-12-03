@@ -1,30 +1,30 @@
 using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
-using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.TaskAggregate;
+using FamilyTaskManager.UseCases.Pets.Specifications;
 using FamilyTaskManager.UseCases.Tasks;
 
 namespace FamilyTaskManager.UnitTests.UseCases.Tasks;
 
 public class CreateTaskHandlerTests
 {
-  private readonly IRepository<Family> _familyRepository;
+  private readonly IAppRepository<Family> _familyAppRepository;
   private readonly CreateTaskHandler _handler;
   private readonly IPetMoodCalculator _moodCalculator;
-  private readonly IRepository<Pet> _petRepository;
-  private readonly IRepository<TaskInstance> _taskRepository;
+  private readonly IAppRepository<Pet> _petAppRepository;
+  private readonly IAppRepository<TaskInstance> _taskAppRepository;
   private readonly ITimeZoneService _timeZoneService;
 
   public CreateTaskHandlerTests()
   {
-    _taskRepository = Substitute.For<IRepository<TaskInstance>>();
-    _petRepository = Substitute.For<IRepository<Pet>>();
-    _familyRepository = Substitute.For<IRepository<Family>>();
+    _taskAppRepository = Substitute.For<IAppRepository<TaskInstance>>();
+    _petAppRepository = Substitute.For<IAppRepository<Pet>>();
+    _familyAppRepository = Substitute.For<IAppRepository<Family>>();
     _timeZoneService = Substitute.For<ITimeZoneService>();
     _moodCalculator = Substitute.For<IPetMoodCalculator>();
-    _handler = new CreateTaskHandler(_taskRepository, _petRepository, _familyRepository, _timeZoneService,
+    _handler = new CreateTaskHandler(_taskAppRepository, _petAppRepository, _timeZoneService,
       _moodCalculator);
   }
 
@@ -34,20 +34,22 @@ public class CreateTaskHandlerTests
     // Arrange
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
-    var pet = new Pet(familyId, PetType.Cat, "Fluffy");
     var family = new Family("Test Family", "UTC", false);
+    var pet = new Pet(familyId, PetType.Cat, "Fluffy");
+    // Set Family navigation property for test
+    typeof(Pet).GetProperty("Family")!.SetValue(pet, family);
     var dueAt = DateTime.UtcNow.AddDays(1);
     var command = new CreateTaskCommand(familyId, petId, "Feed the cat", new TaskPoints(2), dueAt, Guid.NewGuid());
 
-    _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>())
+    _petAppRepository.FirstOrDefaultAsync(Arg.Any<GetPetByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
       .Returns(pet);
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyAppRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
     _timeZoneService.ConvertToUtc(Arg.Any<DateTime>(), "UTC")
       .Returns(callInfo => callInfo.ArgAt<DateTime>(0));
 
     TaskInstance? capturedTask = null;
-    await _taskRepository.AddAsync(Arg.Do<TaskInstance>(t => capturedTask = t), Arg.Any<CancellationToken>());
+    await _taskAppRepository.AddAsync(Arg.Do<TaskInstance>(t => capturedTask = t), Arg.Any<CancellationToken>());
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);
@@ -57,7 +59,7 @@ public class CreateTaskHandlerTests
     capturedTask.ShouldNotBeNull();
     result.Value.ShouldBe(capturedTask.Id);
     capturedTask.FamilyId.ShouldBe(familyId);
-    capturedTask.PetId.ShouldBe(petId);
+    capturedTask.PetId.ShouldBe(pet.Id);
     capturedTask.Title.ShouldBe("Feed the cat");
     capturedTask.Points.Value.ShouldBe(2);
     capturedTask.Type.ShouldBe(TaskType.OneTime);
@@ -71,7 +73,7 @@ public class CreateTaskHandlerTests
       DateTime.UtcNow,
       Guid.NewGuid());
 
-    _petRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+    _petAppRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
       .Returns((Pet?)null);
 
     // Act
@@ -89,14 +91,17 @@ public class CreateTaskHandlerTests
     var familyId = Guid.NewGuid();
     var differentFamilyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
+    var differentFamily = new Family("Different Family", "UTC", false);
     var pet = new Pet(differentFamilyId, PetType.Cat, "Fluffy");
+    // Set Family navigation property for test
+    typeof(Pet).GetProperty("Family")!.SetValue(pet, differentFamily);
     var family = new Family("Test Family", "UTC", false);
     var command = new CreateTaskCommand(familyId, petId, "Feed the cat", new TaskPoints(2), DateTime.UtcNow,
       Guid.NewGuid());
 
-    _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>())
+    _petAppRepository.FirstOrDefaultAsync(Arg.Any<GetPetByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
       .Returns(pet);
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyAppRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act
@@ -115,14 +120,16 @@ public class CreateTaskHandlerTests
     // Arrange
     var familyId = Guid.NewGuid();
     var petId = Guid.NewGuid();
-    var pet = new Pet(familyId, PetType.Cat, "Fluffy");
     var family = new Family("Test Family", "UTC", false);
+    var pet = new Pet(familyId, PetType.Cat, "Fluffy");
+    // Set Family navigation property for test
+    typeof(Pet).GetProperty("Family")!.SetValue(pet, family);
     var command =
       new CreateTaskCommand(familyId, petId, title, new TaskPoints(points), DateTime.UtcNow, Guid.NewGuid());
 
-    _petRepository.GetByIdAsync(petId, Arg.Any<CancellationToken>())
+    _petAppRepository.FirstOrDefaultAsync(Arg.Any<GetPetByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
       .Returns(pet);
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyAppRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act

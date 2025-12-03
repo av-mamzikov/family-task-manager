@@ -29,7 +29,13 @@ public class Pet : EntityBase<Pet, Guid>, IAggregateRoot
     MoodScore = 100;
     CreatedAt = DateTime.UtcNow;
 
-    RegisterDomainEvent(new PetCreatedEvent(this));
+    RegisterDomainEvent(new PetCreatedEvent
+    {
+      PetId = Id,
+      FamilyId = familyId,
+      Name = name.Trim(),
+      Type = type.ToString()
+    });
   }
 
   public Guid FamilyId { get; private set; }
@@ -64,7 +70,14 @@ public class Pet : EntityBase<Pet, Guid>, IAggregateRoot
     // Register event if mood change is significant
     if (ShouldNotifyMoodChange(oldMood, newMood))
     {
-      RegisterDomainEvent(new PetMoodChangedEvent(this, oldMood, newMood));
+      RegisterDomainEvent(new PetMoodChangedEvent
+      {
+        PetId = Id,
+        FamilyId = FamilyId,
+        Name = Name,
+        OldMoodScore = oldMood,
+        NewMoodScore = newMood
+      });
     }
   }
 
@@ -73,7 +86,12 @@ public class Pet : EntityBase<Pet, Guid>, IAggregateRoot
     if (IsDeleted)
       return;
     IsDeleted = true;
-    RegisterDomainEvent(new PetDeletedEvent(this));
+    RegisterDomainEvent(new PetDeletedEvent
+    {
+      PetId = Id,
+      FamilyId = FamilyId,
+      Name = Name
+    });
   }
 
   /// <summary>
