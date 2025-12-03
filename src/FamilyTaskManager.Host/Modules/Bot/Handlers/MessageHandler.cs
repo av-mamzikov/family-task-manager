@@ -100,7 +100,7 @@ public class MessageHandler(
     // Check for invite code
     if (args.Length > 0 && args[0].StartsWith("invite_"))
     {
-      await HandleInviteAsync(botClient, message, session.UserId, args[0], cancellationToken);
+      await HandleInviteAsync(botClient, message, session, args[0], cancellationToken);
       return;
     }
 
@@ -134,51 +134,36 @@ public class MessageHandler(
   private async Task HandleInviteAsync(
     ITelegramBotClient botClient,
     Message message,
-    Guid userId,
+    UserSession session,
     string inviteCode,
     CancellationToken cancellationToken)
   {
-    // Extract code from "invite_CODE" format
     var code = inviteCode.Replace("invite_", "");
+    var joinCommand = new JoinByInviteCodeCommand(session.UserId, code);
+    var invitationResult = await mediator.Send(joinCommand, cancellationToken);
 
-    // Join family by invite code
-    var joinCommand = new JoinByInviteCodeCommand(userId, code);
-    var result = await mediator.Send(joinCommand, cancellationToken);
-
-    if (!result.IsSuccess)
+    if (invitationResult.IsSuccess)
     {
-      var errorMessage = result.Errors.FirstOrDefault() ?? BotConstants.Errors.UnknownError;
+      var invitation = invitationResult.Value;
+      session.CurrentFamilyId = invitation.Family.Id;
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "🎉 *Добро пожаловать в семью!*\n\n" +
+        BotConstants.Messages.FamilyJoined(invitation.Family.Name,
+          BotConstants.Roles.GetRoleText(invitation.Member.Role)),
+        parseMode: ParseMode.Markdown,
+        cancellationToken: cancellationToken);
+      await SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken);
+    }
+    else
+    {
+      var errorMessage = invitationResult.Errors.FirstOrDefault() ?? BotConstants.Errors.UnknownError;
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         $"❌ Не удалось присоединиться к семье:\n{errorMessage}",
         parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
-      return;
     }
-
-    // Get updated family list
-    var getFamiliesQuery = new GetUserFamiliesQuery(userId);
-    var familiesResult = await mediator.Send(getFamiliesQuery, cancellationToken);
-
-    if (familiesResult.IsSuccess && familiesResult.Value.Any())
-    {
-      var newFamily = familiesResult.Value.First();
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "🎉 *Добро пожаловать в семью!*\n\n" +
-        BotConstants.Messages.FamilyJoined(newFamily.Name, BotConstants.Roles.GetRoleText(newFamily.UserRole)),
-        parseMode: ParseMode.Markdown,
-        cancellationToken: cancellationToken);
-
-      // Show main menu
-      await SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken);
-    }
-    else
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "✅ Вы присоединились к семье!",
-        parseMode: ParseMode.Markdown,
-        cancellationToken: cancellationToken);
   }
 
   private async Task HandleFamilyCommandAsync(

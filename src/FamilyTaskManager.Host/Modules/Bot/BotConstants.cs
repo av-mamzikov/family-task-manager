@@ -22,7 +22,7 @@ public static class BotConstants
 
   public static class Errors
   {
-    public const string NoFamily = "❌ Сначала выберите активную семью через /family";
+    public const string NoFamily = "❌ Сначала выберите активную семью через 🏠 Семья";
     public const string UnknownError = "❌ Ошибка. Попробуйте /start";
     public const string LocationError = "❌ Ошибка определения временной зоны по геолокации.\n\n";
     public const string TryAgain = "Пожалуйста, попробуйте снова.";
