@@ -2,12 +2,12 @@ namespace FamilyTaskManager.UseCases.Pets;
 
 public record UpdatePetNameCommand(Guid PetId, string NewName) : ICommand<Result>;
 
-public class UpdatePetNameHandler(IRepository<Pet> petRepository)
+public class UpdatePetNameHandler(IAppRepository<Pet> petAppRepository)
   : ICommandHandler<UpdatePetNameCommand, Result>
 {
   public async ValueTask<Result> Handle(UpdatePetNameCommand command, CancellationToken cancellationToken)
   {
-    var pet = await petRepository.GetByIdAsync(command.PetId, cancellationToken);
+    var pet = await petAppRepository.GetByIdAsync(command.PetId, cancellationToken);
     if (pet == null)
     {
       return Result.NotFound("Питомец не найден");
@@ -19,7 +19,7 @@ public class UpdatePetNameHandler(IRepository<Pet> petRepository)
     }
 
     pet.UpdateName(command.NewName);
-    await petRepository.UpdateAsync(pet, cancellationToken);
+    await petAppRepository.UpdateAsync(pet, cancellationToken);
 
     return Result.Success();
   }

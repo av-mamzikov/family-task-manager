@@ -33,8 +33,8 @@ public class TemplateEditHandler(
       return;
     }
 
-    if (!TryGetSessionData<Guid>(session, "templateId", out var templateId) ||
-        !TryGetSessionData<Guid>(session, "familyId", out var familyId))
+    if (session.Data.TemplateId is not { } templateId ||
+        session.CurrentFamilyId is not { } familyId)
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -59,12 +59,12 @@ public class TemplateEditHandler(
       return;
     }
 
-    session.ClearState();
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       BotConstants.Templates.TemplateUpdated,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
+    session.ClearState();
   }
 
   public async Task HandleTemplateEditPointsInputAsync(
@@ -85,8 +85,8 @@ public class TemplateEditHandler(
       return;
     }
 
-    if (!TryGetSessionData<Guid>(session, "templateId", out var templateId) ||
-        !TryGetSessionData<Guid>(session, "familyId", out var familyId))
+    if (session.Data.TemplateId is not { } templateId ||
+        session.CurrentFamilyId is not { } familyId)
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -97,7 +97,7 @@ public class TemplateEditHandler(
       return;
     }
 
-    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, new TaskPoints(points), null, null,
+    var updateCommand = new UpdateTaskTemplateCommand(templateId, familyId, null, new(points), null, null,
       null, null, null);
     var result = await Mediator.Send(updateCommand, cancellationToken);
 
@@ -112,7 +112,6 @@ public class TemplateEditHandler(
     }
 
     // Return to template edit screen
-    session.ClearState();
     await templateCommandHandler.HandleEditTemplateAsync(
       botClient,
       message.Chat.Id,
@@ -120,6 +119,7 @@ public class TemplateEditHandler(
       templateId,
       session,
       cancellationToken);
+    session.ClearState();
   }
 
   public async Task HandleTemplateEditScheduleTimeInputAsync(
@@ -142,10 +142,11 @@ public class TemplateEditHandler(
       return;
     }
 
-    session.Data["scheduleTime"] = time;
+    session.Data.ScheduleTime = time;
 
     // Check if we need additional input based on schedule type
-    if (!TryGetSessionData<string>(session, "scheduleType", out var scheduleType))
+    var scheduleType = session.Data.ScheduleType;
+    if (string.IsNullOrWhiteSpace(scheduleType))
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -224,7 +225,7 @@ public class TemplateEditHandler(
       return;
     }
 
-    session.Data["scheduleDayOfMonth"] = dayOfMonth;
+    session.Data.ScheduleDayOfMonth = dayOfMonth;
 
     // Ask for DueDuration
     session.State = ConversationState.AwaitingTemplateEditDueDuration;
@@ -243,9 +244,11 @@ public class TemplateEditHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    if (!TryGetSessionData<Guid>(session, "templateId", out var templateId) ||
-        !TryGetSessionData<Guid>(session, "familyId", out var familyId) ||
-        !TryGetSessionData<string>(session, "scheduleType", out var scheduleTypeStr))
+    var data = session.Data;
+
+    if (data.TemplateId is not { } templateId ||
+        session.CurrentFamilyId is not { } familyId ||
+        string.IsNullOrWhiteSpace(data.ScheduleType))
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -256,17 +259,24 @@ public class TemplateEditHandler(
       return;
     }
 
+    var scheduleTypeStr = data.ScheduleType;
+
     // For Manual schedule type, time is not required
     var scheduleTime = TimeOnly.MinValue;
-    if (scheduleTypeStr != "manual" && !TryGetSessionData(session, "scheduleTime", out scheduleTime))
+    if (scheduleTypeStr != "manual")
     {
-      await SendErrorAndClearStateAsync(
-        botClient,
-        message.Chat.Id,
-        session,
-        "❌ Ошибка. Попробуйте снова.",
-        cancellationToken);
-      return;
+      if (data.ScheduleTime is null)
+      {
+        await SendErrorAndClearStateAsync(
+          botClient,
+          message.Chat.Id,
+          session,
+          "❌ Ошибка. Попробуйте снова.",
+          cancellationToken);
+        return;
+      }
+
+      scheduleTime = data.ScheduleTime.Value;
     }
 
     // Map schedule type string to ScheduleType
@@ -293,9 +303,9 @@ public class TemplateEditHandler(
     }
 
     // Get optional schedule parameters
-    TryGetSessionData<DayOfWeek>(session, "scheduleDayOfWeek", out var scheduleDayOfWeek);
-    TryGetSessionData<int>(session, "scheduleDayOfMonth", out var scheduleDayOfMonth);
-    TryGetSessionData<TimeSpan>(session, "dueDuration", out var dueDuration);
+    var scheduleDayOfWeek = data.ScheduleDayOfWeek;
+    var scheduleDayOfMonth = data.ScheduleDayOfMonth;
+    var dueDuration = data.DueDuration;
 
     var updateCommand = new UpdateTaskTemplateCommand(
       templateId,
@@ -306,7 +316,7 @@ public class TemplateEditHandler(
       scheduleTime,
       scheduleDayOfWeek == default ? null : scheduleDayOfWeek,
       scheduleDayOfMonth == default ? null : scheduleDayOfMonth,
-      dueDuration == default ? null : dueDuration);
+      dueDuration);
 
     var result = await Mediator.Send(updateCommand, cancellationToken);
 
@@ -321,12 +331,12 @@ public class TemplateEditHandler(
       return;
     }
 
-    session.ClearState();
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       BotConstants.Templates.TemplateUpdated,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
+    session.ClearState();
   }
 
   public async Task HandleTemplateEditDueDurationInputAsync(
@@ -349,8 +359,8 @@ public class TemplateEditHandler(
       return;
     }
 
-    if (!TryGetSessionData<Guid>(session, "templateId", out var templateId) ||
-        !TryGetSessionData<Guid>(session, "familyId", out var familyId))
+    if (session.Data.TemplateId is not { } templateId ||
+        session.CurrentFamilyId is not { } familyId)
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -364,10 +374,10 @@ public class TemplateEditHandler(
     var dueDuration = TimeSpan.FromHours(dueDurationHours);
 
     // Check if we're in schedule edit flow (scheduleType is set in session)
-    if (TryGetSessionData<string>(session, "scheduleType", out _))
+    if (!string.IsNullOrWhiteSpace(session.Data.ScheduleType))
     {
       // We're editing schedule, store dueDuration and call UpdateTemplateScheduleAsync
-      session.Data["dueDuration"] = dueDuration;
+      session.Data.DueDuration = dueDuration;
       await UpdateTemplateScheduleAsync(botClient, message, session, cancellationToken);
     }
     else
@@ -388,12 +398,12 @@ public class TemplateEditHandler(
         return;
       }
 
-      session.ClearState();
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         BotConstants.Templates.TemplateUpdated,
         replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
         cancellationToken: cancellationToken);
+      session.ClearState();
     }
   }
 }

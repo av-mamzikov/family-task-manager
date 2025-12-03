@@ -81,12 +81,13 @@ public class PetRepositoryTests : RepositoryTestsBase<Pet>
     await DbContext.SaveChangesAsync();
 
     var pet = new Pet(family.Id, PetType.Cat, "Busy Cat");
+    // Set navigation property for test
+    typeof(Pet).GetProperty("Family")!.SetValue(pet, family);
     await Repository.AddAsync(pet);
     await DbContext.SaveChangesAsync();
 
     var task = new TaskInstance(
-      family.Id,
-      pet.Id,
+      pet,
       "Feed Busy Cat",
       new TaskPoints(2),
       TaskType.OneTime,

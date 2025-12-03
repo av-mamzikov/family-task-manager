@@ -2,7 +2,7 @@ using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Core.UserAggregate;
-using FamilyTaskManager.Infrastructure.Notifications;
+using FamilyTaskManager.Infrastructure.Data.Entities;
 using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
 
 namespace FamilyTaskManager.Infrastructure.Data;

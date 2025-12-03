@@ -1,5 +1,6 @@
 using Ardalis.Result;
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.UnitTests.Helpers;
 using FamilyTaskManager.UseCases.Families;
 using FamilyTaskManager.UseCases.Families.Specifications;
 
@@ -7,15 +8,15 @@ namespace FamilyTaskManager.UnitTests.UseCases.Families;
 
 public class CreateInviteCodeHandlerTests
 {
-  private readonly IRepository<Family> _familyRepository;
+  private readonly IAppRepository<Family> _familyAppRepository;
   private readonly CreateInviteCodeHandler _handler;
-  private readonly IRepository<Invitation> _invitationRepository;
+  private readonly IAppRepository<Invitation> _invitationAppRepository;
 
   public CreateInviteCodeHandlerTests()
   {
-    _familyRepository = Substitute.For<IRepository<Family>>();
-    _invitationRepository = Substitute.For<IRepository<Invitation>>();
-    _handler = new CreateInviteCodeHandler(_familyRepository, _invitationRepository);
+    _familyAppRepository = Substitute.For<IAppRepository<Family>>();
+    _invitationAppRepository = Substitute.For<IAppRepository<Invitation>>();
+    _handler = new(_familyAppRepository, _invitationAppRepository);
   }
 
   [Fact]
@@ -25,15 +26,18 @@ public class CreateInviteCodeHandlerTests
     var familyId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     var family = new Family("Test Family", "UTC");
-    family.AddMember(userId, FamilyRole.Admin);
+    var user = TestHelpers.CreateUser();
+    family.AddMember(user, FamilyRole.Admin);
+    userId = user.Id;
 
     var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId);
 
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     Invitation? capturedInvitation = null;
-    await _invitationRepository.AddAsync(Arg.Do<Invitation>(i => capturedInvitation = i), Arg.Any<CancellationToken>());
+    await _invitationAppRepository.AddAsync(Arg.Do<Invitation>(i => capturedInvitation = i),
+      Arg.Any<CancellationToken>());
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);
@@ -57,7 +61,7 @@ public class CreateInviteCodeHandlerTests
     var userId = Guid.NewGuid();
     var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId);
 
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns((Family?)null);
 
     // Act
@@ -66,7 +70,7 @@ public class CreateInviteCodeHandlerTests
     // Assert
     result.IsSuccess.ShouldBeFalse();
     result.Status.ShouldBe(ResultStatus.NotFound);
-    await _invitationRepository.DidNotReceive().AddAsync(Arg.Any<Invitation>(), Arg.Any<CancellationToken>());
+    await _invitationAppRepository.DidNotReceive().AddAsync(Arg.Any<Invitation>(), Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -77,11 +81,12 @@ public class CreateInviteCodeHandlerTests
     var userId = Guid.NewGuid();
     var otherUserId = Guid.NewGuid();
     var family = new Family("Test Family", "UTC");
-    family.AddMember(otherUserId, FamilyRole.Admin);
+    var otherUser = TestHelpers.CreateUser();
+    family.AddMember(otherUser, FamilyRole.Admin);
 
     var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId);
 
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act
@@ -90,7 +95,7 @@ public class CreateInviteCodeHandlerTests
     // Assert
     result.IsSuccess.ShouldBeFalse();
     result.Status.ShouldBe(ResultStatus.Forbidden);
-    await _invitationRepository.DidNotReceive().AddAsync(Arg.Any<Invitation>(), Arg.Any<CancellationToken>());
+    await _invitationAppRepository.DidNotReceive().AddAsync(Arg.Any<Invitation>(), Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -100,11 +105,13 @@ public class CreateInviteCodeHandlerTests
     var familyId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     var family = new Family("Test Family", "UTC");
-    family.AddMember(userId, FamilyRole.Adult); // Not Admin
+    var user = TestHelpers.CreateUser();
+    family.AddMember(user, FamilyRole.Adult); // Not Admin
+    userId = user.Id;
 
     var command = new CreateInviteCodeCommand(familyId, FamilyRole.Child, userId);
 
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act
@@ -113,7 +120,7 @@ public class CreateInviteCodeHandlerTests
     // Assert
     result.IsSuccess.ShouldBeFalse();
     result.Status.ShouldBe(ResultStatus.Forbidden);
-    await _invitationRepository.DidNotReceive().AddAsync(Arg.Any<Invitation>(), Arg.Any<CancellationToken>());
+    await _invitationAppRepository.DidNotReceive().AddAsync(Arg.Any<Invitation>(), Arg.Any<CancellationToken>());
   }
 
   [Fact]
@@ -123,15 +130,18 @@ public class CreateInviteCodeHandlerTests
     var familyId = Guid.NewGuid();
     var userId = Guid.NewGuid();
     var family = new Family("Test Family", "UTC");
-    family.AddMember(userId, FamilyRole.Admin);
+    var user = TestHelpers.CreateUser();
+    family.AddMember(user, FamilyRole.Admin);
+    userId = user.Id;
 
     var command = new CreateInviteCodeCommand(familyId, FamilyRole.Adult, userId, 14);
 
-    _familyRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.FirstOrDefaultAsync(Arg.Any<GetFamilyWithMembersSpec>(), Arg.Any<CancellationToken>())
       .Returns(family);
 
     Invitation? capturedInvitation = null;
-    await _invitationRepository.AddAsync(Arg.Do<Invitation>(i => capturedInvitation = i), Arg.Any<CancellationToken>());
+    await _invitationAppRepository.AddAsync(Arg.Do<Invitation>(i => capturedInvitation = i),
+      Arg.Any<CancellationToken>());
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);

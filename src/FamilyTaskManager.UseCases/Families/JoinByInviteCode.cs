@@ -3,14 +3,14 @@ namespace FamilyTaskManager.UseCases.Families;
 public record JoinByInviteCodeCommand(Guid UserId, string Code) : ICommand<Result<Guid>>;
 
 public class JoinByInviteCodeHandler(
-  IRepository<Family> familyRepository,
-  IRepository<User> userRepository,
-  IRepository<Invitation> invitationRepository) : ICommandHandler<JoinByInviteCodeCommand, Result<Guid>>
+  IAppRepository<Family> familyAppRepository,
+  IAppRepository<User> userAppRepository,
+  IAppRepository<Invitation> invitationAppRepository) : ICommandHandler<JoinByInviteCodeCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(JoinByInviteCodeCommand command, CancellationToken cancellationToken)
   {
     // Verify user exists
-    var user = await userRepository.GetByIdAsync(command.UserId, cancellationToken);
+    var user = await userAppRepository.GetByIdAsync(command.UserId, cancellationToken);
     if (user == null)
     {
       return Result<Guid>.NotFound("User not found");
@@ -18,7 +18,7 @@ public class JoinByInviteCodeHandler(
 
     // Find invitation by code
     var invitationSpec = new GetInvitationByCodeSpec(command.Code);
-    var invitation = await invitationRepository.FirstOrDefaultAsync(invitationSpec, cancellationToken);
+    var invitation = await invitationAppRepository.FirstOrDefaultAsync(invitationSpec, cancellationToken);
 
     if (invitation == null)
     {
@@ -38,7 +38,7 @@ public class JoinByInviteCodeHandler(
 
     // Get family with members
     var familySpec = new GetFamilyWithMembersSpec(invitation.FamilyId);
-    var family = await familyRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
+    var family = await familyAppRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
 
     if (family == null)
     {
@@ -51,16 +51,16 @@ public class JoinByInviteCodeHandler(
       return Result<Guid>.Error("User is already a member of this family");
     }
 
-    // Add member with the role specified in the invitation
-    var member = family.AddMember(command.UserId, invitation.Role);
+    // Add member with the role specified in the invitation (user entity needed for event)
+    var member = family.AddMember(user, invitation.Role);
 
     // Deactivate the invitation (one-time use)
     invitation.Deactivate();
 
     // Update both entities
-    await familyRepository.UpdateAsync(family, cancellationToken);
-    await invitationRepository.UpdateAsync(invitation, cancellationToken);
-    await familyRepository.SaveChangesAsync(cancellationToken);
+    await familyAppRepository.UpdateAsync(family, cancellationToken);
+    await invitationAppRepository.UpdateAsync(invitation, cancellationToken);
+    await familyAppRepository.SaveChangesAsync(cancellationToken);
 
     return Result<Guid>.Success(member.Id);
   }

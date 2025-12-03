@@ -6,17 +6,17 @@ using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
 namespace FamilyTaskManager.Core.Services;
 
 public class PetMoodCalculator(
-  IRepository<Pet> petRepository,
-  IRepository<TaskInstance> taskRepository) : IPetMoodCalculator
+  IAppRepository<Pet> petAppRepository,
+  IAppRepository<TaskInstance> taskAppRepository) : IPetMoodCalculator
 {
   public async Task<int> CalculateMoodScoreAsync(Guid petId, CancellationToken cancellationToken)
   {
-    var pet = await petRepository.GetByIdAsync(petId, cancellationToken);
+    var pet = await petAppRepository.GetByIdAsync(petId, cancellationToken);
     if (pet == null) throw new ArgumentException($"Pet with ID {petId} not found.");
 
     // Get all tasks for this pet where dueAt <= now
     var spec = new TasksByPetSpec(petId);
-    var allTasks = await taskRepository.ListAsync(spec, cancellationToken);
+    var allTasks = await taskAppRepository.ListAsync(spec, cancellationToken);
 
     var now = DateTime.UtcNow;
     var dueTasks = allTasks.Where(t => t.DueAt <= now).ToList();

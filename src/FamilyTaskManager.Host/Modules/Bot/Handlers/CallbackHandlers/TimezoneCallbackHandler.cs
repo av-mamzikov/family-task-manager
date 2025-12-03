@@ -1,7 +1,6 @@
 using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Families;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
@@ -12,9 +11,8 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
 public class TimezoneCallbackHandler(
   ILogger<TimezoneCallbackHandler> logger,
   IMediator mediator,
-  IUserRegistrationService userRegistrationService,
   ITimeZoneService timeZoneService)
-  : BaseCallbackHandler(logger, mediator, userRegistrationService)
+  : BaseCallbackHandler(logger, mediator)
 {
   public async Task HandleTimezoneSelectionAsync(
     ITelegramBotClient botClient,
@@ -24,10 +22,7 @@ public class TimezoneCallbackHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    if (parts.Length < 2)
-    {
-      return;
-    }
+    if (parts.Length < 2) return;
 
     var timezoneId = parts[1];
 
@@ -58,10 +53,7 @@ public class TimezoneCallbackHandler(
   {
     var timezoneListKeyboard = GetRussianTimeZoneListKeyboard();
 
-    var listFamilyName = session.Data.TryGetValue("familyName", out var listFamilyNameObj) &&
-                         listFamilyNameObj is string fn
-      ? fn
-      : "вашей семьи";
+    var listFamilyName = session.Data.FamilyName ?? "вашей семьи";
 
     await botClient.EditMessageTextAsync(
       chatId,
@@ -106,9 +98,7 @@ public class TimezoneCallbackHandler(
     CancellationToken cancellationToken)
   {
     // Get required data from session
-    if (!TryGetSessionData<Guid>(session, "userId", out var userId) ||
-        !TryGetSessionData<string>(session, "familyName", out var familyName) ||
-        familyName == null)
+    if (session.Data.FamilyName == null)
     {
       session.ClearState();
       await EditMessageWithErrorAsync(
@@ -133,7 +123,7 @@ public class TimezoneCallbackHandler(
     }
 
     // Create family with selected timezone
-    var createFamilyCommand = new CreateFamilyCommand(userId, familyName, timezoneId);
+    var createFamilyCommand = new CreateFamilyCommand(session.UserId, session.Data.FamilyName, timezoneId);
     var result = await Mediator.Send(createFamilyCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -149,12 +139,11 @@ public class TimezoneCallbackHandler(
     }
 
     session.CurrentFamilyId = result.Value;
-    session.ClearState();
 
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      BotConstants.Success.FamilyCreatedMessage(familyName) +
+      BotConstants.Success.FamilyCreatedMessage(session.Data.FamilyName) +
       $"🌍 Временная зона: {timezoneId}\n\n" +
       BotConstants.Success.NextStepsMessage,
       ParseMode.Markdown,
@@ -166,6 +155,7 @@ public class TimezoneCallbackHandler(
       "🏠 Главное меню",
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
+    session.ClearState();
   }
 
   private static InlineKeyboardMarkup GetRussianTimeZoneListKeyboard() =>

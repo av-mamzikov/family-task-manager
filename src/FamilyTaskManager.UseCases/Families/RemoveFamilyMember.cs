@@ -3,13 +3,13 @@ namespace FamilyTaskManager.UseCases.Families;
 public record RemoveFamilyMemberCommand(Guid FamilyId, Guid MemberId, Guid RequestedBy)
   : ICommand<Result>;
 
-public class RemoveFamilyMemberHandler(IRepository<Family> familyRepository)
+public class RemoveFamilyMemberHandler(IAppRepository<Family> familyAppRepository)
   : ICommandHandler<RemoveFamilyMemberCommand, Result>
 {
   public async ValueTask<Result> Handle(RemoveFamilyMemberCommand command, CancellationToken cancellationToken)
   {
     var spec = new GetFamilyWithMembersSpec(command.FamilyId);
-    var family = await familyRepository.FirstOrDefaultAsync(spec, cancellationToken);
+    var family = await familyAppRepository.FirstOrDefaultAsync(spec, cancellationToken);
     if (family == null)
     {
       return Result.NotFound("Семья не найдена");
@@ -38,7 +38,7 @@ public class RemoveFamilyMemberHandler(IRepository<Family> familyRepository)
     }
 
     member.Deactivate();
-    await familyRepository.UpdateAsync(family, cancellationToken);
+    await familyAppRepository.UpdateAsync(family, cancellationToken);
 
     return Result.Success();
   }

@@ -2,7 +2,6 @@ using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Pets;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -13,9 +12,8 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
 public class TemplateCallbackHandler(
   ILogger<TemplateCallbackHandler> logger,
   IMediator mediator,
-  IUserRegistrationService userRegistrationService,
   TemplateCommandHandler templateCommandHandler)
-  : BaseCallbackHandler(logger, mediator, userRegistrationService)
+  : BaseCallbackHandler(logger, mediator)
 {
   public async Task HandleTemplateActionAsync(
     ITelegramBotClient botClient,
@@ -26,10 +24,7 @@ public class TemplateCallbackHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    if (parts.Length < 2)
-    {
-      return;
-    }
+    if (parts.Length < 2) return;
 
     var templateAction = parts[1];
 
@@ -89,12 +84,8 @@ public class TemplateCallbackHandler(
 
       case "b":
         // Re-show templates menu
-        var userId = await GetOrRegisterUserAsync(fromUser, cancellationToken);
-        if (userId != null)
-        {
-          var message = new Message { Chat = new Chat { Id = chatId } };
-          await templateCommandHandler.HandleAsync(botClient, message, session, userId.Value, cancellationToken);
-        }
+        var message = new Message { Chat = new() { Id = chatId } };
+        await templateCommandHandler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
 
         break;
 
@@ -119,9 +110,7 @@ public class TemplateCallbackHandler(
       return;
     }
 
-    // Store template ID and family ID in session
-    session.Data["templateId"] = templateId;
-    session.Data["familyId"] = session.CurrentFamilyId.Value;
+    session.Data.TemplateId = templateId;
 
     switch (field)
     {
@@ -234,9 +223,7 @@ public class TemplateCallbackHandler(
       return;
     }
 
-    // Store pet ID and family ID in session
-    session.SetState(ConversationState.AwaitingTemplateTitle,
-      new Dictionary<string, object> { ["petId"] = petId, ["familyId"] = session.CurrentFamilyId.Value });
+    session.SetState(ConversationState.AwaitingTemplateTitle, new() { PetId = petId });
 
     await botClient.EditMessageTextAsync(
       chatId,

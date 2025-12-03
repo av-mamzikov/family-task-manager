@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Telegram.Bot;
 using Telegram.Bot.Args;
 using Telegram.Bot.Exceptions;
@@ -66,9 +67,23 @@ public class TestTelegramBotClient : ITelegramBotClient
   public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(3);
   public IExceptionParser ExceptionsParser { get; set; } = null!;
 
-  public async Task<Message?> WaitForLastMessageToAsync(long chatId)
+  public async Task<Message?> WaitForLastMessageAsync(long chatId)
+    => (await WaitForMessagesAsync(chatId, 1)).LastOrDefault();
+
+  public async Task<IReadOnlyCollection<Message>> WaitForMessagesAsync(long chatId, int minCount)
+    => await WaitForMessagesAsync(chatId, messages => messages.Count >= minCount);
+
+  public async Task<IReadOnlyCollection<Message>> WaitForMessagesUntilAsync(long chatId,
+    Func<Message, bool> messagePredicate)
+    => await WaitForMessagesAsync(chatId, messages => messages.Any(messagePredicate));
+
+  public async Task<IReadOnlyCollection<Message>> WaitForMessagesAsync(long chatId,
+    Func<List<Message>, bool> predicate)
   {
-    var timeout = TimeSpan.FromSeconds(10);
+    var timeout = Debugger.IsAttached
+      ? TimeSpan.FromMinutes(30)
+      : TimeSpan.FromSeconds(10);
+
     const int pollDelayMs = 100;
 
     var start = DateTime.UtcNow;
@@ -77,45 +92,14 @@ public class TestTelegramBotClient : ITelegramBotClient
     while (DateTime.UtcNow - start < timeout)
     {
       var messages = GetMessagesTo(chatId).ToList();
-
-      if (messages.Count > initialCount)
-      {
-        return messages.Last();
-      }
+      var newMessages = messages.Skip(initialCount).ToList();
+      if (predicate(newMessages))
+        return newMessages;
 
       await Task.Delay(pollDelayMs);
     }
 
-    var finalMessages = GetMessagesTo(chatId).ToList();
-
-    return finalMessages.Count > initialCount
-      ? finalMessages.Last()
-      : null;
-  }
-
-  public async Task<IReadOnlyCollection<Message>> WaitForMessagesToAsync(long chatId, int minCount)
-  {
-    var timeout = TimeSpan.FromSeconds(10);
-    const int pollDelayMs = 100;
-
-    var start = DateTime.UtcNow;
-    var initialCount = GetMessagesTo(chatId).Count();
-
-    while (DateTime.UtcNow - start < timeout)
-    {
-      var messages = GetMessagesTo(chatId).ToList();
-      var newCount = messages.Count - initialCount;
-
-      if (newCount >= minCount)
-      {
-        return messages.Skip(initialCount).ToList();
-      }
-
-      await Task.Delay(pollDelayMs);
-    }
-
-    var finalMessages = GetMessagesTo(chatId).ToList();
-    return finalMessages.Skip(initialCount).ToList();
+    throw new("Timeout waiting for messages");
   }
 
   public Task<User> GetMeAsync(CancellationToken cancellationToken = default) =>
@@ -160,10 +144,7 @@ public class TestTelegramBotClient : ITelegramBotClient
   /// </summary>
   public void EnqueueUpdates(IEnumerable<Update> updates)
   {
-    foreach (var update in updates)
-    {
-      EnqueueUpdate(update);
-    }
+    foreach (var update in updates) EnqueueUpdate(update);
   }
 
   private async Task<TResponse> MakeRequestAsync<TResponse>(
@@ -185,17 +166,11 @@ public class TestTelegramBotClient : ITelegramBotClient
   private Task<Update[]> HandleGetUpdates(GetUpdatesRequest _) =>
     Task.Run(async () =>
     {
-      if (GetUpdatesHandler is not null)
-      {
-        return await GetUpdatesHandler(_);
-      }
+      if (GetUpdatesHandler is not null) return await GetUpdatesHandler(_);
 
       var updates = new List<Update>();
 
-      while (_pendingUpdates.TryDequeue(out var update))
-      {
-        updates.Add(update);
-      }
+      while (_pendingUpdates.TryDequeue(out var update)) updates.Add(update);
 
       return updates.ToArray();
     });
@@ -207,8 +182,10 @@ public class TestTelegramBotClient : ITelegramBotClient
       {
         MessageId = _sentMessages.Count + 1,
         Date = DateTime.UtcNow,
-        Chat = new Chat { Id = request.ChatId.Identifier ?? 0, Type = ChatType.Private },
+        Chat = new() { Id = request.ChatId.Identifier ?? 0, Type = ChatType.Private },
         Text = request.Text,
+        // Telegram.Bot Message.ReplyMarkup is InlineKeyboardMarkup? in this version,
+        // so we can only safely store inline keyboards here.
         ReplyMarkup = request.ReplyMarkup as InlineKeyboardMarkup
       };
 
@@ -219,10 +196,7 @@ public class TestTelegramBotClient : ITelegramBotClient
   private Task<bool> HandleAnswerCallback(AnswerCallbackQueryRequest request) =>
     Task.Run(() =>
     {
-      if (!string.IsNullOrEmpty(request.Text))
-      {
-        _sentCallbackAnswers.Add(request.Text);
-      }
+      if (!string.IsNullOrEmpty(request.Text)) _sentCallbackAnswers.Add(request.Text);
 
       return true;
     });
@@ -236,7 +210,7 @@ public class TestTelegramBotClient : ITelegramBotClient
       {
         MessageId = request.MessageId,
         Date = DateTime.UtcNow,
-        Chat = new Chat { Id = request.ChatId.Identifier ?? 0, Type = ChatType.Private },
+        Chat = new() { Id = request.ChatId.Identifier ?? 0, Type = ChatType.Private },
         Text = request.Text,
         ReplyMarkup = request.ReplyMarkup
       };

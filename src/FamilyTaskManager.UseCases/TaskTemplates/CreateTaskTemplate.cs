@@ -13,13 +13,13 @@ public record CreateTaskTemplateCommand(
   Guid CreatedBy) : ICommand<Result<Guid>>;
 
 public class CreateTaskTemplateHandler(
-  IRepository<TaskTemplate> templateRepository,
-  IRepository<Pet> petRepository) : ICommandHandler<CreateTaskTemplateCommand, Result<Guid>>
+  IAppRepository<TaskTemplate> templateAppRepository,
+  IAppRepository<Pet> petAppRepository) : ICommandHandler<CreateTaskTemplateCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreateTaskTemplateCommand command, CancellationToken cancellationToken)
   {
     // Verify pet exists and belongs to family
-    var pet = await petRepository.GetByIdAsync(command.PetId, cancellationToken);
+    var pet = await petAppRepository.GetByIdAsync(command.PetId, cancellationToken);
     if (pet == null)
     {
       return Result<Guid>.NotFound("Питомец не найден");
@@ -67,7 +67,7 @@ public class CreateTaskTemplateHandler(
       command.DueDuration,
       command.CreatedBy);
 
-    await templateRepository.AddAsync(template, cancellationToken);
+    await templateAppRepository.AddAsync(template, cancellationToken);
 
     return Result<Guid>.Success(template.Id);
   }

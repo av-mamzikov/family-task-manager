@@ -28,10 +28,9 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     botClient.Clear();
 
     // Arrange: Create family with admin
-    var adminTelegramId = TestDataBuilder.GenerateTelegramId();
-    const string familyName = "Семья Тестовых";
 
-    await CreateFamilyWithAdminAsync(botClient, adminTelegramId, adminTelegramId, familyName);
+    var (familyName, adminTelegramId, adminChatId) =
+      await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Петровых");
 
     // Add family members via invite flow
     var adultMemberId =
@@ -40,8 +39,8 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
       await AddFamilyMemberAsync(botClient, adminTelegramId, adminTelegramId, FamilyRole.Child, "Ребенок участник");
 
     // Act: Open family menu and navigate to members
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminTelegramId, adminTelegramId, "/family"));
-    var familyMenuMessage = await botClient.WaitForLastMessageToAsync(adminTelegramId);
+    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminTelegramId, adminTelegramId, "🏠 Семья"));
+    var familyMenuMessage = await botClient.WaitForLastMessageAsync(adminTelegramId);
     var familyMenuKeyboard = familyMenuMessage?.ShouldHaveInlineKeyboard();
     var membersButton = familyMenuKeyboard?.GetButton("Управление участниками");
     membersButton?.CallbackData.ShouldNotBeNull();
@@ -50,7 +49,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
       UpdateFactory.CreateCallbackUpdate(adminTelegramId, adminTelegramId, membersButton!.CallbackData!));
 
     // Assert: Verify members list is displayed correctly
-    var membersListMessage = await botClient.WaitForLastMessageToAsync(adminTelegramId);
+    var membersListMessage = await botClient.WaitForLastMessageAsync(adminTelegramId);
     membersListMessage.ShouldNotBeNull("Бот должен показать список участников семьи");
     membersListMessage!.ShouldContainText("Участники семьи");
     membersListMessage.ShouldContainText("Администратор");
@@ -74,22 +73,19 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     botClient.Clear();
 
     // Arrange: Create family with multiple members
-    var adminTelegramId = TestDataBuilder.GenerateTelegramId();
-    var adminChatId = adminTelegramId;
-    var familyName = "Семья для деталей";
-
-    await CreateFamilyWithAdminAsync(botClient, adminChatId, adminTelegramId, familyName);
+    var (familyName, adminTelegramId, adminChatId) =
+      await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Петровых");
     await AddFamilyMemberAsync(botClient, adminChatId, adminTelegramId, FamilyRole.Adult, "Тестовый взрослый");
 
     // Navigate to members list
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "/family"));
-    var familyMenuMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🏠 Семья"));
+    var familyMenuMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     var familyMenuKeyboard = familyMenuMessage?.ShouldHaveInlineKeyboard();
     var membersButton = familyMenuKeyboard?.GetButton("Управление участниками");
     botClient.EnqueueUpdate(
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, membersButton!.CallbackData!));
 
-    var membersListMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var membersListMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     var membersKeyboard = membersListMessage?.ShouldHaveInlineKeyboard();
     var adultMemberButton = membersKeyboard?.GetButton("👤 Тестовый взрослый");
     adultMemberButton?.CallbackData.ShouldNotBeNull();
@@ -99,7 +95,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, adultMemberButton!.CallbackData!));
 
     // Assert: Verify member details are shown
-    var memberDetailsMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var memberDetailsMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     memberDetailsMessage.ShouldNotBeNull("Бот должен показать детали участника");
     memberDetailsMessage!.ShouldContainText("Тестовый взрослый");
     memberDetailsMessage.ShouldContainText("Роль: Взрослый");
@@ -115,7 +111,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     botClient.EnqueueUpdate(UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, backButton.CallbackData!));
 
     // Assert: Verify we're back to members list
-    var backToListMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var backToListMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     backToListMessage.ShouldNotBeNull("Должны вернуться к списку участников");
     backToListMessage!.ShouldContainText("Участники семьи");
   }
@@ -127,17 +123,14 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     botClient.Clear();
 
     // Arrange: Create family with adult member
-    var adminTelegramId = TestDataBuilder.GenerateTelegramId();
-    var adminChatId = adminTelegramId;
-    var familyName = "Семья для смены роли";
-
-    await CreateFamilyWithAdminAsync(botClient, adminChatId, adminTelegramId, familyName);
+    var (familyName, adminTelegramId, adminChatId) =
+      await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Петровых");
     await AddFamilyMemberAsync(botClient, adminChatId, adminTelegramId, FamilyRole.Adult, "Взрослый для смены");
 
     // Navigate to member details
     await NavigateToMemberDetailsAsync(botClient, adminChatId, adminTelegramId, "👤 Взрослый для смены");
 
-    var memberDetailsMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var memberDetailsMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     var detailsKeyboard = memberDetailsMessage!.ShouldHaveInlineKeyboard();
     var changeRoleButton = detailsKeyboard.GetButton("♻️ Сменить роль");
     changeRoleButton.CallbackData.ShouldNotBeNull();
@@ -147,7 +140,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, changeRoleButton.CallbackData!));
 
     // Assert: Verify role selection screen
-    var roleSelectionMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var roleSelectionMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     roleSelectionMessage.ShouldNotBeNull("Бот должен показать выбор новой роли");
     roleSelectionMessage!.ShouldContainText("Смена роли участника");
     roleSelectionMessage.ShouldContainText("Текущая роль: 👤 Взрослый");
@@ -167,7 +160,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, childRoleButton.CallbackData!));
 
     // Assert: Verify role was changed and we're back to member details
-    var updatedDetailsMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var updatedDetailsMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     updatedDetailsMessage.ShouldNotBeNull("Должны вернуться к деталям участника с обновленной ролью");
     updatedDetailsMessage!.ShouldContainText("Взрослый для смены");
     updatedDetailsMessage.ShouldContainText("Роль: Ребёнок");
@@ -180,17 +173,14 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     botClient.Clear();
 
     // Arrange: Create family with adult member
-    var adminTelegramId = TestDataBuilder.GenerateTelegramId();
-    var adminChatId = adminTelegramId;
-    var familyName = "Семья для удаления";
-
-    await CreateFamilyWithAdminAsync(botClient, adminChatId, adminTelegramId, familyName);
+    var (familyName, adminTelegramId, adminChatId) =
+      await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Петровых");
     await AddFamilyMemberAsync(botClient, adminChatId, adminTelegramId, FamilyRole.Adult, "Удаляемый участник");
 
     // Navigate to member details
     await NavigateToMemberDetailsAsync(botClient, adminChatId, adminTelegramId, "👤 Удаляемый участник");
 
-    var memberDetailsMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var memberDetailsMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     var detailsKeyboard = memberDetailsMessage!.ShouldHaveInlineKeyboard();
     var deleteButton = detailsKeyboard.GetButton("🗑️ Удалить участника");
     deleteButton.CallbackData.ShouldNotBeNull();
@@ -200,7 +190,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, deleteButton.CallbackData!));
 
     // Assert: Verify confirmation dialog
-    var confirmationMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var confirmationMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     confirmationMessage.ShouldNotBeNull("Бот должен показать диалог подтверждения удаления");
     confirmationMessage!.ShouldContainText("Удаление участника");
     confirmationMessage.ShouldContainText("Удаляемый участник");
@@ -216,7 +206,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, confirmDeleteButton.CallbackData!));
 
     // Assert: Verify member is removed and we're back to members list
-    var updatedMembersListMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var updatedMembersListMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     updatedMembersListMessage.ShouldNotBeNull("Должны вернуться к обновленному списку участников");
     updatedMembersListMessage!.ShouldContainText("Участники семьи");
     updatedMembersListMessage.ShouldNotContainText("Удаляемый участник");
@@ -232,17 +222,14 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     botClient.Clear();
 
     // Arrange: Create family with adult member
-    var adminTelegramId = TestDataBuilder.GenerateTelegramId();
-    var adminChatId = adminTelegramId;
-    var familyName = "Семья для отмены удаления";
-
-    await CreateFamilyWithAdminAsync(botClient, adminChatId, adminTelegramId, familyName);
+    var (familyName, adminTelegramId, adminChatId) =
+      await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Петровых");
     await AddFamilyMemberAsync(botClient, adminChatId, adminTelegramId, FamilyRole.Adult, "Не удаляемый участник");
 
     // Navigate to member details
     await NavigateToMemberDetailsAsync(botClient, adminChatId, adminTelegramId, "👤 Не удаляемый участник");
 
-    var memberDetailsMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var memberDetailsMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     var detailsKeyboard = memberDetailsMessage!.ShouldHaveInlineKeyboard();
     var deleteButton = detailsKeyboard.GetButton("🗑️ Удалить участника");
     deleteButton.CallbackData.ShouldNotBeNull();
@@ -252,7 +239,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, deleteButton.CallbackData!));
 
     // Assert: Verify confirmation dialog
-    var confirmationMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var confirmationMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     confirmationMessage.ShouldNotBeNull("Бот должен показать диалог подтверждения удаления");
     confirmationMessage!.ShouldContainText("Удаление участника");
 
@@ -266,7 +253,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, cancelButton.CallbackData!));
 
     // Assert: Verify we're back to member details and member still exists
-    var backToDetailsMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var backToDetailsMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     backToDetailsMessage.ShouldNotBeNull("Должны вернуться к деталям участника после отмены");
     backToDetailsMessage!.ShouldContainText("Не удаляемый участник");
     backToDetailsMessage.ShouldContainText("Роль: Взрослый");
@@ -283,20 +270,17 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     botClient.Clear();
 
     // Arrange: Create family and navigate to members list
-    var adminTelegramId = TestDataBuilder.GenerateTelegramId();
-    var adminChatId = adminTelegramId;
-    var familyName = "Семья для навигации";
+    var (familyName, adminTelegramId, adminChatId) =
+      await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Петровых");
 
-    await CreateFamilyWithAdminAsync(botClient, adminChatId, adminTelegramId, familyName);
-
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "/family"));
-    var familyMenuMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🏠 Семья"));
+    var familyMenuMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     var familyMenuKeyboard = familyMenuMessage!.ShouldHaveInlineKeyboard();
     var membersButton = familyMenuKeyboard.GetButton("Управление участниками");
     botClient.EnqueueUpdate(
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, membersButton.CallbackData!));
 
-    var membersListMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var membersListMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     var membersKeyboard = membersListMessage!.ShouldHaveInlineKeyboard();
     var backButton = membersKeyboard.GetButton("⬅️ Назад");
     backButton.CallbackData.ShouldNotBeNull();
@@ -305,7 +289,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     botClient.EnqueueUpdate(UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, backButton.CallbackData!));
 
     // Assert: Verify we're back to family menu
-    var backToFamilyMenuMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var backToFamilyMenuMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     backToFamilyMenuMessage.ShouldNotBeNull("Должны вернуться к меню семьи");
     backToFamilyMenuMessage!.ShouldContainText("Ваши семьи:");
     backToFamilyMenuMessage.ShouldContainText(familyName);
@@ -322,11 +306,8 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     botClient.Clear();
 
     // Arrange: Create family with adult member
-    var adminTelegramId = TestDataBuilder.GenerateTelegramId();
-    var adminChatId = adminTelegramId;
-    var familyName = "Семья для уведомлений об удалении";
-
-    await CreateFamilyWithAdminAsync(botClient, adminChatId, adminTelegramId, familyName);
+    var (familyName, adminTelegramId, adminChatId) =
+      await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Петровых");
     var memberTelegramId =
       await AddFamilyMemberAsync(botClient, adminChatId, adminTelegramId, FamilyRole.Adult,
         "Участник для удаления");
@@ -334,14 +315,14 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     // Navigate to member details and start removal
     await NavigateToMemberDetailsAsync(botClient, adminChatId, adminTelegramId, "👤 Участник для удаления");
 
-    var memberDetailsMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var memberDetailsMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     var detailsKeyboard = memberDetailsMessage!.ShouldHaveInlineKeyboard();
     var deleteButton = detailsKeyboard.GetButton("🗑️ Удалить участника");
 
     botClient.EnqueueUpdate(
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, deleteButton.CallbackData!));
 
-    var confirmationMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var confirmationMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     var confirmationKeyboard = confirmationMessage!.ShouldHaveInlineKeyboard();
     var confirmDeleteButton = confirmationKeyboard.GetButton("✅ Да, удалить");
 
@@ -350,24 +331,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, confirmDeleteButton.CallbackData!));
 
     // Wait for admin to receive confirmation
-    await botClient.WaitForLastMessageToAsync(adminChatId);
-  }
-
-  private async Task CreateFamilyWithAdminAsync(
-    TestTelegramBotClient botClient,
-    long adminChatId,
-    long adminTelegramId,
-    string familyName)
-  {
-    botClient.EnqueueUpdates(new[]
-    {
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, "create_family"),
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, familyName, firstName: "Администратор"),
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, "timezone_showlist"),
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, "timezone_Europe/Moscow")
-    });
-
-    await botClient.WaitForMessagesToAsync(adminChatId, 4);
+    await botClient.WaitForLastMessageAsync(adminChatId);
   }
 
   private async Task<long> AddFamilyMemberAsync(
@@ -378,19 +342,19 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     string memberName)
   {
     // Create invite
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "/family"));
-    var familyMenuMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🏠 Семья"));
+    var familyMenuMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     var familyMenuKeyboard = familyMenuMessage!.ShouldHaveInlineKeyboard();
     var createInviteButton = familyMenuKeyboard.GetButton("Создать приглашение");
     botClient.EnqueueUpdate(
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createInviteButton.CallbackData!));
 
-    var inviteRoleMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var inviteRoleMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     var inviteRoleKeyboard = inviteRoleMessage!.ShouldHaveInlineKeyboard();
     var roleButton = inviteRoleKeyboard.GetButton(BotConstants.Roles.GetRoleText(role));
     botClient.EnqueueUpdate(UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, roleButton.CallbackData!));
 
-    var inviteMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var inviteMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     var inviteText = inviteMessage!.Text!;
     var match = Regex.Match(inviteText, @"invite_[A-Z0-9]+");
     var invitePayload = match.Value;
@@ -401,7 +365,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(newMemberTelegramId, newMemberTelegramId,
       $"/start {invitePayload}", firstName: memberName));
 
-    await botClient.WaitForMessagesToAsync(newMemberTelegramId, 2);
+    await botClient.WaitForMessagesAsync(newMemberTelegramId, 2);
 
     return newMemberTelegramId;
   }
@@ -412,14 +376,14 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     long adminTelegramId,
     string memberButtonName)
   {
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "/family"));
-    var familyMenuMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🏠 Семья"));
+    var familyMenuMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     var familyMenuKeyboard = familyMenuMessage!.ShouldHaveInlineKeyboard();
     var membersButton = familyMenuKeyboard.GetButton("Управление участниками");
     botClient.EnqueueUpdate(
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, membersButton.CallbackData!));
 
-    var membersListMessage = await botClient.WaitForLastMessageToAsync(adminChatId);
+    var membersListMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     var membersKeyboard = membersListMessage!.ShouldHaveInlineKeyboard();
     var memberButton = membersKeyboard.GetButton(memberButtonName);
     botClient.EnqueueUpdate(

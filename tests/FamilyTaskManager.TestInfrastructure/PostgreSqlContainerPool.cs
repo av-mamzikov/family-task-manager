@@ -39,7 +39,7 @@ public sealed class PostgreSqlContainerPool<TDbContext> : IAsyncDisposable
         _lock.Wait();
         try
         {
-          _instance ??= new PostgreSqlContainerPool<TDbContext>();
+          _instance ??= new();
         }
         finally
         {
@@ -59,10 +59,7 @@ public sealed class PostgreSqlContainerPool<TDbContext> : IAsyncDisposable
     await _lock.WaitAsync();
     try
     {
-      while (_allContainers.TryTake(out var container))
-      {
-        await container.Container.DisposeAsync();
-      }
+      while (_allContainers.TryTake(out var container)) await container.Container.DisposeAsync();
 
       _availableContainers.Clear();
       _instance = null;
@@ -137,7 +134,7 @@ public sealed class PostgreSqlContainerPool<TDbContext> : IAsyncDisposable
     // Создаём рабочую базу из template
     await CreateWorkingDatabaseFromTemplateAsync(container, workingDatabaseName);
 
-    return new PooledContainer(container, workingDatabaseName);
+    return new(container, workingDatabaseName);
   }
 
   /// <summary>
@@ -164,12 +161,11 @@ public sealed class PostgreSqlContainerPool<TDbContext> : IAsyncDisposable
 
     var options = new DbContextOptionsBuilder<TDbContext>()
       .UseNpgsql(templateConnectionString)
+      .EnableSensitiveDataLogging()
       .Options;
 
     await using (var dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext), options)!)
-    {
       await dbContext.Database.MigrateAsync();
-    }
 
     // Закрываем все соединения с template базой и помечаем её как template
     await using (var connection = new NpgsqlConnection(postgresConnectionString))
@@ -223,7 +219,7 @@ public sealed class PostgreSqlContainerPool<TDbContext> : IAsyncDisposable
   {
     // Очищаем пул соединений Npgsql для рабочей базы данных
     var workingConnectionString = pooledContainer.GetConnectionString();
-    NpgsqlConnection.ClearPool(new NpgsqlConnection(workingConnectionString));
+    NpgsqlConnection.ClearPool(new(workingConnectionString));
 
     var postgresConnectionString = new NpgsqlConnectionStringBuilder(pooledContainer.Container.GetConnectionString())
     {
@@ -254,10 +250,7 @@ public sealed class PostgreSqlContainerPool<TDbContext> : IAsyncDisposable
   /// </summary>
   internal static async Task ResetInstanceAsync()
   {
-    if (_instance != null)
-    {
-      await _instance.DisposeAsync();
-    }
+    if (_instance != null) await _instance.DisposeAsync();
   }
 }
 

@@ -1,7 +1,9 @@
 namespace FamilyTaskManager.Core.FamilyAggregate.Events;
 
-public sealed class MemberAddedEvent(Family family, FamilyMember member) : DomainEventBase
+public sealed class MemberAddedEvent : DomainEventBase
 {
-  public Family Family { get; init; } = family;
-  public FamilyMember Member { get; init; } = member;
+  public Guid FamilyId { get; init; }
+  public Guid MemberId { get; init; }
+  public Guid UserId { get; init; }
+  public string UserName { get; init; } = string.Empty;
 }

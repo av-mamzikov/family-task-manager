@@ -35,7 +35,10 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
       services.RemoveAll<DbContextOptions<AppDbContext>>();
 
       // Add DbContext using the pooled container
-      services.AddDbContext<AppDbContext>(options => { options.UseNpgsql(_pooledContainer.GetConnectionString()); });
+      services.AddDbContext<AppDbContext>(options =>
+      {
+        options.UseNpgsql(_pooledContainer.GetConnectionString()).EnableSensitiveDataLogging();
+      });
 
       // Remove the real ITelegramBotClient registration
       services.RemoveAll<ITelegramBotClient>();
@@ -46,10 +49,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
       // Remove QuartzHostedService to prevent scheduler initialization in tests
       var quartzHostedService = services
         .FirstOrDefault(d => d.ImplementationType?.Name == "QuartzHostedService");
-      if (quartzHostedService != null)
-      {
-        services.Remove(quartzHostedService);
-      }
+      if (quartzHostedService != null) services.Remove(quartzHostedService);
 
       // Database is already created/migrated in PostgreSqlContainerPool, so no extra hosted initializer is needed here
     });

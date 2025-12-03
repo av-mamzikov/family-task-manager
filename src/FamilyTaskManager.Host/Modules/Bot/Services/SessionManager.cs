@@ -1,122 +1,62 @@
-using System.Collections.Concurrent;
 using System.Text.Json;
-using FamilyTaskManager.Core.Specifications;
-using FamilyTaskManager.Core.UserAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.UseCases.Users.Specifications;
+using FamilyTaskManager.UnitTests.Host.Bot.Models;
+using FamilyTaskManager.UseCases.Users;
+using Quartz.Util;
+using Telegram.Bot.Types;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Services;
 
 public interface ISessionManager
 {
-  Task<UserSession> GetSessionAsync(long telegramId, CancellationToken cancellationToken = default);
-  Task SaveSessionAsync(long telegramId, UserSession session, CancellationToken cancellationToken = default);
-  void ClearInactiveSessions();
+  Task<UserSession> GetSessionAsync(User fromUser, CancellationToken cancellationToken = default);
+
+  Task SaveSessionAsync(UserSession session, CancellationToken cancellationToken = default);
 }
 
-public class SessionManager(IServiceScopeFactory serviceScopeFactory) : ISessionManager
+public class SessionManager(IMediator mediator, ILogger<SessionManager> logger) : ISessionManager
 {
-  private readonly TimeSpan _inactivityTimeout = TimeSpan.FromHours(24);
-  private readonly ConcurrentDictionary<long, UserSession> _sessions = new();
-
-  public async Task<UserSession> GetSessionAsync(long telegramId, CancellationToken cancellationToken = default)
+  public async Task<UserSession> GetSessionAsync(User fromUser,
+    CancellationToken cancellationToken = default)
   {
-    // Check in-memory cache first
-    if (_sessions.TryGetValue(telegramId, out var cachedSession))
-      return cachedSession;
-
-    using var scope = serviceScopeFactory.CreateScope();
-    var userRepository = scope.ServiceProvider.GetRequiredService<IRepository<User>>();
-    var sessionRepository = scope.ServiceProvider.GetRequiredService<IRepository<TelegramSession>>();
-
-    // Get user first
-    var user = await userRepository.FirstOrDefaultAsync(new GetUserByTelegramIdSpec(telegramId), cancellationToken);
-    if (user == null)
-      return _sessions.GetOrAdd(telegramId, _ => new UserSession());
-
-    // Load session from database
-    var dbSession = await sessionRepository.FirstOrDefaultAsync(
-      new GetTelegramSessionByUserIdSpec(user.Id), cancellationToken);
-
-    UserSession session;
-    if (dbSession == null)
+    var telegramId = fromUser.Id;
+    var username = string.Join(" ", new[] { fromUser.FirstName, fromUser.LastName });
+    if (username.IsNullOrWhiteSpace())
+      username = fromUser.Username ?? $"user{telegramId}";
+    var result = await mediator.Send(new GetOrCreateTelegramSessionCommand(telegramId, username),
+      cancellationToken);
+    if (!result.IsSuccess)
+      throw new Exception($"Failed to get session: {string.Join(",", result.Errors)}");
+    var dbSession = result.Value;
+    var session = new UserSession
     {
-      // Create new session in DB
-      dbSession = new TelegramSession(user.Id);
-      await sessionRepository.AddAsync(dbSession, cancellationToken);
-      await sessionRepository.SaveChangesAsync(cancellationToken);
+      TelegramId = telegramId,
+      UserId = dbSession.UserId,
+      CurrentFamilyId = dbSession.CurrentFamilyId,
+      State = (ConversationState)dbSession.ConversationState,
+      LastActivity = dbSession.LastActivity
+    };
 
-      session = new UserSession();
-    }
-    else
-    {
-      session = new UserSession
+    if (!string.IsNullOrWhiteSpace(dbSession.SessionData))
+      try
       {
-        CurrentFamilyId = dbSession.CurrentFamilyId,
-        State = (ConversationState)dbSession.ConversationState,
-        LastActivity = dbSession.LastActivity
-      };
+        var data = JsonSerializer.Deserialize<UserSessionData>(dbSession.SessionData);
+        if (data != null) session.Data = data;
+      }
+      catch (Exception ex)
+      {
+        logger.LogError(ex, "Error deserializing session data");
+      }
 
-      // Deserialize session data if exists
-      if (!string.IsNullOrEmpty(dbSession.SessionData))
-        try
-        {
-          session.Data = JsonSerializer.Deserialize<Dictionary<string, object>>(dbSession.SessionData) ??
-                         new Dictionary<string, object>();
-        }
-        catch
-        {
-          session.Data = new Dictionary<string, object>();
-        }
-    }
-
-    _sessions[telegramId] = session;
     return session;
   }
 
-  public async Task SaveSessionAsync(long telegramId, UserSession session,
+  public async Task SaveSessionAsync(UserSession session,
     CancellationToken cancellationToken = default)
   {
-    using var scope = serviceScopeFactory.CreateScope();
-    var userRepository = scope.ServiceProvider.GetRequiredService<IRepository<User>>();
-    var sessionRepository = scope.ServiceProvider.GetRequiredService<IRepository<TelegramSession>>();
-
-    var user = await userRepository.FirstOrDefaultAsync(new GetUserByTelegramIdSpec(telegramId), cancellationToken);
-    if (user == null)
-      return;
-
-    var dbSession = await sessionRepository.FirstOrDefaultAsync(
-      new GetTelegramSessionByUserIdSpec(user.Id), cancellationToken);
-
-    if (dbSession == null)
-    {
-      // Create new session
-      dbSession = new TelegramSession(user.Id);
-      await sessionRepository.AddAsync(dbSession, cancellationToken);
-    }
-
-    var sessionData = session.Data.Count > 0 ? JsonSerializer.Serialize(session.Data) : null;
-    dbSession.UpdateSession(session.CurrentFamilyId, (int)session.State, sessionData);
-
-    await sessionRepository.UpdateAsync(dbSession, cancellationToken);
-    await sessionRepository.SaveChangesAsync(cancellationToken);
-
-    // Mark as clean and update cache
-    session.MarkClean();
-    _sessions[telegramId] = session;
-  }
-
-  public void ClearInactiveSessions()
-  {
-    var now = DateTime.UtcNow;
-    var inactiveSessions = _sessions
-      .Where(kvp => now - kvp.Value.LastActivity > _inactivityTimeout)
-      .Select(kvp => kvp.Key)
-      .ToList();
-
-    foreach (var telegramId in inactiveSessions)
-    {
-      _sessions.TryRemove(telegramId, out _);
-    }
+    var sessionDataJson = JsonSerializer.Serialize(session.Data);
+    await mediator.Send(
+      new SaveTelegramSessionCommand(session.TelegramId, session.CurrentFamilyId, (int)session.State, sessionDataJson),
+      cancellationToken);
   }
 }

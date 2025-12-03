@@ -35,7 +35,7 @@ public static class TestDataBuilder
   {
     var user = CreateUser(telegramId, userName);
     var family = CreateFamily(familyName);
-    family.AddMember(user.Id, FamilyRole.Admin);
+    family.AddMember(user, FamilyRole.Admin);
     return (family, user);
   }
 
@@ -55,7 +55,7 @@ public static class TestDataBuilder
       users.Add(user);
 
       var role = i == 0 ? FamilyRole.Admin : i % 2 == 0 ? FamilyRole.Adult : FamilyRole.Child;
-      family.AddMember(user.Id, role);
+      family.AddMember(user, role);
     }
 
     return (family, users);

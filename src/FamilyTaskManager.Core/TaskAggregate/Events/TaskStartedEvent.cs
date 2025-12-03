@@ -1,6 +1,6 @@
 namespace FamilyTaskManager.Core.TaskAggregate.Events;
 
-public sealed class TaskStartedEvent(TaskInstance task) : DomainEventBase
+public sealed class TaskStartedEvent : DomainEventBase
 {
-  public TaskInstance Task { get; init; } = task;
+  public required Guid TaskId { get; init; }
 }

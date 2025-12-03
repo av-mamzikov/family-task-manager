@@ -10,8 +10,7 @@ public class TelegramSession : EntityBase<TelegramSession, Guid>, IAggregateRoot
   {
     Id = Guid.NewGuid();
     UserId = userId;
-    ConversationState = 0; // None
-    SessionData = null;
+    ConversationState = 0;
     CurrentFamilyId = null;
     LastActivity = DateTime.UtcNow;
   }
@@ -25,11 +24,11 @@ public class TelegramSession : EntityBase<TelegramSession, Guid>, IAggregateRoot
   // Navigation property
   public User User { get; private set; } = null!;
 
-  public void UpdateSession(Guid? currentFamilyId, int conversationState, string? sessionData)
+  public void UpdateSession(Guid? currentFamilyId, int conversationState, string? sessionDataJson)
   {
     CurrentFamilyId = currentFamilyId;
     ConversationState = conversationState;
-    SessionData = sessionData;
+    SessionData = sessionDataJson;
     LastActivity = DateTime.UtcNow;
   }
 

@@ -1,6 +1,6 @@
 namespace FamilyTaskManager.Core.FamilyAggregate.Events;
 
-public sealed class FamilyCreatedEvent(Family family) : DomainEventBase
+public sealed class FamilyCreatedEvent : DomainEventBase
 {
-  public Family Family { get; init; } = family;
+  public required Guid FamilyId { get; init; }
 }

@@ -8,17 +8,17 @@ namespace FamilyTaskManager.UnitTests.UseCases.Pets;
 
 public class CreatePetHandlerTests
 {
-  private readonly IRepository<Family> _familyRepository;
+  private readonly IAppRepository<Family> _familyAppRepository;
   private readonly CreatePetHandler _handler;
-  private readonly IRepository<Pet> _petRepository;
-  private readonly IRepository<TaskTemplate> _taskTemplateRepository;
+  private readonly IAppRepository<Pet> _petAppRepository;
+  private readonly IAppRepository<TaskTemplate> _taskTemplateAppRepository;
 
   public CreatePetHandlerTests()
   {
-    _petRepository = Substitute.For<IRepository<Pet>>();
-    _familyRepository = Substitute.For<IRepository<Family>>();
-    _taskTemplateRepository = Substitute.For<IRepository<TaskTemplate>>();
-    _handler = new CreatePetHandler(_petRepository, _familyRepository, _taskTemplateRepository);
+    _petAppRepository = Substitute.For<IAppRepository<Pet>>();
+    _familyAppRepository = Substitute.For<IAppRepository<Family>>();
+    _taskTemplateAppRepository = Substitute.For<IAppRepository<TaskTemplate>>();
+    _handler = new(_petAppRepository, _familyAppRepository, _taskTemplateAppRepository);
   }
 
   [Fact]
@@ -29,11 +29,11 @@ public class CreatePetHandlerTests
     var family = new Family("Smith Family", "UTC");
     var command = new CreatePetCommand(familyId, PetType.Cat, "Fluffy");
 
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyAppRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
     Pet? capturedPet = null;
-    await _petRepository.AddAsync(Arg.Do<Pet>(p => capturedPet = p), Arg.Any<CancellationToken>());
+    await _petAppRepository.AddAsync(Arg.Do<Pet>(p => capturedPet = p), Arg.Any<CancellationToken>());
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);
@@ -54,7 +54,7 @@ public class CreatePetHandlerTests
     // Arrange
     var command = new CreatePetCommand(Guid.NewGuid(), PetType.Dog, "Buddy");
 
-    _familyRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+    _familyAppRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
       .Returns((Family?)null);
 
     // Act
@@ -76,7 +76,7 @@ public class CreatePetHandlerTests
     var family = new Family("Smith Family", "UTC");
     var command = new CreatePetCommand(familyId, PetType.Cat, name);
 
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyAppRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act
@@ -99,7 +99,7 @@ public class CreatePetHandlerTests
     var family = new Family("Smith Family", "UTC");
     var command = new CreatePetCommand(familyId, petType, "Pet Name");
 
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyAppRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act
@@ -107,7 +107,7 @@ public class CreatePetHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeTrue();
-    await _petRepository.Received(1).AddAsync(
+    await _petAppRepository.Received(1).AddAsync(
       Arg.Is<Pet>(p => p.Type == petType),
       Arg.Any<CancellationToken>());
   }
@@ -124,7 +124,7 @@ public class CreatePetHandlerTests
     var family = new Family("Smith Family", "UTC");
     var command = new CreatePetCommand(familyId, petType, "Pet Name");
 
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyAppRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
     // Act
@@ -132,7 +132,7 @@ public class CreatePetHandlerTests
 
     // Assert
     result.IsSuccess.ShouldBeTrue();
-    await _taskTemplateRepository.Received(expectedTemplateCount).AddAsync(
+    await _taskTemplateAppRepository.Received(expectedTemplateCount).AddAsync(
       Arg.Any<TaskTemplate>(),
       Arg.Any<CancellationToken>());
   }
@@ -145,11 +145,11 @@ public class CreatePetHandlerTests
     var family = new Family("Smith Family", "UTC");
     var command = new CreatePetCommand(familyId, PetType.Cat, "Fluffy");
 
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyAppRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
     var capturedTemplates = new List<TaskTemplate>();
-    await _taskTemplateRepository.AddAsync(
+    await _taskTemplateAppRepository.AddAsync(
       Arg.Do<TaskTemplate>(t => capturedTemplates.Add(t)),
       Arg.Any<CancellationToken>());
 
@@ -179,11 +179,11 @@ public class CreatePetHandlerTests
     var family = new Family("Smith Family", "UTC");
     var command = new CreatePetCommand(familyId, PetType.Dog, "Buddy");
 
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyAppRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
     var capturedTemplates = new List<TaskTemplate>();
-    await _taskTemplateRepository.AddAsync(
+    await _taskTemplateAppRepository.AddAsync(
       Arg.Do<TaskTemplate>(t => capturedTemplates.Add(t)),
       Arg.Any<CancellationToken>());
 
@@ -208,11 +208,11 @@ public class CreatePetHandlerTests
     var family = new Family("Smith Family", "UTC");
     var command = new CreatePetCommand(familyId, PetType.Hamster, "Nibbles");
 
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyAppRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
     var capturedTemplates = new List<TaskTemplate>();
-    await _taskTemplateRepository.AddAsync(
+    await _taskTemplateAppRepository.AddAsync(
       Arg.Do<TaskTemplate>(t => capturedTemplates.Add(t)),
       Arg.Any<CancellationToken>());
 
@@ -237,11 +237,11 @@ public class CreatePetHandlerTests
     var family = new Family("Smith Family", "UTC");
     var command = new CreatePetCommand(familyId, PetType.Parrot, "Polly");
 
-    _familyRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
+    _familyAppRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
     var capturedTemplates = new List<TaskTemplate>();
-    await _taskTemplateRepository.AddAsync(
+    await _taskTemplateAppRepository.AddAsync(
       Arg.Do<TaskTemplate>(t => capturedTemplates.Add(t)),
       Arg.Any<CancellationToken>());
 

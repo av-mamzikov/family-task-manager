@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
 
@@ -9,9 +10,11 @@ namespace FamilyTaskManager.Core.Services;
 /// </summary>
 public class TaskInstanceFactory : ITaskInstanceFactory
 {
-  public Result<TaskInstance> CreateFromTemplate(TaskTemplate template, DateTime dueAt,
+  public Result<TaskInstance> CreateFromTemplate(TaskTemplate template, Pet pet, DateTime dueAt,
     IEnumerable<TaskInstance> existingInstances)
   {
+    Guard.Against.Null(pet);
+
     // Check if there's already an active TaskInstance for this template
     var existingInstancesList = existingInstances?.ToList() ?? new List<TaskInstance>();
     var activeInstance = existingInstancesList.FirstOrDefault(t => t.Status != TaskStatus.Completed);
@@ -19,8 +22,7 @@ public class TaskInstanceFactory : ITaskInstanceFactory
     if (activeInstance != null) return Result.Error($"Active TaskInstance already exists for template {template.Id}");
 
     var taskInstance = new TaskInstance(
-      template.FamilyId,
-      template.PetId,
+      pet,
       template.Title,
       template.Points,
       TaskType.Recurring,

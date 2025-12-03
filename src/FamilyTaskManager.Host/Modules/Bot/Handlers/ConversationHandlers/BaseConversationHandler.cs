@@ -17,12 +17,12 @@ public abstract class BaseConversationHandler(ILogger logger, IMediator mediator
     string errorMessage,
     CancellationToken cancellationToken)
   {
-    session.ClearState();
     await botClient.SendTextMessageAsync(
       chatId,
       errorMessage,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
+    session.ClearState();
   }
 
   protected async Task SendValidationErrorAsync(
@@ -37,19 +37,4 @@ public abstract class BaseConversationHandler(ILogger logger, IMediator mediator
       errorMessage + hint,
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
-
-  protected bool TryGetSessionData<T>(
-    UserSession session,
-    string key,
-    out T value) where T : notnull
-  {
-    if (session.Data.TryGetValue(key, out var obj) && obj is T typedValue)
-    {
-      value = typedValue;
-      return true;
-    }
-
-    value = default!;
-    return false;
-  }
 }

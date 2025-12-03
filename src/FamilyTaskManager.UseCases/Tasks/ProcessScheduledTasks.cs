@@ -18,7 +18,8 @@ public record ProcessScheduledTaskCommand(DateTime CheckFrom, DateTime CheckTo) 
 /// </summary>
 public class ProcessScheduledTasksHandler(
   IReadRepository<TaskTemplate> templateRepository,
-  IRepository<TaskInstance> taskRepository,
+  IAppRepository<TaskInstance> taskAppRepository,
+  IAppRepository<Pet> petAppRepository,
   ITaskInstanceFactory taskInstanceFactory,
   ILogger<ProcessScheduledTasksHandler> logger)
   : ICommandHandler<ProcessScheduledTaskCommand, Result<int>>
@@ -57,15 +58,24 @@ public class ProcessScheduledTasksHandler(
             "Creating TaskInstance for template {TemplateId} ({Title}), scheduled at {ScheduledTime}, due at {DueAt} (family timezone: {Timezone})",
             template.Id, template.Title, triggerTime.Value, dueAt, template.Family.Timezone);
 
+          // Load pet with family (needed for TaskCreatedEvent)
+          var petSpec = new GetPetByIdWithFamilySpec(template.PetId);
+          var pet = await petAppRepository.FirstOrDefaultAsync(petSpec, cancellationToken);
+          if (pet == null)
+          {
+            logger.LogWarning("Pet {PetId} not found for template {TemplateId}, skipping", template.PetId, template.Id);
+            continue;
+          }
+
           // Get existing instances for this template
           var existingSpec = new TaskInstancesByTemplateSpec(template.Id);
-          var existingInstances = await taskRepository.ListAsync(existingSpec, cancellationToken);
-          var createResult = taskInstanceFactory.CreateFromTemplate(template, dueAt, existingInstances);
+          var existingInstances = await taskAppRepository.ListAsync(existingSpec, cancellationToken);
+          var createResult = taskInstanceFactory.CreateFromTemplate(template, pet, dueAt, existingInstances);
 
           if (createResult.IsSuccess)
           {
-            await taskRepository.AddAsync(createResult.Value, cancellationToken);
-            await taskRepository.SaveChangesAsync(cancellationToken);
+            await taskAppRepository.AddAsync(createResult.Value, cancellationToken);
+            await taskAppRepository.SaveChangesAsync(cancellationToken);
 
             createdCount++;
             logger.LogInformation(

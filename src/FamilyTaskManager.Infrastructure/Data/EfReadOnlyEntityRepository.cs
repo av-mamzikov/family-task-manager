@@ -1,5 +1,4 @@
-using Ardalis.Specification;
-using FamilyTaskManager.Core.Interfaces;
+using Ardalis.Specification.EntityFrameworkCore;
 
 namespace FamilyTaskManager.Infrastructure.Data;
 
