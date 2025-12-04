@@ -9,7 +9,7 @@ namespace FamilyTaskManager.UseCases.Tasks;
 /// </summary>
 public record CreateTaskCommand(
   Guid FamilyId,
-  Guid PetId,
+  Guid SpotId,
   string Title,
   TaskPoints Points,
   DateTime DueAt,
@@ -17,23 +17,23 @@ public record CreateTaskCommand(
 
 public class CreateTaskHandler(
   IAppRepository<TaskInstance> taskAppRepository,
-  IAppRepository<Pet> petAppRepository,
+  IAppRepository<Spot> SpotAppRepository,
   ITimeZoneService timeZoneService,
-  IPetMoodCalculator moodCalculator) : ICommandHandler<CreateTaskCommand, Result<Guid>>
+  ISpotMoodCalculator moodCalculator) : ICommandHandler<CreateTaskCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreateTaskCommand command, CancellationToken cancellationToken)
   {
-    // Load pet with family (needed for TaskCreatedEvent)
-    var petSpec = new GetPetByIdWithFamilySpec(command.PetId);
-    var pet = await petAppRepository.FirstOrDefaultAsync(petSpec, cancellationToken);
-    if (pet == null)
+    // Load Spot with family (needed for TaskCreatedEvent)
+    var SpotSpec = new GetSpotByIdWithFamilySpec(command.SpotId);
+    var Spot = await SpotAppRepository.FirstOrDefaultAsync(SpotSpec, cancellationToken);
+    if (Spot == null)
     {
-      return Result<Guid>.NotFound("Питомец не найден");
+      return Result<Guid>.NotFound("Спот не найден");
     }
 
-    if (pet.FamilyId != command.FamilyId)
+    if (Spot.FamilyId != command.FamilyId)
     {
-      return Result<Guid>.Error("Питомец не принадлежит этой семье");
+      return Result<Guid>.Error("Спот не принадлежит этой семье");
     }
 
     // Validate title length
@@ -46,16 +46,16 @@ public class CreateTaskHandler(
     DateTime dueAtUtc;
     try
     {
-      dueAtUtc = timeZoneService.ConvertToUtc(command.DueAt, pet.Family.Timezone);
+      dueAtUtc = timeZoneService.ConvertToUtc(command.DueAt, Spot.Family.Timezone);
     }
     catch (ArgumentException ex)
     {
       return Result<Guid>.Invalid(new ValidationError($"Ошибка преобразования часового пояса: {ex.Message}"));
     }
 
-    // Create one-time task (pet has Family loaded for event)
+    // Create one-time task (Spot has Family loaded for event)
     var task = new TaskInstance(
-      pet,
+      Spot,
       command.Title,
       command.Points,
       TaskType.OneTime,
@@ -64,10 +64,10 @@ public class CreateTaskHandler(
     await taskAppRepository.AddAsync(task, cancellationToken);
     await taskAppRepository.SaveChangesAsync(cancellationToken);
 
-    // Trigger immediate mood recalculation for the pet
-    var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(command.PetId, cancellationToken);
-    pet.UpdateMoodScore(newMoodScore);
-    await petAppRepository.SaveChangesAsync(cancellationToken);
+    // Trigger immediate mood recalculation for the Spot
+    var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(command.SpotId, cancellationToken);
+    Spot.UpdateMoodScore(newMoodScore);
+    await SpotAppRepository.SaveChangesAsync(cancellationToken);
 
     return Result<Guid>.Success(task.Id);
   }

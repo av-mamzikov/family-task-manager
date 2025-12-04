@@ -1,5 +1,5 @@
 using FamilyTaskManager.Core.FamilyAggregate;
-using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Core.TaskAggregate.Events;
 
 namespace FamilyTaskManager.Core.TaskAggregate;
@@ -10,15 +10,15 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   {
   }
 
-  public TaskInstance(Pet pet, string title, TaskPoints points, TaskType type, DateTime dueAt,
+  public TaskInstance(Spot spot, string title, TaskPoints points, TaskType type, DateTime dueAt,
     Guid? templateId = null)
   {
-    Guard.Against.Null(pet);
+    Guard.Against.Null(spot);
     Guard.Against.NullOrWhiteSpace(title);
     Guard.Against.Null(points);
 
-    FamilyId = pet.FamilyId;
-    PetId = pet.Id;
+    FamilyId = spot.FamilyId;
+    SpotId = spot.Id;
     Title = title.Trim();
     Points = points;
     Type = type;
@@ -30,18 +30,18 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     RegisterDomainEvent(new TaskCreatedEvent
     {
       TaskId = Id,
-      FamilyId = pet.FamilyId,
-      PetId = pet.Id,
+      FamilyId = spot.FamilyId,
+      SpotId = spot.Id,
       Title = title.Trim(),
-      PetName = pet.Name,
+      SpotName = spot.Name,
       Points = points.ToString(),
       DueAt = dueAt,
-      Timezone = pet.Family.Timezone
+      Timezone = spot.Family.Timezone
     });
   }
 
   public Guid FamilyId { get; }
-  public Guid PetId { get; private set; }
+  public Guid SpotId { get; private set; }
   public string Title { get; } = null!;
   public TaskPoints Points { get; } = null!;
   public TaskType Type { get; private set; }
@@ -55,7 +55,7 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
 
   // Navigation properties
   public Family Family { get; } = null!;
-  public Pet Pet { get; private set; } = null!;
+  public Spot Spot { get; private set; } = null!;
   public TaskTemplate? Template { get; private set; }
   public FamilyMember? StartedByMember { get; private set; }
   public FamilyMember? CompletedByMember { get; private set; }

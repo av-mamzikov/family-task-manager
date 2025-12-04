@@ -29,7 +29,7 @@ public class MessageHandler(
 
     // Check if user pressed main menu button while in conversation
     var isMainMenuButton =
-      messageText is "🏠 Семья" or "✅ Наши задачи" or "🐾 Питомец" or "📊 Статистика";
+      messageText is "🏠 Семья" or "✅ Наши задачи" or "🐾 Спот" or "📊 Статистика";
     var isCommand = messageText.StartsWith('/');
 
     // Handle conversation state
@@ -186,13 +186,13 @@ public class MessageHandler(
     await handler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
   }
 
-  private async Task HandlePetCommandAsync(
+  private async Task HandleSpotCommandAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var handler = serviceProvider.GetRequiredService<PetCommandHandler>();
+    var handler = serviceProvider.GetRequiredService<SpotCommandHandler>();
     await handler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
   }
 
@@ -238,7 +238,7 @@ public class MessageHandler(
     {
       "🏠 Семья" => HandleFamilyCommandAsync(botClient, message, session, cancellationToken),
       "✅ Наши задачи" => HandleTasksCommandAsync(botClient, message, session, cancellationToken),
-      "🐾 Питомец" => HandlePetCommandAsync(botClient, message, session, cancellationToken),
+      "🐾 Спот" => HandleSpotCommandAsync(botClient, message, session, cancellationToken),
       "📊 Статистика" => HandleStatsCommandAsync(botClient, message, session, cancellationToken),
       _ => HandleUnknownCommandAsync(botClient, message, cancellationToken)
     });

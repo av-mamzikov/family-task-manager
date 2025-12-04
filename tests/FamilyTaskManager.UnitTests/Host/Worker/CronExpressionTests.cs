@@ -130,7 +130,7 @@ public class CronExpressionTests
   [InlineData("0 0 9,20 * * ?", "Feed cat - twice daily")]
   [InlineData("0 0 20 * * ?", "Clean litter box - daily at 20:00")]
   [InlineData("0 0 9 */5 * ?", "Vet checkup - every 5 days")]
-  public void CronExpression_CommonPetTaskSchedules_AreValid(string cronExpression, string description) =>
+  public void CronExpression_CommonSpotTaskSchedules_AreValid(string cronExpression, string description) =>
     // Act & Assert
     Should.NotThrow(() =>
     {

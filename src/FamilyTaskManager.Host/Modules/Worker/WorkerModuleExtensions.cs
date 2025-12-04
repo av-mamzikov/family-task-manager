@@ -44,14 +44,14 @@ public static class WorkerModuleExtensions
         .WithCronSchedule("0 */15 * * * ?") // Every 15 minutes
         .WithDescription("Sends reminders for tasks due within the next hour"));
 
-      // Job 3: PetMoodCalculatorJob - runs every 30 minutes
-      var moodJobKey = new JobKey("PetMoodCalculatorJob");
-      q.AddJob<PetMoodCalculatorJob>(opts => opts.WithIdentity(moodJobKey));
+      // Job 3: SpotMoodCalculatorJob - runs every 30 minutes
+      var moodJobKey = new JobKey("SpotMoodCalculatorJob");
+      q.AddJob<SpotMoodCalculatorJob>(opts => opts.WithIdentity(moodJobKey));
       q.AddTrigger(opts => opts
         .ForJob(moodJobKey)
-        .WithIdentity("PetMoodCalculatorJob-trigger")
+        .WithIdentity("SpotMoodCalculatorJob-trigger")
         .WithCronSchedule("0 */30 * * * ?") // Every 30 minutes
-        .WithDescription("Recalculates mood scores for all pets"));
+        .WithDescription("Recalculates mood scores for all spots"));
 
       // Register infrastructure jobs (OutboxDispatcherJob)
       q.AddInfrastructureJobs(logger);
@@ -61,7 +61,7 @@ public static class WorkerModuleExtensions
     services.AddQuartzHostedService(options => { options.WaitForJobsToComplete = true; });
 
     logger?.LogInformation(
-      "Worker Module registered: Quartz.NET Jobs (TaskInstanceCreator, TaskReminder, PetMoodCalculator, NotificationBatch)");
+      "Worker Module registered: Quartz.NET Jobs (TaskInstanceCreator, TaskReminder, SpotMoodCalculator, NotificationBatch)");
 
     return services;
   }

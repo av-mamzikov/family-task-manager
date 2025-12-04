@@ -31,7 +31,7 @@ public interface IConversationRouter
 
 public class ConversationRouter(
   FamilyCreationHandler familyCreationHandler,
-  PetCreationHandler petCreationHandler,
+  SpotCreationHandler SpotCreationHandler,
   TaskCreationHandler taskCreationHandler,
   TemplateCreationHandler templateCreationHandler,
   TemplateEditHandler templateEditHandler)
@@ -69,8 +69,8 @@ public class ConversationRouter(
       ConversationState.AwaitingFamilyLocation =>
         HandleLocationTextInput(botClient, message, session, cancellationToken),
 
-      ConversationState.AwaitingPetName =>
-        petCreationHandler.HandlePetNameInputAsync(botClient, message, session, text, cancellationToken),
+      ConversationState.AwaitingSpotName =>
+        SpotCreationHandler.HandleSpotNameInputAsync(botClient, message, session, text, cancellationToken),
 
       ConversationState.AwaitingTaskTitle =>
         taskCreationHandler.HandleTaskTitleInputAsync(botClient, message, session, text, cancellationToken),
@@ -168,13 +168,13 @@ public class ConversationRouter(
     {
       // Task creation flow
       ConversationState.AwaitingTaskPoints => (ConversationState.AwaitingTaskTitle, false),
-      ConversationState.AwaitingTaskPetSelection => (ConversationState.AwaitingTaskPoints, false),
-      ConversationState.AwaitingTaskSchedule => (ConversationState.AwaitingTaskPetSelection, false),
-      ConversationState.AwaitingTaskDueDate => (ConversationState.AwaitingTaskPetSelection, false),
+      ConversationState.AwaitingTaskSpotSelection => (ConversationState.AwaitingTaskPoints, false),
+      ConversationState.AwaitingTaskSchedule => (ConversationState.AwaitingTaskSpotSelection, false),
+      ConversationState.AwaitingTaskDueDate => (ConversationState.AwaitingTaskSpotSelection, false),
 
       // Template creation flow
       ConversationState.AwaitingTemplatePoints => (ConversationState.AwaitingTemplateTitle, false),
-      ConversationState.AwaitingTemplatePetSelection => (ConversationState.AwaitingTemplatePoints, false),
+      ConversationState.AwaitingTemplateSpotSelection => (ConversationState.AwaitingTemplatePoints, false),
       ConversationState.AwaitingTemplateSchedule => (ConversationState.AwaitingTemplatePoints, false),
       ConversationState.AwaitingTemplateScheduleTime => (ConversationState.AwaitingTemplateScheduleType, false),
       ConversationState.AwaitingTemplateScheduleMonthDay => (ConversationState.AwaitingTemplateScheduleType, false),

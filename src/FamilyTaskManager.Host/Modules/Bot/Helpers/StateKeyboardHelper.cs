@@ -16,10 +16,10 @@ public static class StateKeyboardHelper
     {
       ConversationState.AwaitingFamilyTimezone => null, // Используются inline кнопки
       ConversationState.AwaitingFamilyLocation => GetLocationOrBackKeyboard(),
-      ConversationState.AwaitingPetName => GetCancelKeyboard(),
+      ConversationState.AwaitingSpotName => GetCancelKeyboard(),
       ConversationState.AwaitingTaskTitle => GetCancelKeyboard(),
       ConversationState.AwaitingTaskPoints => null, // Используются inline кнопки
-      ConversationState.AwaitingTaskPetSelection => null, // Используются inline кнопки
+      ConversationState.AwaitingTaskSpotSelection => null, // Используются inline кнопки
       ConversationState.AwaitingTaskSchedule => GetBackOrCancelKeyboard(),
       ConversationState.AwaitingTaskDueDate => GetBackOrCancelKeyboard(),
       ConversationState.AwaitingTemplateTitle => GetCancelKeyboard(),
@@ -29,7 +29,7 @@ public static class StateKeyboardHelper
       ConversationState.AwaitingTemplateScheduleWeekday => null, // Используются inline кнопки
       ConversationState.AwaitingTemplateScheduleMonthDay => GetBackOrCancelKeyboard(),
       ConversationState.AwaitingTemplateDueDuration => GetBackOrCancelKeyboard(),
-      ConversationState.AwaitingTemplatePetSelection => null, // Используются inline кнопки
+      ConversationState.AwaitingTemplateSpotSelection => null, // Используются inline кнопки
       ConversationState.AwaitingTemplateEditTitle => GetBackOrCancelKeyboard(),
       ConversationState.AwaitingTemplateEditPoints => null, // Используются inline кнопки
       ConversationState.AwaitingTemplateEditScheduleType => null, // Используются inline кнопки
@@ -53,8 +53,8 @@ public static class StateKeyboardHelper
       ConversationState.AwaitingFamilyLocation =>
         "\n\n💡 Доступные действия:\n• Отправьте геолокацию\n• ⬅️ Назад - Вернуться к выбору способа",
 
-      ConversationState.AwaitingPetName =>
-        "\n\n💡 Доступные действия:\n• Введите имя питомца (2-50 символов)\n•",
+      ConversationState.AwaitingSpotName =>
+        "\n\n💡 Доступные действия:\n• Введите имя спота (2-50 символов)\n•",
 
       ConversationState.AwaitingTaskTitle =>
         "\n\n💡 Доступные действия:\n• Введите название задачи (3-100 символов)\n",
@@ -75,10 +75,10 @@ public static class StateKeyboardHelper
         "\n\n💡 Доступные действия:\n• Введите день месяца (1-31)\n• ⬅️ Назад - К типу расписания\n",
 
       ConversationState.AwaitingTaskSchedule =>
-        "\n\n💡 Доступные действия:\n• Введите расписание в формате Cron\n• ⬅️ Назад - К выбору питомца\n",
+        "\n\n💡 Доступные действия:\n• Введите расписание в формате Cron\n• ⬅️ Назад - К выбору спота\n",
 
       ConversationState.AwaitingTaskDueDate =>
-        "\n\n💡 Доступные действия:\n• Введите срок в днях (0-365)\n• ⬅️ Назад - К выбору питомца\n",
+        "\n\n💡 Доступные действия:\n• Введите срок в днях (0-365)\n• ⬅️ Назад - К выбору спота\n",
 
       ConversationState.AwaitingTemplateTitle =>
         "\n\n💡 Доступные действия:\n• Введите название шаблона (3-100 символов)\n",

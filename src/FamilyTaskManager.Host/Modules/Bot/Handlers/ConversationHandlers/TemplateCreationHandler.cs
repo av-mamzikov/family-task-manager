@@ -211,7 +211,7 @@ public class TemplateCreationHandler(
     var data = session.Data;
 
     if (session.CurrentFamilyId is not { } familyId ||
-        data.PetId is not { } petId ||
+        data.SpotId is not { } SpotId ||
         string.IsNullOrWhiteSpace(data.Title) ||
         data.Points is not { } points ||
         string.IsNullOrWhiteSpace(data.ScheduleType) ||
@@ -277,7 +277,7 @@ public class TemplateCreationHandler(
     // Create template
     var createTemplateCommand = new CreateTaskTemplateCommand(
       familyId,
-      petId,
+      SpotId,
       title,
       new(points),
       scheduleType,

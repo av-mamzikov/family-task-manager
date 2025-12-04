@@ -19,7 +19,7 @@ public record ProcessScheduledTaskCommand(DateTime CheckFrom, DateTime CheckTo) 
 public class ProcessScheduledTasksHandler(
   IReadRepository<TaskTemplate> templateRepository,
   IAppRepository<TaskInstance> taskAppRepository,
-  IAppRepository<Pet> petAppRepository,
+  IAppRepository<Spot> SpotAppRepository,
   ITaskInstanceFactory taskInstanceFactory,
   ILogger<ProcessScheduledTasksHandler> logger)
   : ICommandHandler<ProcessScheduledTaskCommand, Result<int>>
@@ -58,19 +58,20 @@ public class ProcessScheduledTasksHandler(
             "Creating TaskInstance for template {TemplateId} ({Title}), scheduled at {ScheduledTime}, due at {DueAt} (family timezone: {Timezone})",
             template.Id, template.Title, triggerTime.Value, dueAt, template.Family.Timezone);
 
-          // Load pet with family (needed for TaskCreatedEvent)
-          var petSpec = new GetPetByIdWithFamilySpec(template.PetId);
-          var pet = await petAppRepository.FirstOrDefaultAsync(petSpec, cancellationToken);
-          if (pet == null)
+          // Load Spot with family (needed for TaskCreatedEvent)
+          var SpotSpec = new GetSpotByIdWithFamilySpec(template.SpotId);
+          var Spot = await SpotAppRepository.FirstOrDefaultAsync(SpotSpec, cancellationToken);
+          if (Spot == null)
           {
-            logger.LogWarning("Pet {PetId} not found for template {TemplateId}, skipping", template.PetId, template.Id);
+            logger.LogWarning("Spot {SpotId} not found for template {TemplateId}, skipping", template.SpotId,
+              template.Id);
             continue;
           }
 
           // Get existing instances for this template
           var existingSpec = new TaskInstancesByTemplateSpec(template.Id);
           var existingInstances = await taskAppRepository.ListAsync(existingSpec, cancellationToken);
-          var createResult = taskInstanceFactory.CreateFromTemplate(template, pet, dueAt, existingInstances);
+          var createResult = taskInstanceFactory.CreateFromTemplate(template, Spot, dueAt, existingInstances);
 
           if (createResult.IsSuccess)
           {

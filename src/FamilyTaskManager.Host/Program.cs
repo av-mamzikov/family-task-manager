@@ -73,7 +73,7 @@ if (!app.Environment.IsEnvironment("Testing"))
 
 Log.Information("All modules registered successfully");
 Log.Information("Bot Module: Telegram Bot with Long Polling");
-Log.Information("Worker Module: Quartz.NET Jobs (TaskInstanceCreator, TaskReminder, PetMoodCalculator)");
+Log.Information("Worker Module: Quartz.NET Jobs (TaskInstanceCreator, TaskReminder, SpotMoodCalculator)");
 
 app.Run();
 

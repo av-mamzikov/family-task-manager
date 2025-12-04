@@ -13,7 +13,7 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
     builder.Property(t => t.FamilyId)
       .IsRequired();
 
-    builder.Property(t => t.PetId)
+    builder.Property(t => t.SpotId)
       .IsRequired();
 
     builder.Property(t => t.Title)
@@ -56,7 +56,7 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
 
     // Indexes for optimization
     builder.HasIndex(t => t.FamilyId);
-    builder.HasIndex(t => t.PetId);
+    builder.HasIndex(t => t.SpotId);
     builder.HasIndex(t => t.TemplateId);
     builder.HasIndex(t => t.StartedByMemberId);
     builder.HasIndex(t => t.CompletedByMemberId);
@@ -69,10 +69,10 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
       .HasForeignKey(t => t.FamilyId)
       .OnDelete(DeleteBehavior.Cascade);
 
-    // Foreign key relationship to Pet
-    builder.HasOne(t => t.Pet)
+    // Foreign key relationship to Spot
+    builder.HasOne(t => t.Spot)
       .WithMany()
-      .HasForeignKey(t => t.PetId)
+      .HasForeignKey(t => t.SpotId)
       .OnDelete(DeleteBehavior.Cascade);
 
     // Foreign key relationship to TaskTemplate

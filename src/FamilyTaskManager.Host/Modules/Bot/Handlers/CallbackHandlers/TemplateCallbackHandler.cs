@@ -1,8 +1,8 @@
-using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.UseCases.Pets;
+using FamilyTaskManager.UseCases.Spots;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -30,8 +30,8 @@ public class TemplateCallbackHandler(
 
     switch (templateAction)
     {
-      case "vp" when parts.Length >= 3 && Guid.TryParse(parts[2], out var petId):
-        await templateCommandHandler.HandleViewPetTemplatesAsync(botClient, chatId, messageId, petId, session,
+      case "vp" when parts.Length >= 3 && Guid.TryParse(parts[2], out var SpotId):
+        await templateCommandHandler.HandleViewSpotTemplatesAsync(botClient, chatId, messageId, SpotId, session,
           cancellationToken);
         break;
 
@@ -72,8 +72,8 @@ public class TemplateCallbackHandler(
         await HandleTemplateCreateAsync(botClient, chatId, messageId, session, fromUser, cancellationToken);
         break;
 
-      case "cf" when parts.Length >= 3 && Guid.TryParse(parts[2], out var petId):
-        await HandleTemplateCreateForPetAsync(botClient, chatId, messageId, petId, session, fromUser,
+      case "cf" when parts.Length >= 3 && Guid.TryParse(parts[2], out var SpotId):
+        await HandleTemplateCreateForSpotAsync(botClient, chatId, messageId, SpotId, session, fromUser,
           cancellationToken);
         break;
 
@@ -175,27 +175,27 @@ public class TemplateCallbackHandler(
       return;
     }
 
-    // Get pets for the family
-    var getPetsQuery = new GetPetsQuery(session.CurrentFamilyId.Value);
-    var petsResult = await Mediator.Send(getPetsQuery, cancellationToken);
+    // Get Spots for the family
+    var getSpotsQuery = new GetSpotsQuery(session.CurrentFamilyId.Value);
+    var SpotsResult = await Mediator.Send(getSpotsQuery, cancellationToken);
 
-    if (!petsResult.IsSuccess || !petsResult.Value.Any())
+    if (!SpotsResult.IsSuccess || !SpotsResult.Value.Any())
     {
-      await EditMessageWithErrorAsync(botClient, chatId, messageId, BotConstants.Errors.NoPets, cancellationToken);
+      await EditMessageWithErrorAsync(botClient, chatId, messageId, BotConstants.Errors.NoSpots, cancellationToken);
       return;
     }
 
-    // Build pet selection keyboard
-    var buttons = petsResult.Value.Select(p =>
+    // Build Spot selection keyboard
+    var buttons = SpotsResult.Value.Select(p =>
     {
-      var petEmoji = p.Type switch
+      var SpotEmoji = p.Type switch
       {
-        PetType.Cat => "🐱",
-        PetType.Dog => "🐶",
-        PetType.Hamster => "🐹",
+        SpotType.Cat => "🐱",
+        SpotType.Dog => "🐶",
+        SpotType.Hamster => "🐹",
         _ => "🐾"
       };
-      return new[] { InlineKeyboardButton.WithCallbackData($"{petEmoji} {p.Name}", $"tpl_cf_{p.Id}") };
+      return new[] { InlineKeyboardButton.WithCallbackData($"{SpotEmoji} {p.Name}", $"tpl_cf_{p.Id}") };
     }).ToArray();
 
     var keyboard = new InlineKeyboardMarkup(buttons);
@@ -203,16 +203,16 @@ public class TemplateCallbackHandler(
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      "🐾 Выберите питомца для создания шаблона:",
+      "🐾 Выберите спота для создания шаблона:",
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
   }
 
-  private async Task HandleTemplateCreateForPetAsync(
+  private async Task HandleTemplateCreateForSpotAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
-    Guid petId,
+    Guid SpotId,
     UserSession session,
     User fromUser,
     CancellationToken cancellationToken)
@@ -223,7 +223,7 @@ public class TemplateCallbackHandler(
       return;
     }
 
-    session.SetState(ConversationState.AwaitingTemplateTitle, new() { PetId = petId });
+    session.SetState(ConversationState.AwaitingTemplateTitle, new() { SpotId = SpotId });
 
     await botClient.EditMessageTextAsync(
       chatId,

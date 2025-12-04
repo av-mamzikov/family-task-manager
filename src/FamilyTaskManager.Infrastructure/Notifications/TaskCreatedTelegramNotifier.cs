@@ -18,7 +18,7 @@ public class TaskCreatedTelegramNotifier(
     var dueAtLocal = timeZoneService.ConvertFromUtc(notification.DueAt, notification.Timezone);
 
     // Format message using data from event
-    var message = $"🎯 *Новая миссия для {notification.PetName}!*\n\n" +
+    var message = $"🎯 *Новая миссия для {notification.SpotName}!*\n\n" +
                   $"Задача: {notification.Title}\n" +
                   $"Награда: {notification.Points} баллов\n" +
                   $"Срок выполнения: {dueAtLocal:dd.MM.yyyy HH:mm}";

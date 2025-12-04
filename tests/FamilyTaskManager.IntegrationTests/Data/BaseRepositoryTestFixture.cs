@@ -60,5 +60,5 @@ public abstract class BaseRepositoryTestFixture : IAsyncLifetime
   /// </summary>
   protected async Task ClearDatabaseAsync() =>
     await DbContext.Database.ExecuteSqlRawAsync(
-      "TRUNCATE TABLE \"Families\", \"FamilyMembers\", \"Users\", \"Pets\", \"TaskTemplates\", \"TaskInstances\", \"ActionHistory\" CASCADE");
+      "TRUNCATE TABLE \"Families\", \"FamilyMembers\", \"Users\", \"Spots\", \"TaskTemplates\", \"TaskInstances\", \"ActionHistory\" CASCADE");
 }

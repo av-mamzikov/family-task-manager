@@ -2,7 +2,7 @@ namespace FamilyTaskManager.UseCases.TaskTemplates;
 
 public record CreateTaskTemplateCommand(
   Guid FamilyId,
-  Guid PetId,
+  Guid SpotId,
   string Title,
   TaskPoints Points,
   ScheduleType ScheduleType,
@@ -14,20 +14,20 @@ public record CreateTaskTemplateCommand(
 
 public class CreateTaskTemplateHandler(
   IAppRepository<TaskTemplate> templateAppRepository,
-  IAppRepository<Pet> petAppRepository) : ICommandHandler<CreateTaskTemplateCommand, Result<Guid>>
+  IAppRepository<Spot> SpotAppRepository) : ICommandHandler<CreateTaskTemplateCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreateTaskTemplateCommand command, CancellationToken cancellationToken)
   {
-    // Verify pet exists and belongs to family
-    var pet = await petAppRepository.GetByIdAsync(command.PetId, cancellationToken);
-    if (pet == null)
+    // Verify Spot exists and belongs to family
+    var Spot = await SpotAppRepository.GetByIdAsync(command.SpotId, cancellationToken);
+    if (Spot == null)
     {
-      return Result<Guid>.NotFound("Питомец не найден");
+      return Result<Guid>.NotFound("Спот не найден");
     }
 
-    if (pet.FamilyId != command.FamilyId)
+    if (Spot.FamilyId != command.FamilyId)
     {
-      return Result<Guid>.Error("Питомец не принадлежит этой семье");
+      return Result<Guid>.Error("Спот не принадлежит этой семье");
     }
 
     // Validate title
@@ -60,7 +60,7 @@ public class CreateTaskTemplateHandler(
     // Create template
     var template = new TaskTemplate(
       command.FamilyId,
-      command.PetId,
+      command.SpotId,
       command.Title,
       command.Points,
       scheduleResult.Value,

@@ -1,5 +1,5 @@
 using FamilyTaskManager.Core.FamilyAggregate;
-using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 
 namespace FamilyTaskManager.IntegrationTests.Data;
@@ -17,16 +17,16 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
     await familyRepository.AddAsync(family);
     await DbContext.SaveChangesAsync();
 
-    // Создаем питомца для этой семьи
-    var pet = new Pet(family.Id, PetType.Cat, "Test Pet");
-    var petRepository = GetRepository<Pet>();
-    await petRepository.AddAsync(pet);
+    // Создаем спота для этой семьи
+    var Spot = new Spot(family.Id, SpotType.Cat, "Test Spot");
+    var SpotRepository = GetRepository<Spot>();
+    await SpotRepository.AddAsync(Spot);
     await DbContext.SaveChangesAsync();
 
     // Создаем шаблон задачи с валидными ID
     var createdBy = Guid.NewGuid();
     var defaultSchedule = schedule ?? Schedule.CreateDaily(new TimeOnly(8, 0)).Value;
-    return new TaskTemplate(family.Id, pet.Id, title, new TaskPoints(points), defaultSchedule, TimeSpan.FromHours(12),
+    return new TaskTemplate(family.Id, Spot.Id, title, new(points), defaultSchedule, TimeSpan.FromHours(12),
       createdBy);
   }
 

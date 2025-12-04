@@ -9,7 +9,7 @@ public static class CoreServiceExtensions
   {
     // Register domain services
     services.AddScoped<ITaskInstanceFactory, TaskInstanceFactory>();
-    services.AddScoped<IPetMoodCalculator, PetMoodCalculator>();
+    services.AddScoped<ISpotMoodCalculator, SpotMoodCalculator>();
 
     return services;
   }

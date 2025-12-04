@@ -1,11 +1,11 @@
 using Ardalis.Result;
 using Ardalis.Specification;
 using FamilyTaskManager.Core.FamilyAggregate;
-using FamilyTaskManager.Core.PetAggregate;
 using FamilyTaskManager.Core.Services;
+using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.UseCases.Contracts.TaskTemplates;
-using FamilyTaskManager.UseCases.Pets.Specifications;
+using FamilyTaskManager.UseCases.Spots.Specifications;
 using FamilyTaskManager.UseCases.Tasks;
 using FamilyTaskManager.UseCases.Tasks.Specifications;
 using FamilyTaskManager.UseCases.TaskTemplates.Specifications;
@@ -16,7 +16,7 @@ public class ProcessScheduledTasksHandlerTests
 {
   private readonly ProcessScheduledTasksHandler _handler;
   private readonly ILogger<ProcessScheduledTasksHandler> _logger;
-  private readonly IAppRepository<Pet> _petAppRepository;
+  private readonly IAppRepository<Spot> _SpotAppRepository;
   private readonly IAppRepository<TaskInstance> _taskAppRepository;
   private readonly ITaskInstanceFactory _taskInstanceFactory;
   private readonly IReadRepository<TaskTemplate> _templateRepository;
@@ -25,14 +25,14 @@ public class ProcessScheduledTasksHandlerTests
   {
     _templateRepository = Substitute.For<IReadRepository<TaskTemplate>>();
     _taskAppRepository = Substitute.For<IAppRepository<TaskInstance>>();
-    _petAppRepository = Substitute.For<IAppRepository<Pet>>();
+    _SpotAppRepository = Substitute.For<IAppRepository<Spot>>();
     _taskInstanceFactory = Substitute.For<ITaskInstanceFactory>();
     _logger = Substitute.For<ILogger<ProcessScheduledTasksHandler>>();
 
     _handler = new ProcessScheduledTasksHandler(
       _templateRepository,
       _taskAppRepository,
-      _petAppRepository,
+      _SpotAppRepository,
       _taskInstanceFactory,
       _logger);
   }
@@ -62,7 +62,7 @@ public class ProcessScheduledTasksHandlerTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var petId = Guid.NewGuid();
+    var SpotId = Guid.NewGuid();
     var templateId = Guid.NewGuid();
     var checkFrom = new DateTime(2024, 1, 15, 8, 0, 0, DateTimeKind.Utc); // 8:00 UTC
     var checkTo = checkFrom.AddHours(1); // 9:00 UTC
@@ -72,7 +72,7 @@ public class ProcessScheduledTasksHandlerTests
     // Schedule at 10:00 - outside the window
     var schedule = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
     var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, petId, "Daily Task", new TaskPoints(2), schedule, TimeSpan.FromHours(24),
+    var template = new TaskTemplate(familyId, SpotId, "Daily Task", new(2), schedule, TimeSpan.FromHours(24),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
@@ -85,8 +85,8 @@ public class ProcessScheduledTasksHandlerTests
       schedule.Time,
       schedule.DayOfWeek,
       schedule.DayOfMonth,
-      petId,
-      "Test Pet",
+      SpotId,
+      "Test Spot",
       DateTime.UtcNow,
       TimeSpan.FromHours(24));
 
@@ -110,7 +110,7 @@ public class ProcessScheduledTasksHandlerTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var petId = Guid.NewGuid();
+    var SpotId = Guid.NewGuid();
     var templateId = Guid.NewGuid();
     var checkFrom = new DateTime(2024, 1, 15, 9, 0, 0, DateTimeKind.Utc); // 9:00 UTC
     var checkTo = checkFrom.AddHours(2); // 11:00 UTC
@@ -120,7 +120,7 @@ public class ProcessScheduledTasksHandlerTests
     // Schedule at 10:00 - inside the window
     var schedule = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
     var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, petId, "Daily Task", new TaskPoints(2), schedule, TimeSpan.FromHours(24),
+    var template = new TaskTemplate(familyId, SpotId, "Daily Task", new(2), schedule, TimeSpan.FromHours(24),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
@@ -133,14 +133,14 @@ public class ProcessScheduledTasksHandlerTests
       schedule.Time,
       schedule.DayOfWeek,
       schedule.DayOfMonth,
-      petId,
-      "Test Pet",
+      SpotId,
+      "Test Spot",
       DateTime.UtcNow,
       TimeSpan.FromHours(24));
 
-    var pet = new Pet(familyId, PetType.Cat, "Test Pet");
-    typeof(Pet).GetProperty("Family")!.SetValue(pet, family);
-    var newInstance = new TaskInstance(pet, "Daily Task", new TaskPoints(2), TaskType.Recurring,
+    var Spot = new Spot(familyId, SpotType.Cat, "Test Spot");
+    typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
+    var newInstance = new TaskInstance(Spot, "Daily Task", new(2), TaskType.Recurring,
       DateTime.UtcNow.AddHours(24), templateId);
 
     _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
@@ -149,14 +149,14 @@ public class ProcessScheduledTasksHandlerTests
     _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template });
 
-    _petAppRepository.FirstOrDefaultAsync(Arg.Any<GetPetByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
-      .Returns(pet);
+    _SpotAppRepository.FirstOrDefaultAsync(Arg.Any<GetSpotByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
+      .Returns(Spot);
 
     _taskAppRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance>());
 
     _taskInstanceFactory
-      .CreateFromTemplate(template, Arg.Any<Pet>(), Arg.Any<DateTime>(), Arg.Any<IEnumerable<TaskInstance>>())
+      .CreateFromTemplate(template, Arg.Any<Spot>(), Arg.Any<DateTime>(), Arg.Any<IEnumerable<TaskInstance>>())
       .Returns(Result<TaskInstance>.Success(newInstance));
 
     // Act
@@ -174,7 +174,7 @@ public class ProcessScheduledTasksHandlerTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var petId = Guid.NewGuid();
+    var SpotId = Guid.NewGuid();
     var templateId = Guid.NewGuid();
     var checkFrom = new DateTime(2024, 1, 15, 9, 0, 0, DateTimeKind.Utc);
     var checkTo = checkFrom.AddHours(2);
@@ -183,7 +183,7 @@ public class ProcessScheduledTasksHandlerTests
 
     var schedule = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
     var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, petId, "Daily Task", new TaskPoints(2), schedule, TimeSpan.FromHours(24),
+    var template = new TaskTemplate(familyId, SpotId, "Daily Task", new(2), schedule, TimeSpan.FromHours(24),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
@@ -196,13 +196,13 @@ public class ProcessScheduledTasksHandlerTests
       schedule.Time,
       schedule.DayOfWeek,
       schedule.DayOfMonth,
-      petId,
-      "Test Pet",
+      SpotId,
+      "Test Spot",
       DateTime.UtcNow,
       TimeSpan.FromHours(24));
 
-    var pet = new Pet(familyId, PetType.Cat, "Test Pet");
-    typeof(Pet).GetProperty("Family")!.SetValue(pet, family);
+    var Spot = new Spot(familyId, SpotType.Cat, "Test Spot");
+    typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
 
     _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplateDto> { templateDto });
@@ -210,15 +210,15 @@ public class ProcessScheduledTasksHandlerTests
     _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template });
 
-    _petAppRepository.FirstOrDefaultAsync(Arg.Any<GetPetByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
-      .Returns(pet);
+    _SpotAppRepository.FirstOrDefaultAsync(Arg.Any<GetSpotByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
+      .Returns(Spot);
 
     _taskAppRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance>());
 
     // Factory returns error (e.g., already has active instance)
     _taskInstanceFactory
-      .CreateFromTemplate(template, Arg.Any<Pet>(), Arg.Any<DateTime>(), Arg.Any<IEnumerable<TaskInstance>>())
+      .CreateFromTemplate(template, Arg.Any<Spot>(), Arg.Any<DateTime>(), Arg.Any<IEnumerable<TaskInstance>>())
       .Returns(Result<TaskInstance>.Error("Already has active instance"));
 
     // Act
@@ -235,7 +235,7 @@ public class ProcessScheduledTasksHandlerTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var petId = Guid.NewGuid();
+    var SpotId = Guid.NewGuid();
     var checkFrom = new DateTime(2024, 1, 15, 9, 0, 0, DateTimeKind.Utc);
     var checkTo = checkFrom.AddHours(2);
 
@@ -245,23 +245,25 @@ public class ProcessScheduledTasksHandlerTests
     var schedule2 = Schedule.CreateDaily(new TimeOnly(10, 30)).Value;
 
     var family = new Family("Test Family", "UTC", false);
-    var pet = new Pet(familyId, PetType.Cat, "Test Pet");
+    var Spot = new Spot(familyId, SpotType.Cat, "Test Spot");
     // Set Family navigation property for test
-    typeof(Pet).GetProperty("Family")!.SetValue(pet, family);
+    typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
 
-    var template1 = new TaskTemplate(familyId, petId, "Task 1", new TaskPoints(2), schedule1, TimeSpan.FromHours(24),
+    var template1 = new TaskTemplate(familyId, SpotId, "Task 1", new(2), schedule1, TimeSpan.FromHours(24),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template1, family);
 
-    var template2 = new TaskTemplate(familyId, petId, "Task 2", new TaskPoints(2), schedule2, TimeSpan.FromHours(24),
+    var template2 = new TaskTemplate(familyId, SpotId, "Task 2", new(2), schedule2, TimeSpan.FromHours(24),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template2, family);
 
     var templateDtos = new List<TaskTemplateDto>
     {
-      new(template1.Id, familyId, "Task 1", new TaskPoints(2), schedule1.Type, schedule1.Time, null, null, petId, "Pet",
+      new(template1.Id, familyId, "Task 1", new(2), schedule1.Type, schedule1.Time, null, null, SpotId,
+        "Spot",
         DateTime.UtcNow, TimeSpan.FromHours(24)),
-      new(template2.Id, familyId, "Task 2", new TaskPoints(2), schedule2.Type, schedule2.Time, null, null, petId, "Pet",
+      new(template2.Id, familyId, "Task 2", new(2), schedule2.Type, schedule2.Time, null, null, SpotId,
+        "Spot",
         DateTime.UtcNow, TimeSpan.FromHours(24))
     };
 
@@ -271,20 +273,20 @@ public class ProcessScheduledTasksHandlerTests
     _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template1, template2 });
 
-    _petAppRepository.FirstOrDefaultAsync(Arg.Any<GetPetByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
-      .Returns(pet);
+    _SpotAppRepository.FirstOrDefaultAsync(Arg.Any<GetSpotByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
+      .Returns(Spot);
 
     _taskAppRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance>());
 
-    _taskInstanceFactory.CreateFromTemplate(Arg.Any<TaskTemplate>(), Arg.Any<Pet>(), Arg.Any<DateTime>(),
+    _taskInstanceFactory.CreateFromTemplate(Arg.Any<TaskTemplate>(), Arg.Any<Spot>(), Arg.Any<DateTime>(),
         Arg.Any<IEnumerable<TaskInstance>>())
       .Returns(x =>
       {
         var template = x.ArgAt<TaskTemplate>(0);
-        var pet = x.ArgAt<Pet>(1);
+        var Spot = x.ArgAt<Spot>(1);
         var dueAt = x.ArgAt<DateTime>(2);
-        var instance = new TaskInstance(pet, template.Title, template.Points,
+        var instance = new TaskInstance(Spot, template.Title, template.Points,
           TaskType.Recurring, dueAt, template.Id);
         return Result<TaskInstance>.Success(instance);
       });

@@ -1,5 +1,5 @@
 using FamilyTaskManager.Core.FamilyAggregate;
-using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Core.SpotAggregate;
 
 namespace FamilyTaskManager.Core.TaskAggregate;
 
@@ -9,12 +9,12 @@ public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
   {
   }
 
-  public TaskTemplate(Guid familyId, Guid petId, string title, TaskPoints points, Schedule schedule,
+  public TaskTemplate(Guid familyId, Guid spotId, string title, TaskPoints points, Schedule schedule,
     TimeSpan dueDuration,
     Guid createdBy)
   {
     Guard.Against.Default(familyId);
-    Guard.Against.Default(petId);
+    Guard.Against.Default(spotId);
     Guard.Against.Default(createdBy);
     Guard.Against.NullOrWhiteSpace(title);
     Guard.Against.Null(points);
@@ -22,7 +22,7 @@ public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
     Guard.Against.OutOfRange(dueDuration.TotalHours, nameof(dueDuration), 1, 720); // 1 hour to 30 days
 
     FamilyId = familyId;
-    PetId = petId;
+    SpotId = spotId;
     Title = title.Trim();
     Points = points;
     Schedule = schedule;
@@ -33,8 +33,8 @@ public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
 
   public Guid FamilyId { get; private set; }
   public Family Family { get; private set; } = null!;
-  public Guid PetId { get; private set; }
-  public Pet Pet { get; private set; } = null!;
+  public Guid SpotId { get; private set; }
+  public Spot Spot { get; private set; } = null!;
   public string Title { get; private set; } = null!;
   public TaskPoints Points { get; private set; } = null!;
   public Schedule Schedule { get; private set; } = null!;
