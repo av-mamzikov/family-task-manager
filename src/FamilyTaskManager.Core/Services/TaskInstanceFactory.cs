@@ -19,7 +19,7 @@ public class TaskInstanceFactory : ITaskInstanceFactory
     var existingInstancesList = existingInstances?.ToList() ?? new List<TaskInstance>();
     var activeInstance = existingInstancesList.FirstOrDefault(t => t.Status != TaskStatus.Completed);
 
-    if (activeInstance != null) return Result.Error($"Active TaskInstance already exists for template {template.Id}");
+    if (activeInstance != null) return Result.Error("Уже есть активная задача для шаблона");
 
     var taskInstance = new TaskInstance(
       spot,

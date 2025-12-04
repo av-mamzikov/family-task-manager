@@ -157,7 +157,7 @@ public class TaskInstanceTests
 
   [Theory]
   [InlineData(0)]
-  [InlineData(4)]
+  [InlineData(5)]
   public void Constructor_WithInvalidPoints_ThrowsException(int invalidPoints)
   {
     // Arrange
@@ -175,6 +175,7 @@ public class TaskInstanceTests
   [InlineData(1)]
   [InlineData(2)]
   [InlineData(3)]
+  [InlineData(4)]
   public void Constructor_WithValidPoints_CreatesTask(int validPoints)
   {
     // Arrange

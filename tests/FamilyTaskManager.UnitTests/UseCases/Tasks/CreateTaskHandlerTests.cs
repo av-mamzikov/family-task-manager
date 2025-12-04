@@ -142,7 +142,7 @@ public class CreateTaskHandlerTests
 
   [Theory]
   [InlineData(0)]
-  [InlineData(4)]
+  [InlineData(5)]
   public void TaskPoints_Constructor_WithInvalidPoints_ThrowsException(int points) =>
     // Act & Assert
     Should.Throw<ArgumentException>(() => new TaskPoints(points));

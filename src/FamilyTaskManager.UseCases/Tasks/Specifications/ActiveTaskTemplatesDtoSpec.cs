@@ -1,11 +1,13 @@
+using FamilyTaskManager.UseCases.Contracts.TaskTemplates;
+
 namespace FamilyTaskManager.UseCases.Tasks.Specifications;
 
 /// <summary>
 ///   Specification to get active task templates with projection to DTO for SQL-level SELECT.
 /// </summary>
-public class ActiveTaskTemplatesWithTimeZoneSpec : Specification<TaskTemplate, TaskTemplateDto>
+public class ActiveTaskTemplatesDtoSpec : Specification<TaskTemplate, TaskTemplateDto>
 {
-  public ActiveTaskTemplatesWithTimeZoneSpec()
+  public ActiveTaskTemplatesDtoSpec()
   {
     Query.Select(TaskTemplateDto.Projections.FromTaskTemplate);
   }

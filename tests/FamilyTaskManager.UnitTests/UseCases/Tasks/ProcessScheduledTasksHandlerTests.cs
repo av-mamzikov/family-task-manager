@@ -43,10 +43,10 @@ public class ProcessScheduledTasksHandlerTests
     // Arrange
     var command = new ProcessScheduledTaskCommand(DateTime.UtcNow, DateTime.UtcNow.AddHours(1));
 
-    _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
+    _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesDtoSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplateDto>());
 
-    _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
+    _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyAndScheduleSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate>());
 
     // Act
@@ -90,10 +90,10 @@ public class ProcessScheduledTasksHandlerTests
       DateTime.UtcNow,
       TimeSpan.FromHours(24));
 
-    _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
+    _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesDtoSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplateDto> { templateDto });
 
-    _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
+    _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyAndScheduleSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template });
 
     // Act
@@ -142,10 +142,10 @@ public class ProcessScheduledTasksHandlerTests
     typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
     var newInstance = new TaskInstance(Spot, "Daily Task", new(2), DateTime.UtcNow.AddHours(24), templateId);
 
-    _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
+    _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesDtoSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplateDto> { templateDto });
 
-    _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
+    _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyAndScheduleSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template });
 
     _SpotAppRepository.FirstOrDefaultAsync(Arg.Any<GetSpotByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
@@ -203,10 +203,10 @@ public class ProcessScheduledTasksHandlerTests
     var Spot = new Spot(familyId, SpotType.Cat, "Test Spot");
     typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
 
-    _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
+    _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesDtoSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplateDto> { templateDto });
 
-    _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
+    _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyAndScheduleSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template });
 
     _SpotAppRepository.FirstOrDefaultAsync(Arg.Any<GetSpotByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
@@ -266,10 +266,10 @@ public class ProcessScheduledTasksHandlerTests
         DateTime.UtcNow, TimeSpan.FromHours(24))
     };
 
-    _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
+    _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesDtoSpec>(), Arg.Any<CancellationToken>())
       .Returns(templateDtos);
 
-    _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyByIdsSpec>(), Arg.Any<CancellationToken>())
+    _templateRepository.ListAsync(Arg.Any<TaskTemplatesWithFamilyAndScheduleSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplate> { template1, template2 });
 
     _SpotAppRepository.FirstOrDefaultAsync(Arg.Any<GetSpotByIdWithFamilySpec>(), Arg.Any<CancellationToken>())

@@ -15,9 +15,9 @@ public class TaskCompletedTelegramNotifier(
   {
     // Format message using data from event
     var message = $"🎉 *Задача выполнена!*\n\n" +
-                  $"👤 Герой: {notification.CompletedByUserName}\n" +
+                  $"👤 Герой: [{notification.CompletedByUserName}](tg://user?id={notification.CompletedByUserTelegramId})\n" +
                   $"📋 Миссия: {notification.Title}\n" +
-                  $"⭐ Награда: {notification.Points} баллов\n" +
+                  $"⭐ Награда: {notification.Points}\n" +
                   "Команда семьи стала ещё сильнее!";
 
     await telegramNotificationService.SendToFamilyMembersAsync(

@@ -10,19 +10,45 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // In some environments (e.g. fresh test databases) Quartz tables may not exist yet.
+            // Use IF EXISTS guards so the migration is safe to run without Quartz schema.
             migrationBuilder.Sql(@"
-                DELETE FROM qrtz_cron_triggers 
-                WHERE trigger_name = 'PetMoodCalculatorJob-trigger';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'qrtz_cron_triggers'
+  ) THEN
+    DELETE FROM qrtz_cron_triggers WHERE trigger_name = 'PetMoodCalculatorJob-trigger';
+  END IF;
+END
+$$;
             ");
 
             migrationBuilder.Sql(@"
-                DELETE FROM qrtz_triggers 
-                WHERE job_name = 'PetMoodCalculatorJob';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'qrtz_triggers'
+  ) THEN
+    DELETE FROM qrtz_triggers WHERE job_name = 'PetMoodCalculatorJob';
+  END IF;
+END
+$$;
             ");
 
             migrationBuilder.Sql(@"
-                DELETE FROM qrtz_job_details 
-                WHERE job_name = 'PetMoodCalculatorJob';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'qrtz_job_details'
+  ) THEN
+    DELETE FROM qrtz_job_details WHERE job_name = 'PetMoodCalculatorJob';
+  END IF;
+END
+$$;
             ");
         }
 
@@ -30,18 +56,42 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
-                DELETE FROM qrtz_cron_triggers 
-                WHERE trigger_name = 'SpotMoodCalculatorJob-trigger';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'qrtz_cron_triggers'
+  ) THEN
+    DELETE FROM qrtz_cron_triggers WHERE trigger_name = 'SpotMoodCalculatorJob-trigger';
+  END IF;
+END
+$$;
             ");
 
             migrationBuilder.Sql(@"
-                DELETE FROM qrtz_triggers 
-                WHERE job_name = 'SpotMoodCalculatorJob';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'qrtz_triggers'
+  ) THEN
+    DELETE FROM qrtz_triggers WHERE job_name = 'SpotMoodCalculatorJob';
+  END IF;
+END
+$$;
             ");
 
             migrationBuilder.Sql(@"
-                DELETE FROM qrtz_job_details 
-                WHERE job_name = 'SpotMoodCalculatorJob';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'qrtz_job_details'
+  ) THEN
+    DELETE FROM qrtz_job_details WHERE job_name = 'SpotMoodCalculatorJob';
+  END IF;
+END
+$$;
             ");
         }
     }

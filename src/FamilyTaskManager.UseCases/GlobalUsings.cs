@@ -6,7 +6,6 @@ global using FamilyTaskManager.Core.TaskAggregate;
 global using FamilyTaskManager.Core.UserAggregate;
 global using FamilyTaskManager.UseCases.Contracts.Families;
 global using FamilyTaskManager.UseCases.Contracts.Spots;
-global using FamilyTaskManager.UseCases.Contracts.TaskTemplates;
 global using FamilyTaskManager.UseCases.Contracts.Tasks;
 global using FamilyTaskManager.UseCases.Contracts.Statistics;
 global using FamilyTaskManager.UseCases.Contracts.Users;

@@ -55,7 +55,7 @@ public class TaskCreationHandler(
     string pointsText,
     CancellationToken cancellationToken)
   {
-    if (!int.TryParse(pointsText, out var points) || points < 1 || points > 3)
+    if (!int.TryParse(pointsText, out var points) || !TaskPoints.IsValidValue(points))
     {
       var keyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
       await botClient.SendTextMessageAsync(

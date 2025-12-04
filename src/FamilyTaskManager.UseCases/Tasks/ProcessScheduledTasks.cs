@@ -28,20 +28,12 @@ public class ProcessScheduledTasksHandler(
   {
     try
     {
-      var spec = new ActiveTaskTemplatesWithTimeZoneSpec();
-      var templateDtos = await templateRepository.ListAsync(spec, cancellationToken);
-
-      logger.LogInformation("Found {Count} active task templates to evaluate", templateDtos.Count);
-
-      // Load full TaskTemplate entities for the domain service
-      var templateIds = templateDtos.Select(t => t.Id).ToList();
       var templates =
-        await templateRepository.ListAsync(new TaskTemplatesWithFamilyByIdsSpec(templateIds), cancellationToken);
+        await templateRepository.ListAsync(new TaskTemplatesWithFamilyAndScheduleSpec(), cancellationToken);
 
       var createdCount = 0;
 
       foreach (var template in templates)
-      {
         try
         {
           var timeZone = TimeZoneInfo.FindSystemTimeZoneById(template.Family.Timezone);
@@ -69,7 +61,7 @@ public class ProcessScheduledTasksHandler(
           }
 
           // Get existing instances for this template
-          var existingSpec = new TaskInstancesByTemplateSpec(template.Id);
+          var existingSpec = new ActiveTaskInstancesByTemplateSpec(template.Id);
           var existingInstances = await taskAppRepository.ListAsync(existingSpec, cancellationToken);
           var createResult = taskInstanceFactory.CreateFromTemplate(template, Spot, dueAt, existingInstances);
 
@@ -84,19 +76,16 @@ public class ProcessScheduledTasksHandler(
               createResult.Value.Id, template.Id);
           }
           else
-          {
             // This is expected if there's already an active instance
             logger.LogDebug(
               "Could not create TaskInstance for template {TemplateId}: {Error} because it is already active",
               template.Id, string.Join(", ", createResult.Errors));
-          }
         }
         catch (Exception ex)
         {
           logger.LogError(ex, "Error processing template {TemplateId} with schedule {Schedule}", template.Id,
             template.Schedule);
         }
-      }
 
       logger.LogInformation(
         "ProcessScheduledTasks completed. Created {CreatedCount} new task instances",

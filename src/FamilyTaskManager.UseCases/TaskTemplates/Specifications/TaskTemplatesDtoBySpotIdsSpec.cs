@@ -1,3 +1,5 @@
+using FamilyTaskManager.UseCases.Contracts.TaskTemplates;
+
 namespace FamilyTaskManager.UseCases.TaskTemplates.Specifications;
 
 /// <summary>

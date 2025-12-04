@@ -42,6 +42,7 @@ public class TaskPoints : ValueObject
     yield return Value;
   }
 
+  public static bool IsValidValue(int pointsValue) => pointsValue is >= MinValue and <= MaxValue;
 
   public override string ToString() => ToStars();
 }

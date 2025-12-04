@@ -17,6 +17,7 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     Guard.Against.NullOrWhiteSpace(title);
     Guard.Against.Null(points);
 
+    Id = Guid.NewGuid();
     FamilyId = spot.FamilyId;
     SpotId = spot.Id;
     Title = title.Trim();
@@ -43,7 +44,7 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public Guid SpotId { get; private set; }
   public string Title { get; } = null!;
   public TaskPoints Points { get; } = null!;
-  public Guid? TemplateId { get; private set; }
+  public Guid? TemplateId { get; }
   public TaskStatus Status { get; private set; }
   public Guid? StartedByMemberId { get; private set; }
   public Guid? CompletedByMemberId { get; private set; }
@@ -87,7 +88,8 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
       Title = Title,
       Points = Points.ToString(),
       CompletedByUserId = completedByMember.UserId,
-      CompletedByUserName = completedByMember.User.Name
+      CompletedByUserName = completedByMember.User.Name,
+      CompletedByUserTelegramId = completedByMember.User.TelegramId
     });
   }
 
@@ -111,6 +113,7 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     {
       TaskId = Id,
       FamilyId = FamilyId,
+      TemplateId = TemplateId,
       Title = Title,
       DueAt = DueAt,
       Timezone = Family.Timezone
