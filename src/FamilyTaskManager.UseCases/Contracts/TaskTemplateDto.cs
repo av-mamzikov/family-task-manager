@@ -11,8 +11,8 @@ public record TaskTemplateDto(
   TimeOnly ScheduleTime,
   DayOfWeek? ScheduleDayOfWeek,
   int? ScheduleDayOfMonth,
-  Guid PetId,
-  string PetName,
+  Guid SpotId,
+  string SpotName,
   DateTime CreatedAt,
   TimeSpan DueDuration)
 {
@@ -28,8 +28,8 @@ public record TaskTemplateDto(
         t.Schedule.Time,
         t.Schedule.DayOfWeek,
         t.Schedule.DayOfMonth,
-        t.PetId,
-        t.Pet.Name,
+        t.SpotId,
+        t.Spot.Name,
         t.CreatedAt,
         t.DueDuration);
   }

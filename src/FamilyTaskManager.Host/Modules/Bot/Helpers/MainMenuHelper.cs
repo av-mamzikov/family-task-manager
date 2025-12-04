@@ -14,7 +14,7 @@ public static class MainMenuHelper
     new(new[]
     {
       new KeyboardButton[] { "🏠 Семья", "✅ Наши задачи" },
-      new KeyboardButton[] { "🐾 Питомец", "📊 Статистика" }
+      new KeyboardButton[] { "🧩 Споты", "📊 Статистика" }
     })
     {
       ResizeKeyboard = true,

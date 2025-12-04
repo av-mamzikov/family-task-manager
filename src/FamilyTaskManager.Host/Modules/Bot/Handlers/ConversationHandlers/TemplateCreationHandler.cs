@@ -51,7 +51,7 @@ public class TemplateCreationHandler(
     string pointsText,
     CancellationToken cancellationToken)
   {
-    if (!int.TryParse(pointsText, out var points) || points < 1 || points > 3)
+    if (!int.TryParse(pointsText, out var points) || !TaskPoints.IsValidValue(points))
     {
       var keyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
       await botClient.SendTextMessageAsync(
@@ -211,7 +211,7 @@ public class TemplateCreationHandler(
     var data = session.Data;
 
     if (session.CurrentFamilyId is not { } familyId ||
-        data.PetId is not { } petId ||
+        data.SpotId is not { } SpotId ||
         string.IsNullOrWhiteSpace(data.Title) ||
         data.Points is not { } points ||
         string.IsNullOrWhiteSpace(data.ScheduleType) ||
@@ -277,7 +277,7 @@ public class TemplateCreationHandler(
     // Create template
     var createTemplateCommand = new CreateTaskTemplateCommand(
       familyId,
-      petId,
+      SpotId,
       title,
       new(points),
       scheduleType,

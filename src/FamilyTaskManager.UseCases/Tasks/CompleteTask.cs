@@ -7,8 +7,8 @@ public record CompleteTaskCommand(Guid TaskId, Guid UserId) : ICommand<Result>;
 public class CompleteTaskHandler(
   IAppRepository<TaskInstance> taskAppRepository,
   IAppRepository<Family> familyAppRepository,
-  IAppRepository<Pet> petAppRepository,
-  IPetMoodCalculator moodCalculator) : ICommandHandler<CompleteTaskCommand, Result>
+  IAppRepository<Spot> SpotAppRepository,
+  ISpotMoodCalculator moodCalculator) : ICommandHandler<CompleteTaskCommand, Result>
 {
   public async ValueTask<Result> Handle(CompleteTaskCommand command, CancellationToken cancellationToken)
   {
@@ -55,13 +55,13 @@ public class CompleteTaskHandler(
     await familyAppRepository.UpdateAsync(family, cancellationToken);
     await taskAppRepository.SaveChangesAsync(cancellationToken);
 
-    // Trigger immediate mood recalculation for the pet
-    var pet = await petAppRepository.GetByIdAsync(task.PetId, cancellationToken);
-    if (pet != null)
+    // Trigger immediate mood recalculation for the Spot
+    var Spot = await SpotAppRepository.GetByIdAsync(task.SpotId, cancellationToken);
+    if (Spot != null)
     {
-      var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(task.PetId, cancellationToken);
-      pet.UpdateMoodScore(newMoodScore);
-      await petAppRepository.SaveChangesAsync(cancellationToken);
+      var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(task.SpotId, cancellationToken);
+      Spot.UpdateMoodScore(newMoodScore);
+      await SpotAppRepository.SaveChangesAsync(cancellationToken);
     }
 
     return Result.Success();

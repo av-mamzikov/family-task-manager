@@ -1,7 +1,7 @@
-using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.UseCases.Pets;
+using FamilyTaskManager.UseCases.Spots;
 using FamilyTaskManager.UseCases.Tasks;
 using FamilyTaskManager.UseCases.TaskTemplates;
 using Telegram.Bot;
@@ -30,25 +30,25 @@ public class TemplateCommandHandler(IMediator mediator)
       return;
     }
 
-    // Get pets for the family
-    var getPetsQuery = new GetPetsQuery(session.CurrentFamilyId.Value);
-    var petsResult = await mediator.Send(getPetsQuery, cancellationToken);
+    // Get Spots for the family
+    var getSpotsQuery = new GetSpotsQuery(session.CurrentFamilyId.Value);
+    var SpotsResult = await mediator.Send(getSpotsQuery, cancellationToken);
 
-    if (!petsResult.IsSuccess || !petsResult.Value.Any())
+    if (!SpotsResult.IsSuccess || !SpotsResult.Value.Any())
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Errors.NoPets,
+        BotConstants.Errors.NoSpots,
         parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
     }
 
-    // Build pet selection keyboard
-    var buttons = petsResult.Value.Select(p =>
+    // Build Spot selection keyboard
+    var buttons = SpotsResult.Value.Select(p =>
     {
-      var petEmoji = GetPetEmoji(p.Type);
-      return new[] { InlineKeyboardButton.WithCallbackData($"{petEmoji} {p.Name}", $"tpl_vp_{p.Id}") };
+      var SpotEmoji = GetSpotEmoji(p.Type);
+      return new[] { InlineKeyboardButton.WithCallbackData($"{SpotEmoji} {p.Name}", $"tpl_vp_{p.Id}") };
     }).ToList();
 
     buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", "tpl_c") });
@@ -58,17 +58,17 @@ public class TemplateCommandHandler(IMediator mediator)
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       "📋 *Управление шаблонами задач*\n\n" +
-      "Выберите питомца для просмотра его шаблонов задач или создайте новый:",
+      "Выберите спота для просмотра его шаблонов задач или создайте новый:",
       parseMode: ParseMode.Markdown,
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
   }
 
-  public virtual async Task HandleViewPetTemplatesAsync(
+  public virtual async Task HandleViewSpotTemplatesAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
-    Guid petId,
+    Guid SpotId,
     UserSession session,
     CancellationToken cancellationToken)
   {
@@ -82,8 +82,8 @@ public class TemplateCommandHandler(IMediator mediator)
       return;
     }
 
-    // Get templates for pet
-    var getTemplatesQuery = new GetTaskTemplatesByPetQuery(petId, session.CurrentFamilyId.Value, true);
+    // Get templates for Spot
+    var getTemplatesQuery = new GetTaskTemplatesBySpotQuery(SpotId, session.CurrentFamilyId.Value, true);
     var templatesResult = await mediator.Send(getTemplatesQuery, cancellationToken);
 
     if (!templatesResult.IsSuccess)
@@ -104,19 +104,19 @@ public class TemplateCommandHandler(IMediator mediator)
       await botClient.EditMessageTextAsync(
         chatId,
         messageId,
-        $"📋 У питомца *{templates.FirstOrDefault()?.PetName ?? "этого питомца"}* пока нет шаблонов задач.\n\n" +
+        $"📋 У спота *{templates.FirstOrDefault()?.SpotName ?? "этого спота"}* пока нет шаблонов задач.\n\n" +
         "Создайте первый шаблон!",
         ParseMode.Markdown,
         replyMarkup: new InlineKeyboardMarkup(new[]
         {
-          new[] { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", $"tpl_cf_{petId}") },
+          new[] { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", $"tpl_cf_{SpotId}") },
           new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", "tpl_b") }
         }),
         cancellationToken: cancellationToken);
       return;
     }
 
-    var messageText = $"📋 *Шаблоны задач для {templates.First().PetName}*\n\n";
+    var messageText = $"📋 *Шаблоны задач для {templates.First().SpotName}*\n\n";
 
     foreach (var template in templates)
     {
@@ -132,7 +132,7 @@ public class TemplateCommandHandler(IMediator mediator)
       new[] { InlineKeyboardButton.WithCallbackData($"✏️ {t.Title}", $"tpl_v_{t.Id}") }
     ).ToList();
 
-    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", $"tpl_cf_{petId}") });
+    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", $"tpl_cf_{SpotId}") });
     buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", "tpl_b") });
 
     var keyboard = new InlineKeyboardMarkup(buttons);
@@ -183,7 +183,7 @@ public class TemplateCommandHandler(IMediator mediator)
 
     var messageText = $"📋 *Шаблон задачи*\n\n" +
                       $"📝 Название: *{template.Title}*\n" +
-                      $"🐾 Питомец: {template.PetName}\n" +
+                      $"🐾 Спот: {template.SpotName}\n" +
                       $"💯 Очки: {template.Points.ToStars()}\n" +
                       $"🔄 Расписание: {ScheduleFormatter.Format(template.ScheduleType, template.ScheduleTime, template.ScheduleDayOfWeek, template.ScheduleDayOfMonth)}\n" +
                       $"🔄 Срок выполнения: `{template.DueDuration}`\n";
@@ -193,7 +193,7 @@ public class TemplateCommandHandler(IMediator mediator)
       new[] { InlineKeyboardButton.WithCallbackData("➕ Создать задачу сейчас", $"tpl_ct_{templateId}") },
       new[] { InlineKeyboardButton.WithCallbackData("✏️ Редактировать", $"tpl_e_{templateId}") },
       new[] { InlineKeyboardButton.WithCallbackData("🗑️ Удалить", $"tpl_d_{templateId}") },
-      new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", $"tpl_vp_{template.PetId}") }
+      new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", $"tpl_vp_{template.SpotId}") }
     });
 
     await botClient.EditMessageTextAsync(
@@ -399,10 +399,10 @@ public class TemplateCommandHandler(IMediator mediator)
       messageId,
       $"✅ *Задача создана!*\n\n" +
       $"📝 Название: {template.Title}\n" +
-      $"🐾 Питомец: {template.PetName}\n" +
+      $"🐾 Спот: {template.SpotName}\n" +
       $"💯 Очки: {template.Points.ToStars()}\n" +
       $"⏰ Срок выполнения: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
-      "Задача добавлена в список активных задач питомца.",
+      "Задача добавлена в список активных задач спота.",
       ParseMode.Markdown,
       replyMarkup: new InlineKeyboardMarkup(new[]
       {
@@ -411,12 +411,12 @@ public class TemplateCommandHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
-  private string GetPetEmoji(PetType type) =>
+  private string GetSpotEmoji(SpotType type) =>
     type switch
     {
-      PetType.Cat => "🐱",
-      PetType.Dog => "🐶",
-      PetType.Hamster => "🐹",
+      SpotType.Cat => "🐱",
+      SpotType.Dog => "🐶",
+      SpotType.Hamster => "🐹",
       _ => "🐾"
     };
 }

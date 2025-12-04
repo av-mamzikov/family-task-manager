@@ -1,5 +1,5 @@
 using FamilyTaskManager.Core.FamilyAggregate;
-using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Core.UserAggregate;
 using FamilyTaskManager.Infrastructure.Data.Entities;
@@ -13,7 +13,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
   public DbSet<Family> Families => Set<Family>();
   public DbSet<FamilyMember> FamilyMembers => Set<FamilyMember>();
   public DbSet<Invitation> Invitations => Set<Invitation>();
-  public DbSet<Pet> Pets => Set<Pet>();
+  public DbSet<Spot> Spots => Set<Spot>();
   public DbSet<TaskTemplate> TaskTemplates => Set<TaskTemplate>();
   public DbSet<TaskInstance> TaskInstances => Set<TaskInstance>();
   public DbSet<DomainEventOutbox> DomainEventOutbox => Set<DomainEventOutbox>();
@@ -23,15 +23,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     base.OnModelCreating(modelBuilder);
     modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
-    modelBuilder.Entity<Pet>()
+    modelBuilder.Entity<Spot>()
       .HasQueryFilter(p => !p.IsDeleted);
 
     modelBuilder.Entity<TaskTemplate>()
-      .HasQueryFilter(t => !t.Pet.IsDeleted);
+      .HasQueryFilter(t => !t.Spot.IsDeleted);
 
-    // Для удалённого питомца показываем только завершённые задачи
+    // Для удалённого спота показываем только завершённые задачи
     modelBuilder.Entity<TaskInstance>()
-      .HasQueryFilter(t => t.Status != TaskStatus.Completed || !t.Pet.IsDeleted);
+      .HasQueryFilter(t => t.Status != TaskStatus.Completed || !t.Spot.IsDeleted);
   }
 
   public override int SaveChanges() => SaveChangesAsync().GetAwaiter().GetResult();

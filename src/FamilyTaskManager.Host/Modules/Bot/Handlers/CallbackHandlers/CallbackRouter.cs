@@ -15,7 +15,7 @@ public interface ICallbackRouter
 
 public class CallbackRouter(
   FamilyCallbackHandler familyCallbackHandler,
-  PetCallbackHandler petCallbackHandler,
+  SpotCallbackHandler SpotCallbackHandler,
   TaskCallbackHandler taskCallbackHandler,
   TemplateCallbackHandler templateCallbackHandler,
   TimezoneCallbackHandler timezoneCallbackHandler,
@@ -44,9 +44,9 @@ public class CallbackRouter(
       "select" => HandleSelectActionAsync(botClient, chatId, messageId, parts, session, cancellationToken),
       "task" => taskCallbackHandler.HandleTaskActionAsync(botClient, chatId, messageId, parts, session, fromUser,
         cancellationToken),
-      "taskpet" => taskCallbackHandler.HandleTaskPetSelectionAsync(botClient, chatId, messageId, parts, session,
+      "taskSpot" => taskCallbackHandler.HandleTaskSpotSelectionAsync(botClient, chatId, messageId, parts, session,
         cancellationToken),
-      "pet" => petCallbackHandler.HandlePetActionAsync(botClient, chatId, messageId, parts, session, fromUser,
+      "Spot" => SpotCallbackHandler.HandleSpotActionAsync(botClient, chatId, messageId, parts, session, fromUser,
         cancellationToken),
       "family" => familyCallbackHandler.HandleFamilyActionAsync(botClient, chatId, messageId, parts, session,
         fromUser, cancellationToken),
@@ -89,8 +89,8 @@ public class CallbackRouter(
           cancellationToken);
         break;
 
-      case "pet":
-        await petCallbackHandler.StartCreatePetAsync(botClient, chatId, messageId, session, cancellationToken);
+      case "Spot":
+        await SpotCallbackHandler.StartCreateSpotAsync(botClient, chatId, messageId, session, cancellationToken);
         break;
 
       case "task":
@@ -117,8 +117,8 @@ public class CallbackRouter(
 
     switch (selectType)
     {
-      case "pettype":
-        await petCallbackHandler.HandlePetTypeSelectionAsync(botClient, chatId, messageId, value, session,
+      case "Spottype":
+        await SpotCallbackHandler.HandleSpotTypeSelectionAsync(botClient, chatId, messageId, value, session,
           cancellationToken);
         break;
 

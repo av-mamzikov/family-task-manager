@@ -138,7 +138,7 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
                     b.ToTable("Invitations", (string)null);
                 });
 
-            modelBuilder.Entity("FamilyTaskManager.Core.PetAggregate.Pet", b =>
+            modelBuilder.Entity("FamilyTaskManager.Core.SpotAggregate.Spot", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -172,7 +172,7 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
 
                     b.HasIndex("FamilyId");
 
-                    b.ToTable("Pets", (string)null);
+                    b.ToTable("Spots", (string)null);
                 });
 
             modelBuilder.Entity("FamilyTaskManager.Core.TaskAggregate.TaskInstance", b =>
@@ -196,11 +196,11 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
                     b.Property<Guid>("FamilyId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("PetId")
-                        .HasColumnType("uuid");
-
                     b.Property<int>("Points")
                         .HasColumnType("integer");
+
+                    b.Property<Guid>("SpotId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("StartedByMemberId")
                         .HasColumnType("uuid");
@@ -218,18 +218,13 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CompletedByMemberId");
 
                     b.HasIndex("FamilyId");
 
-                    b.HasIndex("PetId");
+                    b.HasIndex("SpotId");
 
                     b.HasIndex("StartedByMemberId");
 
@@ -260,11 +255,11 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
                     b.Property<Guid>("FamilyId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("PetId")
-                        .HasColumnType("uuid");
-
                     b.Property<int>("Points")
                         .HasColumnType("integer");
+
+                    b.Property<Guid>("SpotId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -275,7 +270,7 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
 
                     b.HasIndex("FamilyId");
 
-                    b.HasIndex("PetId");
+                    b.HasIndex("SpotId");
 
                     b.ToTable("TaskTemplates", (string)null);
                 });
@@ -336,7 +331,7 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
-            modelBuilder.Entity("FamilyTaskManager.Infrastructure.Notifications.DomainEventOutbox", b =>
+            modelBuilder.Entity("FamilyTaskManager.Infrastructure.Data.Entities.DomainEventOutbox", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -416,7 +411,7 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
                     b.Navigation("Family");
                 });
 
-            modelBuilder.Entity("FamilyTaskManager.Core.PetAggregate.Pet", b =>
+            modelBuilder.Entity("FamilyTaskManager.Core.SpotAggregate.Spot", b =>
                 {
                     b.HasOne("FamilyTaskManager.Core.FamilyAggregate.Family", "Family")
                         .WithMany()
@@ -440,9 +435,9 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("FamilyTaskManager.Core.PetAggregate.Pet", "Pet")
+                    b.HasOne("FamilyTaskManager.Core.SpotAggregate.Spot", "Spot")
                         .WithMany()
-                        .HasForeignKey("PetId")
+                        .HasForeignKey("SpotId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -460,7 +455,7 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
 
                     b.Navigation("Family");
 
-                    b.Navigation("Pet");
+                    b.Navigation("Spot");
 
                     b.Navigation("StartedByMember");
 
@@ -475,9 +470,9 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("FamilyTaskManager.Core.PetAggregate.Pet", "Pet")
+                    b.HasOne("FamilyTaskManager.Core.SpotAggregate.Spot", "Spot")
                         .WithMany()
-                        .HasForeignKey("PetId")
+                        .HasForeignKey("SpotId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -512,10 +507,10 @@ namespace FamilyTaskManager.Infrastructure.Data.Migrations
 
                     b.Navigation("Family");
 
-                    b.Navigation("Pet");
-
                     b.Navigation("Schedule")
                         .IsRequired();
+
+                    b.Navigation("Spot");
                 });
 
             modelBuilder.Entity("FamilyTaskManager.Core.UserAggregate.TelegramSession", b =>

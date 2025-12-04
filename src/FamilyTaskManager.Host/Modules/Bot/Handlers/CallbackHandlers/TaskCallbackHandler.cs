@@ -54,13 +54,13 @@ public class TaskCallbackHandler(
     // Store task type and family in session state
     session.SetState(ConversationState.AwaitingTaskTitle, new UserSessionData { TaskType = taskType });
 
-    var taskTypeText = taskType == "onetime" ? "разовую" : "периодическую";
+    var taskTySpotext = taskType == "onetime" ? "разовую" : "периодическую";
     var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskTitle);
 
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      $"📝 Создание {taskTypeText} задачи\n\nВведите название задачи (от 3 до 100 символов):" +
+      $"📝 Создание {taskTySpotext} задачи\n\nВведите название задачи (от 3 до 100 символов):" +
       StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskTitle),
       cancellationToken: cancellationToken);
 
@@ -73,7 +73,7 @@ public class TaskCallbackHandler(
         cancellationToken: cancellationToken);
   }
 
-  public async Task HandleTaskPetSelectionAsync(
+  public async Task HandleTaskSpotSelectionAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
@@ -83,10 +83,10 @@ public class TaskCallbackHandler(
   {
     if (parts.Length < 2) return;
 
-    if (!Guid.TryParse(parts[1], out var petId)) return;
+    if (!Guid.TryParse(parts[1], out var SpotId)) return;
 
-    // Store pet ID in session
-    session.Data.PetId = petId;
+    // Store Spot ID in session
+    session.Data.SpotId = SpotId;
 
     // Check task type to determine next step
     if (session.Data.TaskType == null)

@@ -1,8 +1,8 @@
-using FamilyTaskManager.Core.PetAggregate;
+using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.UseCases.Pets;
+using FamilyTaskManager.UseCases.Spots;
 using FamilyTaskManager.UseCases.Tasks;
 using FamilyTaskManager.UseCases.TaskTemplates;
 using Telegram.Bot;
@@ -55,7 +55,7 @@ public class TaskCreationHandler(
     string pointsText,
     CancellationToken cancellationToken)
   {
-    if (!int.TryParse(pointsText, out var points) || points < 1 || points > 3)
+    if (!int.TryParse(pointsText, out var points) || !TaskPoints.IsValidValue(points))
     {
       var keyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
       await botClient.SendTextMessageAsync(
@@ -66,11 +66,11 @@ public class TaskCreationHandler(
       return;
     }
 
-    // Store points and show pet selection
+    // Store points and show Spot selection
     session.Data.Points = points;
-    session.State = ConversationState.AwaitingTaskPetSelection;
+    session.State = ConversationState.AwaitingTaskSpotSelection;
 
-    // Get family pets
+    // Get family Spots
     if (session.CurrentFamilyId == null)
     {
       await SendErrorAndClearStateAsync(
@@ -82,38 +82,38 @@ public class TaskCreationHandler(
       return;
     }
 
-    var getPetsQuery = new GetPetsQuery(session.CurrentFamilyId.Value);
-    var petsResult = await Mediator.Send(getPetsQuery, cancellationToken);
+    var getSpotsQuery = new GetSpotsQuery(session.CurrentFamilyId.Value);
+    var SpotsResult = await Mediator.Send(getSpotsQuery, cancellationToken);
 
-    if (!petsResult.IsSuccess || !petsResult.Value.Any())
+    if (!SpotsResult.IsSuccess || !SpotsResult.Value.Any())
     {
       await SendErrorAndClearStateAsync(
         botClient,
         message.Chat.Id,
         session,
-        BotConstants.Errors.NoPets,
+        BotConstants.Errors.NoSpots,
         cancellationToken);
       return;
     }
 
-    var buttons = petsResult.Value.Select(p =>
+    var buttons = SpotsResult.Value.Select(p =>
     {
-      var petEmoji = p.Type switch
+      var SpotEmoji = p.Type switch
       {
-        PetType.Cat => "🐱",
-        PetType.Dog => "🐶",
-        PetType.Hamster => "🐹",
+        SpotType.Cat => "🐱",
+        SpotType.Dog => "🐶",
+        SpotType.Hamster => "🐹",
         _ => "🐾"
       };
-      return new[] { InlineKeyboardButton.WithCallbackData($"{petEmoji} {p.Name}", $"taskpet_{p.Id}") };
+      return new[] { InlineKeyboardButton.WithCallbackData($"{SpotEmoji} {p.Name}", $"taskSpot_{p.Id}") };
     }).ToArray();
 
-    var petSelectionKeyboard = new InlineKeyboardMarkup(buttons);
+    var SpotSelectionKeyboard = new InlineKeyboardMarkup(buttons);
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      "🐾 Выберите питомца, к которому относится задача:",
-      replyMarkup: petSelectionKeyboard,
+      "🐾 Выберите спота, к которому относится задача:",
+      replyMarkup: SpotSelectionKeyboard,
       cancellationToken: cancellationToken);
   }
 
@@ -142,7 +142,7 @@ public class TaskCreationHandler(
 
     // Get all required data from session
     if (session.CurrentFamilyId == null ||
-        session.Data.PetId == null ||
+        session.Data.SpotId == null ||
         session.Data.Title == null ||
         session.Data.Points == null)
     {
@@ -158,7 +158,7 @@ public class TaskCreationHandler(
     // Create one-time task (user id not tracked here anymore)
     var taskPoints = new TaskPoints(session.Data.Points.Value);
     var createTaskCommand =
-      new CreateTaskCommand(session.CurrentFamilyId.Value, session.Data.PetId.Value, session.Data.Title,
+      new CreateTaskCommand(session.CurrentFamilyId.Value, session.Data.SpotId.Value, session.Data.Title,
         taskPoints, dueAt, session.UserId);
     var result = await Mediator.Send(createTaskCommand, cancellationToken);
 
@@ -207,7 +207,7 @@ public class TaskCreationHandler(
 
     // Get all required data from session
     if (session.CurrentFamilyId == null ||
-        session.Data.PetId == null ||
+        session.Data.SpotId == null ||
         session.Data.Title == null ||
         session.Data.Points == null)
     {
@@ -240,7 +240,7 @@ public class TaskCreationHandler(
     // Create periodic task template
     var taskPoints = new TaskPoints(session.Data.Points.Value);
     var createTemplateCommand =
-      new CreateTaskTemplateCommand(session.CurrentFamilyId.Value, session.Data.PetId.Value,
+      new CreateTaskTemplateCommand(session.CurrentFamilyId.Value, session.Data.SpotId.Value,
         session.Data.Title, taskPoints, scheduleType, scheduleTime,
         scheduleDayOfWeek,
         scheduleDayOfMonth, TimeSpan.FromHours(12), session.UserId);

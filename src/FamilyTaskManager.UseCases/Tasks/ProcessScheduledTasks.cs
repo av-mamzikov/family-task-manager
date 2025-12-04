@@ -19,7 +19,7 @@ public record ProcessScheduledTaskCommand(DateTime CheckFrom, DateTime CheckTo) 
 public class ProcessScheduledTasksHandler(
   IReadRepository<TaskTemplate> templateRepository,
   IAppRepository<TaskInstance> taskAppRepository,
-  IAppRepository<Pet> petAppRepository,
+  IAppRepository<Spot> SpotAppRepository,
   ITaskInstanceFactory taskInstanceFactory,
   ILogger<ProcessScheduledTasksHandler> logger)
   : ICommandHandler<ProcessScheduledTaskCommand, Result<int>>
@@ -28,20 +28,12 @@ public class ProcessScheduledTasksHandler(
   {
     try
     {
-      var spec = new ActiveTaskTemplatesWithTimeZoneSpec();
-      var templateDtos = await templateRepository.ListAsync(spec, cancellationToken);
-
-      logger.LogInformation("Found {Count} active task templates to evaluate", templateDtos.Count);
-
-      // Load full TaskTemplate entities for the domain service
-      var templateIds = templateDtos.Select(t => t.Id).ToList();
       var templates =
-        await templateRepository.ListAsync(new TaskTemplatesWithFamilyByIdsSpec(templateIds), cancellationToken);
+        await templateRepository.ListAsync(new TaskTemplatesWithFamilyAndScheduleSpec(), cancellationToken);
 
       var createdCount = 0;
 
       foreach (var template in templates)
-      {
         try
         {
           var timeZone = TimeZoneInfo.FindSystemTimeZoneById(template.Family.Timezone);
@@ -58,19 +50,20 @@ public class ProcessScheduledTasksHandler(
             "Creating TaskInstance for template {TemplateId} ({Title}), scheduled at {ScheduledTime}, due at {DueAt} (family timezone: {Timezone})",
             template.Id, template.Title, triggerTime.Value, dueAt, template.Family.Timezone);
 
-          // Load pet with family (needed for TaskCreatedEvent)
-          var petSpec = new GetPetByIdWithFamilySpec(template.PetId);
-          var pet = await petAppRepository.FirstOrDefaultAsync(petSpec, cancellationToken);
-          if (pet == null)
+          // Load Spot with family (needed for TaskCreatedEvent)
+          var SpotSpec = new GetSpotByIdWithFamilySpec(template.SpotId);
+          var Spot = await SpotAppRepository.FirstOrDefaultAsync(SpotSpec, cancellationToken);
+          if (Spot == null)
           {
-            logger.LogWarning("Pet {PetId} not found for template {TemplateId}, skipping", template.PetId, template.Id);
+            logger.LogWarning("Spot {SpotId} not found for template {TemplateId}, skipping", template.SpotId,
+              template.Id);
             continue;
           }
 
           // Get existing instances for this template
-          var existingSpec = new TaskInstancesByTemplateSpec(template.Id);
+          var existingSpec = new ActiveTaskInstancesByTemplateSpec(template.Id);
           var existingInstances = await taskAppRepository.ListAsync(existingSpec, cancellationToken);
-          var createResult = taskInstanceFactory.CreateFromTemplate(template, pet, dueAt, existingInstances);
+          var createResult = taskInstanceFactory.CreateFromTemplate(template, Spot, dueAt, existingInstances);
 
           if (createResult.IsSuccess)
           {
@@ -83,19 +76,16 @@ public class ProcessScheduledTasksHandler(
               createResult.Value.Id, template.Id);
           }
           else
-          {
             // This is expected if there's already an active instance
             logger.LogDebug(
               "Could not create TaskInstance for template {TemplateId}: {Error} because it is already active",
               template.Id, string.Join(", ", createResult.Errors));
-          }
         }
         catch (Exception ex)
         {
           logger.LogError(ex, "Error processing template {TemplateId} with schedule {Schedule}", template.Id,
             template.Schedule);
         }
-      }
 
       logger.LogInformation(
         "ProcessScheduledTasks completed. Created {CreatedCount} new task instances",

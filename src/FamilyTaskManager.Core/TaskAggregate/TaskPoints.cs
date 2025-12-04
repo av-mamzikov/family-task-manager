@@ -7,7 +7,7 @@ namespace FamilyTaskManager.Core.TaskAggregate;
 public class TaskPoints : ValueObject
 {
   public const int MinValue = 1;
-  public const int MaxValue = 3;
+  public const int MaxValue = 4;
 
   private TaskPoints()
   {
@@ -19,6 +19,11 @@ public class TaskPoints : ValueObject
     Guard.Against.OutOfRange(value, nameof(value), MinValue, MaxValue);
     Value = value;
   }
+
+  public static TaskPoints Easy { get; } = new(1);
+  public static TaskPoints Medium { get; } = new(2);
+  public static TaskPoints Hard { get; } = new(3);
+  public static TaskPoints VeryHard { get; } = new(4);
 
   public int Value { get; }
 
@@ -36,6 +41,8 @@ public class TaskPoints : ValueObject
   {
     yield return Value;
   }
+
+  public static bool IsValidValue(int pointsValue) => pointsValue is >= MinValue and <= MaxValue;
 
   public override string ToString() => ToStars();
 }

@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
@@ -33,24 +34,18 @@ public class PointsCallbackHandler(
       return;
     }
 
-    // Handle points selection
     if (!int.TryParse(selection, out var points)) return;
 
-    // Validate points are in range 1-3
-    if (points < 1 || points > 3) return;
-
-    // Create a fake message for the handler
+    if (!TaskPoints.IsValidValue(points)) return;
     var fakeMessage = new Message
     {
-      Chat = new Chat { Id = chatId },
+      Chat = new() { Id = chatId },
       MessageId = messageId
     };
 
-    // Delete the inline keyboard message only for creation modes (not for edit mode)
     if (session.State != ConversationState.AwaitingTemplateEditPoints)
       await botClient.DeleteMessageAsync(chatId, messageId, cancellationToken);
 
-    // Route to appropriate handler based on current state
     switch (session.State)
     {
       case ConversationState.AwaitingTaskPoints:

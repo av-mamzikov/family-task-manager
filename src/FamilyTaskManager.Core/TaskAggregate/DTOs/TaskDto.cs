@@ -11,8 +11,8 @@ public record TaskDto(
   TaskPoints Points,
   TaskStatus Status,
   DateTime DueAtUtc,
-  Guid PetId,
-  string PetName,
+  Guid SpotId,
+  string SpotName,
   Guid? StartedByUserId,
   string FamilyTimezone,
   string? StartedByUserName = null)
@@ -45,8 +45,8 @@ public record TaskDto(
       t.Points,
       t.Status,
       t.DueAt,
-      t.PetId,
-      t.Pet.Name,
+      t.SpotId,
+      t.Spot.Name,
       t.StartedByMember!.UserId,
       t.Family.Timezone,
       t.StartedByMember != null ? t.StartedByMember.User!.Name : null);

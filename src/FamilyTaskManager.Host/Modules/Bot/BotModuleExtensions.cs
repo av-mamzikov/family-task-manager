@@ -49,7 +49,7 @@ public static class BotModuleExtensions
     // Command Handlers
     services.AddScoped<FamilyCommandHandler>();
     services.AddScoped<TasksCommandHandler>();
-    services.AddScoped<PetCommandHandler>();
+    services.AddScoped<SpotCommandHandler>();
     services.AddScoped<StatsCommandHandler>();
     services.AddScoped<TemplateCommandHandler>();
 
@@ -57,7 +57,7 @@ public static class BotModuleExtensions
     services.AddScoped<IConversationRouter, ConversationRouter>();
     services.AddScoped<FamilyCreationHandler>();
     services.AddScoped<FamilyMembersHandler>();
-    services.AddScoped<PetCreationHandler>();
+    services.AddScoped<SpotCreationHandler>();
     services.AddScoped<TaskCreationHandler>();
     services.AddScoped<TemplateCreationHandler>();
     services.AddScoped<TemplateEditHandler>();
@@ -66,7 +66,7 @@ public static class BotModuleExtensions
     services.AddScoped<ICallbackRouter, CallbackRouter>();
     services.AddScoped<FamilyCallbackHandler>();
     services.AddScoped<FamilyMembersCallbackHandler>();
-    services.AddScoped<PetCallbackHandler>();
+    services.AddScoped<SpotCallbackHandler>();
     services.AddScoped<TaskCallbackHandler>();
     services.AddScoped<TemplateCallbackHandler>();
     services.AddScoped<TimezoneCallbackHandler>();

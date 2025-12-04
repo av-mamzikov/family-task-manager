@@ -105,7 +105,7 @@ public class OutboxDispatcherJob(
       // Get event type from Core assembly
       var eventType =
         Type.GetType($"FamilyTaskManager.Core.TaskAggregate.Events.{entry.EventType}, FamilyTaskManager.Core") ??
-        Type.GetType($"FamilyTaskManager.Core.PetAggregate.Events.{entry.EventType}, FamilyTaskManager.Core") ??
+        Type.GetType($"FamilyTaskManager.Core.SpotAggregate.Events.{entry.EventType}, FamilyTaskManager.Core") ??
         Type.GetType($"FamilyTaskManager.Core.FamilyAggregate.Events.{entry.EventType}, FamilyTaskManager.Core") ??
         Type.GetType($"FamilyTaskManager.Core.Points.{entry.EventType}, FamilyTaskManager.Core");
 
