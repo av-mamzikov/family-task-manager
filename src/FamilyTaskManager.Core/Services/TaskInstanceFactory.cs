@@ -25,7 +25,6 @@ public class TaskInstanceFactory : ITaskInstanceFactory
       spot,
       template.Title,
       template.Points,
-      TaskType.Recurring,
       dueAt,
       template.Id
     );

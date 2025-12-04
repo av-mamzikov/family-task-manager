@@ -26,21 +26,13 @@ public class CreateTaskHandler(
     // Load Spot with family (needed for TaskCreatedEvent)
     var SpotSpec = new GetSpotByIdWithFamilySpec(command.SpotId);
     var Spot = await SpotAppRepository.FirstOrDefaultAsync(SpotSpec, cancellationToken);
-    if (Spot == null)
-    {
-      return Result<Guid>.NotFound("Спот не найден");
-    }
+    if (Spot == null) return Result<Guid>.NotFound("Спот не найден");
 
-    if (Spot.FamilyId != command.FamilyId)
-    {
-      return Result<Guid>.Error("Спот не принадлежит этой семье");
-    }
+    if (Spot.FamilyId != command.FamilyId) return Result<Guid>.Error("Спот не принадлежит этой семье");
 
     // Validate title length
     if (command.Title.Length < 3 || command.Title.Length > 100)
-    {
       return Result<Guid>.Invalid(new ValidationError("Название должно быть длиной от 3 до 100 символов"));
-    }
 
     // Convert DueAt from family timezone to UTC for storage
     DateTime dueAtUtc;
@@ -58,7 +50,6 @@ public class CreateTaskHandler(
       Spot,
       command.Title,
       command.Points,
-      TaskType.OneTime,
       dueAtUtc);
 
     await taskAppRepository.AddAsync(task, cancellationToken);

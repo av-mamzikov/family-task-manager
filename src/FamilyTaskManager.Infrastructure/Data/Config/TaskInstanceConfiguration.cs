@@ -24,12 +24,7 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
       .IsRequired()
       .HasConversion(
         v => v.Value,
-        v => new TaskPoints(v));
-
-    builder.Property(t => t.Type)
-      .IsRequired()
-      .HasConversion<string>()
-      .HasMaxLength(20);
+        v => new(v));
 
     builder.Property(t => t.TemplateId)
       .IsRequired(false);

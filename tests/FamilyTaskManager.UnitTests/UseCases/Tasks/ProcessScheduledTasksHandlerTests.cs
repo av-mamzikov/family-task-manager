@@ -29,7 +29,7 @@ public class ProcessScheduledTasksHandlerTests
     _taskInstanceFactory = Substitute.For<ITaskInstanceFactory>();
     _logger = Substitute.For<ILogger<ProcessScheduledTasksHandler>>();
 
-    _handler = new ProcessScheduledTasksHandler(
+    _handler = new(
       _templateRepository,
       _taskAppRepository,
       _SpotAppRepository,
@@ -70,7 +70,7 @@ public class ProcessScheduledTasksHandlerTests
     var command = new ProcessScheduledTaskCommand(checkFrom, checkTo);
 
     // Schedule at 10:00 - outside the window
-    var schedule = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
+    var schedule = Schedule.CreateDaily(new(10, 0)).Value;
     var family = new Family("Test Family", "UTC", false);
     var template = new TaskTemplate(familyId, SpotId, "Daily Task", new(2), schedule, TimeSpan.FromHours(24),
       Guid.NewGuid());
@@ -80,7 +80,7 @@ public class ProcessScheduledTasksHandlerTests
       templateId,
       familyId,
       "Daily Task",
-      new TaskPoints(2),
+      new(2),
       schedule.Type,
       schedule.Time,
       schedule.DayOfWeek,
@@ -118,7 +118,7 @@ public class ProcessScheduledTasksHandlerTests
     var command = new ProcessScheduledTaskCommand(checkFrom, checkTo);
 
     // Schedule at 10:00 - inside the window
-    var schedule = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
+    var schedule = Schedule.CreateDaily(new(10, 0)).Value;
     var family = new Family("Test Family", "UTC", false);
     var template = new TaskTemplate(familyId, SpotId, "Daily Task", new(2), schedule, TimeSpan.FromHours(24),
       Guid.NewGuid());
@@ -128,7 +128,7 @@ public class ProcessScheduledTasksHandlerTests
       templateId,
       familyId,
       "Daily Task",
-      new TaskPoints(2),
+      new(2),
       schedule.Type,
       schedule.Time,
       schedule.DayOfWeek,
@@ -140,8 +140,7 @@ public class ProcessScheduledTasksHandlerTests
 
     var Spot = new Spot(familyId, SpotType.Cat, "Test Spot");
     typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
-    var newInstance = new TaskInstance(Spot, "Daily Task", new(2), TaskType.Recurring,
-      DateTime.UtcNow.AddHours(24), templateId);
+    var newInstance = new TaskInstance(Spot, "Daily Task", new(2), DateTime.UtcNow.AddHours(24), templateId);
 
     _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesWithTimeZoneSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplateDto> { templateDto });
@@ -181,7 +180,7 @@ public class ProcessScheduledTasksHandlerTests
 
     var command = new ProcessScheduledTaskCommand(checkFrom, checkTo);
 
-    var schedule = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
+    var schedule = Schedule.CreateDaily(new(10, 0)).Value;
     var family = new Family("Test Family", "UTC", false);
     var template = new TaskTemplate(familyId, SpotId, "Daily Task", new(2), schedule, TimeSpan.FromHours(24),
       Guid.NewGuid());
@@ -191,7 +190,7 @@ public class ProcessScheduledTasksHandlerTests
       templateId,
       familyId,
       "Daily Task",
-      new TaskPoints(2),
+      new(2),
       schedule.Type,
       schedule.Time,
       schedule.DayOfWeek,
@@ -241,8 +240,8 @@ public class ProcessScheduledTasksHandlerTests
 
     var command = new ProcessScheduledTaskCommand(checkFrom, checkTo);
 
-    var schedule1 = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
-    var schedule2 = Schedule.CreateDaily(new TimeOnly(10, 30)).Value;
+    var schedule1 = Schedule.CreateDaily(new(10, 0)).Value;
+    var schedule2 = Schedule.CreateDaily(new(10, 30)).Value;
 
     var family = new Family("Test Family", "UTC", false);
     var Spot = new Spot(familyId, SpotType.Cat, "Test Spot");
@@ -286,8 +285,7 @@ public class ProcessScheduledTasksHandlerTests
         var template = x.ArgAt<TaskTemplate>(0);
         var Spot = x.ArgAt<Spot>(1);
         var dueAt = x.ArgAt<DateTime>(2);
-        var instance = new TaskInstance(Spot, template.Title, template.Points,
-          TaskType.Recurring, dueAt, template.Id);
+        var instance = new TaskInstance(Spot, template.Title, template.Points, dueAt, template.Id);
         return Result<TaskInstance>.Success(instance);
       });
 

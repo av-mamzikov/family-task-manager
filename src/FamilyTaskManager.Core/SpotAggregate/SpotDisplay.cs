@@ -7,7 +7,24 @@ public static class SpotDisplay
     { SpotType.Cat, new("🐱", "Кот", "cat") },
     { SpotType.Dog, new("🐶", "Собака", "dog") },
     { SpotType.Hamster, new("🐹", "Хомяк", "hamster") },
-    { SpotType.Parrot, new("🦜", "Попугай", "parrot") }
+    { SpotType.Parrot, new("🦜", "Попугай", "parrot") },
+    { SpotType.OtherPet, new("🐾", "Питомец", "otherpet") },
+
+    { SpotType.Fish, new("🐠", "Рыбки", "fish") },
+    { SpotType.Turtle, new("🐢", "Черепаха", "turtle") },
+    { SpotType.Plant, new("🪴", "Растение", "plant") },
+
+    { SpotType.Kitchen, new("🍽️", "Кухня", "kitchen") },
+    { SpotType.Bathroom, new("🛁", "Ванная", "bathroom") },
+    { SpotType.KidsRoom, new("🧸", "Детская", "kidsroom") },
+    { SpotType.Hallway, new("🚪", "Прихожая", "hallway") },
+
+    { SpotType.WashingMachine, new("🧺", "Стиральная машина", "washingmachine") },
+    { SpotType.Dishwasher, new("🍽", "Посудомойка", "dishwasher") },
+    { SpotType.Fridge, new("🧊", "Холодильник", "fridge") },
+
+    { SpotType.Finances, new("💰", "Финансы семьи", "finances") },
+    { SpotType.Documents, new("📁", "Документы семьи", "documents") }
   };
 
   public static string GetEmoji(SpotType spotType) =>

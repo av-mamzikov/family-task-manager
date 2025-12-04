@@ -10,7 +10,7 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   {
   }
 
-  public TaskInstance(Spot spot, string title, TaskPoints points, TaskType type, DateTime dueAt,
+  public TaskInstance(Spot spot, string title, TaskPoints points, DateTime dueAt,
     Guid? templateId = null)
   {
     Guard.Against.Null(spot);
@@ -21,7 +21,6 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     SpotId = spot.Id;
     Title = title.Trim();
     Points = points;
-    Type = type;
     TemplateId = templateId;
     Status = TaskStatus.Active;
     CreatedAt = DateTime.UtcNow;
@@ -44,7 +43,6 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public Guid SpotId { get; private set; }
   public string Title { get; } = null!;
   public TaskPoints Points { get; } = null!;
-  public TaskType Type { get; private set; }
   public Guid? TemplateId { get; private set; }
   public TaskStatus Status { get; private set; }
   public Guid? StartedByMemberId { get; private set; }

@@ -35,8 +35,7 @@ public class CompleteTaskHandlerTests
     var taskId = Guid.NewGuid();
 
     var Spot = TestHelpers.CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the cat", new(2), TaskType.OneTime,
-      DateTime.UtcNow.AddDays(1));
+    var task = new TaskInstance(Spot, "Feed the cat", new(2), DateTime.UtcNow.AddDays(1));
     var family = new Family("Smith Family", "UTC");
     var user = TestHelpers.CreateUser();
     var member = family.AddMember(user, FamilyRole.Child);
@@ -102,8 +101,7 @@ public class CompleteTaskHandlerTests
     var taskId = Guid.NewGuid();
 
     var Spot = TestHelpers.CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the cat", new(2), TaskType.OneTime,
-      DateTime.UtcNow.AddDays(1));
+    var task = new TaskInstance(Spot, "Feed the cat", new(2), DateTime.UtcNow.AddDays(1));
     var member = TestHelpers.CreateMemberWithUser();
     task.Complete(member, DateTime.UtcNow);
 
@@ -129,8 +127,7 @@ public class CompleteTaskHandlerTests
     var taskId = Guid.NewGuid();
 
     var Spot = TestHelpers.CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the cat", new(2), TaskType.OneTime,
-      DateTime.UtcNow.AddDays(1));
+    var task = new TaskInstance(Spot, "Feed the cat", new(2), DateTime.UtcNow.AddDays(1));
     var family = new Family("Smith Family", "UTC");
     var differentUser = TestHelpers.CreateUser();
     family.AddMember(differentUser, FamilyRole.Child); // Different user

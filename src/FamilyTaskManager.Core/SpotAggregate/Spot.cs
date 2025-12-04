@@ -8,7 +8,25 @@ public enum SpotType
   Cat = 0,
   Dog = 1,
   Hamster = 2,
-  Parrot = 3
+  Parrot = 3,
+
+  Fish = 4,
+  Turtle = 5,
+  Plant = 6,
+
+  OtherPet = 10,
+
+  Kitchen = 20,
+  Bathroom = 21,
+  KidsRoom = 22,
+  Hallway = 23,
+
+  WashingMachine = 30,
+  Dishwasher = 31,
+  Fridge = 32,
+
+  Finances = 40,
+  Documents = 41
 }
 
 public class Spot : EntityBase<Spot, Guid>, IAggregateRoot
@@ -38,7 +56,7 @@ public class Spot : EntityBase<Spot, Guid>, IAggregateRoot
     });
   }
 
-  public Guid FamilyId { get; private set; }
+  public Guid FamilyId { get; }
   public SpotType Type { get; private set; }
   public string Name { get; private set; } = null!;
 
@@ -69,7 +87,6 @@ public class Spot : EntityBase<Spot, Guid>, IAggregateRoot
 
     // Register event if mood change is significant
     if (ShouldNotifyMoodChange(oldMood, newMood))
-    {
       RegisterDomainEvent(new SpotMoodChangedEvent
       {
         SpotId = Id,
@@ -78,7 +95,6 @@ public class Spot : EntityBase<Spot, Guid>, IAggregateRoot
         OldMoodScore = oldMood,
         NewMoodScore = newMood
       });
-    }
   }
 
   public void SoftDelete()
@@ -108,23 +124,17 @@ public class Spot : EntityBase<Spot, Guid>, IAggregateRoot
     // Check if crossed critical low threshold (< 20)
     if ((oldMood >= criticalLow && newMood < criticalLow) ||
         (oldMood < criticalLow && newMood >= criticalLow))
-    {
       return true;
-    }
 
     // Check if crossed warning threshold (< 50)
     if ((oldMood >= warningLow && newMood < warningLow) ||
         (oldMood < warningLow && newMood >= warningLow))
-    {
       return true;
-    }
 
     // Check if crossed excellent threshold (>= 80)
     if ((oldMood < excellent && newMood >= excellent) ||
         (oldMood >= excellent && newMood < excellent))
-    {
       return true;
-    }
 
     return false;
   }

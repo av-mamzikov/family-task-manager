@@ -29,7 +29,7 @@ public class MessageHandler(
 
     // Check if user pressed main menu button while in conversation
     var isMainMenuButton =
-      messageText is "🏠 Семья" or "✅ Наши задачи" or "🐾 Спот" or "📊 Статистика";
+      messageText is "🏠 Семья" or "✅ Наши задачи" or "🧩 Споты" or "📊 Статистика";
     var isCommand = messageText.StartsWith('/');
 
     // Handle conversation state
@@ -238,7 +238,7 @@ public class MessageHandler(
     {
       "🏠 Семья" => HandleFamilyCommandAsync(botClient, message, session, cancellationToken),
       "✅ Наши задачи" => HandleTasksCommandAsync(botClient, message, session, cancellationToken),
-      "🐾 Спот" => HandleSpotCommandAsync(botClient, message, session, cancellationToken),
+      "🧩 Споты" => HandleSpotCommandAsync(botClient, message, session, cancellationToken),
       "📊 Статистика" => HandleStatsCommandAsync(botClient, message, session, cancellationToken),
       _ => HandleUnknownCommandAsync(botClient, message, cancellationToken)
     });

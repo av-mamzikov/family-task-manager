@@ -32,7 +32,7 @@ public class SpotRepositoryTests : RepositoryTestsBase<Spot>
     familyRepository.AddAsync(family).GetAwaiter().GetResult();
     DbContext.SaveChangesAsync().GetAwaiter().GetResult();
 
-    return new Spot(family.Id, type, name);
+    return new(family.Id, type, name);
   }
 
   [Fact]
@@ -89,8 +89,7 @@ public class SpotRepositoryTests : RepositoryTestsBase<Spot>
     var task = new TaskInstance(
       Spot,
       "Feed Busy Cat",
-      new TaskPoints(2),
-      TaskType.OneTime,
+      new(2),
       DateTime.UtcNow.AddDays(1));
 
     var taskRepository = GetRepository<TaskInstance>();

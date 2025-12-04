@@ -24,7 +24,7 @@ public class CreateTaskHandlerTests
     _familyAppRepository = Substitute.For<IAppRepository<Family>>();
     _timeZoneService = Substitute.For<ITimeZoneService>();
     _moodCalculator = Substitute.For<ISpotMoodCalculator>();
-    _handler = new CreateTaskHandler(_taskAppRepository, _SpotAppRepository, _timeZoneService,
+    _handler = new(_taskAppRepository, _SpotAppRepository, _timeZoneService,
       _moodCalculator);
   }
 
@@ -62,14 +62,14 @@ public class CreateTaskHandlerTests
     capturedTask.SpotId.ShouldBe(Spot.Id);
     capturedTask.Title.ShouldBe("Feed the cat");
     capturedTask.Points.Value.ShouldBe(2);
-    capturedTask.Type.ShouldBe(TaskType.OneTime);
+    capturedTask.DueAt.ShouldBe(dueAt);
   }
 
   [Fact]
   public async Task Handle_NonExistentSpot_ReturnsNotFound()
   {
     // Arrange
-    var command = new CreateTaskCommand(Guid.NewGuid(), Guid.NewGuid(), "Feed the cat", new TaskPoints(2),
+    var command = new CreateTaskCommand(Guid.NewGuid(), Guid.NewGuid(), "Feed the cat", new(2),
       DateTime.UtcNow,
       Guid.NewGuid());
 

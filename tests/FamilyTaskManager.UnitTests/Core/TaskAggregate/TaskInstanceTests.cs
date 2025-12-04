@@ -35,18 +35,16 @@ public class TaskInstanceTests
     var Spot = CreateSpotWithFamily();
     var title = "Feed the Spot";
     var points = 2;
-    var type = TaskType.OneTime;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act
-    var task = new TaskInstance(Spot, title, new(points), type, dueAt);
+    var task = new TaskInstance(Spot, title, new(points), dueAt);
 
     // Assert
     task.FamilyId.ShouldBe(Spot.FamilyId);
     task.SpotId.ShouldBe(Spot.Id);
     task.Title.ShouldBe(title);
     task.Points.Value.ShouldBe(points);
-    task.Type.ShouldBe(type);
     task.DueAt.ShouldBe(dueAt);
     task.Status.ShouldBe(TaskStatus.Active);
     task.TemplateId.ShouldBeNull();
@@ -63,17 +61,15 @@ public class TaskInstanceTests
     var SpotId = Guid.NewGuid();
     var title = "Feed the Spot";
     var points = 2;
-    var type = TaskType.Recurring;
     var dueAt = DateTime.UtcNow.AddHours(2);
     var templateId = Guid.NewGuid();
 
     // Act
     var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, title, new(points), type, dueAt, templateId);
+    var task = new TaskInstance(Spot, title, new(points), dueAt, templateId);
 
     // Assert
     task.TemplateId.ShouldBe(templateId);
-    task.Type.ShouldBe(TaskType.Recurring);
   }
 
   [Fact]
@@ -84,12 +80,11 @@ public class TaskInstanceTests
     var SpotId = Guid.NewGuid();
     var title = "  Feed the Spot  ";
     var points = 2;
-    var type = TaskType.OneTime;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act
     var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, title, new(points), type, dueAt);
+    var task = new TaskInstance(Spot, title, new(points), dueAt);
 
     // Assert
     task.Title.ShouldBe("Feed the Spot");
@@ -103,12 +98,11 @@ public class TaskInstanceTests
     var SpotId = Guid.NewGuid();
     var title = "Feed the Spot";
     var points = 2;
-    var type = TaskType.OneTime;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act
     var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, title, new(points), type, dueAt);
+    var task = new TaskInstance(Spot, title, new(points), dueAt);
 
     // Assert
     task.DomainEvents.ShouldContain(e => e is TaskCreatedEvent);
@@ -122,12 +116,11 @@ public class TaskInstanceTests
     var SpotId = Guid.NewGuid();
     var title = "Feed the Spot";
     var points = 10;
-    var type = TaskType.OneTime;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act & Assert
     Should.Throw<ArgumentException>(() =>
-      new TaskInstance(CreateSpotWithFamily(), title, new(points), type, dueAt));
+      new TaskInstance(CreateSpotWithFamily(), title, new(points), dueAt));
   }
 
   [Fact]
@@ -138,12 +131,11 @@ public class TaskInstanceTests
     var SpotId = Guid.Empty;
     var title = "Feed the Spot";
     var points = 10;
-    var type = TaskType.OneTime;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act & Assert
     Should.Throw<ArgumentException>(() =>
-      new TaskInstance(CreateSpotWithFamily(), title, new(points), type, dueAt));
+      new TaskInstance(CreateSpotWithFamily(), title, new(points), dueAt));
   }
 
   [Theory]
@@ -156,12 +148,11 @@ public class TaskInstanceTests
     var familyId = Guid.NewGuid();
     var SpotId = Guid.NewGuid();
     var points = 10;
-    var type = TaskType.OneTime;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act & Assert
     Should.Throw<ArgumentException>(() =>
-      new TaskInstance(CreateSpotWithFamily(), invalidTitle!, new(points), type, dueAt));
+      new TaskInstance(CreateSpotWithFamily(), invalidTitle!, new(points), dueAt));
   }
 
   [Theory]
@@ -173,12 +164,11 @@ public class TaskInstanceTests
     var familyId = Guid.NewGuid();
     var SpotId = Guid.NewGuid();
     var title = "Feed the Spot";
-    var type = TaskType.OneTime;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act & Assert
     Should.Throw<ArgumentException>(() =>
-      new TaskInstance(CreateSpotWithFamily(), title, new(invalidPoints), type, dueAt));
+      new TaskInstance(CreateSpotWithFamily(), title, new(invalidPoints), dueAt));
   }
 
   [Theory]
@@ -191,35 +181,14 @@ public class TaskInstanceTests
     var familyId = Guid.NewGuid();
     var SpotId = Guid.NewGuid();
     var title = "Feed the Spot";
-    var type = TaskType.OneTime;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act
     var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, title, new(validPoints), type, dueAt);
+    var task = new TaskInstance(Spot, title, new(validPoints), dueAt);
 
     // Assert
     task.Points.Value.ShouldBe(validPoints);
-  }
-
-  [Theory]
-  [InlineData(TaskType.OneTime)]
-  [InlineData(TaskType.Recurring)]
-  public void Constructor_WithDifferentTypes_CreatesWithCorrectType(TaskType type)
-  {
-    // Arrange
-    var familyId = Guid.NewGuid();
-    var SpotId = Guid.NewGuid();
-    var title = "Feed the Spot";
-    var points = 2;
-    var dueAt = DateTime.UtcNow.AddHours(2);
-
-    // Act
-    var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, title, new(points), type, dueAt);
-
-    // Assert
-    task.Type.ShouldBe(type);
   }
 
   [Fact]
@@ -227,8 +196,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), TaskType.OneTime,
-      DateTime.UtcNow.AddHours(2));
+    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
     var memberId = Guid.NewGuid();
     task.Status.ShouldBe(TaskStatus.Active);
 
@@ -245,8 +213,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), TaskType.OneTime,
-      DateTime.UtcNow.AddHours(2));
+    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
     var memberId = Guid.NewGuid();
     task.Start(memberId);
 
@@ -262,8 +229,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), TaskType.OneTime,
-      DateTime.UtcNow.AddHours(2));
+    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
     var memberId = Guid.NewGuid();
     var completedByMember = CreateMemberWithUser();
     task.Complete(completedByMember, DateTime.UtcNow);
@@ -280,8 +246,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), TaskType.OneTime,
-      DateTime.UtcNow.AddHours(2));
+    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
     var completedByMember = CreateMemberWithUser();
     var completedAt = DateTime.UtcNow;
 
@@ -299,8 +264,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), TaskType.OneTime,
-      DateTime.UtcNow.AddHours(2));
+    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
     var memberId = Guid.NewGuid();
     task.Start(memberId);
     var completedByMember = CreateMemberWithUser();
@@ -320,8 +284,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), TaskType.OneTime,
-      DateTime.UtcNow.AddHours(2));
+    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
     var completedByMember = CreateMemberWithUser();
     var completedAt = DateTime.UtcNow;
 
@@ -337,8 +300,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), TaskType.OneTime,
-      DateTime.UtcNow.AddHours(2));
+    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
     var firstCompletedByMember = CreateMemberWithUser();
     var firstCompletedAt = DateTime.UtcNow;
     task.Complete(firstCompletedByMember, firstCompletedAt);
@@ -360,8 +322,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), TaskType.OneTime,
-      DateTime.UtcNow.AddHours(2));
+    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
     var completedAt = DateTime.UtcNow;
 
     // Act & Assert
@@ -373,8 +334,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), TaskType.OneTime,
-      DateTime.UtcNow.AddHours(2));
+    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
     var completedByMember = CreateMemberWithUser();
     var completedAt = DateTime.UtcNow;
 
@@ -400,8 +360,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), TaskType.OneTime,
-      DateTime.UtcNow.AddHours(2));
+    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
     var completedByMember = CreateMemberWithUser();
     var completedAt = DateTime.UtcNow;
 

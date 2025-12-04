@@ -172,7 +172,7 @@ public class SpotMoodCalculatorTests
     DateTime completedAt)
   {
     var Spot = TestHelpers.CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Test Task", points, TaskType.OneTime, dueAt);
+    var task = new TaskInstance(Spot, "Test Task", points, dueAt);
     var member = TestHelpers.CreateMemberWithUser();
     task.Complete(member, completedAt);
     return task;
@@ -181,6 +181,6 @@ public class SpotMoodCalculatorTests
   private TaskInstance CreateOverdueTask(Guid familyId, Guid SpotId, TaskPoints points, DateTime dueAt)
   {
     var Spot = TestHelpers.CreateSpotWithFamily();
-    return new(Spot, "Test Task", points, TaskType.OneTime, dueAt);
+    return new(Spot, "Test Task", points, dueAt);
   }
 }

@@ -14,7 +14,8 @@ public static class TaskPointsHelper
       {
         InlineKeyboardButton.WithCallbackData("⭐", "points_1"),
         InlineKeyboardButton.WithCallbackData("⭐⭐", "points_2"),
-        InlineKeyboardButton.WithCallbackData("⭐⭐⭐", "points_3")
+        InlineKeyboardButton.WithCallbackData("⭐⭐⭐", "points_3"),
+        InlineKeyboardButton.WithCallbackData("⭐⭐⭐⭐", "points_4")
       },
       new[]
       {
