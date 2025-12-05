@@ -76,7 +76,7 @@ public class SpotCommandHandler(IMediator mediator)
       var spotEmoji = GetSpotEmoji(spot.Type);
       buttons.Add(new[]
       {
-        InlineKeyboardButton.WithCallbackData($"{spotEmoji} {spot.Name}", $"Spot_view_{spot.Id}")
+        InlineKeyboardButton.WithCallbackData($"{spotEmoji} {spot.Name}", $"spot_view_{spot.Id}")
       });
     }
 

@@ -72,7 +72,7 @@ public class ProcessScheduledTasksHandlerTests
     // Schedule at 10:00 - outside the window
     var schedule = Schedule.CreateDaily(new(10, 0)).Value;
     var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, SpotId, "Daily Task", new(2), schedule, TimeSpan.FromHours(24),
+    var template = new TaskTemplate(familyId, SpotId, new("Daily Task"), new(2), schedule, new(TimeSpan.FromHours(24)),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
@@ -120,7 +120,7 @@ public class ProcessScheduledTasksHandlerTests
     // Schedule at 10:00 - inside the window
     var schedule = Schedule.CreateDaily(new(10, 0)).Value;
     var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, SpotId, "Daily Task", new(2), schedule, TimeSpan.FromHours(24),
+    var template = new TaskTemplate(familyId, SpotId, new("Daily Task"), new(2), schedule, new(TimeSpan.FromHours(24)),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
@@ -182,7 +182,7 @@ public class ProcessScheduledTasksHandlerTests
 
     var schedule = Schedule.CreateDaily(new(10, 0)).Value;
     var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, SpotId, "Daily Task", new(2), schedule, TimeSpan.FromHours(24),
+    var template = new TaskTemplate(familyId, SpotId, new("Daily Task"), new(2), schedule, new(TimeSpan.FromHours(24)),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
