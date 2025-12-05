@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using FamilyTaskManager.Core.SpotAggregate;
 
 namespace FamilyTaskManager.Core.TaskAggregate.DTOs;
 
@@ -15,7 +16,8 @@ public record TaskDto(
   string SpotName,
   Guid? StartedByUserId,
   string FamilyTimezone,
-  string? StartedByUserName = null)
+  string? StartedByUserName = null,
+  SpotType SpotType = SpotType.OtherPet)
 {
   /// <summary>
   ///   DueAt converted to family's local timezone
@@ -49,6 +51,7 @@ public record TaskDto(
       t.Spot.Name,
       t.StartedByMember!.UserId,
       t.Family.Timezone,
-      t.StartedByMember != null ? t.StartedByMember.User!.Name : null);
+      t.StartedByMember != null ? t.StartedByMember.User!.Name : null,
+      t.Spot.Type);
   }
 }

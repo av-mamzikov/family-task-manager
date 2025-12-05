@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Tasks;
 using Telegram.Bot;
@@ -62,8 +63,9 @@ public class TasksCommandHandler(IMediator mediator)
       foreach (var task in activeTasks)
       {
         var overdueMarker = task.DueAtLocal < DateTime.Now ? "⚠️" : "";
+        var spotEmoji = SpotDisplay.GetEmoji(task.SpotType);
         messageText += $"{overdueMarker} *{task.Title}*\n";
-        messageText += $"   🐾 {task.SpotName} | {task.Points.ToStars()}\n";
+        messageText += $"   {spotEmoji} {task.SpotName} | {task.Points.ToStars()}\n";
         messageText += $"   📅 До: {task.DueAtLocal:dd.MM.yyyy HH:mm}\n\n";
       }
     }
@@ -73,8 +75,9 @@ public class TasksCommandHandler(IMediator mediator)
       messageText += "\n*В работе:*\n";
       foreach (var task in inProgressTasks)
       {
+        var spotEmoji = SpotDisplay.GetEmoji(task.SpotType);
         messageText += $"🔄 *{task.Title}*\n";
-        messageText += $"   🐾 {task.SpotName} | {task.Points.ToStars()}\n";
+        messageText += $"   {spotEmoji} {task.SpotName} | {task.Points.ToStars()}\n";
         if (!string.IsNullOrEmpty(task.StartedByUserName)) messageText += $"   👤 Взял(а): {task.StartedByUserName}\n";
 
         messageText += "\n";
