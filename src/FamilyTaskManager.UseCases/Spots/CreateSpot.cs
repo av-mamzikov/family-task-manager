@@ -11,16 +11,11 @@ public class CreateSpotHandler(
   {
     // Verify family exists
     var family = await familyAppRepository.GetByIdAsync(command.FamilyId, cancellationToken);
-    if (family == null)
-    {
-      return Result<Guid>.NotFound("Семья не найдена");
-    }
+    if (family == null) return Result<Guid>.NotFound("Семья не найдена");
 
     // Validate name
     if (string.IsNullOrWhiteSpace(command.Name) || command.Name.Length < 2 || command.Name.Length > 50)
-    {
       return Result<Guid>.Invalid(new ValidationError("Имя спота должно быть длиной от 2 до 50 символов"));
-    }
 
     // Create Spot
     var spot = new Spot(command.FamilyId, command.Type, command.Name);
@@ -37,10 +32,10 @@ public class CreateSpotHandler(
       var taskTemplate = new TaskTemplate(
         command.FamilyId,
         spot.Id,
-        templateData.Title,
+        new(templateData.Title),
         templateData.GetTaskPoints(),
         templateData.Schedule,
-        templateData.DueDuration,
+        new(templateData.DueDuration),
         systemUserId);
 
       await taskTemplateAppRepository.AddAsync(taskTemplate, cancellationToken);

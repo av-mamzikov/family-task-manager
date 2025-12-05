@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UnitTests.Host.Bot.Models;
@@ -60,7 +61,7 @@ public class TaskCallbackHandler(
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      $"📝 Создание {taskTySpotext} задачи\n\nВведите название задачи (от 3 до 100 символов):" +
+      $"📝 Создание {taskTySpotext} задачи\n\nВведите название задачи (от {TaskTitle.MinLength} до {TaskTitle.MaxLength} символов):" +
       StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskTitle),
       cancellationToken: cancellationToken);
 

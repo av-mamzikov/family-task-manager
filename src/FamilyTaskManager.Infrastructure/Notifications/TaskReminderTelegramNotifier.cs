@@ -46,7 +46,7 @@ public class TaskReminderTelegramNotifier(
     if (!result.IsSuccess || result.Value is null)
       return string.Empty;
 
-    var user = await userAppRepository.GetByIdAsync(result.Value, cancellationToken);
+    var user = await userAppRepository.GetByIdAsync(result.Value.UserId, cancellationToken);
     if (user is null)
       return string.Empty;
 

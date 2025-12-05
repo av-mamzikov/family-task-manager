@@ -9,21 +9,21 @@ public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
   {
   }
 
-  public TaskTemplate(Guid familyId, Guid spotId, string title, TaskPoints points, Schedule schedule,
-    TimeSpan dueDuration,
+  public TaskTemplate(Guid familyId, Guid spotId, TaskTitle title, TaskPoints points, Schedule schedule,
+    DueDuration dueDuration,
     Guid createdBy)
   {
     Guard.Against.Default(familyId);
     Guard.Against.Default(spotId);
     Guard.Against.Default(createdBy);
-    Guard.Against.NullOrWhiteSpace(title);
+    Guard.Against.Null(title);
     Guard.Against.Null(points);
     Guard.Against.Null(schedule);
-    Guard.Against.OutOfRange(dueDuration.TotalHours, nameof(dueDuration), 1, 720); // 1 hour to 30 days
+    Guard.Against.Null(dueDuration);
 
     FamilyId = familyId;
     SpotId = spotId;
-    Title = title.Trim();
+    Title = title;
     Points = points;
     Schedule = schedule;
     DueDuration = dueDuration;
@@ -35,21 +35,21 @@ public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
   public Family Family { get; private set; } = null!;
   public Guid SpotId { get; private set; }
   public Spot Spot { get; private set; } = null!;
-  public string Title { get; private set; } = null!;
+  public TaskTitle Title { get; private set; } = null!;
   public TaskPoints Points { get; private set; } = null!;
   public Schedule Schedule { get; private set; } = null!;
-  public TimeSpan DueDuration { get; private set; }
+  public DueDuration DueDuration { get; private set; } = null!;
   public Guid CreatedBy { get; private set; }
   public DateTime CreatedAt { get; private set; }
 
-  public void Update(string title, TaskPoints points, Schedule schedule, TimeSpan dueDuration)
+  public void Update(TaskTitle title, TaskPoints points, Schedule schedule, DueDuration dueDuration)
   {
-    Guard.Against.NullOrWhiteSpace(title);
+    Guard.Against.Null(title);
     Guard.Against.Null(points);
     Guard.Against.Null(schedule);
-    Guard.Against.OutOfRange(dueDuration.TotalHours, nameof(dueDuration), 1, 720); // 1 hour to 30 days
+    Guard.Against.Null(dueDuration);
 
-    Title = title.Trim();
+    Title = title;
     Points = points;
     Schedule = schedule;
     DueDuration = dueDuration;

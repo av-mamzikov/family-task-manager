@@ -30,12 +30,6 @@ public class CreateTaskTemplateHandler(
       return Result<Guid>.Error("Спот не принадлежит этой семье");
     }
 
-    // Validate title
-    if (command.Title.Length < 3 || command.Title.Length > 100)
-    {
-      return Result<Guid>.Invalid(new ValidationError("Название должно быть длиной от 3 до 100 символов"));
-    }
-
     // Create schedule
     var scheduleResult = command.ScheduleType.Name switch
     {
@@ -58,13 +52,16 @@ public class CreateTaskTemplateHandler(
     }
 
     // Create template
+    var title = new TaskTitle(command.Title);
+    var dueDuration = new DueDuration(command.DueDuration);
+
     var template = new TaskTemplate(
       command.FamilyId,
       command.SpotId,
-      command.Title,
+      title,
       command.Points,
       scheduleResult.Value,
-      command.DueDuration,
+      dueDuration,
       command.CreatedBy);
 
     await templateAppRepository.AddAsync(template, cancellationToken);

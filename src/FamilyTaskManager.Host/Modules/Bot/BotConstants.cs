@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.TaskAggregate;
 
 namespace FamilyTaskManager.Host.Modules.Bot;
 
@@ -138,14 +139,18 @@ public static class BotConstants
     public const string TemplateCreated = "✅ Шаблон задачи успешно создан!";
     public const string TemplateUpdated = "✅ Шаблон задачи успешно обновлён!";
     public const string TemplateDeleted = "✅ Шаблон задачи успешно удалён!";
-    public const string EnterTemplateTitle = "📝 Введите название шаблона задачи (от 3 до 100 символов):";
     public const string EnterTemplatePoints = "⭐ Выберите сложность задачи:";
 
     public const string ChooseScheduleType = "🔄 Выберите тип расписания для шаблона задачи:";
     public const string EnterScheduleTime = "⏰ Введите время в формате HH:mm (например, 09:00 или 15:30):";
     public const string ChooseWeekday = "📅 Выберите день недели:";
     public const string EnterMonthDay = "📅 Введите день месяца (от 1 до 31):";
-    public const string EnterDueDuration = "⏰ Введите срок выполнения задачи в часах (от 0 до 24):";
+
+    public static readonly string EnterTemplateTitle =
+      $"📝 Введите название шаблона задачи (от {TaskTitle.MinLength} до {TaskTitle.MaxLength} символов):";
+
+    public static readonly string EnterDueDuration =
+      $"⏰ Введите срок выполнения задачи в часах (от {DueDuration.MinHours} до {DueDuration.MaxHours}, где 24 = 1 день, 720 = 30 дней):";
   }
 
   public static class Roles

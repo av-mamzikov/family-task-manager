@@ -23,7 +23,7 @@ public class UpdateTaskTemplateHandler(IAppRepository<TaskTemplate> templateAppR
     if (template.FamilyId != command.FamilyId) return Result.NotFound("Шаблон задачи не найден");
 
     // Get current values or use new ones
-    var newTitle = command.Title ?? template.Title;
+    var newTitle = command.Title != null ? new(command.Title) : template.Title;
     var newPoints = command.Points ?? template.Points;
     var newSchedule = template.Schedule;
 
@@ -50,16 +50,10 @@ public class UpdateTaskTemplateHandler(IAppRepository<TaskTemplate> templateAppR
       newSchedule = scheduleResult.Value;
     }
 
-    // Validate title
-    if (newTitle.Length < 3 || newTitle.Length > 100)
-      return Result.Invalid(new ValidationError("Название должно быть длиной от 3 до 100 символов"));
-
     // Update template
-    var newDueDuration = command.DueDuration ?? template.DueDuration;
-
-    // Validate dueDuration
-    if (newDueDuration < TimeSpan.Zero || newDueDuration > TimeSpan.FromHours(24))
-      return Result.Invalid(new ValidationError("Срок выполнения должен быть в диапазоне от 0 до 24 часов"));
+    var newDueDuration = command.DueDuration.HasValue
+      ? new(command.DueDuration.Value)
+      : template.DueDuration;
 
     template.Update(newTitle, newPoints, newSchedule, newDueDuration);
     await templateAppRepository.UpdateAsync(template, cancellationToken);

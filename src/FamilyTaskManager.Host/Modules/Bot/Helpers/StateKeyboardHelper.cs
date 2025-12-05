@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using Telegram.Bot.Types.ReplyMarkups;
 
@@ -57,7 +58,7 @@ public static class StateKeyboardHelper
         "\n\n💡 Доступные действия:\n• Введите имя спота (2-50 символов)\n•",
 
       ConversationState.AwaitingTaskTitle =>
-        "\n\n💡 Доступные действия:\n• Введите название задачи (3-100 символов)\n",
+        $"\n\n💡 Доступные действия:\n• Введите название задачи ({TaskTitle.MinLength}-{TaskTitle.MaxLength} символов)\n",
 
       ConversationState.AwaitingTaskPoints =>
         "\n\n💡 Выберите сложность с помощью кнопок выше",
@@ -81,7 +82,7 @@ public static class StateKeyboardHelper
         "\n\n💡 Доступные действия:\n• Введите срок в днях (0-365)\n• ⬅️ Назад - К выбору спота\n",
 
       ConversationState.AwaitingTemplateTitle =>
-        "\n\n💡 Доступные действия:\n• Введите название шаблона (3-100 символов)\n",
+        $"\n\n💡 Доступные действия:\n• Введите название шаблона ({TaskTitle.MinLength}-{TaskTitle.MaxLength} символов)\n",
 
       ConversationState.AwaitingTemplatePoints =>
         "\n\n💡 Выберите сложность с помощью кнопок выше",

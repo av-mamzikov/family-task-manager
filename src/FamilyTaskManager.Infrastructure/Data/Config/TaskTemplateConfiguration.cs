@@ -18,13 +18,22 @@ public class TaskTemplateConfiguration : IEntityTypeConfiguration<TaskTemplate>
 
     builder.Property(t => t.Title)
       .IsRequired()
-      .HasMaxLength(100);
+      .HasMaxLength(100)
+      .HasConversion(
+        v => v.Value,
+        v => new TaskTitle(v));
 
     builder.Property(t => t.Points)
       .IsRequired()
       .HasConversion(
         v => v.Value,
         v => new TaskPoints(v));
+
+    builder.Property(t => t.DueDuration)
+      .IsRequired()
+      .HasConversion(
+        v => v.Value,
+        v => new DueDuration(v));
 
     // Configure Schedule as owned entity (Value Object)
     builder.OwnsOne(t => t.Schedule, schedule =>

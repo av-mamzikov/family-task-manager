@@ -20,13 +20,13 @@ public class TemplateEditHandler(
     string title,
     CancellationToken cancellationToken)
   {
-    if (string.IsNullOrWhiteSpace(title) || title.Length < 3 || title.Length > 100)
+    if (string.IsNullOrWhiteSpace(title) || title.Length < TaskTitle.MinLength || title.Length > TaskTitle.MaxLength)
     {
       var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditTitle);
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
-        "❌ Название шаблона должно содержать от 3 до 100 символов. Попробуйте снова:",
+        $"❌ Название шаблона должно содержать от {TaskTitle.MinLength} до {TaskTitle.MaxLength} символов. Попробуйте снова:",
         StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditTitle),
         keyboard,
         cancellationToken);

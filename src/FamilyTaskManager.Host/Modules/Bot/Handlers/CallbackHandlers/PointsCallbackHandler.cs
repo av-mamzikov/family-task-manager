@@ -95,7 +95,8 @@ public class PointsCallbackHandler(
         // Delete message and send new one for task creation
         await botClient.DeleteMessageAsync(chatId, messageId, cancellationToken);
         previousState = ConversationState.AwaitingTaskTitle;
-        messageText = "📝 Введите название задачи (от 3 до 100 символов):";
+        messageText =
+          $"📝 Введите название задачи (от {TaskTitle.MinLength} до {TaskTitle.MaxLength} символов):";
         keyboard = StateKeyboardHelper.GetKeyboardForState(previousState);
         session.State = previousState;
         await botClient.SendTextMessageAsync(
@@ -109,7 +110,8 @@ public class PointsCallbackHandler(
         // Delete message and send new one for template creation
         await botClient.DeleteMessageAsync(chatId, messageId, cancellationToken);
         previousState = ConversationState.AwaitingTemplateTitle;
-        messageText = "📝 Введите название шаблона задачи (от 3 до 100 символов):";
+        messageText =
+          $"📝 Введите название шаблона задачи (от {TaskTitle.MinLength} до {TaskTitle.MaxLength} символов):";
         keyboard = StateKeyboardHelper.GetKeyboardForState(previousState);
         session.State = previousState;
         await botClient.SendTextMessageAsync(
