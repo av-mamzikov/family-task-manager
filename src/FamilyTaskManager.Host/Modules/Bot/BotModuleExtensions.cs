@@ -26,10 +26,8 @@ public static class BotModuleExtensions
     {
       var config = sp.GetRequiredService<BotConfiguration>();
       if (string.IsNullOrEmpty(config.BotToken))
-      {
         throw new InvalidOperationException(
           "Bot configuration is missing. Please configure Bot:BotToken in appsettings.json or user secrets.");
-      }
 
       return new TelegramBotClient(config.BotToken);
     });
@@ -43,8 +41,6 @@ public static class BotModuleExtensions
 
     // Handlers
     services.AddScoped<IUpdateHandler, UpdateHandler>();
-    services.AddScoped<IMessageHandler, MessageHandler>();
-    services.AddScoped<ICallbackQueryHandler, CallbackQueryHandler>();
 
     // Command Handlers
     services.AddScoped<FamilyCommandHandler>();
@@ -54,7 +50,6 @@ public static class BotModuleExtensions
     services.AddScoped<TemplateCommandHandler>();
 
     // Conversation Handlers
-    services.AddScoped<IConversationRouter, ConversationRouter>();
     services.AddScoped<FamilyCreationHandler>();
     services.AddScoped<FamilyMembersHandler>();
     services.AddScoped<SpotCreationHandler>();
@@ -62,16 +57,15 @@ public static class BotModuleExtensions
     services.AddScoped<TemplateCreationHandler>();
     services.AddScoped<TemplateEditHandler>();
 
-    // Callback Handlers
-    services.AddScoped<ICallbackRouter, CallbackRouter>();
+    // Callback Handlers (для просмотра данных, не для conversations)
     services.AddScoped<FamilyCallbackHandler>();
     services.AddScoped<FamilyMembersCallbackHandler>();
     services.AddScoped<SpotCallbackHandler>();
     services.AddScoped<TaskCallbackHandler>();
     services.AddScoped<TemplateCallbackHandler>();
-    services.AddScoped<TimezoneCallbackHandler>();
-    services.AddScoped<ScheduleCallbackHandler>();
-    services.AddScoped<PointsCallbackHandler>();
+    // PointsCallbackHandler - удален, логика в ConversationHandlers
+    // TimezoneCallbackHandler - удален, логика в FamilyCreationHandler
+    // ScheduleCallbackHandler - удален, логика в ConversationHandlers
 
     logger?.LogInformation("Bot Module registered: Telegram Bot with Long Polling");
 

@@ -15,8 +15,18 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
 public class SpotCallbackHandler(
   ILogger<SpotCallbackHandler> logger,
   IMediator mediator)
-  : BaseCallbackHandler(logger, mediator)
+  : BaseCallbackHandler(logger, mediator), ICallbackHandler
 {
+  public async Task Handle(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] parts,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken) =>
+    await HandleSpotActionAsync(botClient, chatId, messageId, parts, session, fromUser, cancellationToken);
+
   public async Task StartCreateSpotAsync(
     ITelegramBotClient botClient,
     long chatId,
@@ -48,29 +58,31 @@ public class SpotCallbackHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    session.SetState(ConversationState.AwaitingSpotName, new() { SpotType = spotType });
+    session.State = ConversationState.SpotCreation;
+    session.Data = new() { SpotType = spotType, InternalState = "awaiting_name" };
 
     var spotTypeEmoji = SpotTypeHelper.GetEmojiFromString(spotType);
 
-    var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingSpotName);
+    var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+    {
+      ResizeKeyboard = true
+    };
 
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      $"{spotTypeEmoji} Введите имя спота:" +
-      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingSpotName),
+      $"{spotTypeEmoji} Введите имя спота {spotTypeEmoji}:\n\n💡 Используйте кнопку \"❌ Отменить\" для отмены.",
       cancellationToken: cancellationToken);
 
     // Send keyboard in a separate message
-    if (keyboard != null)
-      await botClient.SendTextMessageAsync(
-        chatId,
-        "Используйте кнопки ниже для управления:",
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
+    await botClient.SendTextMessageAsync(
+      chatId,
+      "Используйте кнопки ниже для управления:",
+      replyMarkup: keyboard,
+      cancellationToken: cancellationToken);
   }
 
-  public async Task HandleSpotActionAsync(
+  private async Task HandleSpotActionAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,

@@ -12,9 +12,95 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 public class TemplateCreationHandler(
   ILogger<TemplateCreationHandler> logger,
   IMediator mediator)
-  : BaseConversationHandler(logger, mediator)
+  : BaseConversationHandler(logger, mediator), IConversationHandler
 {
-  public async Task HandleTemplateTitleInputAsync(
+  private const string StateAwaitingTitle = "awaiting_title";
+  private const string StateAwaitingPoints = "awaiting_points";
+  private const string StateAwaitingScheduleTime = "awaiting_schedule_time";
+  private const string StateAwaitingScheduleMonthDay = "awaiting_schedule_month_day";
+  private const string StateAwaitingDueDuration = "awaiting_due_duration";
+
+  public async Task HandleAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    var text = message.Text;
+    if (string.IsNullOrWhiteSpace(text))
+      return;
+
+    if (text is "❌ Отменить" or "/cancel" or "⬅️ Назад")
+      return;
+
+    await (session.Data.InternalState switch
+    {
+      StateAwaitingTitle => HandleTemplateTitleInputAsync(botClient, message, session, text, cancellationToken),
+      StateAwaitingPoints => HandleTemplatePointsInputAsync(botClient, message, session, text, cancellationToken),
+      StateAwaitingScheduleTime => HandleTemplateScheduleTimeInputAsync(botClient, message, session, text,
+        cancellationToken),
+      StateAwaitingScheduleMonthDay => HandleTemplateScheduleMonthDayInputAsync(botClient, message, session, text,
+        cancellationToken),
+      StateAwaitingDueDuration => HandleTemplateDueDurationInputAsync(botClient, message, session, text,
+        cancellationToken),
+      _ => Task.CompletedTask
+    });
+  }
+
+  public async Task HandleCancelAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    Func<Task> sendMainMenuAction,
+    CancellationToken cancellationToken)
+  {
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      "❌ Создание шаблона отменено.",
+      replyMarkup: new ReplyKeyboardRemove(),
+      cancellationToken: cancellationToken);
+
+    await sendMainMenuAction();
+    session.ClearState();
+  }
+
+  public async Task HandleBackAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    Func<Task> sendMainMenuAction,
+    CancellationToken cancellationToken)
+  {
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      "⬅️ Возврат в шаблонах пока не поддерживается.",
+      replyMarkup: new ReplyKeyboardRemove(),
+      cancellationToken: cancellationToken);
+    await sendMainMenuAction();
+    session.ClearState();
+  }
+
+  public async Task HandleCallbackAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] callbackParts,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken)
+  {
+    if (callbackParts.Length < 2)
+      return;
+
+    var action = callbackParts[0];
+
+    if (action == "points")
+      await HandlePointsCallbackAsync(botClient, chatId, messageId, callbackParts, session, cancellationToken);
+    else if (action == "schedule")
+      await HandleScheduleCallbackAsync(botClient, chatId, messageId, callbackParts, session, cancellationToken);
+  }
+
+  private async Task HandleTemplateTitleInputAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -23,19 +109,22 @@ public class TemplateCreationHandler(
   {
     if (string.IsNullOrWhiteSpace(title) || title.Length < TaskTitle.MinLength || title.Length > TaskTitle.MaxLength)
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateTitle);
+      var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+      {
+        ResizeKeyboard = true
+      };
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
         $"❌ Название шаблона должно содержать от {TaskTitle.MinLength} до {TaskTitle.MaxLength} символов. Попробуйте снова:",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateTitle),
+        $"\n\n💡 Введите название шаблона ({TaskTitle.MinLength}-{TaskTitle.MaxLength} символов)",
         keyboard,
         cancellationToken);
       return;
     }
 
     session.Data.Title = title;
-    session.State = ConversationState.AwaitingTemplatePoints;
+    session.Data.InternalState = StateAwaitingPoints;
 
     var pointsKeyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
     await botClient.SendTextMessageAsync(
@@ -45,7 +134,7 @@ public class TemplateCreationHandler(
       cancellationToken: cancellationToken);
   }
 
-  public async Task HandleTemplatePointsInputAsync(
+  private async Task HandleTemplatePointsInputAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -64,18 +153,16 @@ public class TemplateCreationHandler(
     }
 
     session.Data.Points = points;
-    session.State = ConversationState.AwaitingTemplateScheduleType;
 
     var scheduleTypeKeyboard = ScheduleKeyboardHelper.GetScheduleTypeKeyboard();
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotMessages.Templates.ChooseScheduleType +
-      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateScheduleType),
+      BotMessages.Templates.ChooseScheduleType + "\n\n💡 Выберите тип расписания с помощью кнопок",
       replyMarkup: scheduleTypeKeyboard,
       cancellationToken: cancellationToken);
   }
 
-  public async Task HandleTemplateScheduleTimeInputAsync(
+  private async Task HandleTemplateScheduleTimeInputAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -84,12 +171,15 @@ public class TemplateCreationHandler(
   {
     if (!TimeOnly.TryParse(timeText, out var time))
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateScheduleTime);
+      var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("⬅️ Назад"), new("❌ Отменить") } })
+      {
+        ResizeKeyboard = true
+      };
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
         "❌ Неверный формат времени. Используйте формат HH:mm (например, 09:00):",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateScheduleTime),
+        "\n\n💡 Введите время (HH:mm)\n• ⬅️ Назад - К типу расписания",
         keyboard,
         cancellationToken);
       return;
@@ -112,31 +202,34 @@ public class TemplateCreationHandler(
 
     if (scheduleType == "weekly")
     {
-      session.State = ConversationState.AwaitingTemplateScheduleWeekday;
+      session.Data.InternalState = "awaiting_schedule_weekday";
       var weekdayKeyboard = ScheduleKeyboardHelper.GetWeekdayKeyboard();
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotMessages.Templates.ChooseWeekday +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateScheduleWeekday),
+        BotMessages.Templates.ChooseWeekday + "\n\n💡 Используйте кнопки для выбора.",
         replyMarkup: weekdayKeyboard,
         cancellationToken: cancellationToken);
     }
     else if (scheduleType == "monthly")
     {
-      session.State = ConversationState.AwaitingTemplateScheduleMonthDay;
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateScheduleMonthDay);
+      session.Data.InternalState = StateAwaitingScheduleMonthDay;
+      var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+      {
+        ResizeKeyboard = true
+      };
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotMessages.Templates.EnterMonthDay +
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateScheduleMonthDay),
+        BotMessages.Templates.EnterMonthDay + "\n\n💡 Используйте кнопку \"❌ Отменить\" для отмены.",
         replyMarkup: keyboard,
         cancellationToken: cancellationToken);
     }
     else
     {
-      // For daily, workdays, weekends - ask for DueDuration
-      session.State = ConversationState.AwaitingTemplateDueDuration;
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateDueDuration);
+      session.Data.InternalState = StateAwaitingDueDuration;
+      var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("⬅️ Назад"), new("❌ Отменить") } })
+      {
+        ResizeKeyboard = true
+      };
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         BotMessages.Templates.EnterDueDuration,
@@ -145,22 +238,24 @@ public class TemplateCreationHandler(
     }
   }
 
-  public async Task HandleTemplateScheduleMonthDayInputAsync(
+  private async Task HandleTemplateScheduleMonthDayInputAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
     string dayText,
     CancellationToken cancellationToken)
   {
-    IReplyMarkup? keyboard;
     if (!int.TryParse(dayText, out var dayOfMonth) || dayOfMonth < 1 || dayOfMonth > 31)
     {
-      keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateScheduleMonthDay);
+      var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("⬅️ Назад"), new("❌ Отменить") } })
+      {
+        ResizeKeyboard = true
+      };
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
         "❌ День месяца должен быть числом от 1 до 31. Попробуйте снова:",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateScheduleMonthDay),
+        "\n\n💡 Введите день месяца (1-31)\n• ⬅️ Назад - К типу расписания",
         keyboard,
         cancellationToken);
       return;
@@ -168,17 +263,20 @@ public class TemplateCreationHandler(
 
     session.Data.ScheduleDayOfMonth = dayOfMonth;
 
-    // Ask for DueDuration
-    session.State = ConversationState.AwaitingTemplateDueDuration;
-    keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateDueDuration);
+    session.Data.InternalState = StateAwaitingDueDuration;
+    var dueDurationKeyboard =
+      new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("⬅️ Назад"), new("❌ Отменить") } })
+      {
+        ResizeKeyboard = true
+      };
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       BotMessages.Templates.EnterDueDuration,
-      replyMarkup: keyboard,
+      replyMarkup: dueDurationKeyboard,
       cancellationToken: cancellationToken);
   }
 
-  public async Task HandleTemplateDueDurationInputAsync(
+  private async Task HandleTemplateDueDurationInputAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -187,12 +285,15 @@ public class TemplateCreationHandler(
   {
     if (!int.TryParse(dueDurationText, out var dueDurationHours) || dueDurationHours < 0 || dueDurationHours > 24)
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateDueDuration);
+      var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("⬅️ Назад"), new("❌ Отменить") } })
+      {
+        ResizeKeyboard = true
+      };
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
         "❌ Срок выполнения должен быть числом от 0 до 24 часов. Попробуйте снова:",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateDueDuration),
+        "\n\n💡 Введите срок в часах (0-24)\n• ⬅️ Назад - К расписанию",
         keyboard,
         cancellationToken);
       return;
@@ -202,7 +303,7 @@ public class TemplateCreationHandler(
     await CreateTemplateAsync(botClient, message, session, cancellationToken);
   }
 
-  public async Task CreateTemplateAsync(
+  private async Task CreateTemplateAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -332,5 +433,122 @@ public class TemplateCreationHandler(
       "monthly" when dayOfMonth.HasValue => $"{typeName}, {dayOfMonth}-го числа в {time:HH:mm}",
       _ => $"{typeName} в {time:HH:mm}"
     };
+  }
+
+  private async Task HandlePointsCallbackAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] callbackParts,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    var selection = callbackParts[1];
+
+    if (selection == "back")
+    {
+      await botClient.DeleteMessageAsync(chatId, messageId, cancellationToken);
+      session.Data.InternalState = StateAwaitingTitle;
+      var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+      {
+        ResizeKeyboard = true
+      };
+      await botClient.SendTextMessageAsync(
+        chatId,
+        $"📝 Введите название шаблона задачи (от {TaskTitle.MinLength} до {TaskTitle.MaxLength} символов):\n\n💡 Используйте кнопку \"❌ Отменить\" для отмены.",
+        replyMarkup: keyboard,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    if (!int.TryParse(selection, out var points) || !TaskPoints.IsValidValue(points))
+      return;
+
+    await botClient.DeleteMessageAsync(chatId, messageId, cancellationToken);
+
+    var fakeMessage = new Message
+    {
+      Chat = new() { Id = chatId },
+      MessageId = messageId
+    };
+
+    await HandleTemplatePointsInputAsync(botClient, fakeMessage, session, points.ToString(), cancellationToken);
+  }
+
+  private async Task HandleScheduleCallbackAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] callbackParts,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (callbackParts.Length < 2)
+      return;
+
+    var scheduleAction = callbackParts[1];
+
+    if (scheduleAction == "type" && callbackParts.Length >= 3)
+    {
+      var scheduleType = callbackParts[2];
+      session.Data.ScheduleType = scheduleType;
+
+      if (scheduleType == "manual")
+      {
+        session.Data.InternalState = StateAwaitingDueDuration;
+        var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+        {
+          ResizeKeyboard = true
+        };
+        await botClient.EditMessageTextAsync(
+          chatId,
+          messageId,
+          BotMessages.Templates.EnterDueDuration,
+          cancellationToken: cancellationToken);
+        await botClient.SendTextMessageAsync(
+          chatId,
+          "Используйте кнопки ниже:",
+          replyMarkup: keyboard,
+          cancellationToken: cancellationToken);
+      }
+      else
+      {
+        session.Data.InternalState = StateAwaitingScheduleTime;
+        var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+        {
+          ResizeKeyboard = true
+        };
+        await botClient.EditMessageTextAsync(
+          chatId,
+          messageId,
+          "🕐 Введите время выполнения в формате HH:mm (например, 09:00):",
+          cancellationToken: cancellationToken);
+        await botClient.SendTextMessageAsync(
+          chatId,
+          "Используйте кнопки ниже:",
+          replyMarkup: keyboard,
+          cancellationToken: cancellationToken);
+      }
+    }
+    else if (scheduleAction == "weekday" && callbackParts.Length >= 3)
+      if (Enum.TryParse<DayOfWeek>(callbackParts[2], out var dayOfWeek))
+      {
+        session.Data.ScheduleDayOfWeek = dayOfWeek;
+        session.Data.InternalState = StateAwaitingDueDuration;
+        var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+        {
+          ResizeKeyboard = true
+        };
+        await botClient.EditMessageTextAsync(
+          chatId,
+          messageId,
+          BotMessages.Templates.EnterDueDuration,
+          cancellationToken: cancellationToken);
+        await botClient.SendTextMessageAsync(
+          chatId,
+          "Используйте кнопки ниже:",
+          replyMarkup: keyboard,
+          cancellationToken: cancellationToken);
+      }
   }
 }

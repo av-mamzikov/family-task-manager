@@ -5,14 +5,76 @@ using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Spots;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
 public class SpotCreationHandler(
   ILogger<SpotCreationHandler> logger,
-  IMediator mediator) : BaseConversationHandler(logger, mediator)
+  IMediator mediator) : BaseConversationHandler(logger, mediator), IConversationHandler
 {
-  public async Task HandleSpotNameInputAsync(
+  private const string StateAwaitingName = "awaiting_name";
+
+  public async Task HandleAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    var text = message.Text;
+    if (string.IsNullOrWhiteSpace(text))
+      return;
+
+    if (text is "❌ Отменить" or "/cancel" or "⬅️ Назад")
+      return;
+
+    if (session.Data.InternalState == StateAwaitingName)
+      await HandleSpotNameInputAsync(botClient, message, session, text, cancellationToken);
+  }
+
+  public async Task HandleCancelAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    Func<Task> sendMainMenuAction,
+    CancellationToken cancellationToken)
+  {
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      "❌ Создание спота отменено.",
+      replyMarkup: new ReplyKeyboardRemove(),
+      cancellationToken: cancellationToken);
+
+    await sendMainMenuAction();
+    session.ClearState();
+  }
+
+  public async Task HandleBackAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    Func<Task> sendMainMenuAction,
+    CancellationToken cancellationToken)
+  {
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      "⬅️ Возврат отменён.",
+      replyMarkup: new ReplyKeyboardRemove(),
+      cancellationToken: cancellationToken);
+    await sendMainMenuAction();
+    session.ClearState();
+  }
+
+  public Task HandleCallbackAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] callbackParts,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken) => Task.CompletedTask;
+
+  private async Task HandleSpotNameInputAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -21,12 +83,12 @@ public class SpotCreationHandler(
   {
     if (string.IsNullOrWhiteSpace(SpotName) || SpotName.Length < 2 || SpotName.Length > 50)
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingSpotName);
+      var keyboard = GetCancelKeyboard();
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
         "❌ Имя спота должно содержать от 2 до 50 символов. Попробуйте снова:",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingSpotName),
+        "\n\n💡 Используйте кнопку \"❌ Отменить\" для отмены.",
         keyboard,
         cancellationToken);
       return;
@@ -81,4 +143,10 @@ public class SpotCreationHandler(
       cancellationToken: cancellationToken);
     session.ClearState();
   }
+
+  private static ReplyKeyboardMarkup GetCancelKeyboard() =>
+    new(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+    {
+      ResizeKeyboard = true
+    };
 }

@@ -15,9 +15,110 @@ public class FamilyCreationHandler(
   ILogger<FamilyCreationHandler> logger,
   IMediator mediator,
   ITimeZoneService timeZoneService)
-  : BaseConversationHandler(logger, mediator)
+  : BaseConversationHandler(logger, mediator), IConversationHandler
 {
-  public async Task HandleFamilyNameInputAsync(
+  private const string StateAwaitingName = "awaiting_name";
+  private const string StateAwaitingTimezone = "awaiting_timezone";
+  private const string StateAwaitingLocation = "awaiting_location";
+
+  public async Task HandleAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (message.Location != null && session.Data.InternalState == StateAwaitingLocation)
+    {
+      await HandleFamilyLocationInputAsync(botClient, message, session, cancellationToken);
+      return;
+    }
+
+    var text = message.Text;
+    if (string.IsNullOrWhiteSpace(text))
+      return;
+
+    if (text is "❌ Отменить" or "/cancel" or "⬅️ Назад")
+      return;
+
+    await (session.Data.InternalState switch
+    {
+      StateAwaitingName => HandleFamilyNameInputAsync(botClient, message, session, text, cancellationToken),
+      StateAwaitingTimezone => HandleTimezoneTextInput(botClient, message, cancellationToken),
+      StateAwaitingLocation => HandleLocationTextInput(botClient, message, session, cancellationToken),
+      _ => HandleUnknownState(botClient, message, session, cancellationToken)
+    });
+  }
+
+  public async Task HandleCancelAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    Func<Task> sendMainMenuAction,
+    CancellationToken cancellationToken)
+  {
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      "❌ Создание семьи отменено.",
+      replyMarkup: new ReplyKeyboardRemove(),
+      cancellationToken: cancellationToken);
+
+    await sendMainMenuAction();
+    session.ClearState();
+  }
+
+  public async Task HandleBackAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    Func<Task> sendMainMenuAction,
+    CancellationToken cancellationToken)
+  {
+    var currentState = session.Data.InternalState;
+
+    if (currentState == StateAwaitingLocation)
+      await HandleBackToTimezoneSelectionAsync(botClient, message, session, cancellationToken);
+    else
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "⬅️ Возврат отменён.",
+        replyMarkup: new ReplyKeyboardRemove(),
+        cancellationToken: cancellationToken);
+      await sendMainMenuAction();
+      session.ClearState();
+    }
+  }
+
+  public async Task HandleCallbackAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] callbackParts,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken)
+  {
+    if (callbackParts.Length < 2 || callbackParts[0] != "timezone")
+      return;
+
+    var timezoneId = callbackParts[1];
+
+    if (timezoneId == "showlist")
+    {
+      await ShowTimezoneListAsync(botClient, chatId, messageId, session, cancellationToken);
+      return;
+    }
+
+    if (timezoneId == "detect")
+    {
+      await RequestLocationAsync(botClient, chatId, messageId, session, cancellationToken);
+      return;
+    }
+
+    await CreateFamilyWithTimezoneAsync(botClient, chatId, messageId, timezoneId, session, cancellationToken);
+  }
+
+  private async Task HandleFamilyNameInputAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -26,20 +127,19 @@ public class FamilyCreationHandler(
   {
     if (string.IsNullOrWhiteSpace(familyName) || familyName.Length < 3)
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingFamilyName);
+      var keyboard = GetCancelKeyboard();
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
         BotMessages.Errors.FamilyNameTooShort,
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingFamilyName),
+        "\n\n💡 Используйте кнопку \"❌ Отменить\" для отмены.",
         keyboard,
         cancellationToken);
       return;
     }
 
-    // Store family name and ask for timezone
     session.Data.FamilyName = familyName;
-    session.State = ConversationState.AwaitingFamilyTimezone;
+    session.Data.InternalState = StateAwaitingTimezone;
 
     var timezoneKeyboard = GetTimezoneChoiceKeyboard();
 
@@ -50,7 +150,7 @@ public class FamilyCreationHandler(
       cancellationToken: cancellationToken);
   }
 
-  public async Task HandleFamilyLocationInputAsync(
+  private async Task HandleFamilyLocationInputAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -167,13 +267,13 @@ public class FamilyCreationHandler(
     }
   }
 
-  public async Task HandleBackToTimezoneSelectionAsync(
+  private async Task HandleBackToTimezoneSelectionAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
     CancellationToken cancellationToken)
   {
-    session.State = ConversationState.AwaitingFamilyTimezone;
+    session.Data.InternalState = StateAwaitingTimezone;
 
     var keyboard = GetTimezoneChoiceKeyboard();
 
@@ -191,5 +291,181 @@ public class FamilyCreationHandler(
     {
       new[] { InlineKeyboardButton.WithCallbackData("📍 Определить по геолокации", "timezone_detect") },
       new[] { InlineKeyboardButton.WithCallbackData("📋 Выбрать из списка", "timezone_showlist") }
+    });
+
+  private static ReplyKeyboardMarkup GetCancelKeyboard() =>
+    new(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+    {
+      ResizeKeyboard = true
+    };
+
+  private static async Task HandleTimezoneTextInput(
+    ITelegramBotClient botClient,
+    Message message,
+    CancellationToken cancellationToken) =>
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      "❌ Пожалуйста, используйте кнопки для выбора временной зоны.",
+      cancellationToken: cancellationToken);
+
+  private async Task HandleLocationTextInput(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (message.Text == "⬅️ Назад")
+    {
+      await HandleBackToTimezoneSelectionAsync(botClient, message, session, cancellationToken);
+      return;
+    }
+
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      "❌ Пожалуйста, используйте кнопку \"📍 Отправить местоположение\" для определения временной зоны.",
+      cancellationToken: cancellationToken);
+  }
+
+  private static async Task HandleUnknownState(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      "❌ Произошла ошибка. Попробуйте снова.",
+      cancellationToken: cancellationToken);
+    session.ClearState();
+  }
+
+  private async Task ShowTimezoneListAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    var timezoneListKeyboard = GetRussianTimeZoneListKeyboard();
+    var listFamilyName = session.Data.FamilyName ?? "вашей семьи";
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      $"🌍 Выберите временную зону для семьи \"{listFamilyName}\":",
+      replyMarkup: timezoneListKeyboard,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task RequestLocationAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    session.Data.InternalState = StateAwaitingLocation;
+
+    var locationKeyboard = new ReplyKeyboardMarkup(new[]
+    {
+      new KeyboardButton[] { new("📍 Отправить местоположение") { RequestLocation = true } },
+      new KeyboardButton[] { new("⬅️ Назад") }
+    })
+    {
+      ResizeKeyboard = true
+    };
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      "📍 Нажмите кнопку ниже, чтобы поделиться местоположением:",
+      cancellationToken: cancellationToken);
+
+    await botClient.SendTextMessageAsync(
+      chatId,
+      "🌍 Определение временной зоны по геолокации\n\n" +
+      BotMessages.Messages.SendLocation +
+      BotMessages.Messages.OrBackToManual,
+      replyMarkup: locationKeyboard,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task CreateFamilyWithTimezoneAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string timezoneId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (session.Data.FamilyName == null)
+    {
+      session.ClearState();
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        "❌ Ошибка сессии. Попробуйте создать семью заново.",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    if (!timeZoneService.IsValidTimeZone(timezoneId))
+    {
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        "❌ Неверная временная зона. Попробуйте снова.",
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var createFamilyCommand = new CreateFamilyCommand(session.UserId, session.Data.FamilyName, timezoneId);
+    var result = await Mediator.Send(createFamilyCommand, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        $"❌ Ошибка создания семьи: {result.Errors.FirstOrDefault()}",
+        cancellationToken: cancellationToken);
+      session.ClearState();
+      return;
+    }
+
+    session.CurrentFamilyId = result.Value;
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      BotMessages.Success.FamilyCreatedMessage(session.Data.FamilyName) +
+      $"🌍 Временная зона: {timezoneId}\n\n" +
+      BotMessages.Success.NextStepsMessage,
+      ParseMode.Markdown,
+      cancellationToken: cancellationToken);
+
+    await botClient.SendTextMessageAsync(
+      chatId,
+      "🏠 Главное меню",
+      replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
+      cancellationToken: cancellationToken);
+    session.ClearState();
+  }
+
+  private static InlineKeyboardMarkup GetRussianTimeZoneListKeyboard() =>
+    new(new[]
+    {
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Калининград", "timezone_Europe/Kaliningrad") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Москва", "timezone_Europe/Moscow") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Самара", "timezone_Europe/Samara") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Екатеринбург", "timezone_Asia/Yekaterinburg") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Омск", "timezone_Asia/Omsk") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Красноярск", "timezone_Asia/Krasnoyarsk") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Иркутск", "timezone_Asia/Irkutsk") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Якутск", "timezone_Asia/Yakutsk") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Владивосток", "timezone_Asia/Vladivostok") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Магадан", "timezone_Asia/Magadan") },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Камчатка", "timezone_Asia/Kamchatka") },
+      new[] { InlineKeyboardButton.WithCallbackData("⏭️ Пропустить (UTC)", "timezone_UTC") }
     });
 }

@@ -2,6 +2,8 @@ namespace FamilyTaskManager.UnitTests.Host.Bot.Models;
 
 public class UserSessionData
 {
+  public string? InternalState { get; set; }
+
   public string? FamilyName { get; set; }
   public string? Title { get; set; }
   public int? Points { get; set; }

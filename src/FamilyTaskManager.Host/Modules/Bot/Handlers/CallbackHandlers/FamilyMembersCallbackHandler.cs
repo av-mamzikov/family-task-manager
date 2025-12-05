@@ -12,9 +12,19 @@ public class FamilyMembersCallbackHandler(
   ILogger<FamilyMembersCallbackHandler> logger,
   IMediator mediator,
   FamilyMembersHandler familyMembersHandler)
-  : BaseCallbackHandler(logger, mediator)
+  : BaseCallbackHandler(logger, mediator), ICallbackHandler
 {
   private readonly FamilyMembersHandler _familyMembersHandler = familyMembersHandler;
+
+  public async Task Handle(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] parts,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken) =>
+    await HandleMemberActionAsync(botClient, chatId, messageId, parts, session, fromUser, cancellationToken);
 
   public async Task HandleMemberActionAsync(
     ITelegramBotClient botClient,

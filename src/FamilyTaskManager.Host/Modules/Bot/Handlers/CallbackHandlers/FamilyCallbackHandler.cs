@@ -17,10 +17,20 @@ public class FamilyCallbackHandler(
   BotInfoService botInfoService,
   FamilyMembersHandler familyMembersHandler,
   FamilyMembersCallbackHandler familyMembersCallbackHandler)
-  : BaseCallbackHandler(logger, mediator)
+  : BaseCallbackHandler(logger, mediator), ICallbackHandler
 {
   private readonly FamilyMembersCallbackHandler _familyMembersCallbackHandler = familyMembersCallbackHandler;
   private readonly FamilyMembersHandler _familyMembersHandler = familyMembersHandler;
+
+  public async Task Handle(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] parts,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken) =>
+    await HandleFamilyActionAsync(botClient, chatId, messageId, parts, session, fromUser, cancellationToken);
 
   public async Task StartCreateFamilyAsync(
     ITelegramBotClient botClient,
@@ -30,7 +40,8 @@ public class FamilyCallbackHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    session.SetState(ConversationState.AwaitingFamilyName, new());
+    session.State = ConversationState.FamilyCreation;
+    session.Data = new() { InternalState = "awaiting_name" };
 
     await botClient.EditMessageTextAsync(
       chatId,

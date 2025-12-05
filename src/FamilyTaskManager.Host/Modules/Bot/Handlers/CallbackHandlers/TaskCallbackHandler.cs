@@ -1,5 +1,4 @@
 using FamilyTaskManager.Host.Modules.Bot.Constants;
-using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Tasks;
 using Telegram.Bot;
@@ -12,8 +11,18 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
 public class TaskCallbackHandler(
   ILogger<TaskCallbackHandler> logger,
   IMediator mediator)
-  : BaseCallbackHandler(logger, mediator)
+  : BaseCallbackHandler(logger, mediator), ICallbackHandler
 {
+  public async Task Handle(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] parts,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken) =>
+    await HandleTaskActionAsync(botClient, chatId, messageId, parts, session, fromUser, cancellationToken);
+
   public async Task HandleTaskActionAsync(
     ITelegramBotClient botClient,
     long chatId,
@@ -157,9 +166,11 @@ public class TaskCallbackHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    // For one-time tasks, ask for due date
-    session.State = ConversationState.AwaitingTaskDueDate;
-    var dueDateKeyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskDueDate);
+    session.Data.InternalState = "awaiting_due_date";
+    var dueDateKeyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+    {
+      ResizeKeyboard = true
+    };
 
     await botClient.EditMessageTextAsync(
       chatId,
@@ -168,8 +179,7 @@ public class TaskCallbackHandler(
       "0 - сегодня\n" +
       "1 - завтра\n" +
       "7 - через неделю\n" +
-      "30 - через месяц" +
-      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskDueDate),
+      "30 - через месяц\n\n💡 Используйте кнопку \"❌ Отменить\" для отмены.",
       cancellationToken: cancellationToken);
 
     if (dueDateKeyboard != null)
@@ -187,16 +197,18 @@ public class TaskCallbackHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    // For recurring tasks, ask for schedule
-    session.State = ConversationState.AwaitingTaskSchedule;
-    var scheduleKeyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskSchedule);
+    session.Data.InternalState = "awaiting_schedule";
+    var scheduleKeyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+    {
+      ResizeKeyboard = true
+    };
 
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
       "🔄 Введите расписание задачи в формате Quartz Cron:\n\n" +
       BotMessages.Messages.CronExamples +
-      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskSchedule),
+      "\n\n💡 Используйте кнопку \"❌ Отменить\" для отмены.",
       ParseMode.Markdown,
       cancellationToken: cancellationToken);
 

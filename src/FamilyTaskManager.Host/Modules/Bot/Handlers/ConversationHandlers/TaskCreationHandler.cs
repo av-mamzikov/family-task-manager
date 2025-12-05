@@ -15,9 +15,129 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 public class TaskCreationHandler(
   ILogger<TaskCreationHandler> logger,
   IMediator mediator)
-  : BaseConversationHandler(logger, mediator)
+  : BaseConversationHandler(logger, mediator), IConversationHandler
 {
-  public async Task HandleTaskTitleInputAsync(
+  private const string StateAwaitingTitle = "awaiting_title";
+  private const string StateAwaitingPoints = "awaiting_points";
+  private const string StateAwaitingDueDate = "awaiting_due_date";
+  private const string StateAwaitingSchedule = "awaiting_schedule";
+
+  public async Task HandleAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    var text = message.Text;
+    if (string.IsNullOrWhiteSpace(text))
+      return;
+
+    if (text is "❌ Отменить" or "/cancel" or "⬅️ Назад")
+      return;
+
+    await (session.Data.InternalState switch
+    {
+      StateAwaitingTitle => HandleTaskTitleInputAsync(botClient, message, session, text, cancellationToken),
+      StateAwaitingPoints => HandleTaskPointsInputAsync(botClient, message, session, text, cancellationToken),
+      StateAwaitingDueDate => HandleTaskDueDateInputAsync(botClient, message, session, text, cancellationToken),
+      StateAwaitingSchedule => HandleTaskScheduleInputAsync(botClient, message, session, text, cancellationToken),
+      _ => Task.CompletedTask
+    });
+  }
+
+  public async Task HandleCancelAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    Func<Task> sendMainMenuAction,
+    CancellationToken cancellationToken)
+  {
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      "❌ Создание задачи отменено.",
+      replyMarkup: new ReplyKeyboardRemove(),
+      cancellationToken: cancellationToken);
+
+    await sendMainMenuAction();
+    session.ClearState();
+  }
+
+  public async Task HandleBackAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    Func<Task> sendMainMenuAction,
+    CancellationToken cancellationToken)
+  {
+    var currentState = session.Data.InternalState;
+
+    var previousState = currentState switch
+    {
+      StateAwaitingPoints => StateAwaitingTitle,
+      StateAwaitingDueDate => StateAwaitingPoints,
+      StateAwaitingSchedule => StateAwaitingPoints,
+      _ => null
+    };
+
+    if (previousState == null)
+    {
+      await botClient.SendTextMessageAsync(
+        message.Chat.Id,
+        "⬅️ Возврат отменён.",
+        replyMarkup: new ReplyKeyboardRemove(),
+        cancellationToken: cancellationToken);
+      await sendMainMenuAction();
+      session.ClearState();
+      return;
+    }
+
+    session.Data.InternalState = previousState;
+
+    var keyboard = GetKeyboardForState(previousState);
+    var messageText = GetMessageForState(previousState);
+
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      messageText,
+      replyMarkup: keyboard,
+      cancellationToken: cancellationToken);
+  }
+
+  public async Task HandleCallbackAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] callbackParts,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken)
+  {
+    if (callbackParts.Length < 2 || callbackParts[0] != "points")
+      return;
+
+    var selection = callbackParts[1];
+
+    if (selection == "back")
+    {
+      await HandleBackFromPointsAsync(botClient, chatId, messageId, session, cancellationToken);
+      return;
+    }
+
+    if (!int.TryParse(selection, out var points) || !TaskPoints.IsValidValue(points))
+      return;
+
+    await botClient.DeleteMessageAsync(chatId, messageId, cancellationToken);
+
+    var fakeMessage = new Message
+    {
+      Chat = new() { Id = chatId },
+      MessageId = messageId
+    };
+
+    await HandleTaskPointsInputAsync(botClient, fakeMessage, session, points.ToString(), cancellationToken);
+  }
+
+  private async Task HandleTaskTitleInputAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -26,20 +146,22 @@ public class TaskCreationHandler(
   {
     if (string.IsNullOrWhiteSpace(title) || title.Length < TaskTitle.MinLength || title.Length > TaskTitle.MaxLength)
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskTitle);
+      var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+      {
+        ResizeKeyboard = true
+      };
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
         $"❌ Название задачи должно содержать от {TaskTitle.MinLength} до {TaskTitle.MaxLength} символов. Попробуйте снова:",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskTitle),
+        $"\n\n💡 Введите название задачи ({TaskTitle.MinLength}-{TaskTitle.MaxLength} символов)",
         keyboard,
         cancellationToken);
       return;
     }
 
-    // Store title and move to points input
     session.Data.Title = title;
-    session.State = ConversationState.AwaitingTaskPoints;
+    session.Data.InternalState = StateAwaitingPoints;
 
     var pointsKeyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
     await botClient.SendTextMessageAsync(
@@ -49,7 +171,7 @@ public class TaskCreationHandler(
       cancellationToken: cancellationToken);
   }
 
-  public async Task HandleTaskPointsInputAsync(
+  private async Task HandleTaskPointsInputAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -67,9 +189,7 @@ public class TaskCreationHandler(
       return;
     }
 
-    // Store points and show Spot selection
     session.Data.Points = points;
-    session.State = ConversationState.AwaitingTaskSpotSelection;
 
     // Get family Spots
     if (session.CurrentFamilyId == null)
@@ -118,7 +238,7 @@ public class TaskCreationHandler(
       cancellationToken: cancellationToken);
   }
 
-  public async Task HandleTaskDueDateInputAsync(
+  private async Task HandleTaskDueDateInputAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -128,12 +248,15 @@ public class TaskCreationHandler(
     // Try to parse the date
     if (!int.TryParse(dueDateText, out var days) || days < 0 || days > 365)
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskDueDate);
+      var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("⬅️ Назад"), new("❌ Отменить") } })
+      {
+        ResizeKeyboard = true
+      };
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
         "❌ Введите количество дней (от 0 до 365). Например: 1 (завтра), 7 (через неделю):",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskDueDate),
+        "\n\n💡 Введите срок в днях (0-365)\n• ⬅️ Назад - К выбору спота",
         keyboard,
         cancellationToken);
       return;
@@ -185,7 +308,7 @@ public class TaskCreationHandler(
     session.ClearState();
   }
 
-  public async Task HandleTaskScheduleInputAsync(
+  private async Task HandleTaskScheduleInputAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -195,12 +318,15 @@ public class TaskCreationHandler(
     // Validate schedule (basic check)
     if (string.IsNullOrWhiteSpace(schedule))
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskSchedule);
+      var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("⬅️ Назад"), new("❌ Отменить") } })
+      {
+        ResizeKeyboard = true
+      };
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
         "❌ Расписание не может быть пустым. Попробуйте снова:",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskSchedule),
+        "\n\n💡 Введите расписание в формате Cron\n• ⬅️ Назад - К выбору спота",
         keyboard,
         cancellationToken);
       return;
@@ -225,12 +351,15 @@ public class TaskCreationHandler(
     var parseResult = ScheduleParser.Parse(schedule);
     if (!parseResult.IsSuccess)
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskSchedule);
+      var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("⬅️ Назад"), new("❌ Отменить") } })
+      {
+        ResizeKeyboard = true
+      };
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
         $"❌ {parseResult.Errors.FirstOrDefault()}",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskSchedule),
+        "\n\n💡 Введите расписание в формате Cron\n• ⬅️ Назад - К выбору спота",
         keyboard,
         cancellationToken);
       return;
@@ -267,5 +396,42 @@ public class TaskCreationHandler(
       BotMessages.Messages.ScheduledTask,
       cancellationToken: cancellationToken);
     session.ClearState();
+  }
+
+  private static IReplyMarkup GetKeyboardForState(string state) =>
+    state switch
+    {
+      StateAwaitingTitle => new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+        { ResizeKeyboard = true },
+      StateAwaitingPoints => TaskPointsHelper.GetPointsSelectionKeyboard(),
+      _ => new ReplyKeyboardRemove()
+    };
+
+  private static string GetMessageForState(string state) =>
+    state switch
+    {
+      StateAwaitingTitle => $"📝 Введите название задачи (от {TaskTitle.MinLength} до {TaskTitle.MaxLength} символов):",
+      StateAwaitingPoints => "⭐ Выберите сложность задачи:",
+      _ => "⬅️ Возврат к предыдущему шагу."
+    };
+
+  private async Task HandleBackFromPointsAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    await botClient.DeleteMessageAsync(chatId, messageId, cancellationToken);
+    session.Data.InternalState = StateAwaitingTitle;
+    var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+    {
+      ResizeKeyboard = true
+    };
+    await botClient.SendTextMessageAsync(
+      chatId,
+      $"📝 Введите название задачи (от {TaskTitle.MinLength} до {TaskTitle.MaxLength} символов):\n\n💡 Используйте кнопку \"❌ Отменить\" для отмены.",
+      replyMarkup: keyboard,
+      cancellationToken: cancellationToken);
   }
 }

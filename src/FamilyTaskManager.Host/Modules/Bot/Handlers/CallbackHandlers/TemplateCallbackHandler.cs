@@ -14,8 +14,18 @@ public class TemplateCallbackHandler(
   ILogger<TemplateCallbackHandler> logger,
   IMediator mediator,
   TemplateCommandHandler templateCommandHandler)
-  : BaseCallbackHandler(logger, mediator)
+  : BaseCallbackHandler(logger, mediator), ICallbackHandler
 {
+  public async Task Handle(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    string[] parts,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken) =>
+    await HandleTemplateActionAsync(botClient, chatId, messageId, parts, session, fromUser, cancellationToken);
+
   public async Task HandleTemplateActionAsync(
     ITelegramBotClient botClient,
     long chatId,
@@ -124,7 +134,8 @@ public class TemplateCallbackHandler(
     switch (field)
     {
       case "title":
-        session.State = ConversationState.AwaitingTemplateEditTitle;
+        session.State = ConversationState.TemplateEdit;
+        session.Data.InternalState = "awaiting_title";
         await botClient.EditMessageTextAsync(
           chatId,
           messageId,
@@ -133,7 +144,8 @@ public class TemplateCallbackHandler(
         break;
 
       case "points":
-        session.State = ConversationState.AwaitingTemplateEditPoints;
+        session.State = ConversationState.TemplateEdit;
+        session.Data.InternalState = "awaiting_points";
         var pointsKeyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
         await botClient.EditMessageTextAsync(
           chatId,
@@ -144,19 +156,21 @@ public class TemplateCallbackHandler(
         break;
 
       case "schedule":
-        session.State = ConversationState.AwaitingTemplateEditScheduleType;
+        session.State = ConversationState.TemplateEdit;
+        session.Data.InternalState = "awaiting_schedule_type";
         var scheduleTypeKeyboard = ScheduleKeyboardHelper.GetScheduleTypeKeyboard();
         await botClient.EditMessageTextAsync(
           chatId,
           messageId,
           BotMessages.Templates.ChooseScheduleType +
-          StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditScheduleType),
+          "\n\n💡 Используйте кнопки для выбора.",
           replyMarkup: scheduleTypeKeyboard,
           cancellationToken: cancellationToken);
         break;
 
       case "dueduration":
-        session.State = ConversationState.AwaitingTemplateEditDueDuration;
+        session.State = ConversationState.TemplateEdit;
+        session.Data.InternalState = "awaiting_due_duration";
         await botClient.EditMessageTextAsync(
           chatId,
           messageId,
@@ -233,7 +247,8 @@ public class TemplateCallbackHandler(
       return;
     }
 
-    session.SetState(ConversationState.AwaitingTemplateTitle, new() { SpotId = SpotId });
+    session.State = ConversationState.TemplateCreation;
+    session.Data = new() { SpotId = SpotId, InternalState = "awaiting_title" };
 
     await botClient.EditMessageTextAsync(
       chatId,
