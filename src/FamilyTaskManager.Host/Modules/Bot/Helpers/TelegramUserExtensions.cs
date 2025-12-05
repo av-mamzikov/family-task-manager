@@ -15,11 +15,6 @@ public static class TelegramUserExtensions
   /// <returns>The display name</returns>
   public static string GetDisplayName(this User user)
   {
-    if (user == null)
-    {
-      return "User";
-    }
-
     // Try FirstName + LastName first (only if both exist)
     if (!string.IsNullOrEmpty(user.FirstName) && !string.IsNullOrEmpty(user.LastName))
     {

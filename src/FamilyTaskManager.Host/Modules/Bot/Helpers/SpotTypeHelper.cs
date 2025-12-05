@@ -37,19 +37,17 @@ public static class SpotTypeHelper
       // Callback data still uses the original lowercase code from Core
       var callbackCode = SpotType.ToString().ToLowerInvariant();
 
-      buttons.Add(new[]
-      {
+      buttons.Add([
         InlineKeyboardButton.WithCallbackData(
           $"{emoji} {text}",
           CallbackData.SpotType.Select(callbackCode))
-      });
+      ]);
     }
 
     if (includeBackButton)
-      buttons.Add(new[]
-      {
+      buttons.Add([
         InlineKeyboardButton.WithCallbackData("⬅️ Назад", "Spot_back")
-      });
+      ]);
 
     return buttons.ToArray();
   }

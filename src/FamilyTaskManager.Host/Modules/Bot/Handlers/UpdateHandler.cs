@@ -1,6 +1,4 @@
 using FamilyTaskManager.Host.Modules.Bot.Constants;
-using FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
-using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
@@ -74,46 +72,11 @@ public class UpdateHandler(
     {
       // Если нажата кнопка главного меню или команда - отменяем conversation
       if (isMainMenuButton || isCommand)
-      {
-        await botClient.SendTextMessageAsync(
-          chatId,
-          "❌ Предыдущее действие отменено.",
-          parseMode: ParseMode.Markdown,
-          replyMarkup: new ReplyKeyboardRemove(),
-          cancellationToken: cancellationToken);
         session.ClearState();
-        // Продолжаем обработку кнопки/команды
-      }
-      // Обработка универсальных команд conversation
-      else if (messageText is "❌ Отменить" or "/cancel")
-      {
-        var handler = GetConversationHandler(session.State);
-        if (handler != null)
-          await handler.HandleCancelAsync(
-            botClient, message, session,
-            () => SendMainMenuAsync(botClient, chatId, cancellationToken),
-            cancellationToken);
-
-        await sessionManager.SaveSessionAsync(session, cancellationToken);
-        return;
-      }
-      else if (messageText == "⬅️ Назад")
-      {
-        var handler = GetConversationHandler(session.State);
-        if (handler != null)
-          await handler.HandleBackAsync(
-            botClient, message, session,
-            () => SendMainMenuAsync(botClient, chatId, cancellationToken),
-            cancellationToken);
-
-        await sessionManager.SaveSessionAsync(session, cancellationToken);
-        return;
-      }
       else
       {
-        // Передаем сообщение conversation handler
         var handler = GetConversationHandler(session.State);
-        if (handler != null) await handler.HandleAsync(botClient, message, session, cancellationToken);
+        if (handler != null) await handler.HandleMessageAsync(botClient, message, session, cancellationToken);
 
         await sessionManager.SaveSessionAsync(session, cancellationToken);
         return;
@@ -134,9 +97,7 @@ public class UpdateHandler(
       });
     }
     else
-    {
       await HandleKeyboardButtonAsync(botClient, message, session, cancellationToken);
-    }
 
     await sessionManager.SaveSessionAsync(session, cancellationToken);
   }
@@ -159,10 +120,13 @@ public class UpdateHandler(
     var parts = data.Split('_');
     var action = parts[0];
 
-    // Если есть активная conversation, сначала пытаемся передать callback ей
-    if (session.State != ConversationState.None)
+    var browsingState = GetBrowsingStateForAction(action);
+    if (browsingState != ConversationState.None)
     {
-      var conversationHandler = GetConversationHandler(session.State);
+      session.State = browsingState;
+      session.Data = new();
+
+      var conversationHandler = GetConversationHandler(browsingState);
       if (conversationHandler != null)
       {
         await conversationHandler.HandleCallbackAsync(botClient, chatId, messageId, parts, session, fromUser,
@@ -172,15 +136,10 @@ public class UpdateHandler(
       }
     }
 
-    // Иначе используем специализированные callback handlers
-    var handler = GetCallbackHandler(action);
-    if (handler != null)
-      await handler.Handle(botClient, chatId, messageId, parts, session, fromUser, cancellationToken);
-    else
-      await botClient.SendTextMessageAsync(
-        chatId,
-        "❓ Неизвестное действие",
-        cancellationToken: cancellationToken);
+    await botClient.SendTextMessageAsync(
+      chatId,
+      "❓ Неизвестное действие",
+      cancellationToken: cancellationToken);
 
     await sessionManager.SaveSessionAsync(session, cancellationToken);
   }
@@ -190,22 +149,21 @@ public class UpdateHandler(
     {
       ConversationState.FamilyCreation => serviceProvider.GetRequiredService<FamilyCreationHandler>(),
       ConversationState.SpotCreation => serviceProvider.GetRequiredService<SpotCreationHandler>(),
-      ConversationState.TaskCreation => serviceProvider.GetRequiredService<TaskCreationHandler>(),
-      ConversationState.TemplateCreation => serviceProvider.GetRequiredService<TemplateCreationHandler>(),
-      ConversationState.TemplateEdit => serviceProvider.GetRequiredService<TemplateEditHandler>(),
+      ConversationState.TemplateForm => serviceProvider.GetRequiredService<TemplateFormHandler>(),
+      ConversationState.TaskBrowsing => serviceProvider.GetRequiredService<TaskBrowsingHandler>(),
+      ConversationState.TemplateBrowsing => serviceProvider.GetRequiredService<TemplateBrowsingHandler>(),
+      ConversationState.SpotBrowsing => serviceProvider.GetRequiredService<SpotBrowsingHandler>(),
+      ConversationState.Family => serviceProvider.GetRequiredService<FamilyHandler>(),
+      ConversationState.FamilyMembers => serviceProvider.GetRequiredService<FamilyMembersHandler>(),
+      ConversationState.StatsBrowsing => serviceProvider.GetRequiredService<StatsBrowsingHandler>(),
       _ => null
     };
 
-  private ICallbackHandler? GetCallbackHandler(string action) =>
-    action switch
-    {
-      CallbackData.Task.Entity => serviceProvider.GetRequiredService<TaskCallbackHandler>(),
-      CallbackData.Spot.Entity => serviceProvider.GetRequiredService<SpotCallbackHandler>(),
-      CallbackData.Family.Entity => serviceProvider.GetRequiredService<FamilyCallbackHandler>(),
-      CallbackData.Templates.Entity => serviceProvider.GetRequiredService<TemplateCallbackHandler>(),
-      // points, timezone, schedule - обрабатываются в ConversationHandlers
-      _ => null
-    };
+  private ConversationState GetBrowsingStateForAction(string action) =>
+    // points, timezone, schedule обрабатываются в активных Creation/Edit conversations
+    Enum.TryParse(action, out ConversationState newState)
+      ? newState
+      : ConversationState.None;
 
   private async Task HandleStartCommandAsync(
     ITelegramBotClient botClient,
@@ -267,10 +225,9 @@ public class UpdateHandler(
         BotMessages.Messages.WelcomeMessage +
         BotMessages.Messages.NoFamiliesJoin,
         parseMode: ParseMode.Markdown,
-        replyMarkup: new InlineKeyboardMarkup(new[]
-        {
+        replyMarkup: new InlineKeyboardMarkup([
           InlineKeyboardButton.WithCallbackData("➕ Создать семью", CallbackData.Family.Create)
-        }),
+        ]),
         cancellationToken: cancellationToken);
   }
 
@@ -318,8 +275,12 @@ public class UpdateHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var handler = serviceProvider.GetRequiredService<FamilyCommandHandler>();
-    await handler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
+    session.State = ConversationState.Family;
+    session.Data = new();
+
+    var handler = serviceProvider.GetRequiredService<FamilyHandler>();
+    await handler.ShowFamilyListAsync(botClient, message.Chat.Id, null, session.CurrentFamilyId, session,
+      cancellationToken);
   }
 
   private async Task HandleTasksCommandAsync(
@@ -328,8 +289,19 @@ public class UpdateHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var handler = serviceProvider.GetRequiredService<TasksCommandHandler>();
-    await handler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
+    if (session.CurrentFamilyId == null)
+    {
+      await botClient.SendTextMessageAsync(message.Chat.Id, BotMessages.Errors.NoFamily,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    session.State = ConversationState.TaskBrowsing;
+    session.Data = new();
+
+    // Просто отправляем сообщение, дальнейшая навигация через callbacks
+    await botClient.SendTextMessageAsync(message.Chat.Id, "✅ Используйте кнопки для управления задачами",
+      cancellationToken: cancellationToken);
   }
 
   private async Task HandleSpotCommandAsync(
@@ -338,8 +310,19 @@ public class UpdateHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var handler = serviceProvider.GetRequiredService<SpotCommandHandler>();
-    await handler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
+    if (session.CurrentFamilyId == null)
+    {
+      await botClient.SendTextMessageAsync(message.Chat.Id, BotMessages.Errors.NoFamily,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    session.State = ConversationState.SpotBrowsing;
+    session.Data = new();
+
+    // Просто отправляем сообщение, дальнейшая навигация через callbacks
+    await botClient.SendTextMessageAsync(message.Chat.Id, "🧩 Используйте кнопки для управления спотами",
+      cancellationToken: cancellationToken);
   }
 
   private async Task HandleStatsCommandAsync(
@@ -348,8 +331,19 @@ public class UpdateHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var handler = serviceProvider.GetRequiredService<StatsCommandHandler>();
-    await handler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
+    if (session.CurrentFamilyId == null)
+    {
+      await botClient.SendTextMessageAsync(message.Chat.Id, BotMessages.Errors.NoFamily,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    session.State = ConversationState.StatsBrowsing;
+    session.Data = new();
+
+    // Просто отправляем сообщение, дальнейшая навигация через callbacks
+    await botClient.SendTextMessageAsync(message.Chat.Id, "📊 Используйте кнопки для просмотра статистики",
+      cancellationToken: cancellationToken);
   }
 
   private async Task SendMainMenuAsync(

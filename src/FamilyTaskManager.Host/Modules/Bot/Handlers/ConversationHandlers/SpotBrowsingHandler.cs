@@ -10,24 +10,120 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
 
-namespace FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
+namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
-public class SpotCallbackHandler(
-  ILogger<SpotCallbackHandler> logger,
+public class SpotBrowsingHandler(
+  ILogger<SpotBrowsingHandler> logger,
   IMediator mediator)
-  : BaseCallbackHandler(logger, mediator), ICallbackHandler
+  : BaseConversationHandler(logger, mediator), IConversationHandler
 {
-  public async Task Handle(
+  public Task HandleMessageAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    CancellationToken cancellationToken) => Task.CompletedTask;
+
+  public async Task HandleCallbackAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
-    string[] parts,
+    string[] callbackParts,
     UserSession session,
     User fromUser,
-    CancellationToken cancellationToken) =>
-    await HandleSpotActionAsync(botClient, chatId, messageId, parts, session, fromUser, cancellationToken);
+    CancellationToken cancellationToken)
+  {
+    if (callbackParts.Length < 2) return;
 
-  public async Task StartCreateSpotAsync(
+    var spotAction = callbackParts[1];
+
+    await (spotAction switch
+    {
+      CallbackActions.Select when callbackParts.Length >= 3 =>
+        HandleSpotTypeSelectionAsync(botClient, chatId, messageId, callbackParts[2], session, cancellationToken),
+
+      CallbackActions.Create =>
+        StartCreateSpotAsync(botClient, chatId, messageId, session, cancellationToken),
+
+      CallbackActions.View when callbackParts.Length >= 3 &&
+                                Guid.TryParse(callbackParts[2], out var spotId) =>
+        HandleViewSpotAsync(botClient, chatId, messageId, spotId, session, cancellationToken),
+
+      CallbackActions.Delete when callbackParts.Length >= 3 &&
+                                  Guid.TryParse(callbackParts[2], out var spotId) =>
+        HandleDeleteSpotAsync(botClient, chatId, messageId, spotId, session, cancellationToken),
+
+      CallbackActions.ConfirmDelete when callbackParts.Length >= 3 &&
+                                         Guid.TryParse(callbackParts[2], out var spotId) =>
+        HandleConfirmDeleteSpotAsync(botClient, chatId, messageId, spotId, session, cancellationToken),
+
+      CallbackActions.List =>
+        ShowSpotListAsync(botClient, chatId, messageId, session, cancellationToken),
+
+      _ => Task.CompletedTask
+    });
+  }
+
+  public async Task HandleBackAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    Func<Task> sendMainMenuAction,
+    CancellationToken cancellationToken)
+  {
+    await sendMainMenuAction();
+    session.ClearState();
+  }
+
+  public async Task ShowSpotListAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (session.CurrentFamilyId == null)
+    {
+      await EditMessageWithErrorAsync(botClient, chatId, messageId, BotMessages.Errors.NoFamily, cancellationToken);
+      return;
+    }
+
+    var getSpotsQuery = new GetSpotsQuery(session.CurrentFamilyId.Value);
+    var spotsResult = await Mediator.Send(getSpotsQuery, cancellationToken);
+
+    if (!spotsResult.IsSuccess)
+    {
+      await EditMessageWithErrorAsync(botClient, chatId, messageId, "❌ Ошибка загрузки спотов", cancellationToken);
+      return;
+    }
+
+    var spots = spotsResult.Value;
+
+    if (!spots.Any())
+    {
+      await botClient.EditMessageTextAsync(
+        chatId,
+        messageId,
+        "🐾 У вас пока нет спотов.\n\nАдминистратор может создать спота.",
+        replyMarkup: new([
+          InlineKeyboardButton.WithCallbackData("➕ Создать спота", CallbackData.Spot.Create)
+        ]),
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var messageText = BuildSpotListMessage(spots);
+    var keyboard = BuildSpotListKeyboard(spots);
+
+    await botClient.EditMessageTextAsync(
+      chatId,
+      messageId,
+      messageText,
+      ParseMode.Markdown,
+      replyMarkup: keyboard,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task StartCreateSpotAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
@@ -50,7 +146,7 @@ public class SpotCallbackHandler(
       cancellationToken: cancellationToken);
   }
 
-  public async Task HandleSpotTypeSelectionAsync(
+  private async Task HandleSpotTypeSelectionAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
@@ -63,7 +159,7 @@ public class SpotCallbackHandler(
 
     var spotTypeEmoji = SpotTypeHelper.GetEmojiFromString(spotType);
 
-    var keyboard = new ReplyKeyboardMarkup(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+    var keyboard = new ReplyKeyboardMarkup([[new("❌ Отменить")]])
     {
       ResizeKeyboard = true
     };
@@ -74,75 +170,11 @@ public class SpotCallbackHandler(
       $"{spotTypeEmoji} Введите имя спота {spotTypeEmoji}:\n\n💡 Используйте кнопку \"❌ Отменить\" для отмены.",
       cancellationToken: cancellationToken);
 
-    // Send keyboard in a separate message
     await botClient.SendTextMessageAsync(
       chatId,
       "Используйте кнопки ниже для управления:",
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
-  }
-
-  private async Task HandleSpotActionAsync(
-    ITelegramBotClient botClient,
-    long chatId,
-    int messageId,
-    string[] parts,
-    UserSession session,
-    User fromUser,
-    CancellationToken cancellationToken)
-  {
-    if (parts.Length < 2) return;
-
-    var spotAction = parts[1];
-
-    // Handle select action for spot type selection
-    if (spotAction == CallbackActions.Select && parts.Length >= 3)
-    {
-      await HandleSpotTypeSelectionAsync(botClient, chatId, messageId, parts[2], session, cancellationToken);
-      return;
-    }
-
-    // Handle actions that don't require a spotId
-    if (spotAction == CallbackActions.Back)
-    {
-      await HandleSpotListAsync(botClient, chatId, messageId, session, fromUser, cancellationToken);
-      return;
-    }
-
-    if (spotAction == CallbackActions.Create)
-    {
-      await StartCreateSpotAsync(botClient, chatId, messageId, session, cancellationToken);
-      return;
-    }
-
-    if (parts.Length < 3) return;
-
-    var spotIdStr = parts[2];
-
-    if (!Guid.TryParse(spotIdStr, out var spotId)) return;
-
-    switch (spotAction)
-    {
-      case var _ when spotAction == CallbackActions.View:
-        await HandleViewSpotAsync(botClient, chatId, messageId, spotId, session, cancellationToken);
-        break;
-
-      case var _ when spotAction == CallbackActions.Delete:
-        await HandleDeleteSpotAsync(botClient, chatId, messageId, spotId, session, cancellationToken);
-        break;
-
-      case var _ when spotAction == CallbackActions.ConfirmDelete:
-        await HandleConfirmDeleteSpotAsync(botClient, chatId, messageId, spotId, session, fromUser, cancellationToken);
-        break;
-
-      case var _ when spotAction == CallbackActions.CancelDelete:
-        await botClient.EditMessageTextAsync(
-          chatId,
-          messageId,
-          "❌ Удаление спота отменено",
-          cancellationToken: cancellationToken);
-        break;
-    }
   }
 
   private async Task HandleViewSpotAsync(
@@ -159,7 +191,6 @@ public class SpotCallbackHandler(
       return;
     }
 
-    // Get spot details
     var getSpotQuery = new GetSpotsQuery(session.CurrentFamilyId.Value);
     var spotsResult = await Mediator.Send(getSpotQuery, cancellationToken);
 
@@ -176,17 +207,15 @@ public class SpotCallbackHandler(
       return;
     }
 
-    // Get active tasks for the spot
     var getTasksQuery = new GetTasksBySpotQuery(spotId, session.CurrentFamilyId.Value, TaskStatus.Active);
     var tasksResult = await Mediator.Send(getTasksQuery, cancellationToken);
 
-    var (spotEmoji, spotTySpotext) = GetSoptTypeInfo(spot.Type);
+    var (spotEmoji, _) = GetSpotTypeInfo(spot.Type);
     var (moodEmoji, moodText) = SpotDisplay.GetMoodInfo(spot.MoodScore);
 
     var messageText = $"{spotEmoji} *{spot.Name}*\n\n" +
                       $"💖 Настроение: {moodEmoji} - {moodText}\n\n";
 
-    // Add tasks section
     if (tasksResult.IsSuccess && tasksResult.Value.Any())
     {
       messageText += $"📝 *{spot.Name} хочет чтобы вы ему помогли:*\n";
@@ -199,12 +228,11 @@ public class SpotCallbackHandler(
       messageText += "Нет активных задач. Создайте задачи из шаблонов!";
     }
 
-    var keyboard = new InlineKeyboardMarkup(new[]
-    {
-      new[] { InlineKeyboardButton.WithCallbackData("📋 Шаблоны задач", CallbackData.Templates.ViewForSpot(spotId)) },
-      new[] { InlineKeyboardButton.WithCallbackData("🗑️ Удалить спота", CallbackData.Spot.Delete(spotId)) },
-      new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад к списку", CallbackData.Spot.Back) }
-    });
+    var keyboard = new InlineKeyboardMarkup([
+      [InlineKeyboardButton.WithCallbackData("📋 Шаблоны задач", CallbackData.Templates.ViewForSpot(spotId))],
+      [InlineKeyboardButton.WithCallbackData("🗑️ Удалить спота", CallbackData.Spot.Delete(spotId))],
+      [InlineKeyboardButton.WithCallbackData("⬅️ Назад к списку", CallbackData.Spot.List())]
+    ]);
 
     await botClient.EditMessageTextAsync(
       chatId,
@@ -229,7 +257,6 @@ public class SpotCallbackHandler(
       return;
     }
 
-    // Get spot details for confirmation message
     var getSpotsQuery = new GetSpotsQuery(session.CurrentFamilyId.Value);
     var spotsResult = await Mediator.Send(getSpotsQuery, cancellationToken);
 
@@ -246,14 +273,12 @@ public class SpotCallbackHandler(
       return;
     }
 
-    var (spotEmoji, _) = GetSoptTypeInfo(spot.Type);
+    var (spotEmoji, _) = GetSpotTypeInfo(spot.Type);
 
-    // Show confirmation dialog
-    var keyboard = new InlineKeyboardMarkup(new[]
-    {
-      new[] { InlineKeyboardButton.WithCallbackData("✅ Да, удалить спота", CallbackData.Spot.ConfirmDelete(spotId)) },
-      new[] { InlineKeyboardButton.WithCallbackData("❌ Отмена", CallbackData.Spot.CancelDelete) }
-    });
+    var keyboard = new InlineKeyboardMarkup([
+      [InlineKeyboardButton.WithCallbackData("✅ Да, удалить спота", CallbackData.Spot.ConfirmDelete(spotId))],
+      [InlineKeyboardButton.WithCallbackData("❌ Отмена", CallbackData.Spot.CancelDelete)]
+    ]);
 
     await botClient.EditMessageTextAsync(
       chatId,
@@ -276,10 +301,8 @@ public class SpotCallbackHandler(
     int messageId,
     Guid spotId,
     UserSession session,
-    User fromUser,
     CancellationToken cancellationToken)
   {
-    // Delete the Spot
     var deleteSpotCommand = new DeleteSpotCommand(spotId, session.UserId);
     var deleteResult = await Mediator.Send(deleteSpotCommand, cancellationToken);
 
@@ -302,65 +325,13 @@ public class SpotCallbackHandler(
       cancellationToken: cancellationToken);
   }
 
-  private async Task HandleSpotListAsync(
-    ITelegramBotClient botClient,
-    long chatId,
-    int messageId,
-    UserSession session,
-    User fromUser,
-    CancellationToken cancellationToken)
-  {
-    if (session.CurrentFamilyId == null)
-    {
-      await EditMessageWithErrorAsync(botClient, chatId, messageId, BotMessages.Errors.NoFamily, cancellationToken);
-      return;
-    }
-
-    // Get Spots
-    var getSpotsQuery = new GetSpotsQuery(session.CurrentFamilyId.Value);
-    var SpotsResult = await Mediator.Send(getSpotsQuery, cancellationToken);
-
-    if (!SpotsResult.IsSuccess)
-    {
-      await EditMessageWithErrorAsync(botClient, chatId, messageId, "❌ Ошибка загрузки спотов", cancellationToken);
-      return;
-    }
-
-    var Spots = SpotsResult.Value;
-
-    if (!Spots.Any())
-    {
-      await botClient.EditMessageTextAsync(
-        chatId,
-        messageId,
-        "🐾 У вас пока нет спотов.\n\nАдминистратор может создать спота.",
-        replyMarkup: new(new[]
-        {
-          InlineKeyboardButton.WithCallbackData("➕ Создать спота", CallbackData.Spot.Create)
-        }),
-        cancellationToken: cancellationToken);
-      return;
-    }
-
-    var messageText = BuildSpotListMessage(Spots);
-    var keyboard = BuildSpotListKeyboard(Spots);
-
-    await botClient.EditMessageTextAsync(
-      chatId,
-      messageId,
-      messageText,
-      ParseMode.Markdown,
-      replyMarkup: keyboard,
-      cancellationToken: cancellationToken);
-  }
-
   private static string BuildSpotListMessage(IEnumerable<SpotDto> spots)
   {
     var messageText = "🐾 *Ваши споты:*\n\n";
 
     foreach (var spot in spots)
     {
-      var (spotEmoji, spotTySpotext) = GetSoptTypeInfo(spot.Type);
+      var (spotEmoji, _) = GetSpotTypeInfo(spot.Type);
       var (moodEmoji, moodText) = SpotDisplay.GetMoodInfo(spot.MoodScore);
 
       messageText += $"{spotEmoji} *{spot.Name}*\n";
@@ -374,23 +345,19 @@ public class SpotCallbackHandler(
   {
     var buttons = new List<InlineKeyboardButton[]>();
 
-    // Add button for each Spot
     foreach (var spot in spots)
     {
-      var (spotEmoji, _) = GetSoptTypeInfo(spot.Type);
-
-      buttons.Add(new[]
-      {
+      var (spotEmoji, _) = GetSpotTypeInfo(spot.Type);
+      buttons.Add([
         InlineKeyboardButton.WithCallbackData($"{spotEmoji} {spot.Name}", CallbackData.Spot.View(spot.Id))
-      });
+      ]);
     }
 
-    // Add create Spot button
-    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать спота", CallbackData.Spot.Create) });
+    buttons.Add([InlineKeyboardButton.WithCallbackData("➕ Создать спота", CallbackData.Spot.Create)]);
 
     return new(buttons);
   }
 
-  private static (string emoji, string text) GetSoptTypeInfo(SpotType spotType) =>
+  private static (string emoji, string text) GetSpotTypeInfo(SpotType spotType) =>
     SpotTypeHelper.GetInfo(spotType);
 }

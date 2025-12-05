@@ -8,21 +8,18 @@ public static class TaskPointsHelper
   /// <summary>
   ///   Creates inline keyboard with star buttons for selecting task points (1-3).
   /// </summary>
-  public static InlineKeyboardMarkup GetPointsSelectionKeyboard() =>
-    new(new[]
-    {
-      new[]
-      {
+  public static InlineKeyboardMarkup GetPointsSelectionKeyboard(string backCallBackData) =>
+    new([
+      [
         InlineKeyboardButton.WithCallbackData("⭐", CallbackData.Points.One),
         InlineKeyboardButton.WithCallbackData("⭐⭐", CallbackData.Points.Two),
         InlineKeyboardButton.WithCallbackData("⭐⭐⭐", CallbackData.Points.Three),
         InlineKeyboardButton.WithCallbackData("⭐⭐⭐⭐", CallbackData.Points.Four)
-      },
-      new[]
-      {
-        InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.Points.Back)
-      }
-    });
+      ],
+      [
+        InlineKeyboardButton.WithCallbackData("⬅️ Назад", backCallBackData)
+      ]
+    ]);
 
   /// <summary>
   ///   Converts points value to star representation.

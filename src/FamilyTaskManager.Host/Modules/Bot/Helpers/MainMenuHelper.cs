@@ -11,11 +11,10 @@ public static class MainMenuHelper
   ///   Получить клавиатуру главного меню
   /// </summary>
   public static ReplyKeyboardMarkup GetMainMenuKeyboard() =>
-    new(new[]
-    {
-      new KeyboardButton[] { "🏠 Семья", "✅ Наши задачи" },
-      new KeyboardButton[] { "🧩 Споты", "📊 Статистика" }
-    })
+    new([
+      ["🏠 Семья", "✅ Наши задачи"],
+      ["🧩 Споты", "📊 Статистика"]
+    ])
     {
       ResizeKeyboard = true,
       IsPersistent = true

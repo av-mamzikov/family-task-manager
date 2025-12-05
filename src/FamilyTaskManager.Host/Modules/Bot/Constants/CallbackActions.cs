@@ -10,7 +10,6 @@ public static class CallbackActions
   public const string View = "view";
   public const string Delete = "delete";
   public const string Edit = "edit";
-  public const string Back = "back";
   public const string Select = "select";
   public const string Confirm = "confirm";
   public const string Cancel = "cancel";
@@ -18,7 +17,7 @@ public static class CallbackActions
 
   // Spot-specific actions
   public const string ConfirmDelete = "confirmdelete";
-  public const string CancelDelete = "canceldelete";
+  public const string List = "list";
 
   // Task-specific actions
   public const string Complete = "complete";

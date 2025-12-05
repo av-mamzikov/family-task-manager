@@ -1,25 +1,85 @@
 using System.Text;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
+using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Families;
 using Telegram.Bot;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
-public class FamilyMembersHandler(IMediator mediator)
+public class FamilyMembersHandler(
+  ILogger<FamilyMembersHandler> logger,
+  IMediator mediator)
+  : BaseConversationHandler(logger, mediator), IConversationHandler
 {
-  private readonly IMediator _mediator = mediator;
+  public Task HandleMessageAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    CancellationToken cancellationToken) => Task.CompletedTask;
 
-  public async Task ShowFamilyMembersAsync(
+  public async Task HandleCallbackAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
-    Guid familyId,
+    string[] callbackParts,
+    UserSession session,
+    User fromUser,
     CancellationToken cancellationToken)
   {
-    var result = await _mediator.Send(new GetFamilyMembersQuery(familyId), cancellationToken);
+    var memberAction = callbackParts[1];
+    var memberIdStr = callbackParts.Length > 2 ? callbackParts[2] : null;
+
+    var memberId = Guid.Empty;
+    if (memberIdStr != null && !TryParseGuid(callbackParts[2], out memberId)) return;
+
+    await (memberAction switch
+    {
+      CallbackActions.Members =>
+        ShowFamilyMembersAsync(botClient, chatId, messageId, session, cancellationToken),
+      CallbackActions.Member =>
+        ShowFamilyMemberAsync(botClient, chatId, messageId, memberId, cancellationToken),
+
+      CallbackActions.MemberRole =>
+        ShowRoleSelectionAsync(botClient, chatId, messageId, memberId, cancellationToken),
+
+      CallbackActions.MemberRolePick when callbackParts.Length >= 4 &&
+                                          Enum.TryParse(callbackParts[3], out FamilyRole newRole) =>
+        HandleMemberRoleUpdateAsync(botClient, chatId, messageId, session, memberId, newRole, cancellationToken),
+
+      CallbackActions.MemberDelete =>
+        ShowRemoveMemberConfirmationAsync(botClient, chatId, messageId, memberId, cancellationToken),
+
+      CallbackActions.MemberDeleteOk =>
+        HandleMemberRemovalAsync(botClient, chatId, messageId, session, memberId, cancellationToken),
+
+      _ => botClient.SendTextMessageAsync(chatId, "👥 Действие с участником\n(В разработке)",
+        cancellationToken: cancellationToken)
+    });
+  }
+
+  public async Task HandleBackAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    Func<Task> sendMainMenuAction,
+    CancellationToken cancellationToken)
+  {
+    await sendMainMenuAction();
+    session.ClearState();
+  }
+
+  private async Task ShowFamilyMembersAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    var result = await Mediator.Send(new GetFamilyMembersQuery(session.CurrentFamilyId!.Value), cancellationToken);
     if (!result.IsSuccess)
     {
       await botClient.EditMessageTextAsync(
@@ -32,7 +92,7 @@ public class FamilyMembersHandler(IMediator mediator)
 
     var members = result.Value;
     var messageText = BuildMembersListText(members);
-    var keyboard = BuildMembersKeyboard(familyId, members);
+    var keyboard = BuildMembersKeyboard(session.CurrentFamilyId!.Value, members);
 
     await botClient.EditMessageTextAsync(
       chatId,
@@ -43,7 +103,7 @@ public class FamilyMembersHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
-  public async Task ShowFamilyMemberAsync(
+  private async Task ShowFamilyMemberAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
@@ -63,22 +123,17 @@ public class FamilyMembersHandler(IMediator mediator)
                       $"Роль: {roleText}\n" +
                       $"Очки: ⭐ {member.Points}";
 
-    var familyCode = CallbackDataHelper.EncodeGuid(member.FamilyId);
     var memberCode = CallbackDataHelper.EncodeGuid(member.Id);
 
-    var keyboard = new InlineKeyboardMarkup(new[]
-    {
-      new[]
-      {
+    var keyboard = new InlineKeyboardMarkup([
+      [
         InlineKeyboardButton.WithCallbackData("♻️ Сменить роль", CallbackData.FamilyMembers.ChangeRole(memberCode)),
         InlineKeyboardButton.WithCallbackData("🗑️ Удалить участника", CallbackData.FamilyMembers.Delete(memberCode))
-      },
-      new[]
-      {
-        InlineKeyboardButton.WithCallbackData("⬅️ Назад к участникам",
-          CallbackData.Family.Members(Guid.Parse(member.FamilyId.ToString())))
-      }
-    });
+      ],
+      [
+        InlineKeyboardButton.WithCallbackData("⬅️ Назад к участникам", CallbackData.Family.List())
+      ]
+    ]);
 
     await botClient.EditMessageTextAsync(
       chatId,
@@ -89,7 +144,7 @@ public class FamilyMembersHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
-  public async Task ShowRoleSelectionAsync(
+  private async Task ShowRoleSelectionAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
@@ -105,7 +160,6 @@ public class FamilyMembersHandler(IMediator mediator)
     }
 
     var (roleEmoji, roleText) = GetRoleInfo(member.Role);
-
     var memberCode = CallbackDataHelper.EncodeGuid(member.Id);
 
     var availableRoles = Enum.GetValues<FamilyRole>()
@@ -118,12 +172,11 @@ public class FamilyMembersHandler(IMediator mediator)
       })
       .ToList();
 
-    availableRoles.Add(new[]
-    {
+    availableRoles.Add([
       InlineKeyboardButton.WithCallbackData(
         "⬅️ Назад",
         CallbackData.FamilyMembers.Member(memberCode))
-    });
+    ]);
 
     await botClient.EditMessageTextAsync(
       chatId,
@@ -134,7 +187,7 @@ public class FamilyMembersHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
-  public async Task ShowRemoveMemberConfirmationAsync(
+  private async Task ShowRemoveMemberConfirmationAsync(
     ITelegramBotClient botClient,
     long chatId,
     int messageId,
@@ -150,21 +203,18 @@ public class FamilyMembersHandler(IMediator mediator)
     }
 
     var (roleEmoji, roleText) = GetRoleInfo(member.Role);
-
     var memberCode = CallbackDataHelper.EncodeGuid(member.Id);
 
-    var keyboard = new InlineKeyboardMarkup(new[]
-    {
-      new[]
-      {
+    var keyboard = new InlineKeyboardMarkup([
+      [
         InlineKeyboardButton.WithCallbackData(
           "✅ Да, удалить",
           CallbackData.FamilyMembers.ConfirmDelete(memberCode)),
         InlineKeyboardButton.WithCallbackData(
           "❌ Отмена",
           CallbackData.FamilyMembers.Member(memberCode))
-      }
-    });
+      ]
+    ]);
 
     var messageText = $"⚠️ *Удаление участника*\n\n" +
                       $"Вы уверены, что хотите удалить {roleEmoji} *{member.UserName}* ({roleText}) из семьи?";
@@ -178,12 +228,65 @@ public class FamilyMembersHandler(IMediator mediator)
       cancellationToken: cancellationToken);
   }
 
+  private async Task HandleMemberRoleUpdateAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    UserSession session,
+    Guid memberId,
+    FamilyRole newRole,
+    CancellationToken cancellationToken)
+  {
+    if (session.CurrentFamilyId == null) return;
+
+    var command = new UpdateFamilyMemberRoleCommand(session.CurrentFamilyId.Value, memberId, session.UserId, newRole);
+    var result = await Mediator.Send(command, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      await EditMessageWithErrorAsync(
+        botClient,
+        chatId,
+        messageId,
+        $"❌ Не удалось изменить роль: {result.Errors.FirstOrDefault()}",
+        cancellationToken);
+      return;
+    }
+
+    await ShowFamilyMemberAsync(botClient, chatId, messageId, memberId, cancellationToken);
+  }
+
+  private async Task HandleMemberRemovalAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    int messageId,
+    UserSession session,
+    Guid memberId,
+    CancellationToken cancellationToken)
+  {
+    if (session.CurrentFamilyId == null) return;
+
+    var command = new RemoveFamilyMemberCommand(session.CurrentFamilyId.Value, memberId, session.UserId);
+    var result = await Mediator.Send(command, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      await EditMessageWithErrorAsync(
+        botClient,
+        chatId,
+        messageId,
+        $"❌ Не удалось удалить участника: {result.Errors.FirstOrDefault()}",
+        cancellationToken);
+      return;
+    }
+
+    await ShowFamilyMembersAsync(botClient, chatId, messageId, session, cancellationToken);
+  }
+
   private async Task<FamilyMemberDto?> GetMemberAsync(Guid memberId, CancellationToken cancellationToken)
   {
-    var result = await _mediator.Send(new GetFamilyMemberByIdQuery(memberId), cancellationToken);
-    if (!result.IsSuccess)
-      return null;
-    return result.Value;
+    var result = await Mediator.Send(new GetFamilyMemberByIdQuery(memberId), cancellationToken);
+    return result.IsSuccess ? result.Value : null;
   }
 
   private static string BuildMembersListText(List<FamilyMemberDto> members)
@@ -216,19 +319,17 @@ public class FamilyMembersHandler(IMediator mediator)
       };
     }).ToList();
 
-    buttons.Add(new[]
-    {
+    buttons.Add([
       InlineKeyboardButton.WithCallbackData(
         "🔗 Создать приглашение",
-        CallbackData.FamilyMembers.Invite(familyCode))
-    });
+        CallbackData.FamilyMembers.Invite())
+    ]);
 
-    buttons.Add(new[]
-    {
+    buttons.Add([
       InlineKeyboardButton.WithCallbackData(
         "⬅️ Назад",
-        CallbackData.FamilyMembers.Back(familyCode))
-    });
+        CallbackData.Family.List())
+    ]);
 
     return new(buttons);
   }
@@ -240,4 +341,7 @@ public class FamilyMembersHandler(IMediator mediator)
     FamilyRole.Child => ("👶", "Ребёнок"),
     _ => ("❓", "Неизвестно")
   };
+
+  private static bool TryParseGuid(string value, out Guid guid) =>
+    Guid.TryParse(value, out guid) || CallbackDataHelper.TryDecodeGuid(value, out guid);
 }
