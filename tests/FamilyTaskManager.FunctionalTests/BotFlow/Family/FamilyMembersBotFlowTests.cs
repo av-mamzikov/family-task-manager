@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.FunctionalTests.Helpers;
-using FamilyTaskManager.Host.Modules.Bot;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.TestInfrastructure;
 
 namespace FamilyTaskManager.FunctionalTests.BotFlow.Family;
@@ -351,7 +351,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
 
     var inviteRoleMessage = await botClient.WaitForLastMessageAsync(adminChatId);
     var inviteRoleKeyboard = inviteRoleMessage!.ShouldHaveInlineKeyboard();
-    var roleButton = inviteRoleKeyboard.GetButton(BotConstants.Roles.GetRoleText(role));
+    var roleButton = inviteRoleKeyboard.GetButton(BotMessages.Roles.GetRoleText(role));
     botClient.EnqueueUpdate(UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, roleButton.CallbackData!));
 
     var inviteMessage = await botClient.WaitForLastMessageAsync(adminChatId);

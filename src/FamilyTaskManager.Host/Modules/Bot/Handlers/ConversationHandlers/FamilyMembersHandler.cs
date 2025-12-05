@@ -1,5 +1,6 @@
 using System.Text;
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.UseCases.Families;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
@@ -69,12 +70,13 @@ public class FamilyMembersHandler(IMediator mediator)
     {
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("♻️ Сменить роль", $"family_memberrole_{memberCode}"),
-        InlineKeyboardButton.WithCallbackData("🗑️ Удалить участника", $"family_mdel_{memberCode}")
+        InlineKeyboardButton.WithCallbackData("♻️ Сменить роль", CallbackData.FamilyMembers.ChangeRole(memberCode)),
+        InlineKeyboardButton.WithCallbackData("🗑️ Удалить участника", CallbackData.FamilyMembers.Delete(memberCode))
       },
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("⬅️ Назад к участникам", $"family_members_{familyCode}")
+        InlineKeyboardButton.WithCallbackData("⬅️ Назад к участникам",
+          CallbackData.Family.Members(Guid.Parse(member.FamilyId.ToString())))
       }
     });
 
@@ -111,8 +113,8 @@ public class FamilyMembersHandler(IMediator mediator)
       .Select(role => new[]
       {
         InlineKeyboardButton.WithCallbackData(
-          BotConstants.Roles.GetRoleText(role),
-          $"family_mrpick_{memberCode}_{(int)role}")
+          BotMessages.Roles.GetRoleText(role),
+          CallbackData.FamilyMembers.PickRole(memberCode, (int)role))
       })
       .ToList();
 
@@ -120,7 +122,7 @@ public class FamilyMembersHandler(IMediator mediator)
     {
       InlineKeyboardButton.WithCallbackData(
         "⬅️ Назад",
-        $"family_member_{memberCode}")
+        CallbackData.FamilyMembers.Member(memberCode))
     });
 
     await botClient.EditMessageTextAsync(
@@ -128,7 +130,7 @@ public class FamilyMembersHandler(IMediator mediator)
       messageId,
       $"♻️ *Смена роли участника*\n\nТекущая роль: {roleEmoji} {roleText}. Выберите новую роль:",
       ParseMode.Markdown,
-      replyMarkup: new InlineKeyboardMarkup(availableRoles),
+      replyMarkup: new(availableRoles),
       cancellationToken: cancellationToken);
   }
 
@@ -157,10 +159,10 @@ public class FamilyMembersHandler(IMediator mediator)
       {
         InlineKeyboardButton.WithCallbackData(
           "✅ Да, удалить",
-          $"family_mdelok_{memberCode}"),
+          CallbackData.FamilyMembers.ConfirmDelete(memberCode)),
         InlineKeyboardButton.WithCallbackData(
           "❌ Отмена",
-          $"family_member_{memberCode}")
+          CallbackData.FamilyMembers.Member(memberCode))
       }
     });
 
@@ -186,10 +188,7 @@ public class FamilyMembersHandler(IMediator mediator)
 
   private static string BuildMembersListText(List<FamilyMemberDto> members)
   {
-    if (!members.Any())
-    {
-      return "👥 *Участники семьи*\n\nВ этой семье пока нет активных участников.";
-    }
+    if (!members.Any()) return "👥 *Участники семьи*\n\nВ этой семье пока нет активных участников.";
 
     var sb = new StringBuilder("👥 *Участники семьи*\n\n");
     foreach (var member in members)
@@ -213,7 +212,7 @@ public class FamilyMembersHandler(IMediator mediator)
       {
         InlineKeyboardButton.WithCallbackData(
           $"{GetRoleInfo(member.Role).emoji} {member.UserName}",
-          $"family_member_{memberCode}")
+          CallbackData.FamilyMembers.Member(memberCode))
       };
     }).ToList();
 
@@ -221,17 +220,17 @@ public class FamilyMembersHandler(IMediator mediator)
     {
       InlineKeyboardButton.WithCallbackData(
         "🔗 Создать приглашение",
-        $"family_invite_{familyCode}")
+        CallbackData.FamilyMembers.Invite(familyCode))
     });
 
     buttons.Add(new[]
     {
       InlineKeyboardButton.WithCallbackData(
         "⬅️ Назад",
-        $"family_back_{familyCode}")
+        CallbackData.FamilyMembers.Back(familyCode))
     });
 
-    return new InlineKeyboardMarkup(buttons);
+    return new(buttons);
   }
 
   private static (string emoji, string text) GetRoleInfo(FamilyRole role) => role switch

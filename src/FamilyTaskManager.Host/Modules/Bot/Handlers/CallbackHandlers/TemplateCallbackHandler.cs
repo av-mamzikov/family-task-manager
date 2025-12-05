@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.SpotAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
@@ -30,32 +31,38 @@ public class TemplateCallbackHandler(
 
     switch (templateAction)
     {
-      case "vp" when parts.Length >= 3 && Guid.TryParse(parts[2], out var SpotId):
+      case var _ when templateAction == CallbackActions.ViewForSpot && parts.Length >= 3 &&
+                      Guid.TryParse(parts[2], out var SpotId):
         await templateCommandHandler.HandleViewSpotTemplatesAsync(botClient, chatId, messageId, SpotId, session,
           cancellationToken);
         break;
 
-      case "v" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
+      case var _ when templateAction == CallbackActions.View && parts.Length >= 3 &&
+                      Guid.TryParse(parts[2], out var templateId):
         await templateCommandHandler.HandleViewTemplateAsync(botClient, chatId, messageId, templateId, session,
           cancellationToken);
         break;
 
-      case "d" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
+      case var _ when templateAction == CallbackActions.Delete && parts.Length >= 3 &&
+                      Guid.TryParse(parts[2], out var templateId):
         await templateCommandHandler.HandleDeleteTemplateAsync(botClient, chatId, messageId, templateId, session,
           cancellationToken);
         break;
 
-      case "cd" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
+      case var _ when templateAction == CallbackActions.ConfirmDelete && parts.Length >= 3 &&
+                      Guid.TryParse(parts[2], out var templateId):
         await templateCommandHandler.HandleConfirmDeleteTemplateAsync(botClient, chatId, messageId, templateId,
           session, cancellationToken);
         break;
 
-      case "e" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
+      case var _ when templateAction == CallbackActions.Edit && parts.Length >= 3 &&
+                      Guid.TryParse(parts[2], out var templateId):
         await templateCommandHandler.HandleEditTemplateAsync(botClient, chatId, messageId, templateId, session,
           cancellationToken);
         break;
 
-      case "ef" when parts.Length >= 4 && Guid.TryParse(parts[2], out var templateId):
+      case var _ when templateAction == CallbackActions.EditField && parts.Length >= 4 &&
+                      Guid.TryParse(parts[2], out var templateId):
         var fieldMap = new Dictionary<string, string>
         {
           { "t", "title" },
@@ -68,21 +75,23 @@ public class TemplateCallbackHandler(
           cancellationToken);
         break;
 
-      case "c":
+      case var _ when templateAction == CallbackActions.Create:
         await HandleTemplateCreateAsync(botClient, chatId, messageId, session, fromUser, cancellationToken);
         break;
 
-      case "cf" when parts.Length >= 3 && Guid.TryParse(parts[2], out var SpotId):
+      case var _ when templateAction == CallbackActions.CreateForSpot && parts.Length >= 3 &&
+                      Guid.TryParse(parts[2], out var SpotId):
         await HandleTemplateCreateForSpotAsync(botClient, chatId, messageId, SpotId, session, fromUser,
           cancellationToken);
         break;
 
-      case "ct" when parts.Length >= 3 && Guid.TryParse(parts[2], out var templateId):
+      case var _ when templateAction == CallbackActions.CreateTask && parts.Length >= 3 &&
+                      Guid.TryParse(parts[2], out var templateId):
         await templateCommandHandler.HandleCreateTaskNowAsync(botClient, chatId, messageId, templateId, session,
           cancellationToken);
         break;
 
-      case "b":
+      case var _ when templateAction == CallbackActions.Back:
         // Re-show templates menu
         var message = new Message { Chat = new() { Id = chatId } };
         await templateCommandHandler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
@@ -106,7 +115,7 @@ public class TemplateCallbackHandler(
   {
     if (session.CurrentFamilyId == null)
     {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.NoFamily, cancellationToken);
+      await SendErrorAsync(botClient, chatId, BotMessages.Errors.NoFamily, cancellationToken);
       return;
     }
 
@@ -140,7 +149,7 @@ public class TemplateCallbackHandler(
         await botClient.EditMessageTextAsync(
           chatId,
           messageId,
-          BotConstants.Templates.ChooseScheduleType +
+          BotMessages.Templates.ChooseScheduleType +
           StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditScheduleType),
           replyMarkup: scheduleTypeKeyboard,
           cancellationToken: cancellationToken);
@@ -171,7 +180,7 @@ public class TemplateCallbackHandler(
   {
     if (session.CurrentFamilyId == null)
     {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.NoFamily, cancellationToken);
+      await SendErrorAsync(botClient, chatId, BotMessages.Errors.NoFamily, cancellationToken);
       return;
     }
 
@@ -181,7 +190,7 @@ public class TemplateCallbackHandler(
 
     if (!SpotsResult.IsSuccess || !SpotsResult.Value.Any())
     {
-      await EditMessageWithErrorAsync(botClient, chatId, messageId, BotConstants.Errors.NoSpots, cancellationToken);
+      await EditMessageWithErrorAsync(botClient, chatId, messageId, BotMessages.Errors.NoSpots, cancellationToken);
       return;
     }
 
@@ -195,7 +204,8 @@ public class TemplateCallbackHandler(
         SpotType.Hamster => "🐹",
         _ => "🐾"
       };
-      return new[] { InlineKeyboardButton.WithCallbackData($"{SpotEmoji} {p.Name}", $"tpl_cf_{p.Id}") };
+      return new[]
+        { InlineKeyboardButton.WithCallbackData($"{SpotEmoji} {p.Name}", CallbackData.Templates.CreateForSpot(p.Id)) };
     }).ToArray();
 
     var keyboard = new InlineKeyboardMarkup(buttons);
@@ -219,7 +229,7 @@ public class TemplateCallbackHandler(
   {
     if (session.CurrentFamilyId == null)
     {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.NoFamily, cancellationToken);
+      await SendErrorAsync(botClient, chatId, BotMessages.Errors.NoFamily, cancellationToken);
       return;
     }
 
@@ -228,7 +238,7 @@ public class TemplateCallbackHandler(
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      BotConstants.Templates.EnterTemplateTitle,
+      BotMessages.Templates.EnterTemplateTitle,
       cancellationToken: cancellationToken);
   }
 }

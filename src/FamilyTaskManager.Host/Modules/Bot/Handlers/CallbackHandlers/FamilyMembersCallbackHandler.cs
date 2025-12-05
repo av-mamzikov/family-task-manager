@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Families;
@@ -26,60 +27,45 @@ public class FamilyMembersCallbackHandler(
   {
     // Family member callback data format: ["family", "action", "memberCode"]
     // All member-specific actions must use 3-part format for Telegram size constraints
-    if (parts.Length < 3)
-    {
-      return;
-    }
+    if (parts.Length < 3) return;
 
     var memberAction = parts[1];
     var memberIdStr = parts[2];
 
-    if (!TryParseGuid(memberIdStr, out var memberId))
-    {
-      return;
-    }
+    if (!TryParseGuid(memberIdStr, out var memberId)) return;
 
     switch (memberAction)
     {
-      case "member":
+      case var _ when memberAction == CallbackActions.Member:
         await _familyMembersHandler.ShowFamilyMemberAsync(botClient, chatId, messageId, memberId,
           cancellationToken);
         break;
 
-      case "memberrole":
+      case var _ when memberAction == CallbackActions.MemberRole:
         await _familyMembersHandler.ShowRoleSelectionAsync(botClient, chatId, messageId, memberId,
           cancellationToken);
         break;
 
-      case "mrpick":
-        if (parts.Length < 4 || !Enum.TryParse(parts[3], out FamilyRole newRole))
-        {
-          return;
-        }
+      case var _ when memberAction == CallbackActions.MemberRolePick:
+        if (parts.Length < 4 || !Enum.TryParse(parts[3], out FamilyRole newRole)) return;
 
         // Query member to get familyId
         var memberResult = await Mediator.Send(new GetFamilyMemberByIdQuery(memberId), cancellationToken);
-        if (!memberResult.IsSuccess)
-        {
-          return;
-        }
+        if (!memberResult.IsSuccess) return;
 
         await HandleMemberRoleUpdateAsync(
           botClient, chatId, messageId, session, memberId, newRole, cancellationToken);
         break;
 
-      case "mdel":
+      case var _ when memberAction == CallbackActions.MemberDelete:
         await _familyMembersHandler.ShowRemoveMemberConfirmationAsync(
           botClient, chatId, messageId, memberId, cancellationToken);
         break;
 
-      case "mdelok":
+      case var _ when memberAction == CallbackActions.MemberDeleteOk:
         // Query member to get familyId
         var memberForRemovalResult = await Mediator.Send(new GetFamilyMemberByIdQuery(memberId), cancellationToken);
-        if (!memberForRemovalResult.IsSuccess)
-        {
-          return;
-        }
+        if (!memberForRemovalResult.IsSuccess) return;
 
         await HandleMemberRemovalAsync(
           botClient, chatId, messageId, session, memberId, cancellationToken);
@@ -133,10 +119,7 @@ public class FamilyMembersCallbackHandler(
     Guid memberId,
     CancellationToken cancellationToken)
   {
-    if (session.CurrentFamilyId == null)
-    {
-      return;
-    }
+    if (session.CurrentFamilyId == null) return;
 
     var command = new RemoveFamilyMemberCommand(session.CurrentFamilyId.Value, memberId, session.UserId);
     var result = await Mediator.Send(command, cancellationToken);

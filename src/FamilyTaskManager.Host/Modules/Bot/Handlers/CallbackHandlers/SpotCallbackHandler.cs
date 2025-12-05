@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.SpotAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Spots;
@@ -82,10 +83,23 @@ public class SpotCallbackHandler(
 
     var spotAction = parts[1];
 
-    // Handle "back" action separately as it doesn't have a spotId
-    if (spotAction == "back")
+    // Handle select action for spot type selection
+    if (spotAction == CallbackActions.Select && parts.Length >= 3)
+    {
+      await HandleSpotTypeSelectionAsync(botClient, chatId, messageId, parts[2], session, cancellationToken);
+      return;
+    }
+
+    // Handle actions that don't require a spotId
+    if (spotAction == CallbackActions.Back)
     {
       await HandleSpotListAsync(botClient, chatId, messageId, session, fromUser, cancellationToken);
+      return;
+    }
+
+    if (spotAction == CallbackActions.Create)
+    {
+      await StartCreateSpotAsync(botClient, chatId, messageId, session, cancellationToken);
       return;
     }
 
@@ -97,19 +111,19 @@ public class SpotCallbackHandler(
 
     switch (spotAction)
     {
-      case "view":
+      case var _ when spotAction == CallbackActions.View:
         await HandleViewSpotAsync(botClient, chatId, messageId, spotId, session, cancellationToken);
         break;
 
-      case "delete":
+      case var _ when spotAction == CallbackActions.Delete:
         await HandleDeleteSpotAsync(botClient, chatId, messageId, spotId, session, cancellationToken);
         break;
 
-      case "confirmdelete":
+      case var _ when spotAction == CallbackActions.ConfirmDelete:
         await HandleConfirmDeleteSpotAsync(botClient, chatId, messageId, spotId, session, fromUser, cancellationToken);
         break;
 
-      case "canceldelete":
+      case var _ when spotAction == CallbackActions.CancelDelete:
         await botClient.EditMessageTextAsync(
           chatId,
           messageId,
@@ -129,7 +143,7 @@ public class SpotCallbackHandler(
   {
     if (session.CurrentFamilyId == null)
     {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.NoFamily, cancellationToken);
+      await SendErrorAsync(botClient, chatId, BotMessages.Errors.NoFamily, cancellationToken);
       return;
     }
 
@@ -175,9 +189,9 @@ public class SpotCallbackHandler(
 
     var keyboard = new InlineKeyboardMarkup(new[]
     {
-      new[] { InlineKeyboardButton.WithCallbackData("📋 Шаблоны задач", $"tpl_vp_{spotId}") },
-      new[] { InlineKeyboardButton.WithCallbackData("🗑️ Удалить спота", $"spot_delete_{spotId}") },
-      new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад к списку", "spot_back") }
+      new[] { InlineKeyboardButton.WithCallbackData("📋 Шаблоны задач", CallbackData.Templates.ViewForSpot(spotId)) },
+      new[] { InlineKeyboardButton.WithCallbackData("🗑️ Удалить спота", CallbackData.Spot.Delete(spotId)) },
+      new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад к списку", CallbackData.Spot.Back) }
     });
 
     await botClient.EditMessageTextAsync(
@@ -199,7 +213,7 @@ public class SpotCallbackHandler(
   {
     if (session.CurrentFamilyId == null)
     {
-      await SendErrorAsync(botClient, chatId, BotConstants.Errors.NoFamily, cancellationToken);
+      await SendErrorAsync(botClient, chatId, BotMessages.Errors.NoFamily, cancellationToken);
       return;
     }
 
@@ -225,8 +239,8 @@ public class SpotCallbackHandler(
     // Show confirmation dialog
     var keyboard = new InlineKeyboardMarkup(new[]
     {
-      new[] { InlineKeyboardButton.WithCallbackData("✅ Да, удалить спота", $"spot_confirmdelete_{spotId}") },
-      new[] { InlineKeyboardButton.WithCallbackData("❌ Отмена", "spot_canceldelete") }
+      new[] { InlineKeyboardButton.WithCallbackData("✅ Да, удалить спота", CallbackData.Spot.ConfirmDelete(spotId)) },
+      new[] { InlineKeyboardButton.WithCallbackData("❌ Отмена", CallbackData.Spot.CancelDelete) }
     });
 
     await botClient.EditMessageTextAsync(
@@ -238,7 +252,7 @@ public class SpotCallbackHandler(
       "• Удалению всех шаблонов задач спота\n" +
       "• Удалению всех связанных задач\n" +
       "• Настроение и статистика спота перестанут обновляться, но история действий семьи сохранится\n\n" +
-      BotConstants.Messages.ConfirmDeletion,
+      BotMessages.Messages.ConfirmDeletion,
       ParseMode.Markdown,
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
@@ -286,7 +300,7 @@ public class SpotCallbackHandler(
   {
     if (session.CurrentFamilyId == null)
     {
-      await EditMessageWithErrorAsync(botClient, chatId, messageId, BotConstants.Errors.NoFamily, cancellationToken);
+      await EditMessageWithErrorAsync(botClient, chatId, messageId, BotMessages.Errors.NoFamily, cancellationToken);
       return;
     }
 
@@ -310,7 +324,7 @@ public class SpotCallbackHandler(
         "🐾 У вас пока нет спотов.\n\nАдминистратор может создать спота.",
         replyMarkup: new(new[]
         {
-          InlineKeyboardButton.WithCallbackData("➕ Создать спота", "create_Spot")
+          InlineKeyboardButton.WithCallbackData("➕ Создать спота", CallbackData.Spot.Create)
         }),
         cancellationToken: cancellationToken);
       return;
@@ -355,12 +369,12 @@ public class SpotCallbackHandler(
 
       buttons.Add(new[]
       {
-        InlineKeyboardButton.WithCallbackData($"{spotEmoji} {spot.Name}", $"spot_view_{spot.Id}")
+        InlineKeyboardButton.WithCallbackData($"{spotEmoji} {spot.Name}", CallbackData.Spot.View(spot.Id))
       });
     }
 
     // Add create Spot button
-    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать спота", "create_Spot") });
+    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать спота", CallbackData.Spot.Create) });
 
     return new(buttons);
   }

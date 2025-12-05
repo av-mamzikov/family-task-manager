@@ -5,7 +5,6 @@ public class UserSessionData
   public string? FamilyName { get; set; }
   public string? Title { get; set; }
   public int? Points { get; set; }
-  public string? TaskType { get; set; }
   public Guid? SpotId { get; set; }
   public string? ScheduleType { get; set; }
   public TimeOnly? ScheduleTime { get; set; }

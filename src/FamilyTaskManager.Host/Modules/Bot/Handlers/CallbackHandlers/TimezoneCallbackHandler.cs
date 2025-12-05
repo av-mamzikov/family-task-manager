@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Families;
@@ -27,14 +28,14 @@ public class TimezoneCallbackHandler(
     var timezoneId = parts[1];
 
     // Handle show list request
-    if (timezoneId == "showlist")
+    if (timezoneId == CallbackActions.ShowList)
     {
       await ShowTimezoneListAsync(botClient, chatId, messageId, session, cancellationToken);
       return;
     }
 
     // Handle geolocation detection request
-    if (timezoneId == "detect")
+    if (timezoneId == CallbackActions.Detect)
     {
       await RequestLocationAsync(botClient, chatId, messageId, session, cancellationToken);
       return;
@@ -83,8 +84,8 @@ public class TimezoneCallbackHandler(
     await botClient.SendTextMessageAsync(
       chatId,
       "🌍 Определение временной зоны по геолокации\n\n" +
-      BotConstants.Messages.SendLocation +
-      BotConstants.Messages.OrBackToManual,
+      BotMessages.Messages.SendLocation +
+      BotMessages.Messages.OrBackToManual,
       replyMarkup: locationKeyboard,
       cancellationToken: cancellationToken);
   }
@@ -143,9 +144,9 @@ public class TimezoneCallbackHandler(
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      BotConstants.Success.FamilyCreatedMessage(session.Data.FamilyName) +
+      BotMessages.Success.FamilyCreatedMessage(session.Data.FamilyName) +
       $"🌍 Временная зона: {timezoneId}\n\n" +
-      BotConstants.Success.NextStepsMessage,
+      BotMessages.Success.NextStepsMessage,
       ParseMode.Markdown,
       cancellationToken: cancellationToken);
 
@@ -161,17 +162,17 @@ public class TimezoneCallbackHandler(
   private static InlineKeyboardMarkup GetRussianTimeZoneListKeyboard() =>
     new(new[]
     {
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Калининград", "timezone_Europe/Kaliningrad") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Москва", "timezone_Europe/Moscow") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Самара", "timezone_Europe/Samara") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Екатеринбург", "timezone_Asia/Yekaterinburg") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Омск", "timezone_Asia/Omsk") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Красноярск", "timezone_Asia/Krasnoyarsk") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Иркутск", "timezone_Asia/Irkutsk") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Якутск", "timezone_Asia/Yakutsk") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Владивосток", "timezone_Asia/Vladivostok") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Магадан", "timezone_Asia/Magadan") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Камчатка", "timezone_Asia/Kamchatka") },
-      new[] { InlineKeyboardButton.WithCallbackData("⏭️ Пропустить (UTC)", "timezone_UTC") }
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Калининград", CallbackData.Timezone.EuropeKaliningrad) },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Москва", CallbackData.Timezone.EuropeMoscow) },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Самара", CallbackData.Timezone.EuropeSamara) },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Екатеринбург", CallbackData.Timezone.AsiaYekaterinburg) },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Омск", CallbackData.Timezone.AsiaOmsk) },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Красноярск", CallbackData.Timezone.AsiaKrasnoyarsk) },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Иркутск", CallbackData.Timezone.AsiaIrkutsk) },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Якутск", CallbackData.Timezone.AsiaYakutsk) },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Владивосток", CallbackData.Timezone.AsiaVladivostok) },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Магадан", CallbackData.Timezone.AsiaMagadan) },
+      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Камчатка", CallbackData.Timezone.AsiaKamchatka) },
+      new[] { InlineKeyboardButton.WithCallbackData("⏭️ Пропустить (UTC)", CallbackData.Timezone.Utc) }
     });
 }

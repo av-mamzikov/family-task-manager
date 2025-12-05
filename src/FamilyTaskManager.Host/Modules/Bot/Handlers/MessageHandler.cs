@@ -1,3 +1,4 @@
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
@@ -114,19 +115,19 @@ public class MessageHandler(
       var family = familiesResult.Value.First();
       session.CurrentFamilyId = family.Id;
       await SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken,
-        BotConstants.Messages.WelcomeMessage
-        + BotConstants.Messages.FamilyJoined(family.Name, BotConstants.Roles.GetRoleText(family.UserRole)));
+        BotMessages.Messages.WelcomeMessage
+        + BotMessages.Messages.FamilyJoined(family.Name, BotMessages.Roles.GetRoleText(family.UserRole)));
     }
     else
       // New user - offer to create family
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Messages.WelcomeMessage +
-        BotConstants.Messages.NoFamiliesJoin,
+        BotMessages.Messages.WelcomeMessage +
+        BotMessages.Messages.NoFamiliesJoin,
         parseMode: ParseMode.Markdown,
         replyMarkup: new InlineKeyboardMarkup(new[]
         {
-          InlineKeyboardButton.WithCallbackData("➕ Создать семью", "create_family")
+          InlineKeyboardButton.WithCallbackData("➕ Создать семью", CallbackData.Family.Create)
         }),
         cancellationToken: cancellationToken);
   }
@@ -149,15 +150,15 @@ public class MessageHandler(
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         "🎉 *Добро пожаловать в семью!*\n\n" +
-        BotConstants.Messages.FamilyJoined(invitation.Family.Name,
-          BotConstants.Roles.GetRoleText(invitation.Member.Role)),
+        BotMessages.Messages.FamilyJoined(invitation.Family.Name,
+          BotMessages.Roles.GetRoleText(invitation.Member.Role)),
         parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       await SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken);
     }
     else
     {
-      var errorMessage = invitationResult.Errors.FirstOrDefault() ?? BotConstants.Errors.UnknownError;
+      var errorMessage = invitationResult.Errors.FirstOrDefault() ?? BotMessages.Errors.UnknownError;
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
         $"❌ Не удалось присоединиться к семье:\n{errorMessage}",
@@ -212,7 +213,7 @@ public class MessageHandler(
     CancellationToken cancellationToken) =>
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Help.Commands,
+      BotMessages.Help.Commands,
       parseMode: ParseMode.Markdown,
       cancellationToken: cancellationToken);
 
@@ -222,7 +223,7 @@ public class MessageHandler(
     CancellationToken cancellationToken) =>
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Errors.UnknownCommand,
+      BotMessages.Errors.UnknownCommand,
       parseMode: ParseMode.Markdown,
       cancellationToken: cancellationToken);
 

@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.SpotAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Spots;
@@ -24,7 +25,7 @@ public class TemplateCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Errors.NoFamily,
+        BotMessages.Errors.NoFamily,
         parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
@@ -38,7 +39,7 @@ public class TemplateCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Errors.NoSpots,
+        BotMessages.Errors.NoSpots,
         parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
@@ -48,10 +49,11 @@ public class TemplateCommandHandler(IMediator mediator)
     var buttons = SpotsResult.Value.Select(p =>
     {
       var SpotEmoji = GetSpotEmoji(p.Type);
-      return new[] { InlineKeyboardButton.WithCallbackData($"{SpotEmoji} {p.Name}", $"tpl_vp_{p.Id}") };
+      return new[]
+        { InlineKeyboardButton.WithCallbackData($"{SpotEmoji} {p.Name}", CallbackData.Templates.ViewForSpot(p.Id)) };
     }).ToList();
 
-    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", "tpl_c") });
+    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", CallbackData.Templates.CreateRoot) });
 
     var keyboard = new InlineKeyboardMarkup(buttons);
 
@@ -76,7 +78,7 @@ public class TemplateCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         chatId,
-        BotConstants.Errors.NoFamily,
+        BotMessages.Errors.NoFamily,
         parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
@@ -107,10 +109,13 @@ public class TemplateCommandHandler(IMediator mediator)
         $"📋 У спота *{templates.FirstOrDefault()?.SpotName ?? "этого спота"}* пока нет шаблонов задач.\n\n" +
         "Создайте первый шаблон!",
         ParseMode.Markdown,
-        replyMarkup: new InlineKeyboardMarkup(new[]
+        replyMarkup: new(new[]
         {
-          new[] { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", $"tpl_cf_{SpotId}") },
-          new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", "tpl_b") }
+          new[]
+          {
+            InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", CallbackData.Templates.CreateForSpot(SpotId))
+          },
+          new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.Templates.Back) }
         }),
         cancellationToken: cancellationToken);
       return;
@@ -129,11 +134,12 @@ public class TemplateCommandHandler(IMediator mediator)
 
     // Build buttons for each template
     var buttons = templates.Select(t =>
-      new[] { InlineKeyboardButton.WithCallbackData($"✏️ {t.Title}", $"tpl_v_{t.Id}") }
+      new[] { InlineKeyboardButton.WithCallbackData($"✏️ {t.Title}", CallbackData.Templates.View(t.Id)) }
     ).ToList();
 
-    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", $"tpl_cf_{SpotId}") });
-    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", "tpl_b") });
+    buttons.Add(new[]
+      { InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", CallbackData.Templates.CreateForSpot(SpotId)) });
+    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.Templates.Back) });
 
     var keyboard = new InlineKeyboardMarkup(buttons);
 
@@ -158,7 +164,7 @@ public class TemplateCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         chatId,
-        BotConstants.Errors.NoFamily,
+        BotMessages.Errors.NoFamily,
         parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
@@ -217,7 +223,7 @@ public class TemplateCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         chatId,
-        BotConstants.Errors.NoFamily,
+        BotMessages.Errors.NoFamily,
         parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
@@ -253,7 +259,7 @@ public class TemplateCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         chatId,
-        BotConstants.Errors.NoFamily,
+        BotMessages.Errors.NoFamily,
         parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
       return;
@@ -295,7 +301,7 @@ public class TemplateCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         chatId,
-        BotConstants.Errors.NoFamily,
+        BotMessages.Errors.NoFamily,
         cancellationToken: cancellationToken);
       return;
     }
@@ -355,7 +361,7 @@ public class TemplateCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         chatId,
-        BotConstants.Errors.NoFamily,
+        BotMessages.Errors.NoFamily,
         cancellationToken: cancellationToken);
       return;
     }
@@ -404,7 +410,7 @@ public class TemplateCommandHandler(IMediator mediator)
       $"⏰ Срок выполнения: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
       "Задача добавлена в список активных задач спота.",
       ParseMode.Markdown,
-      replyMarkup: new InlineKeyboardMarkup(new[]
+      replyMarkup: new(new[]
       {
         new[] { InlineKeyboardButton.WithCallbackData("⬅️ Назад к шаблону", $"tpl_v_{templateId}") }
       }),

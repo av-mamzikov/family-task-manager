@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Statistics;
 using Telegram.Bot;
@@ -20,7 +21,7 @@ public class StatsCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Errors.NoFamily,
+        BotMessages.Errors.NoFamily,
         cancellationToken: cancellationToken);
       return;
     }
@@ -32,10 +33,8 @@ public class StatsCommandHandler(IMediator mediator)
     var messageText = "📊 *Статистика семьи*\n\n";
 
     if (!leaderboardResult.IsSuccess)
-    {
       // Leaderboard might be disabled
-      messageText += BotConstants.Messages.LeaderboardDisabled;
-    }
+      messageText += BotMessages.Messages.LeaderboardDisabled;
     else
     {
       var entries = leaderboardResult.Value;

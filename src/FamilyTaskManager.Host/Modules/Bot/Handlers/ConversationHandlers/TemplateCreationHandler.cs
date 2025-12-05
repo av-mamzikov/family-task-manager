@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.TaskAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.TaskTemplates;
@@ -39,7 +40,7 @@ public class TemplateCreationHandler(
     var pointsKeyboard = TaskPointsHelper.GetPointsSelectionKeyboard();
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Templates.EnterTemplatePoints,
+      BotMessages.Templates.EnterTemplatePoints,
       replyMarkup: pointsKeyboard,
       cancellationToken: cancellationToken);
   }
@@ -68,7 +69,7 @@ public class TemplateCreationHandler(
     var scheduleTypeKeyboard = ScheduleKeyboardHelper.GetScheduleTypeKeyboard();
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Templates.ChooseScheduleType +
+      BotMessages.Templates.ChooseScheduleType +
       StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateScheduleType),
       replyMarkup: scheduleTypeKeyboard,
       cancellationToken: cancellationToken);
@@ -115,7 +116,7 @@ public class TemplateCreationHandler(
       var weekdayKeyboard = ScheduleKeyboardHelper.GetWeekdayKeyboard();
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Templates.ChooseWeekday +
+        BotMessages.Templates.ChooseWeekday +
         StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateScheduleWeekday),
         replyMarkup: weekdayKeyboard,
         cancellationToken: cancellationToken);
@@ -126,7 +127,7 @@ public class TemplateCreationHandler(
       var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateScheduleMonthDay);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Templates.EnterMonthDay +
+        BotMessages.Templates.EnterMonthDay +
         StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateScheduleMonthDay),
         replyMarkup: keyboard,
         cancellationToken: cancellationToken);
@@ -138,7 +139,7 @@ public class TemplateCreationHandler(
       var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateDueDuration);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Templates.EnterDueDuration,
+        BotMessages.Templates.EnterDueDuration,
         replyMarkup: keyboard,
         cancellationToken: cancellationToken);
     }
@@ -172,7 +173,7 @@ public class TemplateCreationHandler(
     keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateDueDuration);
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Templates.EnterDueDuration,
+      BotMessages.Templates.EnterDueDuration,
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
   }
@@ -309,7 +310,7 @@ public class TemplateCreationHandler(
       $"✅ Шаблон \"{title}\" успешно создан!\n\n" +
       $"💯 Очки: {TaskPointsHelper.ToStars(points)}\n" +
       $"🔄 Расписание: {scheduleDescription}\n\n" +
-      BotConstants.Messages.ScheduledTask,
+      BotMessages.Messages.ScheduledTask,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
     session.ClearState();

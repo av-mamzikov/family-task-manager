@@ -1,3 +1,4 @@
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Helpers;
@@ -15,31 +16,31 @@ public static class ScheduleKeyboardHelper
     {
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("📅 Ежедневно", "schedule_type_daily")
+        InlineKeyboardButton.WithCallbackData("📅 Ежедневно", CallbackData.Schedule.TypeDaily)
       },
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("💼 По будням (пн-пт)", "schedule_type_workdays")
+        InlineKeyboardButton.WithCallbackData("💼 По будням (пн-пт)", CallbackData.Schedule.TypeWorkdays)
       },
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("🎉 По выходным (сб-вс)", "schedule_type_weekends")
+        InlineKeyboardButton.WithCallbackData("🎉 По выходным (сб-вс)", CallbackData.Schedule.TypeWeekends)
       },
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("📆 Еженедельно", "schedule_type_weekly")
+        InlineKeyboardButton.WithCallbackData("📆 Еженедельно", CallbackData.Schedule.TypeWeekly)
       },
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("🗓️ Ежемесячно", "schedule_type_monthly")
+        InlineKeyboardButton.WithCallbackData("🗓️ Ежемесячно", CallbackData.Schedule.TypeMonthly)
       },
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("✋ Вручную", "schedule_type_manual")
+        InlineKeyboardButton.WithCallbackData("✋ Вручную", CallbackData.Schedule.TypeManual)
       },
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("⬅️ Назад", "schedule_type_back")
+        InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.Schedule.TypeBack)
       }
     });
 
@@ -51,19 +52,19 @@ public static class ScheduleKeyboardHelper
     {
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("Пн", "schedule_weekday_monday"),
-        InlineKeyboardButton.WithCallbackData("Вт", "schedule_weekday_tuesday"),
-        InlineKeyboardButton.WithCallbackData("Ср", "schedule_weekday_wednesday")
+        InlineKeyboardButton.WithCallbackData("Пн", CallbackData.Schedule.WeekdayMonday),
+        InlineKeyboardButton.WithCallbackData("Вт", CallbackData.Schedule.WeekdayTuesday),
+        InlineKeyboardButton.WithCallbackData("Ср", CallbackData.Schedule.WeekdayWednesday)
       },
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("Чт", "schedule_weekday_thursday"),
-        InlineKeyboardButton.WithCallbackData("Пт", "schedule_weekday_friday")
+        InlineKeyboardButton.WithCallbackData("Чт", CallbackData.Schedule.WeekdayThursday),
+        InlineKeyboardButton.WithCallbackData("Пт", CallbackData.Schedule.WeekdayFriday)
       },
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("Сб", "schedule_weekday_saturday"),
-        InlineKeyboardButton.WithCallbackData("Вс", "schedule_weekday_sunday")
+        InlineKeyboardButton.WithCallbackData("Сб", CallbackData.Schedule.WeekdaySaturday),
+        InlineKeyboardButton.WithCallbackData("Вс", CallbackData.Schedule.WeekdaySunday)
       }
     });
 

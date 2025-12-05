@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.TaskAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
@@ -28,7 +29,7 @@ public class PointsCallbackHandler(
     var selection = parts[1];
 
     // Handle back button
-    if (selection == "back")
+    if (selection == CallbackActions.Back)
     {
       await HandleBackFromPointsAsync(botClient, chatId, messageId, session, cancellationToken);
       return;

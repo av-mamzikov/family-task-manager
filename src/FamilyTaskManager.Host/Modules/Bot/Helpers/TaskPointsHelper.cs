@@ -1,3 +1,4 @@
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Helpers;
@@ -12,14 +13,14 @@ public static class TaskPointsHelper
     {
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("⭐", "points_1"),
-        InlineKeyboardButton.WithCallbackData("⭐⭐", "points_2"),
-        InlineKeyboardButton.WithCallbackData("⭐⭐⭐", "points_3"),
-        InlineKeyboardButton.WithCallbackData("⭐⭐⭐⭐", "points_4")
+        InlineKeyboardButton.WithCallbackData("⭐", CallbackData.Points.One),
+        InlineKeyboardButton.WithCallbackData("⭐⭐", CallbackData.Points.Two),
+        InlineKeyboardButton.WithCallbackData("⭐⭐⭐", CallbackData.Points.Three),
+        InlineKeyboardButton.WithCallbackData("⭐⭐⭐⭐", CallbackData.Points.Four)
       },
       new[]
       {
-        InlineKeyboardButton.WithCallbackData("⬅️ Назад", "points_back")
+        InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.Points.Back)
       }
     });
 

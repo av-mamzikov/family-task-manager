@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Families;
 using Telegram.Bot;
@@ -25,17 +26,17 @@ public class FamilyCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Messages.NoFamilies,
+        BotMessages.Messages.NoFamilies,
         replyMarkup: new InlineKeyboardMarkup(new[]
         {
-          InlineKeyboardButton.WithCallbackData("➕ Создать семью", "create_family")
+          InlineKeyboardButton.WithCallbackData("➕ Создать семью", CallbackData.Family.Create)
         }),
         cancellationToken: cancellationToken);
       return;
     }
 
     var families = familiesResult.Value;
-    var currentFamilyId = session.CurrentFamilyId;
+    var currentFamilyId = session.CurrentFamilyId!.Value;
 
     // Build family list message
     var messageText = "🏠 *Ваши семьи:*\n\n";
@@ -53,19 +54,15 @@ public class FamilyCommandHandler(IMediator mediator)
     var buttons = new List<InlineKeyboardButton[]>();
 
     foreach (var family in families)
-    {
       if (family.Id != currentFamilyId)
-      {
         buttons.Add(new[]
         {
           InlineKeyboardButton.WithCallbackData(
             $"Переключиться на \"{family.Name}\"",
-            $"select_family_{family.Id}")
+            CallbackData.Family.Select(family.Id))
         });
-      }
-    }
 
-    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать новую семью", "create_family") });
+    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать новую семью", CallbackData.Family.Create) });
 
     // Add admin actions for current family
     var currentFamily = families.FirstOrDefault(f => f.Id == currentFamilyId);
@@ -73,13 +70,14 @@ public class FamilyCommandHandler(IMediator mediator)
     {
       buttons.Add(new[]
       {
-        InlineKeyboardButton.WithCallbackData("👥 Управление участниками", $"family_members_{currentFamilyId}"),
-        InlineKeyboardButton.WithCallbackData("🔗 Создать приглашение", $"family_invite_{currentFamilyId}")
+        InlineKeyboardButton.WithCallbackData("👥 Управление участниками",
+          CallbackData.Family.Members(currentFamilyId)),
+        InlineKeyboardButton.WithCallbackData("🔗 Создать приглашение", CallbackData.Family.Invite(currentFamilyId))
       });
       buttons.Add(new[]
       {
-        InlineKeyboardButton.WithCallbackData("⚙️ Настройки семьи", $"family_settings_{currentFamilyId}"),
-        InlineKeyboardButton.WithCallbackData("🗑️ Удалить семью", $"family_delete_{currentFamilyId}")
+        InlineKeyboardButton.WithCallbackData("⚙️ Настройки семьи", CallbackData.Family.Settings(currentFamilyId)),
+        InlineKeyboardButton.WithCallbackData("🗑️ Удалить семью", CallbackData.Family.Delete(currentFamilyId))
       });
     }
 
@@ -100,5 +98,5 @@ public class FamilyCommandHandler(IMediator mediator)
       _ => "❓"
     };
 
-  private string GetRoleText(FamilyRole role) => BotConstants.Roles.GetRoleText(role);
+  private string GetRoleText(FamilyRole role) => BotMessages.Roles.GetRoleText(role);
 }

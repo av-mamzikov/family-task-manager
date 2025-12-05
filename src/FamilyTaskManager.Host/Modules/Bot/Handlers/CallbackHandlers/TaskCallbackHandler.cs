@@ -1,7 +1,6 @@
-using FamilyTaskManager.Core.TaskAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.UnitTests.Host.Bot.Models;
 using FamilyTaskManager.UseCases.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -15,94 +14,6 @@ public class TaskCallbackHandler(
   IMediator mediator)
   : BaseCallbackHandler(logger, mediator)
 {
-  public async Task StartCreateTaskAsync(
-    ITelegramBotClient botClient,
-    long chatId,
-    int messageId,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    if (session.CurrentFamilyId == null)
-    {
-      await SendErrorAsync(botClient, chatId, "❌ Сначала выберите активную семью", cancellationToken);
-      return;
-    }
-
-    // Ask user to select task type
-    var keyboard = new InlineKeyboardMarkup(new[]
-    {
-      new[] { InlineKeyboardButton.WithCallbackData("📝 Разовая задача", "select_tasktype_onetime") },
-      new[] { InlineKeyboardButton.WithCallbackData("🔄 Периодическая задача", "select_tasktype_recurring") }
-    });
-
-    await botClient.EditMessageTextAsync(
-      chatId,
-      messageId,
-      "📋 *Создание задачи*\n\nВыберите тип задачи:",
-      ParseMode.Markdown,
-      replyMarkup: keyboard,
-      cancellationToken: cancellationToken);
-  }
-
-  public async Task HandleTaskTypeSelectionAsync(
-    ITelegramBotClient botClient,
-    long chatId,
-    int messageId,
-    string taskType,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    // Store task type and family in session state
-    session.SetState(ConversationState.AwaitingTaskTitle, new UserSessionData { TaskType = taskType });
-
-    var taskTySpotext = taskType == "onetime" ? "разовую" : "периодическую";
-    var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskTitle);
-
-    await botClient.EditMessageTextAsync(
-      chatId,
-      messageId,
-      $"📝 Создание {taskTySpotext} задачи\n\nВведите название задачи (от {TaskTitle.MinLength} до {TaskTitle.MaxLength} символов):" +
-      StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskTitle),
-      cancellationToken: cancellationToken);
-
-    // Send keyboard in a separate message
-    if (keyboard != null)
-      await botClient.SendTextMessageAsync(
-        chatId,
-        "Используйте кнопки ниже для управления:",
-        replyMarkup: keyboard,
-        cancellationToken: cancellationToken);
-  }
-
-  public async Task HandleTaskSpotSelectionAsync(
-    ITelegramBotClient botClient,
-    long chatId,
-    int messageId,
-    string[] parts,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    if (parts.Length < 2) return;
-
-    if (!Guid.TryParse(parts[1], out var SpotId)) return;
-
-    // Store Spot ID in session
-    session.Data.SpotId = SpotId;
-
-    // Check task type to determine next step
-    if (session.Data.TaskType == null)
-    {
-      session.ClearState();
-      await SendErrorAsync(botClient, chatId, "❌ Ошибка. Попробуйте создать задачу заново.", cancellationToken);
-      return;
-    }
-
-    if (session.Data.TaskType == "onetime")
-      await RequestDueDateAsync(botClient, chatId, messageId, session, cancellationToken);
-    else
-      await RequestScheduleAsync(botClient, chatId, messageId, session, cancellationToken);
-  }
-
   public async Task HandleTaskActionAsync(
     ITelegramBotClient botClient,
     long chatId,
@@ -112,24 +23,27 @@ public class TaskCallbackHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    if (parts.Length < 3) return;
+    if (parts.Length < 2) return;
 
     var taskAction = parts[1];
+
+    if (parts.Length < 3) return;
+
     var taskIdStr = parts[2];
 
     if (!Guid.TryParse(taskIdStr, out var taskId)) return;
 
     switch (taskAction)
     {
-      case "take":
+      case var _ when taskAction == CallbackActions.Take:
         await HandleTakeTaskAsync(botClient, chatId, messageId, taskId, session, fromUser, cancellationToken);
         break;
 
-      case "complete":
+      case var _ when taskAction == CallbackActions.Complete:
         await HandleCompleteTaskAsync(botClient, chatId, messageId, taskId, session, fromUser, cancellationToken);
         break;
 
-      case "cancel":
+      case var _ when taskAction == CallbackActions.Cancel:
         await HandleCancelTaskAsync(botClient, chatId, messageId, taskId, session, fromUser, cancellationToken);
         break;
     }
@@ -166,10 +80,10 @@ public class TaskCallbackHandler(
       chatId,
       messageId,
       $" ✅ Задача взята в работу!\n\n{task?.Title} {task?.Points.ToStars()}\n",
-      replyMarkup: new InlineKeyboardMarkup([
+      replyMarkup: new([
         [
-          InlineKeyboardButton.WithCallbackData("✅ Выполнить", $"task_complete_{task?.Id}"),
-          InlineKeyboardButton.WithCallbackData("❌ Отказаться", $"task_cancel_{task?.Id}")
+          InlineKeyboardButton.WithCallbackData("✅ Выполнить", CallbackData.Task.Complete(task!.Id)),
+          InlineKeyboardButton.WithCallbackData("❌ Отказаться", CallbackData.Task.Cancel(task.Id))
         ]
       ]),
       parseMode: ParseMode.Markdown,
@@ -281,7 +195,7 @@ public class TaskCallbackHandler(
       chatId,
       messageId,
       "🔄 Введите расписание задачи в формате Quartz Cron:\n\n" +
-      BotConstants.Messages.CronExamples +
+      BotMessages.Messages.CronExamples +
       StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskSchedule),
       ParseMode.Markdown,
       cancellationToken: cancellationToken);

@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.SpotAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Spots;
@@ -22,7 +23,7 @@ public class SpotCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Errors.NoFamily,
+        BotMessages.Errors.NoFamily,
         cancellationToken: cancellationToken);
       return;
     }
@@ -49,7 +50,7 @@ public class SpotCommandHandler(IMediator mediator)
         "🐾 У вас пока нет спотов.\n\nАдминистратор может создать спота.",
         replyMarkup: new InlineKeyboardMarkup(new[]
         {
-          InlineKeyboardButton.WithCallbackData("➕ Создать спота", "create_Spot")
+          InlineKeyboardButton.WithCallbackData("➕ Создать спота", CallbackData.Spot.Create)
         }),
         cancellationToken: cancellationToken);
       return;
@@ -76,12 +77,12 @@ public class SpotCommandHandler(IMediator mediator)
       var spotEmoji = GetSpotEmoji(spot.Type);
       buttons.Add(new[]
       {
-        InlineKeyboardButton.WithCallbackData($"{spotEmoji} {spot.Name}", $"spot_view_{spot.Id}")
+        InlineKeyboardButton.WithCallbackData($"{spotEmoji} {spot.Name}", CallbackData.Spot.View(spot.Id))
       });
     }
 
     // Add create Spot button
-    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать спота", "create_Spot") });
+    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("➕ Создать спота", CallbackData.Spot.Create) });
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,

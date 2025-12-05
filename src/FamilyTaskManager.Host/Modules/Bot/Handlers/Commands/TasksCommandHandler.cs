@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.SpotAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Tasks;
 using Telegram.Bot;
@@ -22,7 +23,7 @@ public class TasksCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Errors.NoFamily,
+        BotMessages.Errors.NoFamily,
         cancellationToken: cancellationToken);
       return;
     }
@@ -35,7 +36,7 @@ public class TasksCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Errors.TasksLoadError,
+        BotMessages.Errors.TasksLoadError,
         cancellationToken: cancellationToken);
       return;
     }
@@ -46,7 +47,7 @@ public class TasksCommandHandler(IMediator mediator)
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Messages.NoActiveTasks,
+        BotMessages.Messages.NoActiveTasks,
         cancellationToken: cancellationToken);
       return;
     }
@@ -88,9 +89,7 @@ public class TasksCommandHandler(IMediator mediator)
     var buttons = new List<InlineKeyboardButton[]>();
 
     foreach (var task in activeTasks.Take(10)) // Limit to 10 tasks
-    {
       buttons.Add([InlineKeyboardButton.WithCallbackData($"✋ Взять: {task.Title}", $"task_take_{task.Id}")]);
-    }
 
     foreach (var task in inProgressTasks.Where(t => t.StartedByUserId == userId).Take(5))
     {

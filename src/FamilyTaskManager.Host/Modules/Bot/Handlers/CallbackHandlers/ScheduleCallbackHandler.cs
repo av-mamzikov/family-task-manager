@@ -1,3 +1,4 @@
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using Telegram.Bot;
@@ -32,11 +33,11 @@ public class ScheduleCallbackHandler(
 
     switch (action)
     {
-      case "type":
+      case var _ when action == CallbackActions.Type:
         await HandleScheduleTypeSelectionAsync(botClient, chatId, messageId, value, session, cancellationToken);
         break;
 
-      case "weekday":
+      case var _ when action == CallbackActions.Weekday:
         await HandleWeekdaySelectionAsync(botClient, chatId, messageId, value, session, cancellationToken);
         break;
 
@@ -55,7 +56,7 @@ public class ScheduleCallbackHandler(
     CancellationToken cancellationToken)
   {
     // Handle back button
-    if (scheduleType == "back")
+    if (scheduleType == CallbackActions.Back)
     {
       await HandleBackFromScheduleTypeAsync(botClient, chatId, messageId, session, cancellationToken);
       return;
@@ -93,7 +94,7 @@ public class ScheduleCallbackHandler(
       await botClient.EditMessageTextAsync(
         chatId,
         messageId,
-        BotConstants.Templates.EnterDueDuration,
+        BotMessages.Templates.EnterDueDuration,
         replyMarkup: keyboard,
         cancellationToken: cancellationToken);
       return;
@@ -115,7 +116,7 @@ public class ScheduleCallbackHandler(
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      BotConstants.Templates.EnterScheduleTime,
+      BotMessages.Templates.EnterScheduleTime,
       replyMarkup: timeKeyboard,
       cancellationToken: cancellationToken);
   }
@@ -166,7 +167,7 @@ public class ScheduleCallbackHandler(
     await botClient.EditMessageTextAsync(
       chatId,
       messageId,
-      BotConstants.Templates.EnterDueDuration,
+      BotMessages.Templates.EnterDueDuration,
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
   }
@@ -198,7 +199,7 @@ public class ScheduleCallbackHandler(
     else
     {
       previousState = ConversationState.AwaitingTemplatePoints;
-      messageText = BotConstants.Templates.EnterTemplatePoints;
+      messageText = BotMessages.Templates.EnterTemplatePoints;
     }
 
     session.State = previousState;

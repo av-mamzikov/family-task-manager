@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.SpotAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Spots;
@@ -75,7 +76,7 @@ public class SpotCreationHandler(
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       $"✅ Спот {SpotEmoji} \"{SpotName}\" успешно создан!\n\n" +
-      BotConstants.Messages.SpotTasksAvailable,
+      BotMessages.Messages.SpotTasksAvailable,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
     session.ClearState();

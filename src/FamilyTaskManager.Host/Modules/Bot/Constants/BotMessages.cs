@@ -1,9 +1,9 @@
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 
-namespace FamilyTaskManager.Host.Modules.Bot;
+namespace FamilyTaskManager.Host.Modules.Bot.Constants;
 
-public static class BotConstants
+public static class BotMessages
 {
   public static class Success
   {

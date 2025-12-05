@@ -1,5 +1,6 @@
 using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Spots;
@@ -91,7 +92,7 @@ public class TaskCreationHandler(
         botClient,
         message.Chat.Id,
         session,
-        BotConstants.Errors.NoSpots,
+        BotMessages.Errors.NoSpots,
         cancellationToken);
       return;
     }
@@ -178,7 +179,7 @@ public class TaskCreationHandler(
       $"✅ Задача \"{session.Data.Title}\" успешно создана!\n\n" +
       $"💯 Очки: {taskPoints.ToStars()}\n" +
       $"📎 Срок: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
-      BotConstants.Messages.TaskAvailableToAll,
+      BotMessages.Messages.TaskAvailableToAll,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
     session.ClearState();
@@ -263,7 +264,7 @@ public class TaskCreationHandler(
       $"✅ Периодическая задача \"{session.Data.Title}\" успешно создана!\n\n" +
       $"💯 Очки: {taskPoints.ToStars()}\n" +
       $"🔄 Расписание: {scheduleText}\n\n" +
-      BotConstants.Messages.ScheduledTask,
+      BotMessages.Messages.ScheduledTask,
       cancellationToken: cancellationToken);
     session.ClearState();
   }

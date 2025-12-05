@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Families;
@@ -29,7 +30,7 @@ public class FamilyCreationHandler(
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
-        BotConstants.Errors.FamilyNameTooShort,
+        BotMessages.Errors.FamilyNameTooShort,
         StateKeyboardHelper.GetHintForState(ConversationState.AwaitingFamilyName),
         keyboard,
         cancellationToken);
@@ -44,7 +45,7 @@ public class FamilyCreationHandler(
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Messages.ChooseTimezoneMethod(familyName),
+      BotMessages.Messages.ChooseTimezoneMethod(familyName),
       replyMarkup: timezoneKeyboard,
       cancellationToken: cancellationToken);
   }
@@ -62,8 +63,8 @@ public class FamilyCreationHandler(
     {
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Errors.InvalidLocationData +
-        BotConstants.Errors.TryAgain,
+        BotMessages.Errors.InvalidLocationData +
+        BotMessages.Errors.TryAgain,
         replyMarkup: new ReplyKeyboardRemove(),
         cancellationToken: cancellationToken);
 
@@ -82,7 +83,7 @@ public class FamilyCreationHandler(
       {
         await botClient.SendTextMessageAsync(
           message.Chat.Id,
-          BotConstants.Errors.TimezoneDetectionFailed,
+          BotMessages.Errors.TimezoneDetectionFailed,
           replyMarkup: new ReplyKeyboardRemove(),
           cancellationToken: cancellationToken);
 
@@ -100,7 +101,7 @@ public class FamilyCreationHandler(
           botClient,
           message.Chat.Id,
           session,
-          BotConstants.Errors.SessionErrorRetry,
+          BotMessages.Errors.SessionErrorRetry,
           cancellationToken);
         return;
       }
@@ -110,8 +111,8 @@ public class FamilyCreationHandler(
       {
         await botClient.SendTextMessageAsync(
           message.Chat.Id,
-          BotConstants.Errors.TimezoneValidationFailed +
-          BotConstants.Errors.ChooseTimezoneManually,
+          BotMessages.Errors.TimezoneValidationFailed +
+          BotMessages.Errors.ChooseTimezoneManually,
           replyMarkup: new ReplyKeyboardRemove(),
           cancellationToken: cancellationToken);
 
@@ -129,7 +130,7 @@ public class FamilyCreationHandler(
           botClient,
           message.Chat.Id,
           session,
-          BotConstants.Errors.FamilyCreationError(result.Errors.FirstOrDefault()),
+          BotMessages.Errors.FamilyCreationError(result.Errors.FirstOrDefault()),
           cancellationToken);
         return;
       }
@@ -138,7 +139,7 @@ public class FamilyCreationHandler(
 
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Messages.FamilyCreatedWithTimezone(session.Data.FamilyName, detectedTimezone),
+        BotMessages.Messages.FamilyCreatedWithTimezone(session.Data.FamilyName, detectedTimezone),
         parseMode: ParseMode.Markdown,
         replyMarkup: new ReplyKeyboardRemove(),
         cancellationToken: cancellationToken);
@@ -157,8 +158,8 @@ public class FamilyCreationHandler(
 
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Errors.LocationError +
-        BotConstants.Errors.TryAgainOrChooseTimezone,
+        BotMessages.Errors.LocationError +
+        BotMessages.Errors.TryAgainOrChooseTimezone,
         replyMarkup: new ReplyKeyboardRemove(),
         cancellationToken: cancellationToken);
 
@@ -180,7 +181,7 @@ public class FamilyCreationHandler(
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Messages.ChooseTimezoneMethod(familyName),
+      BotMessages.Messages.ChooseTimezoneMethod(familyName),
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
   }

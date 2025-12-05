@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.TaskAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
@@ -61,7 +62,7 @@ public class TemplateEditHandler(
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Templates.TemplateUpdated,
+      BotMessages.Templates.TemplateUpdated,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
     session.ClearState();
@@ -165,7 +166,7 @@ public class TemplateEditHandler(
         StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditDueDuration);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Templates.EnterDueDuration,
+        BotMessages.Templates.EnterDueDuration,
         replyMarkup: dueDurationKeyboard,
         cancellationToken: cancellationToken);
     }
@@ -175,7 +176,7 @@ public class TemplateEditHandler(
       var weekdayKeyboard = ScheduleKeyboardHelper.GetWeekdayKeyboard();
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Templates.ChooseWeekday +
+        BotMessages.Templates.ChooseWeekday +
         StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditScheduleWeekday),
         replyMarkup: weekdayKeyboard,
         cancellationToken: cancellationToken);
@@ -186,7 +187,7 @@ public class TemplateEditHandler(
       var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditScheduleMonthDay);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Templates.EnterMonthDay +
+        BotMessages.Templates.EnterMonthDay +
         StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTemplateEditScheduleMonthDay),
         replyMarkup: keyboard,
         cancellationToken: cancellationToken);
@@ -199,7 +200,7 @@ public class TemplateEditHandler(
         StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditDueDuration);
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Templates.EnterDueDuration,
+        BotMessages.Templates.EnterDueDuration,
         replyMarkup: dueDurationKeyboard,
         cancellationToken: cancellationToken);
     }
@@ -233,7 +234,7 @@ public class TemplateEditHandler(
       StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTemplateEditDueDuration);
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Templates.EnterDueDuration,
+      BotMessages.Templates.EnterDueDuration,
       replyMarkup: dueDurationKeyboard,
       cancellationToken: cancellationToken);
   }
@@ -333,7 +334,7 @@ public class TemplateEditHandler(
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotConstants.Templates.TemplateUpdated,
+      BotMessages.Templates.TemplateUpdated,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
     session.ClearState();
@@ -400,7 +401,7 @@ public class TemplateEditHandler(
 
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotConstants.Templates.TemplateUpdated,
+        BotMessages.Templates.TemplateUpdated,
         replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
         cancellationToken: cancellationToken);
       session.ClearState();

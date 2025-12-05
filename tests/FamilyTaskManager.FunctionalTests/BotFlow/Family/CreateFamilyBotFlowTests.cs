@@ -1,5 +1,5 @@
 using FamilyTaskManager.FunctionalTests.Helpers;
-using FamilyTaskManager.Host.Modules.Bot;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 
 namespace FamilyTaskManager.FunctionalTests.BotFlow.Family;
 
@@ -121,7 +121,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     // Assert - Check bot response
     var response = await botClient.WaitForLastMessageAsync(chatId);
     response.ShouldNotBeNull("Бот должен показать ошибку валидации имени семьи");
-    response!.ShouldContainText(BotConstants.Errors.FamilyNameTooShort);
+    response!.ShouldContainText(BotMessages.Errors.FamilyNameTooShort);
   }
 
   [Fact]

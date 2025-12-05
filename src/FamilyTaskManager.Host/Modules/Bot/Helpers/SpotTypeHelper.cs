@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.SpotAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Helpers;
@@ -40,7 +41,7 @@ public static class SpotTypeHelper
       {
         InlineKeyboardButton.WithCallbackData(
           $"{emoji} {text}",
-          $"select_Spottype_{callbackCode}")
+          CallbackData.SpotType.Select(callbackCode))
       });
     }
 
