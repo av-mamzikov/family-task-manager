@@ -248,11 +248,11 @@ public class ProcessScheduledTasksHandlerTests
     // Set Family navigation property for test
     typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
 
-    var template1 = new TaskTemplate(familyId, SpotId, "Task 1", new(2), schedule1, TimeSpan.FromHours(24),
+    var template1 = new TaskTemplate(familyId, SpotId, new("Task 1"), new(2), schedule1, new(TimeSpan.FromHours(24)),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template1, family);
 
-    var template2 = new TaskTemplate(familyId, SpotId, "Task 2", new(2), schedule2, TimeSpan.FromHours(24),
+    var template2 = new TaskTemplate(familyId, SpotId, new("Task 2"), new(2), schedule2, new(TimeSpan.FromHours(24)),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template2, family);
 
