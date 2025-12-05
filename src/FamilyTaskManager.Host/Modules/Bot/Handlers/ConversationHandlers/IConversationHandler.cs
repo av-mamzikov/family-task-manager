@@ -6,7 +6,7 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
 public interface IConversationHandler
 {
-  Task HandleAsync(
+  Task HandleMessageAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -15,23 +15,9 @@ public interface IConversationHandler
   Task HandleCallbackAsync(
     ITelegramBotClient botClient,
     long chatId,
-    int messageId,
+    Message? message,
     string[] callbackParts,
     UserSession session,
     User fromUser,
-    CancellationToken cancellationToken);
-
-  Task HandleCancelAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    Func<Task> sendMainMenuAction,
-    CancellationToken cancellationToken);
-
-  Task HandleBackAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    Func<Task> sendMainMenuAction,
     CancellationToken cancellationToken);
 }

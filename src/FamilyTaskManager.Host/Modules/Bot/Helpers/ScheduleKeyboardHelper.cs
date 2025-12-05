@@ -11,62 +11,50 @@ public static class ScheduleKeyboardHelper
   /// <summary>
   ///   Creates inline keyboard for schedule type selection.
   /// </summary>
-  public static InlineKeyboardMarkup GetScheduleTypeKeyboard() =>
-    new(new[]
-    {
-      new[]
-      {
+  public static InlineKeyboardMarkup GetScheduleTypeKeyboard(string backCallbackData) =>
+    new([
+      [
         InlineKeyboardButton.WithCallbackData("📅 Ежедневно", CallbackData.Schedule.TypeDaily)
-      },
-      new[]
-      {
+      ],
+      [
         InlineKeyboardButton.WithCallbackData("💼 По будням (пн-пт)", CallbackData.Schedule.TypeWorkdays)
-      },
-      new[]
-      {
+      ],
+      [
         InlineKeyboardButton.WithCallbackData("🎉 По выходным (сб-вс)", CallbackData.Schedule.TypeWeekends)
-      },
-      new[]
-      {
+      ],
+      [
         InlineKeyboardButton.WithCallbackData("📆 Еженедельно", CallbackData.Schedule.TypeWeekly)
-      },
-      new[]
-      {
+      ],
+      [
         InlineKeyboardButton.WithCallbackData("🗓️ Ежемесячно", CallbackData.Schedule.TypeMonthly)
-      },
-      new[]
-      {
+      ],
+      [
         InlineKeyboardButton.WithCallbackData("✋ Вручную", CallbackData.Schedule.TypeManual)
-      },
-      new[]
-      {
-        InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.Schedule.TypeBack)
-      }
-    });
+      ],
+      [
+        InlineKeyboardButton.WithCallbackData("⬅️ Назад", backCallbackData)
+      ]
+    ]);
 
   /// <summary>
   ///   Creates inline keyboard for weekday selection.
   /// </summary>
   public static InlineKeyboardMarkup GetWeekdayKeyboard() =>
-    new(new[]
-    {
-      new[]
-      {
+    new([
+      [
         InlineKeyboardButton.WithCallbackData("Пн", CallbackData.Schedule.WeekdayMonday),
         InlineKeyboardButton.WithCallbackData("Вт", CallbackData.Schedule.WeekdayTuesday),
         InlineKeyboardButton.WithCallbackData("Ср", CallbackData.Schedule.WeekdayWednesday)
-      },
-      new[]
-      {
+      ],
+      [
         InlineKeyboardButton.WithCallbackData("Чт", CallbackData.Schedule.WeekdayThursday),
         InlineKeyboardButton.WithCallbackData("Пт", CallbackData.Schedule.WeekdayFriday)
-      },
-      new[]
-      {
+      ],
+      [
         InlineKeyboardButton.WithCallbackData("Сб", CallbackData.Schedule.WeekdaySaturday),
         InlineKeyboardButton.WithCallbackData("Вс", CallbackData.Schedule.WeekdaySunday)
-      }
-    });
+      ]
+    ]);
 
   /// <summary>
   ///   Parses weekday callback data to DayOfWeek.

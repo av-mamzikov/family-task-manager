@@ -10,7 +10,6 @@ public static class CallbackActions
   public const string View = "view";
   public const string Delete = "delete";
   public const string Edit = "edit";
-  public const string Back = "back";
   public const string Select = "select";
   public const string Confirm = "confirm";
   public const string Cancel = "cancel";
@@ -18,17 +17,11 @@ public static class CallbackActions
 
   // Spot-specific actions
   public const string ConfirmDelete = "confirmdelete";
-  public const string CancelDelete = "canceldelete";
+  public const string List = "list";
 
   // Task-specific actions
   public const string Complete = "complete";
   public const string Take = "take";
-
-  // Template-specific actions (short codes)
-  public const string ViewForSpot = "vp"; // view templates for spot
-  public const string CreateForSpot = "cf"; // create template for spot
-  public const string CreateTask = "ct"; // create task from template
-  public const string EditField = "ef"; // edit template field
 
   // Family member actions
   public const string Member = "member";
@@ -46,6 +39,11 @@ public static class CallbackActions
   public const string Weekday = "weekday";
 
   // Timezone actions
-  public const string ShowList = "showlist";
-  public const string Detect = "detect";
+  public const string Timezone = "tz";
+  public const string ShowTimezoneList = "showtzlist";
+  public const string DetectTimezone = "detecttz";
+
+  // template browsing actions
+  public const string CreateTask = "createTask";
+  public const string ListForSpot = "listForSpot";
 }

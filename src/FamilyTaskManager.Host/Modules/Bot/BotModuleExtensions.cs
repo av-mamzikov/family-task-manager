@@ -1,7 +1,5 @@
 using FamilyTaskManager.Host.Modules.Bot.Configuration;
 using FamilyTaskManager.Host.Modules.Bot.Handlers;
-using FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
-using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Services;
 using Telegram.Bot;
@@ -42,30 +40,26 @@ public static class BotModuleExtensions
     // Handlers
     services.AddScoped<IUpdateHandler, UpdateHandler>();
 
-    // Command Handlers
-    services.AddScoped<FamilyCommandHandler>();
-    services.AddScoped<TasksCommandHandler>();
-    services.AddScoped<SpotCommandHandler>();
-    services.AddScoped<StatsCommandHandler>();
-    services.AddScoped<TemplateCommandHandler>();
-
     // Conversation Handlers
     services.AddScoped<FamilyCreationHandler>();
-    services.AddScoped<FamilyMembersHandler>();
     services.AddScoped<SpotCreationHandler>();
-    services.AddScoped<TaskCreationHandler>();
-    services.AddScoped<TemplateCreationHandler>();
-    services.AddScoped<TemplateEditHandler>();
+    services.AddScoped<TemplateFormHandler>();
+    services.AddScoped<TaskBrowsingHandler>();
+    services.AddScoped<TemplateBrowsingHandler>();
+    services.AddScoped<SpotBrowsingHandler>();
+    services.AddScoped<FamilyBrowsingHandler>();
+    services.AddScoped<FamilyMembersBrousingHandler>();
+    services.AddScoped<StatsBrowsingHandler>();
 
-    // Callback Handlers (для просмотра данных, не для conversations)
-    services.AddScoped<FamilyCallbackHandler>();
-    services.AddScoped<FamilyMembersCallbackHandler>();
-    services.AddScoped<SpotCallbackHandler>();
-    services.AddScoped<TaskCallbackHandler>();
-    services.AddScoped<TemplateCallbackHandler>();
-    // PointsCallbackHandler - удален, логика в ConversationHandlers
-    // TimezoneCallbackHandler - удален, логика в FamilyCreationHandler
-    // ScheduleCallbackHandler - удален, логика в ConversationHandlers
+    // Все CallbackHandlers удалены - логика перенесена в ConversationHandlers:
+    // - TaskCallbackHandler -> TaskBrowsingHandler
+    // - TemplateCallbackHandler -> TemplateBrowsingHandler
+    // - SpotCallbackHandler -> SpotBrowsingHandler
+    // - FamilyCallbackHandler -> FamilyBrowsingHandler
+    // - FamilyMembersCallbackHandler -> FamilyMembersBrowsingHandler
+    // - PointsCallbackHandler -> Creation/Edit handlers
+    // - TimezoneCallbackHandler -> FamilyCreationHandler
+    // - ScheduleCallbackHandler -> Creation/Edit handlers
 
     logger?.LogInformation("Bot Module registered: Telegram Bot with Long Polling");
 

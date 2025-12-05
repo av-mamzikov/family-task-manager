@@ -1,104 +1,114 @@
+using FamilyTaskManager.Host.Modules.Bot.Models;
+
 namespace FamilyTaskManager.Host.Modules.Bot.Constants;
 
 public static class CallbackData
 {
   public static class Spot
   {
-    public const string Entity = "spot";
+    public const ConversationState Conversation = ConversationState.SpotBrowsing;
 
-    public const string Create = $"{Entity}_{CallbackActions.Create}";
-    public const string Back = $"{Entity}_{CallbackActions.Back}";
-    public const string CancelDelete = $"{Entity}_{CallbackActions.CancelDelete}";
+    public static string Create => $"{Conversation}_{CallbackActions.Create}";
+    public static string CancelDelete => $"{Conversation}_{CallbackActions.List}";
 
-    public static string View(Guid spotId) => $"{Entity}_{CallbackActions.View}_{spotId}";
-    public static string Delete(Guid spotId) => $"{Entity}_{CallbackActions.Delete}_{spotId}";
-    public static string ConfirmDelete(Guid spotId) => $"{Entity}_{CallbackActions.ConfirmDelete}_{spotId}";
+    public static string List() => $"{Conversation}_{CallbackActions.List}";
+    public static string View(Guid spotId) => $"{Conversation}_{CallbackActions.View}_{spotId}";
+    public static string Delete(Guid spotId) => $"{Conversation}_{CallbackActions.Delete}_{spotId}";
+    public static string ConfirmDelete(Guid spotId) => $"{Conversation}_{CallbackActions.ConfirmDelete}_{spotId}";
   }
 
-  public static class Templates
+  public static class TemplateForm
   {
-    public const string Entity = "tpl";
+    public const ConversationState Conversation = ConversationState.TemplateForm;
 
-    public const string CreateRoot = $"{Entity}_{CallbackActions.Create}";
-    public const string Back = $"{Entity}_{CallbackActions.Back}";
+    public static string Edit(Guid templateId) => $"{Conversation}_{CallbackActions.Edit}_{templateId}";
+  }
 
-    public static string ViewForSpot(Guid spotId) => $"{Entity}_{CallbackActions.ViewForSpot}_{spotId}";
-    public static string CreateForSpot(Guid spotId) => $"{Entity}_{CallbackActions.CreateForSpot}_{spotId}";
-    public static string View(Guid templateId) => $"{Entity}_{CallbackActions.View}_{templateId}";
-    public static string CreateTask(Guid templateId) => $"{Entity}_{CallbackActions.CreateTask}_{templateId}";
-    public static string Edit(Guid templateId) => $"{Entity}_{CallbackActions.Edit}_{templateId}";
-    public static string Delete(Guid templateId) => $"{Entity}_{CallbackActions.Delete}_{templateId}";
-    public static string ConfirmDelete(Guid templateId) => $"{Entity}_{CallbackActions.ConfirmDelete}_{templateId}";
+  public static class TemplateBrowsing
+  {
+    public const ConversationState Conversation = ConversationState.TemplateBrowsing;
 
-    public static string EditField(Guid templateId, char fieldCode) =>
-      $"{Entity}_{CallbackActions.EditField}_{templateId}_{fieldCode}";
+    public static string Create(Guid spotId) => $"{Conversation}_{CallbackActions.Create}_{spotId}";
 
-    public static string BackToSpot(Guid spotId) => $"{Entity}_{CallbackActions.ViewForSpot}_{spotId}";
-    public static string BackToTemplate(Guid templateId) => $"{Entity}_{CallbackActions.View}_{templateId}";
+    public static string ListOfSpot(Guid spotId) => $"{Conversation}_{CallbackActions.ListForSpot}_{spotId}";
+    public static string View(Guid templateId) => $"{Conversation}_{CallbackActions.View}_{templateId}";
+    public static string CreateTask(Guid templateId) => $"{Conversation}_{CallbackActions.CreateTask}_{templateId}";
+
+    public static string EditField(Guid templateId, string fieldName) =>
+      $"{Conversation}_{CallbackActions.Edit}_{templateId}_{fieldName}";
+
+    public static string Delete(Guid templateId) => $"{Conversation}_{CallbackActions.Delete}_{templateId}";
+
+    public static string ConfirmDelete(Guid templateId) =>
+      $"{Conversation}_{CallbackActions.ConfirmDelete}_{templateId}";
   }
 
   public static class Family
   {
-    public const string Entity = "family";
+    public const ConversationState Conversation = ConversationState.Family;
 
-    public const string Create = $"{Entity}_{CallbackActions.Create}";
+    public static string Create => $"{Conversation}_{CallbackActions.Create}";
 
-    public static string Select(Guid familyId) => $"{Entity}_{CallbackActions.Select}_{familyId}";
-    public static string Members(Guid familyId) => $"{Entity}_{CallbackActions.Members}_{familyId}";
-    public static string Invite(Guid familyId) => $"{Entity}_{CallbackActions.Invite}_{familyId}";
-    public static string Settings(Guid familyId) => $"{Entity}_{CallbackActions.Settings}_{familyId}";
-    public static string Delete(Guid familyId) => $"{Entity}_{CallbackActions.Delete}_{familyId}";
-    public static string CancelDelete(Guid familyId) => $"{Entity}_{CallbackActions.CancelDelete}_{familyId}";
-    public static string ConfirmDelete(Guid familyId) => $"{Entity}_{CallbackActions.ConfirmDelete}_{familyId}";
+    public static string Select(Guid familyId) => $"{Conversation}_{CallbackActions.Select}_{familyId}";
+    public static string Invite() => $"{Conversation}_{CallbackActions.Invite}";
+    public static string Settings() => $"{Conversation}_{CallbackActions.Settings}";
+    public static string Delete() => $"{Conversation}_{CallbackActions.Delete}";
+    public static string List() => $"{Conversation}_{CallbackActions.List}";
+    public static string ConfirmDelete(Guid familyId) => $"{Conversation}_{CallbackActions.ConfirmDelete}_{familyId}";
 
     public static string InviteRole(Guid familyId, string role) =>
-      $"{Entity}_{CallbackActions.Invite}_role_{familyId}_{role}";
+      $"{Conversation}_{CallbackActions.Invite}_role_{familyId}_{role}";
+  }
+
+  public static class FamilyCreation
+  {
+    public const ConversationState Conversation = ConversationState.FamilyCreation;
+
+    public static string DetectTimezone => $"{Conversation}_{CallbackActions.DetectTimezone}";
+    public static string ShowTimezoneList => $"{Conversation}_{CallbackActions.ShowTimezoneList}";
+
+    public static string EuropeKaliningrad => $"{Conversation}_{CallbackActions.Timezone}_Europe/Kaliningrad";
+    public static string EuropeMoscow => $"{Conversation}_{CallbackActions.Timezone}_Europe/Moscow";
+    public static string EuropeSamara => $"{Conversation}_{CallbackActions.Timezone}_Europe/Samara";
+    public static string AsiaYekaterinburg => $"{Conversation}_{CallbackActions.Timezone}_Asia/Yekaterinburg";
+    public static string AsiaOmsk => $"{Conversation}_{CallbackActions.Timezone}_Asia/Omsk";
+    public static string AsiaKrasnoyarsk => $"{Conversation}_{CallbackActions.Timezone}_Asia/Krasnoyarsk";
+    public static string AsiaIrkutsk => $"{Conversation}_{CallbackActions.Timezone}_Asia/Irkutsk";
+    public static string AsiaYakutsk => $"{Conversation}_{CallbackActions.Timezone}_Asia/Yakutsk";
+    public static string AsiaVladivostok => $"{Conversation}_{CallbackActions.Timezone}_Asia/Vladivostok";
+    public static string AsiaMagadan => $"{Conversation}_{CallbackActions.Timezone}_Asia/Magadan";
+    public static string AsiaKamchatka => $"{Conversation}_{CallbackActions.Timezone}_Asia/Kamchatka";
+    public static string Utc => $"{Conversation}_{CallbackActions.Timezone}_UTC";
   }
 
   public static class FamilyMembers
   {
-    public const string Entity = "family";
+    public const ConversationState Conversation = ConversationState.FamilyMembers;
 
-    public static string Member(string memberCode) => $"{Entity}_{CallbackActions.Member}_{memberCode}";
-    public static string ChangeRole(string memberCode) => $"{Entity}_{CallbackActions.MemberRole}_{memberCode}";
-    public static string Delete(string memberCode) => $"{Entity}_{CallbackActions.MemberDelete}_{memberCode}";
-    public static string ConfirmDelete(string memberCode) => $"{Entity}_{CallbackActions.MemberDeleteOk}_{memberCode}";
+    public static string Members() => $"{Conversation}_{CallbackActions.Members}";
+    public static string Member(string memberCode) => $"{Conversation}_{CallbackActions.Member}_{memberCode}";
+    public static string ChangeRole(string memberCode) => $"{Conversation}_{CallbackActions.MemberRole}_{memberCode}";
+    public static string Delete(string memberCode) => $"{Conversation}_{CallbackActions.MemberDelete}_{memberCode}";
+
+    public static string ConfirmDelete(string memberCode) =>
+      $"{Conversation}_{CallbackActions.MemberDeleteOk}_{memberCode}";
 
     public static string PickRole(string memberCode, int role) =>
-      $"{Entity}_{CallbackActions.MemberRolePick}_{memberCode}_{role}";
-
-    public static string Invite(string familyCode) => $"{Entity}_{CallbackActions.Invite}_{familyCode}";
-    public static string Back(string familyCode) => $"{Entity}_{CallbackActions.Back}_{familyCode}";
+      $"{Conversation}_{CallbackActions.MemberRolePick}_{memberCode}_{role}";
   }
 
   public static class Task
   {
-    public const string Entity = "task";
+    public const ConversationState Conversation = ConversationState.TaskBrowsing;
 
-    public const string Create = $"{Entity}_{CallbackActions.Create}";
+    public static string List() => $"{Conversation}_{CallbackActions.List}";
+    public static string Create() => $"{Conversation}_{CallbackActions.Create}";
 
-    public static string Complete(Guid taskId) => $"{Entity}_{CallbackActions.Complete}_{taskId}";
-    public static string Cancel(Guid taskId) => $"{Entity}_{CallbackActions.Cancel}_{taskId}";
-    public static string Take(Guid taskId) => $"{Entity}_{CallbackActions.Take}_{taskId}";
+    public static string Complete(Guid taskId) => $"{Conversation}_{CallbackActions.Complete}_{taskId}";
+    public static string Cancel(Guid taskId) => $"{Conversation}_{CallbackActions.Cancel}_{taskId}";
+    public static string Take(Guid taskId) => $"{Conversation}_{CallbackActions.Take}_{taskId}";
   }
 
-  public static class Timezone
-  {
-    public const string Entity = "timezone";
-
-    public const string EuropeKaliningrad = Entity + "_Europe/Kaliningrad";
-    public const string EuropeMoscow = Entity + "_Europe/Moscow";
-    public const string EuropeSamara = Entity + "_Europe/Samara";
-    public const string AsiaYekaterinburg = Entity + "_Asia/Yekaterinburg";
-    public const string AsiaOmsk = Entity + "_Asia/Omsk";
-    public const string AsiaKrasnoyarsk = Entity + "_Asia/Krasnoyarsk";
-    public const string AsiaIrkutsk = Entity + "_Asia/Irkutsk";
-    public const string AsiaYakutsk = Entity + "_Asia/Yakutsk";
-    public const string AsiaVladivostok = Entity + "_Asia/Vladivostok";
-    public const string AsiaMagadan = Entity + "_Asia/Magadan";
-    public const string AsiaKamchatka = Entity + "_Asia/Kamchatka";
-    public const string Utc = Entity + "_UTC";
-  }
 
   public static class Schedule
   {
@@ -110,7 +120,6 @@ public static class CallbackData
     public const string TypeWeekly = $"{Entity}_{CallbackActions.Type}_weekly";
     public const string TypeMonthly = $"{Entity}_{CallbackActions.Type}_monthly";
     public const string TypeManual = $"{Entity}_{CallbackActions.Type}_manual";
-    public const string TypeBack = $"{Entity}_{CallbackActions.Type}_{CallbackActions.Back}";
 
     public const string WeekdayMonday = $"{Entity}_{CallbackActions.Weekday}_monday";
     public const string WeekdayTuesday = $"{Entity}_{CallbackActions.Weekday}_tuesday";
@@ -129,12 +138,18 @@ public static class CallbackData
     public const string Two = $"{Entity}_2";
     public const string Three = $"{Entity}_3";
     public const string Four = $"{Entity}_4";
-    public const string Back = $"{Entity}_{CallbackActions.Back}";
   }
 
   public static class SpotType
   {
     public static string Select(string callbackCode) =>
-      $"{Spot.Entity}_{CallbackActions.Select}_{callbackCode}"; // spot_select_{code}
+      $"{Spot.Conversation}_{CallbackActions.Select}_{callbackCode}"; // spot_select_{code}
+  }
+
+  public static class Stats
+  {
+    public const ConversationState Conversation = ConversationState.StatsBrowsing;
+
+    public static string List() => $"{Conversation}_{CallbackActions.List}";
   }
 }

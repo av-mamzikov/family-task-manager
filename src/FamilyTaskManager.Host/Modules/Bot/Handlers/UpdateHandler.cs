@@ -1,6 +1,4 @@
 using FamilyTaskManager.Host.Modules.Bot.Constants;
-using FamilyTaskManager.Host.Modules.Bot.Handlers.CallbackHandlers;
-using FamilyTaskManager.Host.Modules.Bot.Handlers.Commands;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
@@ -66,62 +64,8 @@ public class UpdateHandler(
     var messageText = message.Text ?? string.Empty;
     logger.LogInformation("Received message from {ChatId}: {MessageText}", chatId, messageText);
 
-    var isMainMenuButton = messageText is "🏠 Семья" or "✅ Наши задачи" or "🧩 Споты" or "📊 Статистика";
-    var isCommand = messageText.StartsWith('/');
-
-    // Если есть активная conversation
-    if (session.State != ConversationState.None)
-    {
-      // Если нажата кнопка главного меню или команда - отменяем conversation
-      if (isMainMenuButton || isCommand)
-      {
-        await botClient.SendTextMessageAsync(
-          chatId,
-          "❌ Предыдущее действие отменено.",
-          parseMode: ParseMode.Markdown,
-          replyMarkup: new ReplyKeyboardRemove(),
-          cancellationToken: cancellationToken);
-        session.ClearState();
-        // Продолжаем обработку кнопки/команды
-      }
-      // Обработка универсальных команд conversation
-      else if (messageText is "❌ Отменить" or "/cancel")
-      {
-        var handler = GetConversationHandler(session.State);
-        if (handler != null)
-          await handler.HandleCancelAsync(
-            botClient, message, session,
-            () => SendMainMenuAsync(botClient, chatId, cancellationToken),
-            cancellationToken);
-
-        await sessionManager.SaveSessionAsync(session, cancellationToken);
-        return;
-      }
-      else if (messageText == "⬅️ Назад")
-      {
-        var handler = GetConversationHandler(session.State);
-        if (handler != null)
-          await handler.HandleBackAsync(
-            botClient, message, session,
-            () => SendMainMenuAsync(botClient, chatId, cancellationToken),
-            cancellationToken);
-
-        await sessionManager.SaveSessionAsync(session, cancellationToken);
-        return;
-      }
-      else
-      {
-        // Передаем сообщение conversation handler
-        var handler = GetConversationHandler(session.State);
-        if (handler != null) await handler.HandleAsync(botClient, message, session, cancellationToken);
-
-        await sessionManager.SaveSessionAsync(session, cancellationToken);
-        return;
-      }
-    }
-
     // Обработка команд и кнопок главного меню
-    if (isCommand)
+    if (messageText.StartsWith('/'))
     {
       var command = messageText.Split(' ')[0].ToLower();
       var args = messageText.Split(' ').Skip(1).ToArray();
@@ -135,7 +79,18 @@ public class UpdateHandler(
     }
     else
     {
-      await HandleKeyboardButtonAsync(botClient, message, session, cancellationToken);
+      if (await HandleKeyboardButtonAsync(botClient, message, session, cancellationToken))
+        return;
+
+      // Если есть активная conversation
+      if (session.State != ConversationState.None)
+      {
+        var handler = GetConversationHandler(session.State);
+        if (handler != null) await handler.HandleMessageAsync(botClient, message, session, cancellationToken);
+
+        await sessionManager.SaveSessionAsync(session, cancellationToken);
+        return;
+      }
     }
 
     await sessionManager.SaveSessionAsync(session, cancellationToken);
@@ -146,43 +101,42 @@ public class UpdateHandler(
   {
     if (callbackQuery.Data is not { } data)
       return;
-
     var session = await sessionManager.GetSessionAsync(callbackQuery.From, cancellationToken);
     session.UpdateActivity();
 
-    var chatId = callbackQuery.Message!.Chat.Id;
-    var messageId = callbackQuery.Message.MessageId;
-    var fromUser = callbackQuery.From;
-
-    logger.LogInformation("Received callback from {ChatId}: {Data}", chatId, data);
-
-    var parts = data.Split('_');
-    var action = parts[0];
-
-    // Если есть активная conversation, сначала пытаемся передать callback ей
-    if (session.State != ConversationState.None)
-    {
-      var conversationHandler = GetConversationHandler(session.State);
-      if (conversationHandler != null)
-      {
-        await conversationHandler.HandleCallbackAsync(botClient, chatId, messageId, parts, session, fromUser,
-          cancellationToken);
-        await sessionManager.SaveSessionAsync(session, cancellationToken);
-        return;
-      }
-    }
-
-    // Иначе используем специализированные callback handlers
-    var handler = GetCallbackHandler(action);
-    if (handler != null)
-      await handler.Handle(botClient, chatId, messageId, parts, session, fromUser, cancellationToken);
-    else
-      await botClient.SendTextMessageAsync(
-        chatId,
-        "❓ Неизвестное действие",
-        cancellationToken: cancellationToken);
+    var message = callbackQuery.Message!;
+    var chatId = message.Chat.Id;
+    var fromUser = message.From!;
+    await HandleCallback(botClient, session, data, chatId, callbackQuery.Message, fromUser, cancellationToken);
 
     await sessionManager.SaveSessionAsync(session, cancellationToken);
+  }
+
+  private async Task HandleCallback(ITelegramBotClient botClient, UserSession session, string callbackData,
+    long chatId, Message? message, User? fromUser, CancellationToken cancellationToken)
+  {
+    var parts = callbackData.Split('_');
+    var conversation = parts[0];
+
+    logger.LogInformation("Received callback from {ChatId}: {Data}", chatId, callbackData);
+
+    var targetState = GetBrowsingStateForAction(conversation);
+    session.State = targetState;
+    var handler = GetConversationHandler(targetState);
+    if (handler != null)
+    {
+      await handler.HandleCallbackAsync(botClient, chatId, message, parts, session, fromUser!,
+        cancellationToken);
+      await sessionManager.SaveSessionAsync(session, cancellationToken);
+      return;
+    }
+
+    logger.LogError("Handler for {Conversation} not found", conversation);
+
+    await botClient.SendTextMessageAsync(
+      chatId,
+      "❓ Неизвестное действие",
+      cancellationToken: cancellationToken);
   }
 
   private IConversationHandler? GetConversationHandler(ConversationState state) =>
@@ -190,22 +144,20 @@ public class UpdateHandler(
     {
       ConversationState.FamilyCreation => serviceProvider.GetRequiredService<FamilyCreationHandler>(),
       ConversationState.SpotCreation => serviceProvider.GetRequiredService<SpotCreationHandler>(),
-      ConversationState.TaskCreation => serviceProvider.GetRequiredService<TaskCreationHandler>(),
-      ConversationState.TemplateCreation => serviceProvider.GetRequiredService<TemplateCreationHandler>(),
-      ConversationState.TemplateEdit => serviceProvider.GetRequiredService<TemplateEditHandler>(),
+      ConversationState.TemplateForm => serviceProvider.GetRequiredService<TemplateFormHandler>(),
+      ConversationState.TaskBrowsing => serviceProvider.GetRequiredService<TaskBrowsingHandler>(),
+      ConversationState.TemplateBrowsing => serviceProvider.GetRequiredService<TemplateBrowsingHandler>(),
+      ConversationState.SpotBrowsing => serviceProvider.GetRequiredService<SpotBrowsingHandler>(),
+      ConversationState.Family => serviceProvider.GetRequiredService<FamilyBrowsingHandler>(),
+      ConversationState.FamilyMembers => serviceProvider.GetRequiredService<FamilyMembersBrousingHandler>(),
+      ConversationState.StatsBrowsing => serviceProvider.GetRequiredService<StatsBrowsingHandler>(),
       _ => null
     };
 
-  private ICallbackHandler? GetCallbackHandler(string action) =>
-    action switch
-    {
-      CallbackData.Task.Entity => serviceProvider.GetRequiredService<TaskCallbackHandler>(),
-      CallbackData.Spot.Entity => serviceProvider.GetRequiredService<SpotCallbackHandler>(),
-      CallbackData.Family.Entity => serviceProvider.GetRequiredService<FamilyCallbackHandler>(),
-      CallbackData.Templates.Entity => serviceProvider.GetRequiredService<TemplateCallbackHandler>(),
-      // points, timezone, schedule - обрабатываются в ConversationHandlers
-      _ => null
-    };
+  private ConversationState GetBrowsingStateForAction(string action) =>
+    Enum.TryParse(action, out ConversationState newState)
+      ? newState
+      : ConversationState.None;
 
   private async Task HandleStartCommandAsync(
     ITelegramBotClient botClient,
@@ -267,10 +219,9 @@ public class UpdateHandler(
         BotMessages.Messages.WelcomeMessage +
         BotMessages.Messages.NoFamiliesJoin,
         parseMode: ParseMode.Markdown,
-        replyMarkup: new InlineKeyboardMarkup(new[]
-        {
+        replyMarkup: new InlineKeyboardMarkup([
           InlineKeyboardButton.WithCallbackData("➕ Создать семью", CallbackData.Family.Create)
-        }),
+        ]),
         cancellationToken: cancellationToken);
   }
 
@@ -284,72 +235,39 @@ public class UpdateHandler(
       parseMode: ParseMode.Markdown,
       cancellationToken: cancellationToken);
 
-  private async Task HandleUnknownCommandAsync(
+  private async Task<bool> HandleUnknownCommandAsync(
     ITelegramBotClient botClient,
     Message message,
-    CancellationToken cancellationToken) =>
+    CancellationToken cancellationToken)
+  {
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       BotMessages.Errors.UnknownCommand,
       parseMode: ParseMode.Markdown,
       cancellationToken: cancellationToken);
+    return false;
+  }
 
-  private async Task HandleKeyboardButtonAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
+  private async Task<bool> HandleKeyboardButtonAsync(ITelegramBotClient botClient, Message message, UserSession session,
     CancellationToken cancellationToken)
   {
     var text = message.Text!;
 
-    await (text switch
+    var callBackData = text switch
     {
-      "🏠 Семья" => HandleFamilyCommandAsync(botClient, message, session, cancellationToken),
-      "✅ Наши задачи" => HandleTasksCommandAsync(botClient, message, session, cancellationToken),
-      "🧩 Споты" => HandleSpotCommandAsync(botClient, message, session, cancellationToken),
-      "📊 Статистика" => HandleStatsCommandAsync(botClient, message, session, cancellationToken),
-      _ => HandleUnknownCommandAsync(botClient, message, cancellationToken)
-    });
-  }
+      "🏠 Семья" => CallbackData.Family.List(),
+      "✅ Наши задачи" => CallbackData.Task.List(),
+      "🧩 Споты" => CallbackData.Spot.List(),
+      "📊 Статистика" => CallbackData.Stats.List(),
+      _ => null
+    };
+    if (callBackData != null)
+    {
+      await HandleCallback(botClient, session, callBackData, message.Chat.Id, null, message.From, cancellationToken);
+      return true;
+    }
 
-  private async Task HandleFamilyCommandAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    var handler = serviceProvider.GetRequiredService<FamilyCommandHandler>();
-    await handler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
-  }
-
-  private async Task HandleTasksCommandAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    var handler = serviceProvider.GetRequiredService<TasksCommandHandler>();
-    await handler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
-  }
-
-  private async Task HandleSpotCommandAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    var handler = serviceProvider.GetRequiredService<SpotCommandHandler>();
-    await handler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
-  }
-
-  private async Task HandleStatsCommandAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    var handler = serviceProvider.GetRequiredService<StatsCommandHandler>();
-    await handler.HandleAsync(botClient, message, session, session.UserId, cancellationToken);
+    return false;
   }
 
   private async Task SendMainMenuAsync(

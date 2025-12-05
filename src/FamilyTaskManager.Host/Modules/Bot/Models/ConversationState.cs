@@ -6,6 +6,13 @@ public enum ConversationState
   FamilyCreation,
   SpotCreation,
   TaskCreation,
-  TemplateCreation,
-  TemplateEdit
+  TemplateForm,
+
+  // Browsing conversations
+  Family,
+  FamilyMembers,
+  SpotBrowsing,
+  TaskBrowsing,
+  TemplateBrowsing,
+  StatsBrowsing
 }

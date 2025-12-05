@@ -21,7 +21,7 @@ public class FamilyCreationHandler(
   private const string StateAwaitingTimezone = "awaiting_timezone";
   private const string StateAwaitingLocation = "awaiting_location";
 
-  public async Task HandleAsync(
+  public async Task HandleMessageAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -49,73 +49,37 @@ public class FamilyCreationHandler(
     });
   }
 
-  public async Task HandleCancelAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    Func<Task> sendMainMenuAction,
-    CancellationToken cancellationToken)
-  {
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      "❌ Создание семьи отменено.",
-      replyMarkup: new ReplyKeyboardRemove(),
-      cancellationToken: cancellationToken);
-
-    await sendMainMenuAction();
-    session.ClearState();
-  }
-
-  public async Task HandleBackAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    Func<Task> sendMainMenuAction,
-    CancellationToken cancellationToken)
-  {
-    var currentState = session.Data.InternalState;
-
-    if (currentState == StateAwaitingLocation)
-      await HandleBackToTimezoneSelectionAsync(botClient, message, session, cancellationToken);
-    else
-    {
-      await botClient.SendTextMessageAsync(
-        message.Chat.Id,
-        "⬅️ Возврат отменён.",
-        replyMarkup: new ReplyKeyboardRemove(),
-        cancellationToken: cancellationToken);
-      await sendMainMenuAction();
-      session.ClearState();
-    }
-  }
-
-  public async Task HandleCallbackAsync(
-    ITelegramBotClient botClient,
+  public async Task HandleCallbackAsync(ITelegramBotClient botClient,
     long chatId,
-    int messageId,
+    Message? message,
     string[] callbackParts,
     UserSession session,
     User fromUser,
     CancellationToken cancellationToken)
   {
-    if (callbackParts.Length < 2 || callbackParts[0] != "timezone")
+    if (callbackParts.Length < 2)
       return;
 
-    var timezoneId = callbackParts[1];
+    var action = callbackParts[1];
 
-    if (timezoneId == "showlist")
+    if (action == CallbackActions.ShowTimezoneList)
     {
-      await ShowTimezoneListAsync(botClient, chatId, messageId, session, cancellationToken);
+      await ShowTimezoneListAsync(botClient, chatId, message, session, cancellationToken);
       return;
     }
 
-    if (timezoneId == "detect")
+    if (action == CallbackActions.DetectTimezone)
     {
-      await RequestLocationAsync(botClient, chatId, messageId, session, cancellationToken);
+      await RequestLocationAsync(botClient, chatId, message, session, cancellationToken);
       return;
     }
 
-    await CreateFamilyWithTimezoneAsync(botClient, chatId, messageId, timezoneId, session, cancellationToken);
+    // Обработка timezone: FamilyCreation_tz_Asia/Yekaterinburg
+    if (action == CallbackActions.Timezone && callbackParts.Length >= 3)
+    {
+      var timezoneId = string.Join("_", callbackParts.Skip(2));
+      await CreateFamilyWithTimezoneAsync(botClient, chatId, message, timezoneId, session, cancellationToken);
+    }
   }
 
   private async Task HandleFamilyNameInputAsync(
@@ -287,14 +251,15 @@ public class FamilyCreationHandler(
   }
 
   private static InlineKeyboardMarkup GetTimezoneChoiceKeyboard() =>
-    new(new[]
-    {
-      new[] { InlineKeyboardButton.WithCallbackData("📍 Определить по геолокации", "timezone_detect") },
-      new[] { InlineKeyboardButton.WithCallbackData("📋 Выбрать из списка", "timezone_showlist") }
-    });
+    new([
+      [
+        InlineKeyboardButton.WithCallbackData("📍 Определить по геолокации", CallbackData.FamilyCreation.DetectTimezone)
+      ],
+      [InlineKeyboardButton.WithCallbackData("📋 Выбрать из списка", CallbackData.FamilyCreation.ShowTimezoneList)]
+    ]);
 
   private static ReplyKeyboardMarkup GetCancelKeyboard() =>
-    new(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+    new([[new("❌ Отменить")]])
     {
       ResizeKeyboard = true
     };
@@ -342,16 +307,16 @@ public class FamilyCreationHandler(
   private async Task ShowTimezoneListAsync(
     ITelegramBotClient botClient,
     long chatId,
-    int messageId,
+    Message? message,
     UserSession session,
     CancellationToken cancellationToken)
   {
     var timezoneListKeyboard = GetRussianTimeZoneListKeyboard();
     var listFamilyName = session.Data.FamilyName ?? "вашей семьи";
 
-    await botClient.EditMessageTextAsync(
+    await botClient.SendOrEditMessageAsync(
       chatId,
-      messageId,
+      message,
       $"🌍 Выберите временную зону для семьи \"{listFamilyName}\":",
       replyMarkup: timezoneListKeyboard,
       cancellationToken: cancellationToken);
@@ -360,24 +325,23 @@ public class FamilyCreationHandler(
   private async Task RequestLocationAsync(
     ITelegramBotClient botClient,
     long chatId,
-    int messageId,
+    Message? message,
     UserSession session,
     CancellationToken cancellationToken)
   {
     session.Data.InternalState = StateAwaitingLocation;
 
-    var locationKeyboard = new ReplyKeyboardMarkup(new[]
-    {
-      new KeyboardButton[] { new("📍 Отправить местоположение") { RequestLocation = true } },
-      new KeyboardButton[] { new("⬅️ Назад") }
-    })
+    var locationKeyboard = new ReplyKeyboardMarkup([
+      [new("📍 Отправить местоположение") { RequestLocation = true }],
+      [new("⬅️ Назад")]
+    ])
     {
       ResizeKeyboard = true
     };
 
-    await botClient.EditMessageTextAsync(
+    await botClient.SendOrEditMessageAsync(
       chatId,
-      messageId,
+      message,
       "📍 Нажмите кнопку ниже, чтобы поделиться местоположением:",
       cancellationToken: cancellationToken);
 
@@ -393,7 +357,7 @@ public class FamilyCreationHandler(
   private async Task CreateFamilyWithTimezoneAsync(
     ITelegramBotClient botClient,
     long chatId,
-    int messageId,
+    Message? message,
     string timezoneId,
     UserSession session,
     CancellationToken cancellationToken)
@@ -401,9 +365,9 @@ public class FamilyCreationHandler(
     if (session.Data.FamilyName == null)
     {
       session.ClearState();
-      await botClient.EditMessageTextAsync(
+      await botClient.SendOrEditMessageAsync(
         chatId,
-        messageId,
+        message,
         "❌ Ошибка сессии. Попробуйте создать семью заново.",
         cancellationToken: cancellationToken);
       return;
@@ -411,9 +375,9 @@ public class FamilyCreationHandler(
 
     if (!timeZoneService.IsValidTimeZone(timezoneId))
     {
-      await botClient.EditMessageTextAsync(
+      await botClient.SendOrEditMessageAsync(
         chatId,
-        messageId,
+        message,
         "❌ Неверная временная зона. Попробуйте снова.",
         cancellationToken: cancellationToken);
       return;
@@ -424,9 +388,9 @@ public class FamilyCreationHandler(
 
     if (!result.IsSuccess)
     {
-      await botClient.EditMessageTextAsync(
+      await botClient.SendOrEditMessageAsync(
         chatId,
-        messageId,
+        message,
         $"❌ Ошибка создания семьи: {result.Errors.FirstOrDefault()}",
         cancellationToken: cancellationToken);
       session.ClearState();
@@ -435,9 +399,9 @@ public class FamilyCreationHandler(
 
     session.CurrentFamilyId = result.Value;
 
-    await botClient.EditMessageTextAsync(
+    await botClient.SendOrEditMessageAsync(
       chatId,
-      messageId,
+      message,
       BotMessages.Success.FamilyCreatedMessage(session.Data.FamilyName) +
       $"🌍 Временная зона: {timezoneId}\n\n" +
       BotMessages.Success.NextStepsMessage,
@@ -453,19 +417,18 @@ public class FamilyCreationHandler(
   }
 
   private static InlineKeyboardMarkup GetRussianTimeZoneListKeyboard() =>
-    new(new[]
-    {
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Калининград", "timezone_Europe/Kaliningrad") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Москва", "timezone_Europe/Moscow") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Самара", "timezone_Europe/Samara") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Екатеринбург", "timezone_Asia/Yekaterinburg") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Омск", "timezone_Asia/Omsk") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Красноярск", "timezone_Asia/Krasnoyarsk") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Иркутск", "timezone_Asia/Irkutsk") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Якутск", "timezone_Asia/Yakutsk") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Владивосток", "timezone_Asia/Vladivostok") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Магадан", "timezone_Asia/Magadan") },
-      new[] { InlineKeyboardButton.WithCallbackData("🇷🇺 Камчатка", "timezone_Asia/Kamchatka") },
-      new[] { InlineKeyboardButton.WithCallbackData("⏭️ Пропустить (UTC)", "timezone_UTC") }
-    });
+    new([
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Калининград", CallbackData.FamilyCreation.EuropeKaliningrad)],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Москва", CallbackData.FamilyCreation.EuropeMoscow)],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Самара", CallbackData.FamilyCreation.EuropeSamara)],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Екатеринбург", CallbackData.FamilyCreation.AsiaYekaterinburg)],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Омск", CallbackData.FamilyCreation.AsiaOmsk)],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Красноярск", CallbackData.FamilyCreation.AsiaKrasnoyarsk)],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Иркутск", CallbackData.FamilyCreation.AsiaIrkutsk)],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Якутск", CallbackData.FamilyCreation.AsiaYakutsk)],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Владивосток", CallbackData.FamilyCreation.AsiaVladivostok)],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Магадан", CallbackData.FamilyCreation.AsiaMagadan)],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Камчатка", CallbackData.FamilyCreation.AsiaKamchatka)],
+      [InlineKeyboardButton.WithCallbackData("⏭️ Пропустить (UTC)", CallbackData.FamilyCreation.Utc)]
+    ]);
 }

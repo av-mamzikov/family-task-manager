@@ -1,6 +1,7 @@
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using Telegram.Bot;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
@@ -36,5 +37,38 @@ public abstract class BaseConversationHandler(ILogger logger, IMediator mediator
       chatId,
       errorMessage + hint,
       replyMarkup: keyboard,
+      cancellationToken: cancellationToken);
+
+  public virtual async Task HandleCancelAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    Func<Task> sendMainMenuAction,
+    CancellationToken cancellationToken)
+  {
+    await sendMainMenuAction();
+    session.ClearState();
+  }
+
+  protected async Task SendErrorAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    string errorMessage,
+    CancellationToken cancellationToken) =>
+    await botClient.SendTextMessageAsync(
+      chatId,
+      errorMessage,
+      cancellationToken: cancellationToken);
+
+  protected async Task EditMessageWithErrorAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    Message? message,
+    string errorMessage,
+    CancellationToken cancellationToken) =>
+    await botClient.SendOrEditMessageAsync(
+      chatId,
+      message,
+      errorMessage,
       cancellationToken: cancellationToken);
 }

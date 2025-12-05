@@ -15,7 +15,7 @@ public class SpotCreationHandler(
 {
   private const string StateAwaitingName = "awaiting_name";
 
-  public async Task HandleAsync(
+  public async Task HandleMessageAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
@@ -32,22 +32,13 @@ public class SpotCreationHandler(
       await HandleSpotNameInputAsync(botClient, message, session, text, cancellationToken);
   }
 
-  public async Task HandleCancelAsync(
-    ITelegramBotClient botClient,
-    Message message,
+  public Task HandleCallbackAsync(ITelegramBotClient botClient,
+    long chatId,
+    Message? message,
+    string[] callbackParts,
     UserSession session,
-    Func<Task> sendMainMenuAction,
-    CancellationToken cancellationToken)
-  {
-    await botClient.SendTextMessageAsync(
-      message.Chat.Id,
-      "❌ Создание спота отменено.",
-      replyMarkup: new ReplyKeyboardRemove(),
-      cancellationToken: cancellationToken);
-
-    await sendMainMenuAction();
-    session.ClearState();
-  }
+    User fromUser,
+    CancellationToken cancellationToken) => Task.CompletedTask;
 
   public async Task HandleBackAsync(
     ITelegramBotClient botClient,
@@ -64,15 +55,6 @@ public class SpotCreationHandler(
     await sendMainMenuAction();
     session.ClearState();
   }
-
-  public Task HandleCallbackAsync(
-    ITelegramBotClient botClient,
-    long chatId,
-    int messageId,
-    string[] callbackParts,
-    UserSession session,
-    User fromUser,
-    CancellationToken cancellationToken) => Task.CompletedTask;
 
   private async Task HandleSpotNameInputAsync(
     ITelegramBotClient botClient,
@@ -145,7 +127,7 @@ public class SpotCreationHandler(
   }
 
   private static ReplyKeyboardMarkup GetCancelKeyboard() =>
-    new(new[] { new KeyboardButton[] { new("❌ Отменить") } })
+    new([[new("❌ Отменить")]])
     {
       ResizeKeyboard = true
     };

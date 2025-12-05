@@ -19,6 +19,8 @@ public static class SpotTypeHelper
   public static (string emoji, string text) GetInfo(SpotType spotType) =>
     SpotDisplay.GetInfo(spotType);
 
+  public static (string emoji, string text) GetInfoFromString(string spotType) => SpotDisplay.GetInfoFromStr(spotType);
+
   public static string GetEmojiFromString(string SpotTypeString) =>
     SpotDisplay.GetEmojiFromCode(SpotTypeString);
 
@@ -37,19 +39,17 @@ public static class SpotTypeHelper
       // Callback data still uses the original lowercase code from Core
       var callbackCode = SpotType.ToString().ToLowerInvariant();
 
-      buttons.Add(new[]
-      {
+      buttons.Add([
         InlineKeyboardButton.WithCallbackData(
           $"{emoji} {text}",
           CallbackData.SpotType.Select(callbackCode))
-      });
+      ]);
     }
 
     if (includeBackButton)
-      buttons.Add(new[]
-      {
+      buttons.Add([
         InlineKeyboardButton.WithCallbackData("⬅️ Назад", "Spot_back")
-      });
+      ]);
 
     return buttons.ToArray();
   }
