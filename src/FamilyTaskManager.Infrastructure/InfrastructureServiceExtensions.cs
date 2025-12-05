@@ -26,14 +26,12 @@ public static class InfrastructureServiceExtensions
     services.AddScoped<OutboxInterceptor>();
     services.AddScoped<IDomainEventDispatcher, MediatorDomainEventDispatcher>();
 
+    if (string.IsNullOrEmpty(connectionString))
+      throw new InvalidOperationException("DefaultConnection is not available");
+
     services.AddDbContext<AppDbContext>((provider, options) =>
     {
-      // Use PostgreSQL if DefaultConnection is available, otherwise use SQLite
-      if (config.GetConnectionString("DefaultConnection") != null)
-        options.UseNpgsql(connectionString);
-      else
-        options.UseSqlite(connectionString);
-
+      options.UseNpgsql(connectionString);
       options.AddInterceptors(provider.GetRequiredService<OutboxInterceptor>());
     });
 

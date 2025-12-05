@@ -22,7 +22,7 @@ public record TaskTemplateDto(
       t => new TaskTemplateDto(
         t.Id,
         t.FamilyId,
-        t.Title,
+        t.Title.Value,
         t.Points,
         t.Schedule.Type,
         t.Schedule.Time,
@@ -31,6 +31,6 @@ public record TaskTemplateDto(
         t.SpotId,
         t.Spot.Name,
         t.CreatedAt,
-        t.DueDuration);
+        t.DueDuration.Value);
   }
 }

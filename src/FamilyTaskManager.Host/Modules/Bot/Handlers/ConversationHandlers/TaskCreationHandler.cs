@@ -23,13 +23,13 @@ public class TaskCreationHandler(
     string title,
     CancellationToken cancellationToken)
   {
-    if (string.IsNullOrWhiteSpace(title) || title.Length < 3 || title.Length > 100)
+    if (string.IsNullOrWhiteSpace(title) || title.Length < TaskTitle.MinLength || title.Length > TaskTitle.MaxLength)
     {
       var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingTaskTitle);
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
-        "❌ Название задачи должно содержать от 3 до 100 символов. Попробуйте снова:",
+        $"❌ Название задачи должно содержать от {TaskTitle.MinLength} до {TaskTitle.MaxLength} символов. Попробуйте снова:",
         StateKeyboardHelper.GetHintForState(ConversationState.AwaitingTaskTitle),
         keyboard,
         cancellationToken);

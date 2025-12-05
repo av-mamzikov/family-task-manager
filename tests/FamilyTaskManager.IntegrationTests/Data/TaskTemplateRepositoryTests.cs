@@ -25,8 +25,8 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
 
     // Создаем шаблон задачи с валидными ID
     var createdBy = Guid.NewGuid();
-    var defaultSchedule = schedule ?? Schedule.CreateDaily(new TimeOnly(8, 0)).Value;
-    return new TaskTemplate(family.Id, Spot.Id, title, new(points), defaultSchedule, TimeSpan.FromHours(12),
+    var defaultSchedule = schedule ?? Schedule.CreateDaily(new(8, 0)).Value;
+    return new(family.Id, Spot.Id, new(title), new(points), defaultSchedule, new(TimeSpan.FromHours(12)),
       createdBy);
   }
 
@@ -43,34 +43,34 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
     // Assert
     var retrieved = await Repository.GetByIdAsync(taskTemplate.Id);
     retrieved.ShouldNotBeNull();
-    retrieved.Title.ShouldBe("Feed the cat");
+    retrieved.Title.Value.ShouldBe("Feed the cat");
     retrieved.Points.Value.ShouldBe(2);
     retrieved.Schedule.Type.ShouldBe(ScheduleType.Daily);
-    retrieved.Schedule.Time.ShouldBe(new TimeOnly(8, 0));
+    retrieved.Schedule.Time.ShouldBe(new(8, 0));
   }
 
   [Fact]
   public async Task UpdateAsync_ShouldModifyExistingTaskTemplate()
   {
     // Arrange
-    var originalSchedule = Schedule.CreateDaily(new TimeOnly(9, 0)).Value;
+    var originalSchedule = Schedule.CreateDaily(new(9, 0)).Value;
     var taskTemplate = await CreateTaskTemplateWithDependencies("Original Title", 2, originalSchedule);
     await Repository.AddAsync(taskTemplate);
     await DbContext.SaveChangesAsync();
 
     // Act
-    var updatedSchedule = Schedule.CreateDaily(new TimeOnly(10, 0)).Value;
-    taskTemplate.Update("Updated Title", new TaskPoints(3), updatedSchedule, TimeSpan.FromHours(12));
+    var updatedSchedule = Schedule.CreateDaily(new(10, 0)).Value;
+    taskTemplate.Update(new("Updated Title"), new(3), updatedSchedule, new(TimeSpan.FromHours(12)));
     await Repository.UpdateAsync(taskTemplate);
     await DbContext.SaveChangesAsync();
 
     // Assert
     var retrieved = await Repository.GetByIdAsync(taskTemplate.Id);
     retrieved.ShouldNotBeNull();
-    retrieved.Title.ShouldBe("Updated Title");
+    retrieved.Title.Value.ShouldBe("Updated Title");
     retrieved.Points.Value.ShouldBe(3);
     retrieved.Schedule.Type.ShouldBe(ScheduleType.Daily);
-    retrieved.Schedule.Time.ShouldBe(new TimeOnly(10, 0));
+    retrieved.Schedule.Time.ShouldBe(new(10, 0));
   }
 
   [Fact]
@@ -95,8 +95,8 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
   {
     // Arrange
     var task1 = await CreateTaskTemplateWithDependencies("Task 1");
-    var task2 = await CreateTaskTemplateWithDependencies("Task 2", 3, Schedule.CreateDaily(new TimeOnly(9, 0)).Value);
-    var task3 = await CreateTaskTemplateWithDependencies("Task 3", 1, Schedule.CreateDaily(new TimeOnly(10, 0)).Value);
+    var task2 = await CreateTaskTemplateWithDependencies("Task 2", 3, Schedule.CreateDaily(new(9, 0)).Value);
+    var task3 = await CreateTaskTemplateWithDependencies("Task 3", 1, Schedule.CreateDaily(new(10, 0)).Value);
 
     await Repository.AddRangeAsync([task1, task2, task3]);
     await DbContext.SaveChangesAsync();
@@ -116,7 +116,7 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
   {
     // Arrange
     var task1 = await CreateTaskTemplateWithDependencies("Task 1");
-    var task2 = await CreateTaskTemplateWithDependencies("Task 2", 3, Schedule.CreateDaily(new TimeOnly(9, 0)).Value);
+    var task2 = await CreateTaskTemplateWithDependencies("Task 2", 3, Schedule.CreateDaily(new(9, 0)).Value);
 
     await Repository.AddRangeAsync([task1, task2]);
     await DbContext.SaveChangesAsync();

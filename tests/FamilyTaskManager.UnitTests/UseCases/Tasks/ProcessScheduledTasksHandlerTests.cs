@@ -72,7 +72,7 @@ public class ProcessScheduledTasksHandlerTests
     // Schedule at 10:00 - outside the window
     var schedule = Schedule.CreateDaily(new(10, 0)).Value;
     var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, SpotId, "Daily Task", new(2), schedule, TimeSpan.FromHours(24),
+    var template = new TaskTemplate(familyId, SpotId, new("Daily Task"), new(2), schedule, new(TimeSpan.FromHours(24)),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
@@ -120,7 +120,7 @@ public class ProcessScheduledTasksHandlerTests
     // Schedule at 10:00 - inside the window
     var schedule = Schedule.CreateDaily(new(10, 0)).Value;
     var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, SpotId, "Daily Task", new(2), schedule, TimeSpan.FromHours(24),
+    var template = new TaskTemplate(familyId, SpotId, new("Daily Task"), new(2), schedule, new(TimeSpan.FromHours(24)),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
@@ -182,7 +182,7 @@ public class ProcessScheduledTasksHandlerTests
 
     var schedule = Schedule.CreateDaily(new(10, 0)).Value;
     var family = new Family("Test Family", "UTC", false);
-    var template = new TaskTemplate(familyId, SpotId, "Daily Task", new(2), schedule, TimeSpan.FromHours(24),
+    var template = new TaskTemplate(familyId, SpotId, new("Daily Task"), new(2), schedule, new(TimeSpan.FromHours(24)),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template, family);
 
@@ -248,11 +248,11 @@ public class ProcessScheduledTasksHandlerTests
     // Set Family navigation property for test
     typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
 
-    var template1 = new TaskTemplate(familyId, SpotId, "Task 1", new(2), schedule1, TimeSpan.FromHours(24),
+    var template1 = new TaskTemplate(familyId, SpotId, new("Task 1"), new(2), schedule1, new(TimeSpan.FromHours(24)),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template1, family);
 
-    var template2 = new TaskTemplate(familyId, SpotId, "Task 2", new(2), schedule2, TimeSpan.FromHours(24),
+    var template2 = new TaskTemplate(familyId, SpotId, new("Task 2"), new(2), schedule2, new(TimeSpan.FromHours(24)),
       Guid.NewGuid());
     typeof(TaskTemplate).GetProperty(nameof(TaskTemplate.Family))!.SetValue(template2, family);
 

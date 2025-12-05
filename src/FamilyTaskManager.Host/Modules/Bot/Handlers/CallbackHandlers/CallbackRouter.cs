@@ -46,7 +46,7 @@ public class CallbackRouter(
         cancellationToken),
       "taskSpot" => taskCallbackHandler.HandleTaskSpotSelectionAsync(botClient, chatId, messageId, parts, session,
         cancellationToken),
-      "Spot" => SpotCallbackHandler.HandleSpotActionAsync(botClient, chatId, messageId, parts, session, fromUser,
+      "spot" => SpotCallbackHandler.HandleSpotActionAsync(botClient, chatId, messageId, parts, session, fromUser,
         cancellationToken),
       "family" => familyCallbackHandler.HandleFamilyActionAsync(botClient, chatId, messageId, parts, session,
         fromUser, cancellationToken),
@@ -75,10 +75,7 @@ public class CallbackRouter(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    if (parts.Length < 2)
-    {
-      return;
-    }
+    if (parts.Length < 2) return;
 
     var entityType = parts[1];
 
@@ -89,7 +86,7 @@ public class CallbackRouter(
           cancellationToken);
         break;
 
-      case "Spot":
+      case "spot":
         await SpotCallbackHandler.StartCreateSpotAsync(botClient, chatId, messageId, session, cancellationToken);
         break;
 
@@ -107,10 +104,7 @@ public class CallbackRouter(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    if (parts.Length < 3)
-    {
-      return;
-    }
+    if (parts.Length < 3) return;
 
     var selectType = parts[1];
     var value = parts[2];
@@ -143,19 +137,14 @@ public class CallbackRouter(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    if (parts.Length < 3)
-    {
-      return;
-    }
+    if (parts.Length < 3) return;
 
     var confirmType = parts[1];
     var familyIdStr = parts[2];
 
     if (confirmType == "delete" && Guid.TryParse(familyIdStr, out var familyId))
-    {
       await familyCallbackHandler.HandleConfirmDeleteFamilyAsync(botClient, chatId, messageId, familyId, session,
         fromUser, cancellationToken);
-    }
   }
 
   private static async Task HandleCancelActionAsync(
@@ -166,21 +155,16 @@ public class CallbackRouter(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    if (parts.Length < 2)
-    {
-      return;
-    }
+    if (parts.Length < 2) return;
 
     var cancelType = parts[1];
 
     if (cancelType == "delete")
-    {
       await botClient.EditMessageTextAsync(
         chatId,
         messageId,
         "❌ Удаление семьи отменено",
         cancellationToken: cancellationToken);
-    }
   }
 
   private static async Task HandleUnknownCallbackAsync(

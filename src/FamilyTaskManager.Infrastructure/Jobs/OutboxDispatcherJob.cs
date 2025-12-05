@@ -20,6 +20,8 @@ public class OutboxDispatcherJob(
 {
   private const int MaxRetryAttempts = 30;
 
+  private const int CleanupThresholdDays = 30;
+
   public async Task Execute(IJobExecutionContext context)
   {
     logger.LogInformation("OutboxDispatcherJob started at {Time}", DateTime.UtcNow);
@@ -80,6 +82,8 @@ public class OutboxDispatcherJob(
           failureCount++;
         }
 
+      await CleanupOldEntries(context.CancellationToken);
+
       // Save all changes
       await dbContext.SaveChangesAsync(context.CancellationToken);
 
@@ -92,6 +96,23 @@ public class OutboxDispatcherJob(
       logger.LogError(ex, "OutboxDispatcherJob failed");
       throw;
     }
+  }
+
+  private async Task CleanupOldEntries(CancellationToken cancellationToken)
+  {
+    var cutoffDate = DateTime.UtcNow.AddDays(-CleanupThresholdDays);
+
+    var removedCount = await dbContext.DomainEventOutbox
+      .Where(e => (e.Status == NotificationStatus.Sent || e.Status == NotificationStatus.Failed)
+                  && e.ProcessedAtUtc != null
+                  && e.ProcessedAtUtc < cutoffDate)
+      .ExecuteDeleteAsync(cancellationToken);
+
+    if (removedCount > 0)
+      logger.LogInformation(
+        "Removed {Count} old outbox entries older than {Days} days",
+        removedCount,
+        CleanupThresholdDays);
   }
 
   /// <summary>

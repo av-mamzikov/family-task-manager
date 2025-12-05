@@ -23,7 +23,7 @@ public class TaskInstanceFactory : ITaskInstanceFactory
 
     var taskInstance = new TaskInstance(
       spot,
-      template.Title,
+      template.Title.Value,
       template.Points,
       dueAt,
       template.Id

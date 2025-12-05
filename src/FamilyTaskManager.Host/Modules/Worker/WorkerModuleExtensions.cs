@@ -32,7 +32,7 @@ public static class WorkerModuleExtensions
       q.AddTrigger(opts => opts
         .ForJob(taskCreatorJobKey)
         .WithIdentity("TaskInstanceCreatorJob-trigger")
-        .WithCronSchedule("0 * * * * ?") // Every minute at second 0
+        .WithCronSchedule("10 * * * * ?")
         .WithDescription("Creates TaskInstance from TaskTemplate based on schedule"));
 
       // Job 2: TaskReminderJob - runs every 15 minutes
@@ -41,7 +41,7 @@ public static class WorkerModuleExtensions
       q.AddTrigger(opts => opts
         .ForJob(reminderJobKey)
         .WithIdentity("TaskReminderJob-trigger")
-        .WithCronSchedule("0 */15 * * * ?") // Every 15 minutes
+        .WithCronSchedule("10 */15 * * * ?")
         .WithDescription("Sends reminders for tasks due within the next hour"));
 
       // Job 3: SpotMoodCalculatorJob - runs every 30 minutes
@@ -50,7 +50,7 @@ public static class WorkerModuleExtensions
       q.AddTrigger(opts => opts
         .ForJob(moodJobKey)
         .WithIdentity("SpotMoodCalculatorJob-trigger")
-        .WithCronSchedule("0 */30 * * * ?") // Every 30 minutes
+        .WithCronSchedule("10 */30 * * * ?")
         .WithDescription("Recalculates mood scores for all spots"));
 
       // Register infrastructure jobs (OutboxDispatcherJob)

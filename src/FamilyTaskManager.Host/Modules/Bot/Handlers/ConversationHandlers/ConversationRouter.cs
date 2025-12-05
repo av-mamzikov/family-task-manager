@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using Telegram.Bot;
@@ -212,9 +213,11 @@ public class ConversationRouter(
 
     var messageText = previousState switch
     {
-      ConversationState.AwaitingTaskTitle => "📝 Введите название задачи (от 3 до 100 символов):" + hint,
+      ConversationState.AwaitingTaskTitle =>
+        $"📝 Введите название задачи (от {TaskTitle.MinLength} до {TaskTitle.MaxLength} символов):" + hint,
       ConversationState.AwaitingTaskPoints => "⭐ Выберите сложность задачи:",
-      ConversationState.AwaitingTemplateTitle => "📝 Введите название шаблона (от 3 до 100 символов):" + hint,
+      ConversationState.AwaitingTemplateTitle =>
+        $"📝 Введите название шаблона (от {TaskTitle.MinLength} до {TaskTitle.MaxLength} символов):" + hint,
       ConversationState.AwaitingTemplatePoints => "⭐ Выберите сложность задачи:",
       ConversationState.AwaitingFamilyTimezone => "🌍 Выберите способ определения временной зоны:",
       _ => "⬅️ Возврат к предыдущему шагу."
