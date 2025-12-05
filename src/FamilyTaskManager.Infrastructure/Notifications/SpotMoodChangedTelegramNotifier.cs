@@ -17,6 +17,13 @@ public class SpotMoodChangedTelegramNotifier(
     // Format message using data from event
     var (moodEmoji, moodText) = SpotDisplay.GetMoodInfo(notification.NewMoodScore);
 
+    // First, send a separate emoji-only message to show a big animated emoji in Telegram
+    await telegramNotificationService.SendToFamilyMembersAsync(
+      notification.FamilyId,
+      moodEmoji,
+      [],
+      cancellationToken);
+
     var message = $"{moodEmoji} *Настроение вашего спота изменилось!*\n\n" +
                   $"Спот: {notification.Name}\n" +
                   $"Настроение: {moodEmoji} {moodText}\n" +
