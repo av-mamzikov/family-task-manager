@@ -13,18 +13,8 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 public class TemplateBrowsingHandler(
   ILogger<TemplateBrowsingHandler> logger,
   IMediator mediator)
-  : BaseConversationHandler(logger, mediator), IConversationHandler
+  : BaseConversationHandler(logger), IConversationHandler
 {
-  private const string FieldTitle = "title";
-  private const string FieldPoints = "points";
-  private const string FieldSchedule = "schedule";
-  private const string FieldDueDuration = "dueduration";
-
-  private const string StateAwaitingTitle = "awaiting_title";
-  private const string StateAwaitingPoints = "awaiting_points";
-  private const string StateAwaitingScheduleType = "awaiting_schedule_type";
-  private const string StateAwaitingDueDuration = "awaiting_due_duration";
-
   public Task HandleMessageAsync(
     ITelegramBotClient botClient,
     Message message,
@@ -39,42 +29,19 @@ public class TemplateBrowsingHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    if (callbackParts.Length < 2) return;
-
-    var templateAction = callbackParts[1];
-
-    await (templateAction switch
-    {
-      CallbackActions.ListForSpot when callbackParts.Length >= 3 &&
-                                       Guid.TryParse(callbackParts[2], out var spotId) =>
-        HandleViewSpotTemplatesAsync(botClient, chatId, message, spotId, session, cancellationToken),
-
-      CallbackActions.View when callbackParts.Length >= 3 && Guid.TryParse(callbackParts[2], out var templateId) =>
-        HandleViewTemplateAsync(botClient, chatId, message, templateId, session, cancellationToken),
-
-      CallbackActions.Delete when callbackParts.Length >= 3 &&
-                                  Guid.TryParse(callbackParts[2], out var templateId) =>
-        HandleDeleteTemplateAsync(botClient, chatId, message, templateId, session, cancellationToken),
-
-      CallbackActions.ConfirmDelete when callbackParts.Length >= 3 &&
-                                         Guid.TryParse(callbackParts[2], out var templateId) =>
-        HandleConfirmDeleteTemplateAsync(botClient, chatId, message, templateId, session, cancellationToken),
-
-      CallbackActions.Edit when callbackParts.Length >= 3 &&
-                                Guid.TryParse(callbackParts[2], out var templateId) =>
-        HandleEditTemplateAsync(botClient, chatId, message, templateId, session, cancellationToken),
-
-      CallbackActions.Edit when callbackParts.Length >= 4 &&
-                                Guid.TryParse(callbackParts[2], out var templateId) =>
-        HandleTemplateEditFieldAsync(botClient, chatId, message, templateId, callbackParts[3], session,
-          cancellationToken),
-
-      CallbackActions.CreateTask when callbackParts.Length >= 3 &&
-                                      Guid.TryParse(callbackParts[2], out var templateId) =>
-        HandleCreateTaskNowAsync(botClient, chatId, message, templateId, session, cancellationToken),
-
-      _ => SendErrorAsync(botClient, chatId, "❌ Неизвестное действие", cancellationToken)
-    });
+    if (callbackParts.IsCallbackOf(CallbackData.TemplateBrowsing.ListOfSpot, out EncodedGuid spotId))
+      await HandleViewSpotTemplatesAsync(botClient, chatId, message, spotId.Value, session, cancellationToken);
+    else if (callbackParts.IsCallbackOf(CallbackData.TemplateBrowsing.View, out EncodedGuid viewTemplateId))
+      await HandleViewTemplateAsync(botClient, chatId, message, viewTemplateId.Value, session, cancellationToken);
+    else if (callbackParts.IsCallbackOf(CallbackData.TemplateBrowsing.Delete, out EncodedGuid deleteTemplateId))
+      await HandleDeleteTemplateAsync(botClient, chatId, message, deleteTemplateId.Value, session, cancellationToken);
+    else if (callbackParts.IsCallbackOf(CallbackData.TemplateBrowsing.ConfirmDelete,
+               out EncodedGuid confirmDeleteTemplateId))
+      await HandleConfirmDeleteTemplateAsync(botClient, chatId, message, confirmDeleteTemplateId.Value, session,
+        cancellationToken);
+    else if (callbackParts.IsCallbackOf(CallbackData.TemplateBrowsing.CreateTask, out EncodedGuid createTaskTemplateId))
+      await HandleCreateTaskNowAsync(botClient, chatId, message, createTaskTemplateId.Value, session,
+        cancellationToken);
   }
 
 
@@ -87,76 +54,6 @@ public class TemplateBrowsingHandler(
   {
     await sendMainMenuAction();
     session.ClearState();
-  }
-
-  private async Task HandleTemplateEditFieldAsync(
-    ITelegramBotClient botClient,
-    long chatId,
-    Message? message,
-    Guid templateId,
-    string fieldCode,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    if (session.CurrentFamilyId == null)
-    {
-      await SendErrorAsync(botClient, chatId, BotMessages.Errors.NoFamily, cancellationToken);
-      return;
-    }
-
-
-    session.State = ConversationState.TemplateForm;
-    session.Data.TemplateId = templateId;
-
-    switch (fieldCode)
-    {
-      case FieldTitle:
-        session.Data.InternalState = StateAwaitingTitle;
-        await botClient.SendOrEditMessageAsync(
-          chatId,
-          message,
-          "✏️ Введите новое название шаблона (от 3 до 100 символов):",
-          cancellationToken: cancellationToken);
-        break;
-
-      case FieldPoints:
-        session.Data.InternalState = StateAwaitingPoints;
-        var pointsKeyboard =
-          TaskPointsHelper.GetPointsSelectionKeyboard(CallbackData.TemplateBrowsing.View(templateId));
-        await botClient.SendOrEditMessageAsync(
-          chatId,
-          message,
-          "⭐ Выберите новую сложность задачи:",
-          replyMarkup: pointsKeyboard,
-          cancellationToken: cancellationToken);
-        break;
-
-      case FieldSchedule:
-        session.Data.InternalState = StateAwaitingScheduleType;
-        var scheduleTypeKeyboard =
-          ScheduleKeyboardHelper.GetScheduleTypeKeyboard(CallbackData.TemplateBrowsing.View(templateId));
-        await botClient.SendOrEditMessageAsync(
-          chatId,
-          message,
-          BotMessages.Templates.ChooseScheduleType +
-          "\n\n💡 Используйте кнопки для выбора.",
-          replyMarkup: scheduleTypeKeyboard,
-          cancellationToken: cancellationToken);
-        break;
-
-      case FieldDueDuration:
-        session.Data.InternalState = StateAwaitingDueDuration;
-        await botClient.SendOrEditMessageAsync(
-          chatId,
-          message,
-          "⏰ Введите новый срок выполнения в часах (от 0 до 24):",
-          cancellationToken: cancellationToken);
-        break;
-
-      default:
-        await SendErrorAsync(botClient, chatId, "❌ Неизвестное поле", cancellationToken);
-        break;
-    }
   }
 
   public async Task HandleViewSpotTemplatesAsync(
@@ -174,7 +71,7 @@ public class TemplateBrowsingHandler(
     }
 
     var getTemplatesQuery = new GetTaskTemplatesBySpotQuery(spotId, session.CurrentFamilyId.Value, true);
-    var templatesResult = await Mediator.Send(getTemplatesQuery, cancellationToken);
+    var templatesResult = await mediator.Send(getTemplatesQuery, cancellationToken);
 
     if (!templatesResult.IsSuccess)
     {
@@ -191,11 +88,11 @@ public class TemplateBrowsingHandler(
         $"📋 У спота *{templates.FirstOrDefault()?.SpotName ?? "этого спота"}* пока нет шаблонов задач.\n\n" +
         "Создайте первый шаблон!",
         ParseMode.Markdown,
-        new([
+        new InlineKeyboardMarkup([
           [
-            InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", CallbackData.TemplateBrowsing.Create(spotId))
+            InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", CallbackData.TemplateForm.Create(spotId))
           ],
-          [InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.SpotBowsing.List())]
+          [InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.SpotBrowsing.List())]
         ]),
         cancellationToken);
       return;
@@ -217,9 +114,9 @@ public class TemplateBrowsingHandler(
     ).ToList();
 
     buttons.Add([
-      InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", CallbackData.TemplateBrowsing.View(spotId))
+      InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", CallbackData.TemplateForm.Create(spotId))
     ]);
-    buttons.Add([InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.SpotBowsing.View(spotId))]);
+    buttons.Add([InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.SpotBrowsing.View(spotId))]);
 
     var keyboard = new InlineKeyboardMarkup(buttons);
 
@@ -242,7 +139,7 @@ public class TemplateBrowsingHandler(
     }
 
     var getTemplateQuery = new GetTaskTemplateByIdQuery(templateId, session.CurrentFamilyId.Value);
-    var templateResult = await Mediator.Send(getTemplateQuery, cancellationToken);
+    var templateResult = await mediator.Send(getTemplateQuery, cancellationToken);
 
     if (!templateResult.IsSuccess)
     {
@@ -267,7 +164,7 @@ public class TemplateBrowsingHandler(
       ],
       [InlineKeyboardButton.WithCallbackData("✏️ Редактировать", CallbackData.TemplateForm.Edit(templateId))],
       [InlineKeyboardButton.WithCallbackData("🗑️ Удалить", CallbackData.TemplateBrowsing.Delete(templateId))],
-      [InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.SpotBowsing.View(template.SpotId))]
+      [InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.SpotBrowsing.View(template.SpotId))]
     ]);
 
     await botClient.SendOrEditMessageAsync(chatId, message, messageText,
@@ -315,7 +212,7 @@ public class TemplateBrowsingHandler(
     }
 
     var deactivateCommand = new DeleteTaskTemplateCommand(templateId, session.CurrentFamilyId.Value);
-    var result = await Mediator.Send(deactivateCommand, cancellationToken);
+    var result = await mediator.Send(deactivateCommand, cancellationToken);
 
     if (!result.IsSuccess)
     {
@@ -329,62 +226,6 @@ public class TemplateBrowsingHandler(
       "✅ Шаблон успешно удалён!\n\n" +
       "Задачи по этому шаблону больше не будут создаваться автоматически.",
       ParseMode.Markdown, cancellationToken: cancellationToken);
-  }
-
-  public async Task HandleEditTemplateAsync(
-    ITelegramBotClient botClient,
-    long chatId,
-    Message? message,
-    Guid templateId,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    if (session.CurrentFamilyId == null)
-    {
-      await SendErrorAsync(botClient, chatId, BotMessages.Errors.NoFamily, cancellationToken);
-      return;
-    }
-
-    var getTemplateQuery = new GetTaskTemplateByIdQuery(templateId, session.CurrentFamilyId.Value);
-    var templateResult = await Mediator.Send(getTemplateQuery, cancellationToken);
-
-    if (!templateResult.IsSuccess)
-    {
-      await botClient.SendOrEditMessageAsync(chatId, message, "❌ Шаблон не найден",
-        ParseMode.Markdown, cancellationToken: cancellationToken);
-      return;
-    }
-
-    var template = templateResult.Value;
-
-    var keyboard = new InlineKeyboardMarkup([
-      [
-        InlineKeyboardButton.WithCallbackData("✏️ Название",
-          CallbackData.TemplateBrowsing.EditField(templateId, FieldTitle))
-      ],
-      [
-        InlineKeyboardButton.WithCallbackData("💯 Очки",
-          CallbackData.TemplateBrowsing.EditField(templateId, FieldPoints))
-      ],
-      [
-        InlineKeyboardButton.WithCallbackData("🔄 Расписание",
-          CallbackData.TemplateBrowsing.EditField(templateId, FieldSchedule))
-      ],
-      [
-        InlineKeyboardButton.WithCallbackData("⏰ Срок выполнения",
-          CallbackData.TemplateBrowsing.EditField(templateId, FieldDueDuration))
-      ],
-      [InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.TemplateBrowsing.View(templateId))]
-    ]);
-
-    await botClient.SendOrEditMessageAsync(chatId, message,
-      $"✏️ *Редактирование шаблона*\n\n" +
-      $"📝 Название: {template.Title}\n" +
-      $"💯 Очки: {template.Points.ToStars()}\n" +
-      $"🔄 Расписание: {ScheduleFormatter.Format(template.ScheduleType, template.ScheduleTime, template.ScheduleDayOfWeek, template.ScheduleDayOfMonth)}\n" +
-      $"⏰ Срок выполнения: {template.DueDuration.TotalHours} часов\n\n" +
-      "Выберите поле для редактирования:",
-      ParseMode.Markdown, keyboard, cancellationToken);
   }
 
   private async Task HandleCreateTaskNowAsync(
@@ -402,7 +243,7 @@ public class TemplateBrowsingHandler(
     }
 
     var getTemplateQuery = new GetTaskTemplateByIdQuery(templateId, session.CurrentFamilyId.Value);
-    var templateResult = await Mediator.Send(getTemplateQuery, cancellationToken);
+    var templateResult = await mediator.Send(getTemplateQuery, cancellationToken);
 
     if (!templateResult.IsSuccess)
     {
@@ -416,7 +257,7 @@ public class TemplateBrowsingHandler(
     var now = DateTime.UtcNow;
     var dueAt = now.Add(template.DueDuration);
     var createCommand = new CreateTaskInstanceFromTemplateCommand(templateId, dueAt);
-    var result = await Mediator.Send(createCommand, cancellationToken);
+    var result = await mediator.Send(createCommand, cancellationToken);
 
     if (!result.IsSuccess)
     {
@@ -434,7 +275,7 @@ public class TemplateBrowsingHandler(
       $"⏰ Срок выполнения: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
       "Задача добавлена в список активных задач спота.",
       ParseMode.Markdown,
-      new([
+      new InlineKeyboardMarkup([
         [InlineKeyboardButton.WithCallbackData("⬅️ Назад к шаблону", CallbackData.TemplateBrowsing.View(templateId))]
       ]),
       cancellationToken);

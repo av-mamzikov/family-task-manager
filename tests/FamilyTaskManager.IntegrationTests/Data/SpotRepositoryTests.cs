@@ -4,27 +4,27 @@ using FamilyTaskManager.Core.TaskAggregate;
 
 namespace FamilyTaskManager.IntegrationTests.Data;
 
-public class SpotRepositoryTests : RepositoryTestsBase<SpotBowsing>
+public class SpotRepositoryTests : RepositoryTestsBase<Spot>
 {
-  protected override SpotBowsing CreateTestEntity(string uniqueSuffix = "") =>
+  protected override Spot CreateTestEntity(string uniqueSuffix = "") =>
     CreateSpotWithFamily(Guid.NewGuid(), SpotType.Cat, $"Fluffy{uniqueSuffix}");
 
-  protected override SpotBowsing CreateSecondTestEntity(string uniqueSuffix = "") =>
+  protected override Spot CreateSecondTestEntity(string uniqueSuffix = "") =>
     CreateSpotWithFamily(Guid.NewGuid(), SpotType.Dog, $"Buddy{uniqueSuffix}");
 
-  protected override void ModifyEntity(SpotBowsing entity)
+  protected override void ModifyEntity(Spot entity)
   {
     entity.UpdateName("Modified Spot Name");
     entity.UpdateMoodScore(75);
   }
 
-  protected override void AssertEntityWasModified(SpotBowsing entity)
+  protected override void AssertEntityWasModified(Spot entity)
   {
     entity.Name.ShouldBe("Modified Spot Name");
     entity.MoodScore.ShouldBe(75);
   }
 
-  private SpotBowsing CreateSpotWithFamily(Guid familyId, SpotType type, string name)
+  private Spot CreateSpotWithFamily(Guid familyId, SpotType type, string name)
   {
     var family = new Family($"Test Family {familyId:N}", "UTC");
     var familyRepository = GetRepository<Family>();
@@ -80,9 +80,9 @@ public class SpotRepositoryTests : RepositoryTestsBase<SpotBowsing>
     await familyRepository.AddAsync(family);
     await DbContext.SaveChangesAsync();
 
-    var Spot = new SpotBowsing(family.Id, SpotType.Cat, "Busy Cat");
+    var Spot = new Spot(family.Id, SpotType.Cat, "Busy Cat");
     // Set navigation property for test
-    typeof(SpotBowsing).GetProperty("Family")!.SetValue(Spot, family);
+    typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
     await Repository.AddAsync(Spot);
     await DbContext.SaveChangesAsync();
 

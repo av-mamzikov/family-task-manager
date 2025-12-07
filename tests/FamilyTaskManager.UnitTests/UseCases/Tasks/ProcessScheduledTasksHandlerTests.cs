@@ -16,7 +16,7 @@ public class ProcessScheduledTasksHandlerTests
 {
   private readonly ProcessScheduledTasksHandler _handler;
   private readonly ILogger<ProcessScheduledTasksHandler> _logger;
-  private readonly IAppRepository<SpotBowsing> _SpotAppRepository;
+  private readonly IAppRepository<Spot> _SpotAppRepository;
   private readonly IAppRepository<TaskInstance> _taskAppRepository;
   private readonly ITaskInstanceFactory _taskInstanceFactory;
   private readonly IReadRepository<TaskTemplate> _templateRepository;
@@ -25,7 +25,7 @@ public class ProcessScheduledTasksHandlerTests
   {
     _templateRepository = Substitute.For<IReadRepository<TaskTemplate>>();
     _taskAppRepository = Substitute.For<IAppRepository<TaskInstance>>();
-    _SpotAppRepository = Substitute.For<IAppRepository<SpotBowsing>>();
+    _SpotAppRepository = Substitute.For<IAppRepository<Spot>>();
     _taskInstanceFactory = Substitute.For<ITaskInstanceFactory>();
     _logger = Substitute.For<ILogger<ProcessScheduledTasksHandler>>();
 
@@ -138,8 +138,8 @@ public class ProcessScheduledTasksHandlerTests
       DateTime.UtcNow,
       TimeSpan.FromHours(24));
 
-    var Spot = new SpotBowsing(familyId, SpotType.Cat, "Test Spot");
-    typeof(SpotBowsing).GetProperty("Family")!.SetValue(Spot, family);
+    var Spot = new Spot(familyId, SpotType.Cat, "Test Spot");
+    typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
     var newInstance = new TaskInstance(Spot, "Daily Task", new(2), DateTime.UtcNow.AddHours(24), templateId);
 
     _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesDtoSpec>(), Arg.Any<CancellationToken>())
@@ -155,7 +155,7 @@ public class ProcessScheduledTasksHandlerTests
       .Returns(new List<TaskInstance>());
 
     _taskInstanceFactory
-      .CreateFromTemplate(template, Arg.Any<SpotBowsing>(), Arg.Any<DateTime>(), Arg.Any<IEnumerable<TaskInstance>>())
+      .CreateFromTemplate(template, Arg.Any<Spot>(), Arg.Any<DateTime>(), Arg.Any<IEnumerable<TaskInstance>>())
       .Returns(Result<TaskInstance>.Success(newInstance));
 
     // Act
@@ -200,8 +200,8 @@ public class ProcessScheduledTasksHandlerTests
       DateTime.UtcNow,
       TimeSpan.FromHours(24));
 
-    var Spot = new SpotBowsing(familyId, SpotType.Cat, "Test Spot");
-    typeof(SpotBowsing).GetProperty("Family")!.SetValue(Spot, family);
+    var Spot = new Spot(familyId, SpotType.Cat, "Test Spot");
+    typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
 
     _templateRepository.ListAsync(Arg.Any<ActiveTaskTemplatesDtoSpec>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskTemplateDto> { templateDto });
@@ -217,7 +217,7 @@ public class ProcessScheduledTasksHandlerTests
 
     // Factory returns error (e.g., already has active instance)
     _taskInstanceFactory
-      .CreateFromTemplate(template, Arg.Any<SpotBowsing>(), Arg.Any<DateTime>(), Arg.Any<IEnumerable<TaskInstance>>())
+      .CreateFromTemplate(template, Arg.Any<Spot>(), Arg.Any<DateTime>(), Arg.Any<IEnumerable<TaskInstance>>())
       .Returns(Result<TaskInstance>.Error("Already has active instance"));
 
     // Act
@@ -244,9 +244,9 @@ public class ProcessScheduledTasksHandlerTests
     var schedule2 = Schedule.CreateDaily(new(10, 30)).Value;
 
     var family = new Family("Test Family", "UTC", false);
-    var Spot = new SpotBowsing(familyId, SpotType.Cat, "Test Spot");
+    var Spot = new Spot(familyId, SpotType.Cat, "Test Spot");
     // Set Family navigation property for test
-    typeof(SpotBowsing).GetProperty("Family")!.SetValue(Spot, family);
+    typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
 
     var template1 = new TaskTemplate(familyId, SpotId, new("Task 1"), new(2), schedule1, new(TimeSpan.FromHours(24)),
       Guid.NewGuid());
@@ -278,12 +278,12 @@ public class ProcessScheduledTasksHandlerTests
     _taskAppRepository.ListAsync(Arg.Any<ISpecification<TaskInstance>>(), Arg.Any<CancellationToken>())
       .Returns(new List<TaskInstance>());
 
-    _taskInstanceFactory.CreateFromTemplate(Arg.Any<TaskTemplate>(), Arg.Any<SpotBowsing>(), Arg.Any<DateTime>(),
+    _taskInstanceFactory.CreateFromTemplate(Arg.Any<TaskTemplate>(), Arg.Any<Spot>(), Arg.Any<DateTime>(),
         Arg.Any<IEnumerable<TaskInstance>>())
       .Returns(x =>
       {
         var template = x.ArgAt<TaskTemplate>(0);
-        var Spot = x.ArgAt<SpotBowsing>(1);
+        var Spot = x.ArgAt<Spot>(1);
         var dueAt = x.ArgAt<DateTime>(2);
         var instance = new TaskInstance(Spot, template.Title, template.Points, dueAt, template.Id);
         return Result<TaskInstance>.Success(instance);

@@ -4,7 +4,7 @@ public static class SpotDisplay
 {
   private static readonly Dictionary<SpotType, SpotTypeInfo> _spotTypeInfoMap = new()
   {
-    { SpotType.Cat, new("🐱", "Кот", "cat") },
+    { SpotType.Cat, new("🐱", "Кот/Кошка", "cat") },
     { SpotType.Dog, new("🐶", "Собака", "dog") },
     { SpotType.Hamster, new("🐹", "Хомяк", "hamster") },
     { SpotType.Parrot, new("🦜", "Попугай", "parrot") },

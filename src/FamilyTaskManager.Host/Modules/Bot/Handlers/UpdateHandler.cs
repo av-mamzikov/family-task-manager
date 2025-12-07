@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
@@ -79,7 +80,7 @@ public class UpdateHandler(
     }
     else
     {
-      if (await HandleKeyboardButtonAsync(botClient, message, session, cancellationToken))
+      if (await HandleMainMenuButtonAsync(botClient, message, session, cancellationToken))
         return;
 
       // Если есть активная conversation
@@ -183,7 +184,7 @@ public class UpdateHandler(
           message.Chat.Id,
           "🎉 *Добро пожаловать в семью!*\n\n" +
           BotMessages.Messages.FamilyJoined(invitation.Family.Name,
-            BotMessages.Roles.GetRoleText(invitation.Member.Role)),
+            RoleDisplay.GetRoleCaption(invitation.Member.Role)),
           parseMode: ParseMode.Markdown,
           cancellationToken: cancellationToken);
         await SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken);
@@ -211,7 +212,7 @@ public class UpdateHandler(
       session.CurrentFamilyId = family.Id;
       await SendMainMenuAsync(botClient, message.Chat.Id, cancellationToken,
         BotMessages.Messages.WelcomeMessage
-        + BotMessages.Messages.FamilyJoined(family.Name, BotMessages.Roles.GetRoleText(family.UserRole)));
+        + BotMessages.Messages.FamilyJoined(family.Name, RoleDisplay.GetRoleCaption(family.UserRole)));
     }
     else
       await botClient.SendTextMessageAsync(
@@ -220,7 +221,7 @@ public class UpdateHandler(
         BotMessages.Messages.NoFamiliesJoin,
         parseMode: ParseMode.Markdown,
         replyMarkup: new InlineKeyboardMarkup([
-          InlineKeyboardButton.WithCallbackData("➕ Создать семью", CallbackData.Family.Create)
+          InlineKeyboardButton.WithCallbackData("➕ Создать семью", CallbackData.Family.Create())
         ]),
         cancellationToken: cancellationToken);
   }
@@ -248,7 +249,7 @@ public class UpdateHandler(
     return false;
   }
 
-  private async Task<bool> HandleKeyboardButtonAsync(ITelegramBotClient botClient, Message message, UserSession session,
+  private async Task<bool> HandleMainMenuButtonAsync(ITelegramBotClient botClient, Message message, UserSession session,
     CancellationToken cancellationToken)
   {
     var text = message.Text!;
@@ -256,8 +257,8 @@ public class UpdateHandler(
     var callBackData = text switch
     {
       "🏠 Семья" => CallbackData.Family.List(),
-      "✅ Наши задачи" => CallbackData.Task.List(),
-      "🧩 Споты" => CallbackData.SpotBowsing.List(),
+      "✅ Наши задачи" => CallbackData.TaskBrowsing.List(),
+      "🧩 Споты" => CallbackData.SpotBrowsing.List(),
       "📊 Статистика" => CallbackData.Stats.List(),
       _ => null
     };

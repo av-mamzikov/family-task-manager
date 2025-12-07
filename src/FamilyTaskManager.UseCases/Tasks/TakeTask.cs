@@ -22,7 +22,7 @@ public class TakeTaskHandler(
     var member = family.Members.FirstOrDefault(m => m.UserId == command.UserId && m.IsActive);
     if (member == null) return Result.Error("User is not a member of this family");
 
-    task.Start(member.Id);
+    task.Start(member);
     await taskAppRepository.UpdateAsync(task, cancellationToken);
 
     return Result.Success();

@@ -10,10 +10,10 @@ namespace FamilyTaskManager.Core.Services;
 /// </summary>
 public class TaskInstanceFactory : ITaskInstanceFactory
 {
-  public Result<TaskInstance> CreateFromTemplate(TaskTemplate template, SpotBowsing spotBowsing, DateTime dueAt,
+  public Result<TaskInstance> CreateFromTemplate(TaskTemplate template, Spot spot, DateTime dueAt,
     IEnumerable<TaskInstance> existingInstances)
   {
-    Guard.Against.Null(spotBowsing);
+    Guard.Against.Null(spot);
 
     // Check if there's already an active TaskInstance for this template
     var existingInstancesList = existingInstances?.ToList() ?? new List<TaskInstance>();
@@ -22,7 +22,7 @@ public class TaskInstanceFactory : ITaskInstanceFactory
     if (activeInstance != null) return Result.Error("Уже есть активная задача для шаблона");
 
     var taskInstance = new TaskInstance(
-      spotBowsing,
+      spot,
       template.Title.Value,
       template.Points,
       dueAt,

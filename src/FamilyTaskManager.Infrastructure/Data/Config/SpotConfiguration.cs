@@ -2,9 +2,9 @@ using FamilyTaskManager.Core.SpotAggregate;
 
 namespace FamilyTaskManager.Infrastructure.Data.Config;
 
-public class SpotConfiguration : IEntityTypeConfiguration<SpotBowsing>
+public class SpotConfiguration : IEntityTypeConfiguration<Spot>
 {
-  public void Configure(EntityTypeBuilder<SpotBowsing> builder)
+  public void Configure(EntityTypeBuilder<Spot> builder)
   {
     builder.ToTable("Spots");
 

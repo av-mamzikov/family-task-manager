@@ -15,7 +15,7 @@ public class FamilyCreationHandler(
   ILogger<FamilyCreationHandler> logger,
   IMediator mediator,
   ITimeZoneService timeZoneService)
-  : BaseConversationHandler(logger, mediator), IConversationHandler
+  : BaseConversationHandler(logger), IConversationHandler
 {
   private const string StateAwaitingName = "awaiting_name";
   private const string StateAwaitingTimezone = "awaiting_timezone";
@@ -60,26 +60,13 @@ public class FamilyCreationHandler(
     if (callbackParts.Length < 2)
       return;
 
-    var action = callbackParts[1];
-
-    if (action == CallbackActions.ShowTimezoneList)
-    {
+    if (callbackParts.IsCallbackOf(CallbackData.FamilyCreation.ShowTimezoneList))
       await ShowTimezoneListAsync(botClient, chatId, message, session, cancellationToken);
-      return;
-    }
-
-    if (action == CallbackActions.DetectTimezone)
-    {
+    else if (callbackParts.IsCallbackOf(CallbackData.FamilyCreation.DetectTimezone))
       await RequestLocationAsync(botClient, chatId, message, session, cancellationToken);
-      return;
-    }
-
-    // Обработка timezone: FamilyCreation_tz_Asia/Yekaterinburg
-    if (action == CallbackActions.Timezone && callbackParts.Length >= 3)
-    {
-      var timezoneId = string.Join("_", callbackParts.Skip(2));
+    else if (callbackParts.IsCallbackOf((Func<string, string>)CallbackData.FamilyCreation.TimeZone,
+               out var timezoneId))
       await CreateFamilyWithTimezoneAsync(botClient, chatId, message, timezoneId, session, cancellationToken);
-    }
   }
 
   private async Task HandleFamilyNameInputAsync(
@@ -186,7 +173,7 @@ public class FamilyCreationHandler(
 
       // Create family with detected timezone
       var createFamilyCommand = new CreateFamilyCommand(session.UserId, session.Data.FamilyName, detectedTimezone);
-      var result = await Mediator.Send(createFamilyCommand, cancellationToken);
+      var result = await mediator.Send(createFamilyCommand, cancellationToken);
 
       if (!result.IsSuccess)
       {
@@ -253,9 +240,10 @@ public class FamilyCreationHandler(
   private static InlineKeyboardMarkup GetTimezoneChoiceKeyboard() =>
     new([
       [
-        InlineKeyboardButton.WithCallbackData("📍 Определить по геолокации", CallbackData.FamilyCreation.DetectTimezone)
+        InlineKeyboardButton.WithCallbackData("📍 Определить по геолокации",
+          CallbackData.FamilyCreation.DetectTimezone())
       ],
-      [InlineKeyboardButton.WithCallbackData("📋 Выбрать из списка", CallbackData.FamilyCreation.ShowTimezoneList)]
+      [InlineKeyboardButton.WithCallbackData("📋 Выбрать из списка", CallbackData.FamilyCreation.ShowTimezoneList())]
     ]);
 
   private static ReplyKeyboardMarkup GetCancelKeyboard() =>
@@ -384,7 +372,7 @@ public class FamilyCreationHandler(
     }
 
     var createFamilyCommand = new CreateFamilyCommand(session.UserId, session.Data.FamilyName, timezoneId);
-    var result = await Mediator.Send(createFamilyCommand, cancellationToken);
+    var result = await mediator.Send(createFamilyCommand, cancellationToken);
 
     if (!result.IsSuccess)
     {
@@ -418,17 +406,29 @@ public class FamilyCreationHandler(
 
   private static InlineKeyboardMarkup GetRussianTimeZoneListKeyboard() =>
     new([
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Калининград", CallbackData.FamilyCreation.EuropeKaliningrad)],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Москва", CallbackData.FamilyCreation.EuropeMoscow)],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Самара", CallbackData.FamilyCreation.EuropeSamara)],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Екатеринбург", CallbackData.FamilyCreation.AsiaYekaterinburg)],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Омск", CallbackData.FamilyCreation.AsiaOmsk)],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Красноярск", CallbackData.FamilyCreation.AsiaKrasnoyarsk)],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Иркутск", CallbackData.FamilyCreation.AsiaIrkutsk)],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Якутск", CallbackData.FamilyCreation.AsiaYakutsk)],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Владивосток", CallbackData.FamilyCreation.AsiaVladivostok)],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Магадан", CallbackData.FamilyCreation.AsiaMagadan)],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Камчатка", CallbackData.FamilyCreation.AsiaKamchatka)],
-      [InlineKeyboardButton.WithCallbackData("⏭️ Пропустить (UTC)", CallbackData.FamilyCreation.Utc)]
+      [
+        InlineKeyboardButton.WithCallbackData("🇷🇺 Калининград",
+          CallbackData.FamilyCreation.TimeZone("Europe/Kaliningrad"))
+      ],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Москва", CallbackData.FamilyCreation.TimeZone("Europe/Moscow"))],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Самара", CallbackData.FamilyCreation.TimeZone("Europe/Samara"))],
+      [
+        InlineKeyboardButton.WithCallbackData("🇷🇺 Екатеринбург",
+          CallbackData.FamilyCreation.TimeZone("Asia/Yekaterinburg"))
+      ],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Омск", CallbackData.FamilyCreation.TimeZone("Asia/Omsk"))],
+      [
+        InlineKeyboardButton.WithCallbackData("🇷🇺 Красноярск",
+          CallbackData.FamilyCreation.TimeZone("Asia/Krasnoyarsk"))
+      ],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Иркутск", CallbackData.FamilyCreation.TimeZone("Asia/Irkutsk"))],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Якутск", CallbackData.FamilyCreation.TimeZone("Asia/Yakutsk"))],
+      [
+        InlineKeyboardButton.WithCallbackData("🇷🇺 Владивосток",
+          CallbackData.FamilyCreation.TimeZone("Asia/Vladivostok"))
+      ],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Магадан", CallbackData.FamilyCreation.TimeZone("Asia/Magadan"))],
+      [InlineKeyboardButton.WithCallbackData("🇷🇺 Камчатка", CallbackData.FamilyCreation.TimeZone("Asia/Kamchatka"))],
+      [InlineKeyboardButton.WithCallbackData("⏭️ Пропустить (UTC)", CallbackData.FamilyCreation.TimeZone("UTC"))]
     ]);
 }

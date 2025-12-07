@@ -48,10 +48,10 @@ public record TaskDto(
       t.Status,
       t.DueAt,
       t.SpotId,
-      t.SpotBowsing.Name,
+      t.Spot.Name,
       t.StartedByMember!.UserId,
       t.Family.Timezone,
       t.StartedByMember != null ? t.StartedByMember.User!.Name : null,
-      t.SpotBowsing.Type);
+      t.Spot.Type);
   }
 }

@@ -2,7 +2,7 @@ namespace FamilyTaskManager.UseCases.Spots;
 
 public record UpdateSpotNameCommand(Guid SpotId, string NewName) : ICommand<Result>;
 
-public class UpdateSpotNameHandler(IAppRepository<SpotBowsing> spotAppRepository)
+public class UpdateSpotNameHandler(IAppRepository<Spot> spotAppRepository)
   : ICommandHandler<UpdateSpotNameCommand, Result>
 {
   public async ValueTask<Result> Handle(UpdateSpotNameCommand command, CancellationToken cancellationToken)

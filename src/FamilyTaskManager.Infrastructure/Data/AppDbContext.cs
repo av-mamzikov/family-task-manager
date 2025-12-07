@@ -13,7 +13,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
   public DbSet<Family> Families => Set<Family>();
   public DbSet<FamilyMember> FamilyMembers => Set<FamilyMember>();
   public DbSet<Invitation> Invitations => Set<Invitation>();
-  public DbSet<SpotBowsing> Spots => Set<SpotBowsing>();
+  public DbSet<Spot> Spots => Set<Spot>();
   public DbSet<TaskTemplate> TaskTemplates => Set<TaskTemplate>();
   public DbSet<TaskInstance> TaskInstances => Set<TaskInstance>();
   public DbSet<DomainEventOutbox> DomainEventOutbox => Set<DomainEventOutbox>();
@@ -23,15 +23,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     base.OnModelCreating(modelBuilder);
     modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
-    modelBuilder.Entity<SpotBowsing>()
+    modelBuilder.Entity<Spot>()
       .HasQueryFilter(p => !p.IsDeleted);
 
     modelBuilder.Entity<TaskTemplate>()
-      .HasQueryFilter(t => !t.SpotBowsing.IsDeleted);
+      .HasQueryFilter(t => !t.Spot.IsDeleted);
 
     // Для удалённого спота показываем только завершённые задачи
     modelBuilder.Entity<TaskInstance>()
-      .HasQueryFilter(t => t.Status != TaskStatus.Completed || !t.SpotBowsing.IsDeleted);
+      .HasQueryFilter(t => t.Status != TaskStatus.Completed || !t.Spot.IsDeleted);
   }
 
   public override int SaveChanges() => SaveChangesAsync().GetAwaiter().GetResult();

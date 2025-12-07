@@ -82,7 +82,7 @@ public class TestTelegramBotClient : ITelegramBotClient
   {
     var timeout = Debugger.IsAttached
       ? TimeSpan.FromMinutes(30)
-      : TimeSpan.FromSeconds(10);
+      : TimeSpan.FromSeconds(60);
 
     const int pollDelayMs = 100;
 

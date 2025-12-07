@@ -6,12 +6,12 @@ namespace FamilyTaskManager.Host.Modules.Bot.Constants;
 public static class CallbackActions
 {
   // Common actions
+  public const string Start = "start";
   public const string Create = "create";
   public const string View = "view";
   public const string Delete = "delete";
   public const string Edit = "edit";
   public const string Select = "select";
-  public const string Confirm = "confirm";
   public const string Cancel = "cancel";
   public const string Invite = "invite";
 
@@ -32,7 +32,6 @@ public static class CallbackActions
 
   // Settings and configuration
   public const string Settings = "settings";
-  public const string Members = "members";
 
   // Schedule actions
   public const string Type = "type";

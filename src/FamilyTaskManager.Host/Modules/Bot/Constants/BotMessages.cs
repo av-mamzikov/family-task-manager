@@ -1,4 +1,3 @@
-using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Constants;
@@ -151,17 +150,5 @@ public static class BotMessages
 
     public static readonly string EnterDueDuration =
       $"⏰ Введите срок выполнения задачи в часах (от {DueDuration.MinHours} до {DueDuration.MaxHours}, где 24 = 1 день, 720 = 30 дней):";
-  }
-
-  public static class Roles
-  {
-    public static string GetRoleText(FamilyRole role) =>
-      role switch
-      {
-        FamilyRole.Admin => "Администратор",
-        FamilyRole.Adult => "Взрослый",
-        FamilyRole.Child => "Ребёнок",
-        _ => "Неизвестно"
-      };
   }
 }

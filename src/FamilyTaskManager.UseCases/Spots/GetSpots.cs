@@ -2,7 +2,7 @@ namespace FamilyTaskManager.UseCases.Spots;
 
 public record GetSpotsQuery(Guid FamilyId) : IQuery<Result<List<SpotDto>>>;
 
-public class GetSpotsHandler(IAppRepository<SpotBowsing> spotAppRepository)
+public class GetSpotsHandler(IAppRepository<Spot> spotAppRepository)
   : IQueryHandler<GetSpotsQuery, Result<List<SpotDto>>>
 {
   public async ValueTask<Result<List<SpotDto>>> Handle(GetSpotsQuery query, CancellationToken cancellationToken)

@@ -17,7 +17,7 @@ public record CreateTaskCommand(
 
 public class CreateTaskHandler(
   IAppRepository<TaskInstance> taskAppRepository,
-  IAppRepository<SpotBowsing> SpotAppRepository,
+  IAppRepository<Spot> SpotAppRepository,
   ITimeZoneService timeZoneService,
   ISpotMoodCalculator moodCalculator) : ICommandHandler<CreateTaskCommand, Result<Guid>>
 {

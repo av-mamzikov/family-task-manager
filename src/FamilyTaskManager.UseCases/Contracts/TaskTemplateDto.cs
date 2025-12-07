@@ -29,7 +29,7 @@ public record TaskTemplateDto(
         t.Schedule.DayOfWeek,
         t.Schedule.DayOfMonth,
         t.SpotId,
-        t.SpotBowsing.Name,
+        t.Spot.Name,
         t.CreatedAt,
         t.DueDuration.Value);
   }

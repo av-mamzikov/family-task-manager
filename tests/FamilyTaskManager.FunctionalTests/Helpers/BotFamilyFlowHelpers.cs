@@ -1,3 +1,5 @@
+using FamilyTaskManager.Host.Modules.Bot.Constants;
+
 namespace FamilyTaskManager.FunctionalTests.Helpers;
 
 public static class BotFamilyFlowHelpers
@@ -16,13 +18,12 @@ public static class BotFamilyFlowHelpers
     var adminChatId = adminTelegramId;
     var actualFamilyName = familyName ?? "Test Family";
 
-    botClient.EnqueueUpdates(new[]
-    {
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, "create_family"),
+    botClient.EnqueueUpdates([
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, CallbackData.Family.Create()),
       UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, actualFamilyName),
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, "timezone_detect"),
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, CallbackData.FamilyCreation.DetectTimezone()),
       UpdateFactory.CreateLocationUpdate(adminChatId, adminTelegramId, latitude, longitude)
-    });
+    ]);
 
     await botClient.WaitForMessagesUntilAsync(adminChatId, m => m.Text!.Contains("Главное меню"));
 

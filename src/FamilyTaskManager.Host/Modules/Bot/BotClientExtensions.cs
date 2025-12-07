@@ -24,16 +24,17 @@ public static class BotClientExtensions
     Message? message,
     string text,
     ParseMode? parseMode = null,
-    InlineKeyboardMarkup? replyMarkup = null,
+    IReplyMarkup? replyMarkup = null,
     CancellationToken cancellationToken = default)
   {
-    if (message != null && await botClient.CanEditMessageAsync(message))
+    if (message != null && await botClient.CanEditMessageAsync(message) &&
+        replyMarkup is InlineKeyboardMarkup inlineKeyboard)
       await botClient.EditMessageTextAsync(
         message.Chat.Id,
         message.MessageId,
         text,
         parseMode,
-        replyMarkup: replyMarkup,
+        replyMarkup: inlineKeyboard,
         cancellationToken: cancellationToken);
     else
       await botClient.SendTextMessageAsync(

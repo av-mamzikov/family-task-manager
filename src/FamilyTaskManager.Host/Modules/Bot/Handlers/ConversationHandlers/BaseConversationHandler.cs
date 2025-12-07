@@ -6,10 +6,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
-public abstract class BaseConversationHandler(ILogger logger, IMediator mediator)
+public abstract class BaseConversationHandler(ILogger logger)
 {
   protected readonly ILogger Logger = logger;
-  protected readonly IMediator Mediator = mediator;
 
   protected async Task SendErrorAndClearStateAsync(
     ITelegramBotClient botClient,
@@ -38,17 +37,6 @@ public abstract class BaseConversationHandler(ILogger logger, IMediator mediator
       errorMessage + hint,
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
-
-  public virtual async Task HandleCancelAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    UserSession session,
-    Func<Task> sendMainMenuAction,
-    CancellationToken cancellationToken)
-  {
-    await sendMainMenuAction();
-    session.ClearState();
-  }
 
   protected async Task SendErrorAsync(
     ITelegramBotClient botClient,

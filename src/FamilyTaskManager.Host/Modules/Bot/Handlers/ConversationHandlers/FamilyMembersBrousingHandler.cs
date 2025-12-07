@@ -14,7 +14,7 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 public class FamilyMembersBrousingHandler(
   ILogger<FamilyMembersBrousingHandler> logger,
   IMediator mediator)
-  : BaseConversationHandler(logger, mediator), IConversationHandler
+  : BaseConversationHandler(logger), IConversationHandler
 {
   public Task HandleMessageAsync(
     ITelegramBotClient botClient,
@@ -30,35 +30,27 @@ public class FamilyMembersBrousingHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    var memberAction = callbackParts[1];
-    var memberIdStr = callbackParts.Length > 2 ? callbackParts[2] : null;
+    if (callbackParts.Length < 2) return;
 
-    var memberId = Guid.Empty;
-    if (memberIdStr != null && !TryParseGuid(callbackParts[2], out memberId)) return;
-
-    await (memberAction switch
-    {
-      CallbackActions.Members =>
-        ShowFamilyMembersAsync(botClient, chatId, message, session, cancellationToken),
-      CallbackActions.Member =>
-        ShowFamilyMemberAsync(botClient, chatId, message, memberId, cancellationToken),
-
-      CallbackActions.MemberRole =>
-        ShowRoleSelectionAsync(botClient, chatId, message, memberId, cancellationToken),
-
-      CallbackActions.MemberRolePick when callbackParts.Length >= 4 &&
-                                          Enum.TryParse(callbackParts[3], out FamilyRole newRole) =>
-        HandleMemberRoleUpdateAsync(botClient, chatId, message, session, memberId, newRole, cancellationToken),
-
-      CallbackActions.MemberDelete =>
-        ShowRemoveMemberConfirmationAsync(botClient, chatId, message, memberId, cancellationToken),
-
-      CallbackActions.MemberDeleteOk =>
-        HandleMemberRemovalAsync(botClient, chatId, message, session, memberId, cancellationToken),
-
-      _ => botClient.SendTextMessageAsync(chatId, "👥 Действие с участником\n(В разработке)",
-        cancellationToken: cancellationToken)
-    });
+    if (callbackParts.IsCallbackOf(CallbackData.FamilyMembers.List))
+      await ShowFamilyMembersAsync(botClient, chatId, message, session, cancellationToken);
+    else if (callbackParts.IsCallbackOf((Func<EncodedGuid, string>)CallbackData.FamilyMembers.Member,
+               out var memberId))
+      await ShowFamilyMemberAsync(botClient, chatId, message, memberId, cancellationToken);
+    else if (callbackParts.IsCallbackOf((Func<EncodedGuid, string>)CallbackData.FamilyMembers.ChangeRole,
+               out var roleChangeMemberId))
+      await ShowRoleSelectionAsync(botClient, chatId, message, roleChangeMemberId, cancellationToken);
+    else if (callbackParts.Length >= 4 && callbackParts[1] == CallbackActions.MemberRolePick &&
+             EncodedGuid.TryParse(callbackParts[2], out var pickRoleMemberId) &&
+             Enum.TryParse(callbackParts[3], out FamilyRole newRole))
+      await HandleMemberRoleUpdateAsync(botClient, chatId, message, session, pickRoleMemberId, newRole,
+        cancellationToken);
+    else if (callbackParts.IsCallbackOf((Func<EncodedGuid, string>)CallbackData.FamilyMembers.Delete,
+               out var deleteMemberId))
+      await ShowRemoveMemberConfirmationAsync(botClient, chatId, message, deleteMemberId, cancellationToken);
+    else if (callbackParts.IsCallbackOf((Func<EncodedGuid, string>)CallbackData.FamilyMembers.ConfirmDelete,
+               out var confirmDeleteMemberId))
+      await HandleMemberRemovalAsync(botClient, chatId, message, session, confirmDeleteMemberId, cancellationToken);
   }
 
   public async Task HandleBackAsync(
@@ -79,7 +71,7 @@ public class FamilyMembersBrousingHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var result = await Mediator.Send(new GetFamilyMembersQuery(session.CurrentFamilyId!.Value), cancellationToken);
+    var result = await mediator.Send(new GetFamilyMembersQuery(session.CurrentFamilyId!.Value), cancellationToken);
     if (!result.IsSuccess)
     {
       await botClient.SendOrEditMessageAsync(
@@ -118,12 +110,12 @@ public class FamilyMembersBrousingHandler(
       return;
     }
 
-    var (roleEmoji, roleText) = GetRoleInfo(member.Role);
+    var (roleEmoji, roleText) = RoleDisplay.GetRoleInfo(member.Role);
     var messageText = $"{roleEmoji} *{member.UserName}*\n\n" +
                       $"Роль: {roleText}\n" +
                       $"Очки: ⭐ {member.Points}";
 
-    var memberCode = member.Id.EncodeToCallbackData();
+    var memberCode = member.Id;
 
     var keyboard = new InlineKeyboardMarkup([
       [
@@ -131,7 +123,7 @@ public class FamilyMembersBrousingHandler(
         InlineKeyboardButton.WithCallbackData("🗑️ Удалить участника", CallbackData.FamilyMembers.Delete(memberCode))
       ],
       [
-        InlineKeyboardButton.WithCallbackData("⬅️ Назад к участникам", CallbackData.Family.List())
+        InlineKeyboardButton.WithCallbackData("⬅️ Назад к участникам", CallbackData.FamilyMembers.List())
       ]
     ]);
 
@@ -159,15 +151,15 @@ public class FamilyMembersBrousingHandler(
       return;
     }
 
-    var (roleEmoji, roleText) = GetRoleInfo(member.Role);
-    var memberCode = member.Id.EncodeToCallbackData();
+    var (roleEmoji, roleText) = RoleDisplay.GetRoleInfo(member.Role);
+    var memberCode = member.Id;
 
     var availableRoles = Enum.GetValues<FamilyRole>()
       .Where(role => role != member.Role)
       .Select(role => new[]
       {
         InlineKeyboardButton.WithCallbackData(
-          BotMessages.Roles.GetRoleText(role),
+          RoleDisplay.GetRoleCaption(role),
           CallbackData.FamilyMembers.PickRole(memberCode, (int)role))
       })
       .ToList();
@@ -183,7 +175,7 @@ public class FamilyMembersBrousingHandler(
       message,
       $"♻️ *Смена роли участника*\n\nТекущая роль: {roleEmoji} {roleText}. Выберите новую роль:",
       ParseMode.Markdown,
-      new(availableRoles),
+      new InlineKeyboardMarkup(availableRoles),
       cancellationToken);
   }
 
@@ -202,8 +194,8 @@ public class FamilyMembersBrousingHandler(
       return;
     }
 
-    var (roleEmoji, roleText) = GetRoleInfo(member.Role);
-    var memberCode = member.Id.EncodeToCallbackData();
+    var (roleEmoji, roleText) = RoleDisplay.GetRoleInfo(member.Role);
+    var memberCode = member.Id;
 
     var keyboard = new InlineKeyboardMarkup([
       [
@@ -240,7 +232,7 @@ public class FamilyMembersBrousingHandler(
     if (session.CurrentFamilyId == null) return;
 
     var command = new UpdateFamilyMemberRoleCommand(session.CurrentFamilyId.Value, memberId, session.UserId, newRole);
-    var result = await Mediator.Send(command, cancellationToken);
+    var result = await mediator.Send(command, cancellationToken);
 
     if (!result.IsSuccess)
     {
@@ -267,7 +259,7 @@ public class FamilyMembersBrousingHandler(
     if (session.CurrentFamilyId == null) return;
 
     var command = new RemoveFamilyMemberCommand(session.CurrentFamilyId.Value, memberId, session.UserId);
-    var result = await Mediator.Send(command, cancellationToken);
+    var result = await mediator.Send(command, cancellationToken);
 
     if (!result.IsSuccess)
     {
@@ -285,7 +277,7 @@ public class FamilyMembersBrousingHandler(
 
   private async Task<FamilyMemberDto?> GetMemberAsync(Guid memberId, CancellationToken cancellationToken)
   {
-    var result = await Mediator.Send(new GetFamilyMemberByIdQuery(memberId), cancellationToken);
+    var result = await mediator.Send(new GetFamilyMemberByIdQuery(memberId), cancellationToken);
     return result.IsSuccess ? result.Value : null;
   }
 
@@ -296,7 +288,7 @@ public class FamilyMembersBrousingHandler(
     var sb = new StringBuilder("👥 *Участники семьи*\n\n");
     foreach (var member in members)
     {
-      var (emoji, roleText) = GetRoleInfo(member.Role);
+      var (emoji, roleText) = RoleDisplay.GetRoleInfo(member.Role);
       sb.AppendLine($"{emoji} *{member.UserName}*");
       sb.AppendLine($"   Роль: {roleText}");
       sb.AppendLine($"   Очки: ⭐ {member.Points}\n");
@@ -307,14 +299,14 @@ public class FamilyMembersBrousingHandler(
 
   private static InlineKeyboardMarkup BuildMembersKeyboard(Guid familyId, List<FamilyMemberDto> members)
   {
-    var familyCode = familyId.EncodeToCallbackData();
+    var familyCode = familyId;
     var buttons = members.Select(member =>
     {
-      var memberCode = member.Id.EncodeToCallbackData();
+      var memberCode = member.Id;
       return new[]
       {
         InlineKeyboardButton.WithCallbackData(
-          $"{GetRoleInfo(member.Role).emoji} {member.UserName}",
+          $"{RoleDisplay.GetRoleInfo(member.Role).emoji} {member.UserName}",
           CallbackData.FamilyMembers.Member(memberCode))
       };
     }).ToList();
@@ -331,15 +323,4 @@ public class FamilyMembersBrousingHandler(
 
     return new(buttons);
   }
-
-  private static (string emoji, string text) GetRoleInfo(FamilyRole role) => role switch
-  {
-    FamilyRole.Admin => ("👑", "Администратор"),
-    FamilyRole.Adult => ("👤", "Взрослый"),
-    FamilyRole.Child => ("👶", "Ребёнок"),
-    _ => ("❓", "Неизвестно")
-  };
-
-  private static bool TryParseGuid(string value, out Guid guid) =>
-    Guid.TryParse(value, out guid) || CallbackDataHelper.TryParseGuid(value, out guid);
 }

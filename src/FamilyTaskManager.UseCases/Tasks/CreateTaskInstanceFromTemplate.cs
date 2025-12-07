@@ -8,7 +8,7 @@ public class CreateTaskInstanceFromTemplateHandler(
   IAppRepository<TaskTemplate> templateAppRepository,
   IAppRepository<TaskInstance> taskAppRepository,
   ITaskInstanceFactory taskInstanceFactory,
-  IAppRepository<SpotBowsing> SpotAppRepository,
+  IAppRepository<Spot> SpotAppRepository,
   ISpotMoodCalculator moodCalculator)
   : ICommandHandler<CreateTaskInstanceFromTemplateCommand, Result<Guid>>
 {

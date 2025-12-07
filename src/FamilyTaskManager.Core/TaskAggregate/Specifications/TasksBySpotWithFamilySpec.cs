@@ -9,7 +9,7 @@ public class TasksBySpotWithFamilySpec : Specification<TaskInstance>
     if (status.HasValue) Query.Where(t => t.Status == status.Value);
 
     Query
-      .Include(t => t.SpotBowsing)
+      .Include(t => t.Spot)
       .Include(t => t.Family)
       .OrderBy(t => t.DueAt);
   }

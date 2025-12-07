@@ -74,7 +74,7 @@ public class TaskTemplateConfiguration : IEntityTypeConfiguration<TaskTemplate>
       .OnDelete(DeleteBehavior.Cascade);
 
     // Foreign key relationship to Spot
-    builder.HasOne(t => t.SpotBowsing)
+    builder.HasOne(t => t.Spot)
       .WithMany()
       .HasForeignKey(t => t.SpotId)
       .OnDelete(DeleteBehavior.Cascade);

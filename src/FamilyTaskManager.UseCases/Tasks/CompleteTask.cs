@@ -7,7 +7,7 @@ public record CompleteTaskCommand(Guid TaskId, Guid UserId) : ICommand<Result>;
 public class CompleteTaskHandler(
   IAppRepository<TaskInstance> taskAppRepository,
   IAppRepository<Family> familyAppRepository,
-  IAppRepository<SpotBowsing> SpotAppRepository,
+  IAppRepository<Spot> SpotAppRepository,
   ISpotMoodCalculator moodCalculator) : ICommandHandler<CompleteTaskCommand, Result>
 {
   public async ValueTask<Result> Handle(CompleteTaskCommand command, CancellationToken cancellationToken)

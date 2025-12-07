@@ -15,7 +15,7 @@ public class FamilyBrowsingHandler(
   ILogger<FamilyBrowsingHandler> logger,
   IMediator mediator,
   BotInfoService botInfoService)
-  : BaseConversationHandler(logger, mediator), IConversationHandler
+  : BaseConversationHandler(logger), IConversationHandler
 {
   public Task HandleMessageAsync(
     ITelegramBotClient botClient,
@@ -33,43 +33,25 @@ public class FamilyBrowsingHandler(
   {
     if (callbackParts.Length < 2) return;
 
-    var familyAction = callbackParts[1];
-
-    if (familyAction == CallbackActions.Create)
-    {
+    if (callbackParts.IsCallbackOf(CallbackData.Family.Create))
       await StartCreateFamilyAsync(botClient, chatId, message, session, cancellationToken);
-      return;
-    }
-
-    if (familyAction == CallbackActions.Select && callbackParts.Length >= 3)
-    {
-      await HandleFamilySelectionAsync(botClient, chatId, message, callbackParts[2], session, cancellationToken);
-      return;
-    }
-
-    if (callbackParts.Length < 2) return;
-
-    var familyId = session.CurrentFamilyId!.Value;
-
-    await (familyAction switch
-    {
-      CallbackActions.Invite =>
-        HandleInviteActionAsync(botClient, chatId, message, callbackParts, familyId, session, cancellationToken),
-
-      CallbackActions.Settings =>
-        HandleFamilySettingsAsync(botClient, chatId, cancellationToken),
-
-      CallbackActions.Delete =>
-        HandleDeleteFamilyAsync(botClient, chatId, message, familyId, cancellationToken),
-
-      CallbackActions.ConfirmDelete =>
-        HandleConfirmDeleteFamilyAsync(botClient, chatId, message, familyId, session, cancellationToken),
-
-      CallbackActions.List =>
-        ShowFamilyListAsync(botClient, chatId, message, familyId, session, cancellationToken),
-
-      _ => Task.CompletedTask
-    });
+    else if (callbackParts.IsCallbackOf((Func<EncodedGuid, string>)CallbackData.Family.Select,
+               out var familyId))
+      await HandleFamilySelectionAsync(botClient, chatId, message, familyId, session, cancellationToken);
+    else if (callbackParts.IsCallbackOf(CallbackData.Family.List))
+      await ShowFamilyListAsync(botClient, chatId, message, session.CurrentFamilyId, session, cancellationToken);
+    else if (callbackParts.IsCallbackOf(CallbackData.Family.Invite))
+      await HandleCreateInviteAsync(botClient, chatId, message, session.CurrentFamilyId!.Value, cancellationToken);
+    else if (callbackParts.IsCallbackOf(CallbackData.Family.InviteRole, out var inviteFamilyId, out var roleString) &&
+             Enum.TryParse<FamilyRole>(roleString, out var role))
+      await HandleInviteRoleAsync(botClient, chatId, message, inviteFamilyId, role, session, cancellationToken);
+    else if (callbackParts.IsCallbackOf(CallbackData.Family.Settings))
+      await HandleFamilySettingsAsync(botClient, chatId, cancellationToken);
+    else if (callbackParts.IsCallbackOf(CallbackData.Family.Delete))
+      await HandleDeleteFamilyAsync(botClient, chatId, message, session.CurrentFamilyId!.Value, cancellationToken);
+    else if (callbackParts.IsCallbackOf((Func<EncodedGuid, string>)CallbackData.Family.ConfirmDelete,
+               out var deleteFamilyId))
+      await HandleConfirmDeleteFamilyAsync(botClient, chatId, message, deleteFamilyId, session, cancellationToken);
   }
 
   public async Task HandleBackAsync(
@@ -91,7 +73,7 @@ public class FamilyBrowsingHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var familiesResult = await Mediator.Send(new GetUserFamiliesQuery(session.UserId), cancellationToken);
+    var familiesResult = await mediator.Send(new GetUserFamiliesQuery(session.UserId), cancellationToken);
     if (!familiesResult.IsSuccess)
     {
       if (message != null)
@@ -107,7 +89,7 @@ public class FamilyBrowsingHandler(
     if (!families.Any())
     {
       var keyboard = new InlineKeyboardMarkup([
-        [InlineKeyboardButton.WithCallbackData("➕ Создать семью", CallbackData.Family.Create)]
+        [InlineKeyboardButton.WithCallbackData("➕ Создать семью", CallbackData.Family.Create())]
       ]);
 
       await botClient.SendOrEditMessageAsync(
@@ -129,16 +111,10 @@ public class FamilyBrowsingHandler(
     {
       var isActive = family.Id == session.CurrentFamilyId;
       var marker = isActive ? "✅" : "⚪";
-      var roleEmoji = family.UserRole switch
-      {
-        FamilyRole.Admin => "👑",
-        FamilyRole.Adult => "👤",
-        FamilyRole.Child => "👶",
-        _ => "❓"
-      };
+      var (roleEmoji, roleText) = RoleDisplay.GetRoleInfo(family.UserRole);
 
       messageText += $"{marker} *{family.Name}*\n";
-      messageText += $"   Роль: {roleEmoji} {BotMessages.Roles.GetRoleText(family.UserRole)}\n";
+      messageText += $"   Роль: {roleEmoji} {roleText}\n";
       messageText += $"   Очки: ⭐ {family.UserPoints}\n\n";
     }
 
@@ -151,13 +127,13 @@ public class FamilyBrowsingHandler(
             CallbackData.Family.Select(family.Id))
         ]);
 
-    buttons.Add([InlineKeyboardButton.WithCallbackData("➕ Создать новую семью", CallbackData.Family.Create)]);
+    buttons.Add([InlineKeyboardButton.WithCallbackData("➕ Создать новую семью", CallbackData.Family.Create())]);
 
     var currentFamily = families.FirstOrDefault(f => f.Id == session.CurrentFamilyId);
     if (currentFamily?.UserRole == FamilyRole.Admin)
     {
       buttons.Add([
-        InlineKeyboardButton.WithCallbackData("👥 Управление участниками", CallbackData.FamilyMembers.Members()),
+        InlineKeyboardButton.WithCallbackData("👥 Управление участниками", CallbackData.FamilyMembers.List()),
         InlineKeyboardButton.WithCallbackData("🔗 Создать приглашение",
           CallbackData.Family.Invite())
       ]);
@@ -174,7 +150,7 @@ public class FamilyBrowsingHandler(
       message,
       messageText,
       ParseMode.Markdown,
-      new(buttons),
+      new InlineKeyboardMarkup(buttons),
       cancellationToken);
   }
 
@@ -199,12 +175,10 @@ public class FamilyBrowsingHandler(
     ITelegramBotClient botClient,
     long chatId,
     Message? message,
-    string familyIdStr,
+    EncodedGuid familyId,
     UserSession session,
     CancellationToken cancellationToken)
   {
-    if (!TryParseGuid(familyIdStr, out var familyId)) return;
-
     session.CurrentFamilyId = familyId;
 
     await botClient.SendOrEditMessageAsync(
@@ -215,21 +189,6 @@ public class FamilyBrowsingHandler(
       cancellationToken: cancellationToken);
   }
 
-  private async Task HandleInviteActionAsync(
-    ITelegramBotClient botClient,
-    long chatId,
-    Message? message,
-    string[] parts,
-    Guid familyId,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    if (parts.Length >= 5 && parts[2] == "role" && Enum.TryParse<FamilyRole>(parts[4], out var role))
-      await HandleInviteRoleAsync(botClient, chatId, message, familyId, role, session, cancellationToken);
-    else
-      await HandleCreateInviteAsync(botClient, chatId, message, familyId, cancellationToken);
-  }
-
   private async Task HandleCreateInviteAsync(
     ITelegramBotClient botClient,
     long chatId,
@@ -237,20 +196,13 @@ public class FamilyBrowsingHandler(
     Guid familyId,
     CancellationToken cancellationToken)
   {
-    var keyboard = new InlineKeyboardMarkup([
-      [
-        InlineKeyboardButton.WithCallbackData("👑 Администратор",
-          CallbackData.Family.InviteRole(familyId, nameof(FamilyRole.Admin)))
-      ],
-      [
-        InlineKeyboardButton.WithCallbackData("👤 Взрослый",
-          CallbackData.Family.InviteRole(familyId, nameof(FamilyRole.Adult)))
-      ],
-      [
-        InlineKeyboardButton.WithCallbackData("👶 Ребёнок",
-          CallbackData.Family.InviteRole(familyId, nameof(FamilyRole.Child)))
-      ]
-    ]);
+    var keyboard = new InlineKeyboardMarkup(
+      new[] { FamilyRole.Admin, FamilyRole.Adult, FamilyRole.Child }
+        .Select(role => new[]
+        {
+          InlineKeyboardButton.WithCallbackData(RoleDisplay.GetRoleCaption(role),
+            CallbackData.Family.InviteRole(familyId, role.ToString()))
+        }));
 
     await botClient.SendOrEditMessageAsync(
       chatId,
@@ -271,7 +223,7 @@ public class FamilyBrowsingHandler(
     CancellationToken cancellationToken)
   {
     var createInviteCommand = new CreateInviteCodeCommand(familyId, role, session.UserId);
-    var result = await Mediator.Send(createInviteCommand, cancellationToken);
+    var result = await mediator.Send(createInviteCommand, cancellationToken);
 
     if (!result.IsSuccess)
     {
@@ -286,7 +238,7 @@ public class FamilyBrowsingHandler(
 
     var botUsername = botInfoService.Username;
     var inviteLink = $"https://t.me/{botUsername}?start=invite_{inviteCode}";
-    var roleText = BotMessages.Roles.GetRoleText(role);
+    var roleText = RoleDisplay.GetRoleCaption(role);
 
     await botClient.SendOrEditMessageAsync(
       chatId,
@@ -347,7 +299,7 @@ public class FamilyBrowsingHandler(
     CancellationToken cancellationToken)
   {
     var deleteFamilyCommand = new DeleteFamilyCommand(familyId, session.UserId);
-    var deleteResult = await Mediator.Send(deleteFamilyCommand, cancellationToken);
+    var deleteResult = await mediator.Send(deleteFamilyCommand, cancellationToken);
 
     if (!deleteResult.IsSuccess)
     {
@@ -361,7 +313,7 @@ public class FamilyBrowsingHandler(
       session.CurrentFamilyId = null;
 
       var getFamiliesQuery = new GetUserFamiliesQuery(session.UserId);
-      var familiesResult = await Mediator.Send(getFamiliesQuery, cancellationToken);
+      var familiesResult = await mediator.Send(getFamiliesQuery, cancellationToken);
 
       if (familiesResult.IsSuccess && familiesResult.Value.Any())
         session.CurrentFamilyId = familiesResult.Value.First().Id;
@@ -373,8 +325,4 @@ public class FamilyBrowsingHandler(
       "✅ Семья успешно удалена!\n\n" + BotMessages.Messages.FamilyDeleted,
       cancellationToken: cancellationToken);
   }
-
-
-  private static bool TryParseGuid(string value, out Guid guid) =>
-    Guid.TryParse(value, out guid) || CallbackDataHelper.TryParseGuid(value, out guid);
 }

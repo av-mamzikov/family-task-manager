@@ -1,6 +1,6 @@
 namespace FamilyTaskManager.UseCases.Tasks.Specifications;
 
-public class SpotsByIdsSpec : Specification<SpotBowsing>
+public class SpotsByIdsSpec : Specification<Spot>
 {
   public SpotsByIdsSpec(IEnumerable<Guid> SpotIds)
   {

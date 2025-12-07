@@ -34,7 +34,7 @@ public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
   public Guid FamilyId { get; private set; }
   public Family Family { get; private set; } = null!;
   public Guid SpotId { get; private set; }
-  public SpotBowsing SpotBowsing { get; private set; } = null!;
+  public Spot Spot { get; private set; } = null!;
   public TaskTitle Title { get; private set; } = null!;
   public TaskPoints Points { get; private set; } = null!;
   public Schedule Schedule { get; private set; } = null!;

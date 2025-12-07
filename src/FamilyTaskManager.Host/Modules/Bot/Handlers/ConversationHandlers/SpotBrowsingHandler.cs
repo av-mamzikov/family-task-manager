@@ -15,7 +15,7 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 public class SpotBrowsingHandler(
   ILogger<SpotBrowsingHandler> logger,
   IMediator mediator)
-  : BaseConversationHandler(logger, mediator), IConversationHandler
+  : BaseConversationHandler(logger), IConversationHandler
 {
   public Task HandleMessageAsync(
     ITelegramBotClient botClient,
@@ -33,15 +33,16 @@ public class SpotBrowsingHandler(
   {
     if (callbackParts.Length < 2) return;
 
-    if (callbackParts.IsCallbackOf(CallbackData.SpotBowsing.View, out var viewSpotId))
+    if (callbackParts.IsCallbackOf((Func<EncodedGuid, string>)CallbackData.SpotBrowsing.View,
+          out var viewSpotId))
       await HandleViewSpotAsync(botClient, chatId, message, viewSpotId, session, cancellationToken);
-    else if (callbackParts.IsCallbackOf(CallbackData.SpotBowsing.Create))
-      await StartCreateSpotAsync(botClient, chatId, message, session, cancellationToken);
-    else if (callbackParts.IsCallbackOf(CallbackData.SpotBowsing.Delete, out var deleteSpotId))
+    else if (callbackParts.IsCallbackOf((Func<EncodedGuid, string>)CallbackData.SpotBrowsing.Delete,
+               out var deleteSpotId))
       await HandleDeleteSpotAsync(botClient, chatId, message, deleteSpotId, session, cancellationToken);
-    else if (callbackParts.IsCallbackOf(CallbackData.SpotBowsing.ConfirmDelete, out var confirmDeleteSpotId))
+    else if (callbackParts.IsCallbackOf((Func<EncodedGuid, string>)CallbackData.SpotBrowsing.ConfirmDelete,
+               out var confirmDeleteSpotId))
       await HandleConfirmDeleteSpotAsync(botClient, chatId, message, confirmDeleteSpotId, session, cancellationToken);
-    else if (callbackParts.IsCallbackOf(CallbackData.SpotBowsing.List))
+    else if (callbackParts.IsCallbackOf(CallbackData.SpotBrowsing.List))
       await ShowSpotListAsync(botClient, chatId, message, session, cancellationToken);
   }
 
@@ -70,7 +71,7 @@ public class SpotBrowsingHandler(
     }
 
     var getSpotsQuery = new GetSpotsQuery(session.CurrentFamilyId.Value);
-    var spotsResult = await Mediator.Send(getSpotsQuery, cancellationToken);
+    var spotsResult = await mediator.Send(getSpotsQuery, cancellationToken);
 
     if (!spotsResult.IsSuccess)
     {
@@ -86,8 +87,8 @@ public class SpotBrowsingHandler(
         chatId,
         message,
         "🧩 У вас пока нет спотов.\n\nАдминистратор может создать спота.",
-        replyMarkup: new([
-          InlineKeyboardButton.WithCallbackData("➕ Создать спота", CallbackData.SpotBowsing.Create)
+        replyMarkup: new InlineKeyboardMarkup([
+          InlineKeyboardButton.WithCallbackData("➕ Создать спота", CallbackData.SpotCreation.Start())
         ]),
         cancellationToken: cancellationToken);
       return;
@@ -105,46 +106,6 @@ public class SpotBrowsingHandler(
       cancellationToken);
   }
 
-  private async Task StartCreateSpotAsync(
-    ITelegramBotClient botClient,
-    long chatId,
-    Message? messageId,
-    UserSession session,
-    CancellationToken cancellationToken)
-  {
-    var keyboard = new InlineKeyboardMarkup(GetSpotTypeSelectionButtons(true));
-
-    await botClient.SendOrEditMessageAsync(
-      chatId,
-      messageId,
-      "🧩 Выберите тип спота:",
-      replyMarkup: keyboard,
-      cancellationToken: cancellationToken);
-  }
-
-  private static InlineKeyboardButton[][] GetSpotTypeSelectionButtons(bool includeBackButton = false)
-  {
-    var buttons = new List<InlineKeyboardButton[]>();
-    foreach (var SpotType in Enum.GetValues<SpotType>().Order())
-    {
-      var (emoji, text) = SpotDisplay.GetInfo(SpotType);
-      // Callback data still uses the original lowercase code from Core
-      var callbackCode = SpotType.ToString().ToLowerInvariant();
-      buttons.Add([
-        InlineKeyboardButton.WithCallbackData(
-          $"{emoji} {text}",
-          CallbackData.SpotType.Select(callbackCode))
-      ]);
-    }
-
-    if (includeBackButton)
-      buttons.Add([
-        InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.SpotBowsing.List())
-      ]);
-
-    return buttons.ToArray();
-  }
-
   private async Task HandleViewSpotAsync(
     ITelegramBotClient botClient,
     long chatId,
@@ -160,7 +121,7 @@ public class SpotBrowsingHandler(
     }
 
     var getSpotQuery = new GetSpotsQuery(session.CurrentFamilyId.Value);
-    var spotsResult = await Mediator.Send(getSpotQuery, cancellationToken);
+    var spotsResult = await mediator.Send(getSpotQuery, cancellationToken);
 
     if (!spotsResult.IsSuccess)
     {
@@ -176,7 +137,7 @@ public class SpotBrowsingHandler(
     }
 
     var getTasksQuery = new GetTasksBySpotQuery(spotId, session.CurrentFamilyId.Value, TaskStatus.Active);
-    var tasksResult = await Mediator.Send(getTasksQuery, cancellationToken);
+    var tasksResult = await mediator.Send(getTasksQuery, cancellationToken);
 
     var (spotEmoji, _) = GetSpotTypeInfo(spot.Type);
     var (moodEmoji, moodText) = SpotDisplay.GetMoodInfo(spot.MoodScore);
@@ -198,8 +159,8 @@ public class SpotBrowsingHandler(
 
     var keyboard = new InlineKeyboardMarkup([
       [InlineKeyboardButton.WithCallbackData("📋 Шаблоны задач", CallbackData.TemplateBrowsing.ListOfSpot(spotId))],
-      [InlineKeyboardButton.WithCallbackData("🗑️ Удалить спота", CallbackData.SpotBowsing.Delete(spotId))],
-      [InlineKeyboardButton.WithCallbackData("⬅️ Назад к списку", CallbackData.SpotBowsing.List())]
+      [InlineKeyboardButton.WithCallbackData("🗑️ Удалить спота", CallbackData.SpotBrowsing.Delete(spotId))],
+      [InlineKeyboardButton.WithCallbackData("⬅️ Назад к списку", CallbackData.SpotBrowsing.List())]
     ]);
 
     await botClient.SendOrEditMessageAsync(
@@ -226,7 +187,7 @@ public class SpotBrowsingHandler(
     }
 
     var getSpotsQuery = new GetSpotsQuery(session.CurrentFamilyId.Value);
-    var spotsResult = await Mediator.Send(getSpotsQuery, cancellationToken);
+    var spotsResult = await mediator.Send(getSpotsQuery, cancellationToken);
 
     if (!spotsResult.IsSuccess)
     {
@@ -244,8 +205,8 @@ public class SpotBrowsingHandler(
     var (spotEmoji, _) = GetSpotTypeInfo(spot.Type);
 
     var keyboard = new InlineKeyboardMarkup([
-      [InlineKeyboardButton.WithCallbackData("✅ Да, удалить спота", CallbackData.SpotBowsing.ConfirmDelete(spotId))],
-      [InlineKeyboardButton.WithCallbackData("❌ Отмена", CallbackData.SpotBowsing.CancelDelete)]
+      [InlineKeyboardButton.WithCallbackData("✅ Да, удалить спота", CallbackData.SpotBrowsing.ConfirmDelete(spotId))],
+      [InlineKeyboardButton.WithCallbackData("❌ Отмена", CallbackData.SpotBrowsing.List())]
     ]);
 
     await botClient.SendOrEditMessageAsync(
@@ -272,7 +233,7 @@ public class SpotBrowsingHandler(
     CancellationToken cancellationToken)
   {
     var deleteSpotCommand = new DeleteSpotCommand(spotId, session.UserId);
-    var deleteResult = await Mediator.Send(deleteSpotCommand, cancellationToken);
+    var deleteResult = await mediator.Send(deleteSpotCommand, cancellationToken);
 
     if (!deleteResult.IsSuccess)
     {
@@ -317,11 +278,11 @@ public class SpotBrowsingHandler(
     {
       var (spotEmoji, _) = GetSpotTypeInfo(spot.Type);
       buttons.Add([
-        InlineKeyboardButton.WithCallbackData($"{spotEmoji} {spot.Name}", CallbackData.SpotBowsing.View(spot.Id))
+        InlineKeyboardButton.WithCallbackData($"{spotEmoji} {spot.Name}", CallbackData.SpotBrowsing.View(spot.Id))
       ]);
     }
 
-    buttons.Add([InlineKeyboardButton.WithCallbackData("➕ Создать спота", CallbackData.SpotBowsing.Create)]);
+    buttons.Add([InlineKeyboardButton.WithCallbackData("➕ Создать спота", CallbackData.SpotCreation.Start())]);
 
     return new(buttons);
   }

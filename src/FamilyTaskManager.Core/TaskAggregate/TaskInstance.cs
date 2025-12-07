@@ -10,16 +10,16 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   {
   }
 
-  public TaskInstance(SpotBowsing spotBowsing, string title, TaskPoints points, DateTime dueAt,
+  public TaskInstance(Spot spot, string title, TaskPoints points, DateTime dueAt,
     Guid? templateId = null)
   {
-    Guard.Against.Null(spotBowsing);
+    Guard.Against.Null(spot);
     Guard.Against.NullOrWhiteSpace(title);
     Guard.Against.Null(points);
 
     Id = Guid.NewGuid();
-    FamilyId = spotBowsing.FamilyId;
-    SpotId = spotBowsing.Id;
+    FamilyId = spot.FamilyId;
+    SpotId = spot.Id;
     Title = title.Trim();
     Points = points;
     TemplateId = templateId;
@@ -30,13 +30,13 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     RegisterDomainEvent(new TaskCreatedEvent
     {
       TaskId = Id,
-      FamilyId = spotBowsing.FamilyId,
-      SpotId = spotBowsing.Id,
+      FamilyId = spot.FamilyId,
+      SpotId = spot.Id,
       Title = title.Trim(),
-      SpotName = spotBowsing.Name,
+      SpotName = spot.Name,
       Points = points.ToString(),
       DueAt = dueAt,
-      Timezone = spotBowsing.Family.Timezone
+      Timezone = spot.Family.Timezone
     });
   }
 
@@ -54,19 +54,19 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
 
   // Navigation properties
   public Family Family { get; } = null!;
-  public SpotBowsing SpotBowsing { get; private set; } = null!;
+  public Spot Spot { get; private set; } = null!;
   public TaskTemplate? Template { get; private set; }
   public FamilyMember? StartedByMember { get; private set; }
   public FamilyMember? CompletedByMember { get; private set; }
 
-  public void Start(Guid familyMemberId)
+  public void Start(FamilyMember familyMember)
   {
     if (Status != TaskStatus.Active) return;
 
-    Guard.Against.Default(familyMemberId);
+    Guard.Against.Default(familyMember.Id);
 
     Status = TaskStatus.InProgress;
-    StartedByMemberId = familyMemberId;
+    StartedByMemberId = familyMember.Id;
 
     RegisterDomainEvent(new TaskStartedEvent { TaskId = Id });
   }

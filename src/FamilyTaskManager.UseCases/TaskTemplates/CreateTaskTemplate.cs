@@ -14,7 +14,7 @@ public record CreateTaskTemplateCommand(
 
 public class CreateTaskTemplateHandler(
   IAppRepository<TaskTemplate> templateAppRepository,
-  IAppRepository<SpotBowsing> SpotAppRepository) : ICommandHandler<CreateTaskTemplateCommand, Result<Guid>>
+  IAppRepository<Spot> SpotAppRepository) : ICommandHandler<CreateTaskTemplateCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreateTaskTemplateCommand command, CancellationToken cancellationToken)
   {

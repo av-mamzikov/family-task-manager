@@ -3,7 +3,7 @@ namespace FamilyTaskManager.UseCases.Spots;
 public record DeleteSpotCommand(Guid SpotId, Guid UserId) : ICommand<Result>;
 
 public class DeleteSpotHandler(
-  IAppRepository<SpotBowsing> spotAppRepository,
+  IAppRepository<Spot> spotAppRepository,
   IAppRepository<User> userAppRepository,
   IAppRepository<Family> familyAppRepository) : ICommandHandler<DeleteSpotCommand, Result>
 {

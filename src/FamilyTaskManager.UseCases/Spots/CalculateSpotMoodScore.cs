@@ -7,7 +7,7 @@ public record SpotMoodScoreResult(int OldMoodScore, int NewMoodScore, bool HasCh
 public record CalculateSpotMoodScoreCommand(Guid SpotId) : ICommand<Result<SpotMoodScoreResult>>;
 
 public class CalculateSpotMoodScoreHandler(
-  IAppRepository<SpotBowsing> spotAppRepository,
+  IAppRepository<Spot> spotAppRepository,
   ISpotMoodCalculator moodCalculator)
   : ICommandHandler<CalculateSpotMoodScoreCommand, Result<SpotMoodScoreResult>>
 {

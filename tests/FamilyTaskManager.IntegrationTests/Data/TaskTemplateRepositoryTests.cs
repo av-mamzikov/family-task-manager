@@ -18,8 +18,8 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
     await DbContext.SaveChangesAsync();
 
     // Создаем спота для этой семьи
-    var Spot = new SpotBowsing(family.Id, SpotType.Cat, "Test Spot");
-    var SpotRepository = GetRepository<SpotBowsing>();
+    var Spot = new Spot(family.Id, SpotType.Cat, "Test Spot");
+    var SpotRepository = GetRepository<Spot>();
     await SpotRepository.AddAsync(Spot);
     await DbContext.SaveChangesAsync();
 
