@@ -10,12 +10,12 @@ public class CreateSpotHandlerTests
 {
   private readonly IAppRepository<Family> _familyAppRepository;
   private readonly CreateSpotHandler _handler;
-  private readonly IAppRepository<Spot> _SpotAppRepository;
+  private readonly IAppRepository<SpotBowsing> _SpotAppRepository;
   private readonly IAppRepository<TaskTemplate> _taskTemplateAppRepository;
 
   public CreateSpotHandlerTests()
   {
-    _SpotAppRepository = Substitute.For<IAppRepository<Spot>>();
+    _SpotAppRepository = Substitute.For<IAppRepository<SpotBowsing>>();
     _familyAppRepository = Substitute.For<IAppRepository<Family>>();
     _taskTemplateAppRepository = Substitute.For<IAppRepository<TaskTemplate>>();
     _handler = new(_SpotAppRepository, _familyAppRepository, _taskTemplateAppRepository);
@@ -32,8 +32,8 @@ public class CreateSpotHandlerTests
     _familyAppRepository.GetByIdAsync(familyId, Arg.Any<CancellationToken>())
       .Returns(family);
 
-    Spot? capturedSpot = null;
-    await _SpotAppRepository.AddAsync(Arg.Do<Spot>(p => capturedSpot = p), Arg.Any<CancellationToken>());
+    SpotBowsing? capturedSpot = null;
+    await _SpotAppRepository.AddAsync(Arg.Do<SpotBowsing>(p => capturedSpot = p), Arg.Any<CancellationToken>());
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);
@@ -108,7 +108,7 @@ public class CreateSpotHandlerTests
     // Assert
     result.IsSuccess.ShouldBeTrue();
     await _SpotAppRepository.Received(1).AddAsync(
-      Arg.Is<Spot>(p => p.Type == spotType),
+      Arg.Is<SpotBowsing>(p => p.Type == spotType),
       Arg.Any<CancellationToken>());
   }
 

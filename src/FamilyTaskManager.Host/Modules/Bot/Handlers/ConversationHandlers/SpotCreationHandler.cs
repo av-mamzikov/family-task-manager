@@ -115,7 +115,7 @@ public class SpotCreationHandler(
       return;
     }
 
-    var SpotEmoji = SpotTypeHelper.GetEmoji(SpotType);
+    var SpotEmoji = SpotDisplay.GetEmoji(SpotType);
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,

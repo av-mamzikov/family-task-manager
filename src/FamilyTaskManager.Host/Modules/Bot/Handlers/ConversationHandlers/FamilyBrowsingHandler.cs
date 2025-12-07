@@ -1,5 +1,6 @@
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
+using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
 using FamilyTaskManager.UseCases.Families;
@@ -375,5 +376,5 @@ public class FamilyBrowsingHandler(
 
 
   private static bool TryParseGuid(string value, out Guid guid) =>
-    Guid.TryParse(value, out guid) || CallbackDataHelper.TryDecodeGuid(value, out guid);
+    Guid.TryParse(value, out guid) || CallbackDataHelper.TryParseGuid(value, out guid);
 }

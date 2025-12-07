@@ -14,21 +14,15 @@ public record CreateTaskTemplateCommand(
 
 public class CreateTaskTemplateHandler(
   IAppRepository<TaskTemplate> templateAppRepository,
-  IAppRepository<Spot> SpotAppRepository) : ICommandHandler<CreateTaskTemplateCommand, Result<Guid>>
+  IAppRepository<SpotBowsing> SpotAppRepository) : ICommandHandler<CreateTaskTemplateCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreateTaskTemplateCommand command, CancellationToken cancellationToken)
   {
     // Verify Spot exists and belongs to family
     var Spot = await SpotAppRepository.GetByIdAsync(command.SpotId, cancellationToken);
-    if (Spot == null)
-    {
-      return Result<Guid>.NotFound("Спот не найден");
-    }
+    if (Spot == null) return Result<Guid>.NotFound("Спот не найден");
 
-    if (Spot.FamilyId != command.FamilyId)
-    {
-      return Result<Guid>.Error("Спот не принадлежит этой семье");
-    }
+    if (Spot.FamilyId != command.FamilyId) return Result<Guid>.Error("Спот не принадлежит этой семье");
 
     // Create schedule
     var scheduleResult = command.ScheduleType.Name switch
@@ -46,10 +40,7 @@ public class CreateTaskTemplateHandler(
       _ => Result<Schedule>.Error("Invalid schedule type")
     };
 
-    if (!scheduleResult.IsSuccess)
-    {
-      return Result<Guid>.Invalid(new ValidationError(scheduleResult.Errors.First()));
-    }
+    if (!scheduleResult.IsSuccess) return Result<Guid>.Invalid(new ValidationError(scheduleResult.Errors.First()));
 
     // Create template
     var title = new TaskTitle(command.Title);

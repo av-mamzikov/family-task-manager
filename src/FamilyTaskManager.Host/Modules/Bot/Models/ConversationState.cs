@@ -5,7 +5,6 @@ public enum ConversationState
   None,
   FamilyCreation,
   SpotCreation,
-  TaskCreation,
   TemplateForm,
 
   // Browsing conversations

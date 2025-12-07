@@ -10,16 +10,16 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   {
   }
 
-  public TaskInstance(Spot spot, string title, TaskPoints points, DateTime dueAt,
+  public TaskInstance(SpotBowsing spotBowsing, string title, TaskPoints points, DateTime dueAt,
     Guid? templateId = null)
   {
-    Guard.Against.Null(spot);
+    Guard.Against.Null(spotBowsing);
     Guard.Against.NullOrWhiteSpace(title);
     Guard.Against.Null(points);
 
     Id = Guid.NewGuid();
-    FamilyId = spot.FamilyId;
-    SpotId = spot.Id;
+    FamilyId = spotBowsing.FamilyId;
+    SpotId = spotBowsing.Id;
     Title = title.Trim();
     Points = points;
     TemplateId = templateId;
@@ -30,13 +30,13 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     RegisterDomainEvent(new TaskCreatedEvent
     {
       TaskId = Id,
-      FamilyId = spot.FamilyId,
-      SpotId = spot.Id,
+      FamilyId = spotBowsing.FamilyId,
+      SpotId = spotBowsing.Id,
       Title = title.Trim(),
-      SpotName = spot.Name,
+      SpotName = spotBowsing.Name,
       Points = points.ToString(),
       DueAt = dueAt,
-      Timezone = spot.Family.Timezone
+      Timezone = spotBowsing.Family.Timezone
     });
   }
 
@@ -54,7 +54,7 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
 
   // Navigation properties
   public Family Family { get; } = null!;
-  public Spot Spot { get; private set; } = null!;
+  public SpotBowsing SpotBowsing { get; private set; } = null!;
   public TaskTemplate? Template { get; private set; }
   public FamilyMember? StartedByMember { get; private set; }
   public FamilyMember? CompletedByMember { get; private set; }

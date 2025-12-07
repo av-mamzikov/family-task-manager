@@ -1,6 +1,7 @@
 using System.Text;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
+using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Families;
 using Telegram.Bot;
@@ -122,7 +123,7 @@ public class FamilyMembersBrousingHandler(
                       $"Роль: {roleText}\n" +
                       $"Очки: ⭐ {member.Points}";
 
-    var memberCode = CallbackDataHelper.EncodeGuid(member.Id);
+    var memberCode = member.Id.EncodeToCallbackData();
 
     var keyboard = new InlineKeyboardMarkup([
       [
@@ -159,7 +160,7 @@ public class FamilyMembersBrousingHandler(
     }
 
     var (roleEmoji, roleText) = GetRoleInfo(member.Role);
-    var memberCode = CallbackDataHelper.EncodeGuid(member.Id);
+    var memberCode = member.Id.EncodeToCallbackData();
 
     var availableRoles = Enum.GetValues<FamilyRole>()
       .Where(role => role != member.Role)
@@ -202,7 +203,7 @@ public class FamilyMembersBrousingHandler(
     }
 
     var (roleEmoji, roleText) = GetRoleInfo(member.Role);
-    var memberCode = CallbackDataHelper.EncodeGuid(member.Id);
+    var memberCode = member.Id.EncodeToCallbackData();
 
     var keyboard = new InlineKeyboardMarkup([
       [
@@ -306,10 +307,10 @@ public class FamilyMembersBrousingHandler(
 
   private static InlineKeyboardMarkup BuildMembersKeyboard(Guid familyId, List<FamilyMemberDto> members)
   {
-    var familyCode = CallbackDataHelper.EncodeGuid(familyId);
+    var familyCode = familyId.EncodeToCallbackData();
     var buttons = members.Select(member =>
     {
-      var memberCode = CallbackDataHelper.EncodeGuid(member.Id);
+      var memberCode = member.Id.EncodeToCallbackData();
       return new[]
       {
         InlineKeyboardButton.WithCallbackData(
@@ -340,5 +341,5 @@ public class FamilyMembersBrousingHandler(
   };
 
   private static bool TryParseGuid(string value, out Guid guid) =>
-    Guid.TryParse(value, out guid) || CallbackDataHelper.TryDecodeGuid(value, out guid);
+    Guid.TryParse(value, out guid) || CallbackDataHelper.TryParseGuid(value, out guid);
 }

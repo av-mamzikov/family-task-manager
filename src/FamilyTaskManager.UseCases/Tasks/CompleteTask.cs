@@ -7,37 +7,25 @@ public record CompleteTaskCommand(Guid TaskId, Guid UserId) : ICommand<Result>;
 public class CompleteTaskHandler(
   IAppRepository<TaskInstance> taskAppRepository,
   IAppRepository<Family> familyAppRepository,
-  IAppRepository<Spot> SpotAppRepository,
+  IAppRepository<SpotBowsing> SpotAppRepository,
   ISpotMoodCalculator moodCalculator) : ICommandHandler<CompleteTaskCommand, Result>
 {
   public async ValueTask<Result> Handle(CompleteTaskCommand command, CancellationToken cancellationToken)
   {
     // Get task
     var task = await taskAppRepository.GetByIdAsync(command.TaskId, cancellationToken);
-    if (task == null)
-    {
-      return Result.NotFound("Task not found");
-    }
+    if (task == null) return Result.NotFound("Task not found");
 
-    if (task.Status == TaskStatus.Completed)
-    {
-      return Result.Error("Task is already completed");
-    }
+    if (task.Status == TaskStatus.Completed) return Result.Error("Task is already completed");
 
     // Get family with members (including User for event)
     var familySpec = new GetFamilyWithMembersAndUsersSpec(task.FamilyId);
     var family = await familyAppRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
-    if (family == null)
-    {
-      return Result.NotFound("Family not found");
-    }
+    if (family == null) return Result.NotFound("Family not found");
 
     // Find member
     var member = family.Members.FirstOrDefault(m => m.UserId == command.UserId && m.IsActive);
-    if (member == null)
-    {
-      return Result.Error("User is not a member of this family");
-    }
+    if (member == null) return Result.Error("User is not a member of this family");
 
     // Check if task is in progress and if current user is the one who started it
     if (task.Status == TaskStatus.InProgress && task.StartedByMemberId.HasValue &&

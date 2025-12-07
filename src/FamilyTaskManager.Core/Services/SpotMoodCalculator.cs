@@ -6,7 +6,7 @@ using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
 namespace FamilyTaskManager.Core.Services;
 
 public class SpotMoodCalculator(
-  IAppRepository<Spot> spotAppRepository,
+  IAppRepository<SpotBowsing> spotAppRepository,
   IAppRepository<TaskInstance> taskAppRepository) : ISpotMoodCalculator
 {
   public async Task<int> CalculateMoodScoreAsync(Guid spotId, CancellationToken cancellationToken)

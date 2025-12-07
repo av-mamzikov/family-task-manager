@@ -195,7 +195,7 @@ public class TemplateBrowsingHandler(
           [
             InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", CallbackData.TemplateBrowsing.Create(spotId))
           ],
-          [InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.Spot.List())]
+          [InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.SpotBowsing.List())]
         ]),
         cancellationToken);
       return;
@@ -219,7 +219,7 @@ public class TemplateBrowsingHandler(
     buttons.Add([
       InlineKeyboardButton.WithCallbackData("➕ Создать шаблон", CallbackData.TemplateBrowsing.View(spotId))
     ]);
-    buttons.Add([InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.Spot.View(spotId))]);
+    buttons.Add([InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.SpotBowsing.View(spotId))]);
 
     var keyboard = new InlineKeyboardMarkup(buttons);
 
@@ -267,7 +267,7 @@ public class TemplateBrowsingHandler(
       ],
       [InlineKeyboardButton.WithCallbackData("✏️ Редактировать", CallbackData.TemplateForm.Edit(templateId))],
       [InlineKeyboardButton.WithCallbackData("🗑️ Удалить", CallbackData.TemplateBrowsing.Delete(templateId))],
-      [InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.Spot.View(template.SpotId))]
+      [InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.SpotBowsing.View(template.SpotId))]
     ]);
 
     await botClient.SendOrEditMessageAsync(chatId, message, messageText,

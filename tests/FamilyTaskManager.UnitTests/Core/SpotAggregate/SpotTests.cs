@@ -2,7 +2,7 @@ using FamilyTaskManager.Core.SpotAggregate;
 
 namespace FamilyTaskManager.UnitTests.Core.SpotAggregate;
 
-public class SpotTests
+public class SpotBowsingTests
 {
   [Fact]
   public void Constructor_WithValidParameters_CreatesSpot()
@@ -13,7 +13,7 @@ public class SpotTests
     var name = "Whiskers";
 
     // Act
-    var Spot = new Spot(familyId, type, name);
+    var Spot = new SpotBowsing(familyId, type, name);
 
     // Assert
     Spot.FamilyId.ShouldBe(familyId);
@@ -32,7 +32,7 @@ public class SpotTests
     var name = "  Buddy  ";
 
     // Act
-    var Spot = new Spot(familyId, type, name);
+    var Spot = new SpotBowsing(familyId, type, name);
 
     // Assert
     Spot.Name.ShouldBe("Buddy");
@@ -49,7 +49,7 @@ public class SpotTests
     var name = "TestSpot";
 
     // Act
-    var Spot = new Spot(familyId, type, name);
+    var Spot = new SpotBowsing(familyId, type, name);
 
     // Assert
     Spot.Type.ShouldBe(type);
@@ -64,7 +64,7 @@ public class SpotTests
     var name = "Whiskers";
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => new Spot(familyId, type, name));
+    Should.Throw<ArgumentException>(() => new SpotBowsing(familyId, type, name));
   }
 
   [Theory]
@@ -78,14 +78,14 @@ public class SpotTests
     var type = SpotType.Cat;
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => new Spot(familyId, type, invalidName!));
+    Should.Throw<ArgumentException>(() => new SpotBowsing(familyId, type, invalidName!));
   }
 
   [Fact]
   public void UpdateName_WithValidName_UpdatesName()
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var Spot = new SpotBowsing(Guid.NewGuid(), SpotType.Cat, "Whiskers");
     var newName = "Fluffy";
 
     // Act
@@ -99,7 +99,7 @@ public class SpotTests
   public void UpdateName_WithWhitespace_TrimsName()
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var Spot = new SpotBowsing(Guid.NewGuid(), SpotType.Cat, "Whiskers");
     var newName = "  Fluffy  ";
 
     // Act
@@ -116,7 +116,7 @@ public class SpotTests
   public void UpdateName_WithInvalidName_ThrowsException(string? invalidName)
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var Spot = new SpotBowsing(Guid.NewGuid(), SpotType.Cat, "Whiskers");
 
     // Act & Assert
     Should.Throw<ArgumentException>(() => Spot.UpdateName(invalidName!));
@@ -131,7 +131,7 @@ public class SpotTests
   public void UpdateMoodScore_WithValidScore_UpdatesMoodScore(int score)
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var Spot = new SpotBowsing(Guid.NewGuid(), SpotType.Cat, "Whiskers");
 
     // Act
     Spot.UpdateMoodScore(score);
@@ -144,7 +144,7 @@ public class SpotTests
   public void UpdateMoodScore_WithScoreAbove100_ClampsTo100()
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var Spot = new SpotBowsing(Guid.NewGuid(), SpotType.Cat, "Whiskers");
 
     // Act
     Spot.UpdateMoodScore(150);
@@ -157,7 +157,7 @@ public class SpotTests
   public void UpdateMoodScore_WithScoreBelow0_ClampsTo0()
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var Spot = new SpotBowsing(Guid.NewGuid(), SpotType.Cat, "Whiskers");
 
     // Act
     Spot.UpdateMoodScore(-50);
@@ -170,7 +170,7 @@ public class SpotTests
   public void UpdateMoodScore_Multiple_UpdatesToLatestValue()
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var Spot = new SpotBowsing(Guid.NewGuid(), SpotType.Cat, "Whiskers");
 
     // Act
     Spot.UpdateMoodScore(80);
@@ -185,7 +185,7 @@ public class SpotTests
   public void UpdateMoodScore_WithBoundaryValues_ClampsCorrectly()
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var Spot = new SpotBowsing(Guid.NewGuid(), SpotType.Cat, "Whiskers");
 
     // Act & Assert
     Spot.UpdateMoodScore(-1);

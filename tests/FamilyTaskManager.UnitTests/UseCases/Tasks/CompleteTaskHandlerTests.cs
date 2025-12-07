@@ -15,14 +15,14 @@ public class CompleteTaskHandlerTests
   private readonly IAppRepository<Family> _familyAppRepository;
   private readonly CompleteTaskHandler _handler;
   private readonly ISpotMoodCalculator _moodCalculator;
-  private readonly IAppRepository<Spot> _SpotAppRepository;
+  private readonly IAppRepository<SpotBowsing> _SpotAppRepository;
   private readonly IAppRepository<TaskInstance> _taskAppRepository;
 
   public CompleteTaskHandlerTests()
   {
     _taskAppRepository = Substitute.For<IAppRepository<TaskInstance>>();
     _familyAppRepository = Substitute.For<IAppRepository<Family>>();
-    _SpotAppRepository = Substitute.For<IAppRepository<Spot>>();
+    _SpotAppRepository = Substitute.For<IAppRepository<SpotBowsing>>();
     _moodCalculator = Substitute.For<ISpotMoodCalculator>();
     _handler = new(_taskAppRepository, _familyAppRepository, _SpotAppRepository, _moodCalculator);
   }

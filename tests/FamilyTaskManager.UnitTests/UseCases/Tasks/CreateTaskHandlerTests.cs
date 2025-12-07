@@ -13,14 +13,14 @@ public class CreateTaskHandlerTests
   private readonly IAppRepository<Family> _familyAppRepository;
   private readonly CreateTaskHandler _handler;
   private readonly ISpotMoodCalculator _moodCalculator;
-  private readonly IAppRepository<Spot> _SpotAppRepository;
+  private readonly IAppRepository<SpotBowsing> _SpotAppRepository;
   private readonly IAppRepository<TaskInstance> _taskAppRepository;
   private readonly ITimeZoneService _timeZoneService;
 
   public CreateTaskHandlerTests()
   {
     _taskAppRepository = Substitute.For<IAppRepository<TaskInstance>>();
-    _SpotAppRepository = Substitute.For<IAppRepository<Spot>>();
+    _SpotAppRepository = Substitute.For<IAppRepository<SpotBowsing>>();
     _familyAppRepository = Substitute.For<IAppRepository<Family>>();
     _timeZoneService = Substitute.For<ITimeZoneService>();
     _moodCalculator = Substitute.For<ISpotMoodCalculator>();
@@ -35,9 +35,9 @@ public class CreateTaskHandlerTests
     var familyId = Guid.NewGuid();
     var SpotId = Guid.NewGuid();
     var family = new Family("Test Family", "UTC", false);
-    var Spot = new Spot(familyId, SpotType.Cat, "Fluffy");
+    var Spot = new SpotBowsing(familyId, SpotType.Cat, "Fluffy");
     // Set Family navigation property for test
-    typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
+    typeof(SpotBowsing).GetProperty("Family")!.SetValue(Spot, family);
     var dueAt = DateTime.UtcNow.AddDays(1);
     var command = new CreateTaskCommand(familyId, SpotId, "Feed the cat", new(2), dueAt, Guid.NewGuid());
 
@@ -74,7 +74,7 @@ public class CreateTaskHandlerTests
       Guid.NewGuid());
 
     _SpotAppRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-      .Returns((Spot?)null);
+      .Returns((SpotBowsing?)null);
 
     // Act
     var result = await _handler.Handle(command, CancellationToken.None);
@@ -92,9 +92,9 @@ public class CreateTaskHandlerTests
     var differentFamilyId = Guid.NewGuid();
     var SpotId = Guid.NewGuid();
     var differentFamily = new Family("Different Family", "UTC", false);
-    var Spot = new Spot(differentFamilyId, SpotType.Cat, "Fluffy");
+    var Spot = new SpotBowsing(differentFamilyId, SpotType.Cat, "Fluffy");
     // Set Family navigation property for test
-    typeof(Spot).GetProperty("Family")!.SetValue(Spot, differentFamily);
+    typeof(SpotBowsing).GetProperty("Family")!.SetValue(Spot, differentFamily);
     var family = new Family("Test Family", "UTC", false);
     var command = new CreateTaskCommand(familyId, SpotId, "Feed the cat", new(2), DateTime.UtcNow,
       Guid.NewGuid());
@@ -121,9 +121,9 @@ public class CreateTaskHandlerTests
     var familyId = Guid.NewGuid();
     var SpotId = Guid.NewGuid();
     var family = new Family("Test Family", "UTC", false);
-    var Spot = new Spot(familyId, SpotType.Cat, "Fluffy");
+    var Spot = new SpotBowsing(familyId, SpotType.Cat, "Fluffy");
     // Set Family navigation property for test
-    typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
+    typeof(SpotBowsing).GetProperty("Family")!.SetValue(Spot, family);
     var command =
       new CreateTaskCommand(familyId, SpotId, title, new(points), DateTime.UtcNow, Guid.NewGuid());
 

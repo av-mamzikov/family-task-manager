@@ -19,7 +19,7 @@ public record ProcessScheduledTaskCommand(DateTime CheckFrom, DateTime CheckTo) 
 public class ProcessScheduledTasksHandler(
   IReadRepository<TaskTemplate> templateRepository,
   IAppRepository<TaskInstance> taskAppRepository,
-  IAppRepository<Spot> SpotAppRepository,
+  IAppRepository<SpotBowsing> SpotAppRepository,
   ITaskInstanceFactory taskInstanceFactory,
   ILogger<ProcessScheduledTasksHandler> logger)
   : ICommandHandler<ProcessScheduledTaskCommand, Result<int>>

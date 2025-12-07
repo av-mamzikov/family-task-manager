@@ -41,17 +41,17 @@ public record TaskDto(
 
   public static class Projections
   {
-    public static readonly Expression<Func<TaskInstance, TaskDto>> FromTaskInstance = t => new TaskDto(
+    public static readonly Expression<Func<TaskInstance, TaskDto>> FromTaskInstance = t => new(
       t.Id,
       t.Title,
       t.Points,
       t.Status,
       t.DueAt,
       t.SpotId,
-      t.Spot.Name,
+      t.SpotBowsing.Name,
       t.StartedByMember!.UserId,
       t.Family.Timezone,
       t.StartedByMember != null ? t.StartedByMember.User!.Name : null,
-      t.Spot.Type);
+      t.SpotBowsing.Type);
   }
 }

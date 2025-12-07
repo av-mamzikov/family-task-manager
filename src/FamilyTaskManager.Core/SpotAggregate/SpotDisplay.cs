@@ -33,7 +33,7 @@ public static class SpotDisplay
   public static string GetDisplayText(SpotType spotType) =>
     _spotTypeInfoMap.TryGetValue(spotType, out var info) ? info.DisplayText : "Неизвестно";
 
-  public static (string emoji, string text) GetInfoFromStr(string spotTypeCode)
+  public static (string emoji, string text) GetInfoFromString(string spotTypeCode)
   {
     var info = _spotTypeInfoMap.Values.FirstOrDefault(i =>
       i.CallbackData.Equals(spotTypeCode, StringComparison.OrdinalIgnoreCase));

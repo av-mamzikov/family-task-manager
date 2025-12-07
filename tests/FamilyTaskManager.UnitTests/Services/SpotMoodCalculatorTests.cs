@@ -9,12 +9,12 @@ namespace FamilyTaskManager.UnitTests.Services;
 public class SpotMoodCalculatorTests
 {
   private readonly SpotMoodCalculator _calculator;
-  private readonly IAppRepository<Spot> _SpotAppRepository;
+  private readonly IAppRepository<SpotBowsing> _SpotAppRepository;
   private readonly IAppRepository<TaskInstance> _taskAppRepository;
 
   public SpotMoodCalculatorTests()
   {
-    _SpotAppRepository = Substitute.For<IAppRepository<Spot>>();
+    _SpotAppRepository = Substitute.For<IAppRepository<SpotBowsing>>();
     _taskAppRepository = Substitute.For<IAppRepository<TaskInstance>>();
     _calculator = new(_SpotAppRepository, _taskAppRepository);
   }
@@ -24,7 +24,7 @@ public class SpotMoodCalculatorTests
   {
     // Arrange
     var SpotId = Guid.NewGuid();
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Мурзик");
+    var Spot = new SpotBowsing(Guid.NewGuid(), SpotType.Cat, "Мурзик");
 
     _SpotAppRepository.GetByIdAsync(SpotId, Arg.Any<CancellationToken>()).Returns(Spot);
     _taskAppRepository.ListAsync(Arg.Any<TasksBySpotSpec>(), Arg.Any<CancellationToken>()).Returns([]);
@@ -42,7 +42,7 @@ public class SpotMoodCalculatorTests
     // Arrange
     var SpotId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
-    var Spot = new Spot(familyId, SpotType.Cat, "Мурзик");
+    var Spot = new SpotBowsing(familyId, SpotType.Cat, "Мурзик");
 
     var now = DateTime.UtcNow;
     var dueAt = now.AddHours(-2);
@@ -71,7 +71,7 @@ public class SpotMoodCalculatorTests
     // Arrange
     var SpotId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
-    var Spot = new Spot(familyId, SpotType.Cat, "Мурзик");
+    var Spot = new SpotBowsing(familyId, SpotType.Cat, "Мурзик");
 
     var now = DateTime.UtcNow;
     var dueAt = now.AddHours(-2);
@@ -101,7 +101,7 @@ public class SpotMoodCalculatorTests
     // Arrange
     var SpotId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
-    var Spot = new Spot(familyId, SpotType.Cat, "Мурзик");
+    var Spot = new SpotBowsing(familyId, SpotType.Cat, "Мурзик");
 
     var now = DateTime.UtcNow;
     var dueAt = now.AddDays(-10); // Overdue by 10 days
@@ -130,7 +130,7 @@ public class SpotMoodCalculatorTests
     // Arrange
     var SpotId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
-    var Spot = new Spot(familyId, SpotType.Cat, "Мурзик");
+    var Spot = new SpotBowsing(familyId, SpotType.Cat, "Мурзик");
 
     var now = DateTime.UtcNow;
 

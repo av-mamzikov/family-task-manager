@@ -9,11 +9,11 @@ public class CalculateSpotMoodScoreTests
 {
   private readonly CalculateSpotMoodScoreHandler _handler;
   private readonly ISpotMoodCalculator _moodCalculator;
-  private readonly IAppRepository<Spot> _SpotAppRepository;
+  private readonly IAppRepository<SpotBowsing> _SpotAppRepository;
 
   public CalculateSpotMoodScoreTests()
   {
-    _SpotAppRepository = Substitute.For<IAppRepository<Spot>>();
+    _SpotAppRepository = Substitute.For<IAppRepository<SpotBowsing>>();
     _moodCalculator = Substitute.For<ISpotMoodCalculator>();
     _handler = new(_SpotAppRepository, _moodCalculator);
   }
@@ -23,7 +23,7 @@ public class CalculateSpotMoodScoreTests
   {
     // Arrange
     var SpotId = Guid.NewGuid();
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Мурзик");
+    var Spot = new SpotBowsing(Guid.NewGuid(), SpotType.Cat, "Мурзик");
 
     _SpotAppRepository.GetByIdAsync(SpotId, Arg.Any<CancellationToken>())
       .Returns(Spot);
@@ -47,7 +47,7 @@ public class CalculateSpotMoodScoreTests
     // Arrange
     var SpotId = Guid.NewGuid();
     _SpotAppRepository.GetByIdAsync(SpotId, Arg.Any<CancellationToken>())
-      .Returns((Spot?)null);
+      .Returns((SpotBowsing?)null);
 
     // Act
     var result = await _handler.Handle(
@@ -64,7 +64,7 @@ public class CalculateSpotMoodScoreTests
   {
     // Arrange
     var SpotId = Guid.NewGuid();
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Мурзик");
+    var Spot = new SpotBowsing(Guid.NewGuid(), SpotType.Cat, "Мурзик");
 
     _SpotAppRepository.GetByIdAsync(SpotId, Arg.Any<CancellationToken>())
       .Returns(Spot);
@@ -87,7 +87,7 @@ public class CalculateSpotMoodScoreTests
   {
     // Arrange
     var SpotId = Guid.NewGuid();
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Мурзик");
+    var Spot = new SpotBowsing(Guid.NewGuid(), SpotType.Cat, "Мурзик");
 
     _SpotAppRepository.GetByIdAsync(SpotId, Arg.Any<CancellationToken>()).Returns(Spot);
     _moodCalculator.CalculateMoodScoreAsync(SpotId, Arg.Any<CancellationToken>()).Returns(0);
@@ -105,7 +105,7 @@ public class CalculateSpotMoodScoreTests
   {
     // Arrange
     var SpotId = Guid.NewGuid();
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Мурзик");
+    var Spot = new SpotBowsing(Guid.NewGuid(), SpotType.Cat, "Мурзик");
 
     _SpotAppRepository.GetByIdAsync(SpotId, Arg.Any<CancellationToken>()).Returns(Spot);
     _moodCalculator.CalculateMoodScoreAsync(SpotId, Arg.Any<CancellationToken>()).Returns(0);
@@ -124,7 +124,7 @@ public class CalculateSpotMoodScoreTests
     // Arrange
     var SpotId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
-    var Spot = new Spot(familyId, SpotType.Cat, "Мурзик");
+    var Spot = new SpotBowsing(familyId, SpotType.Cat, "Мурзик");
 
     _SpotAppRepository.GetByIdAsync(SpotId, Arg.Any<CancellationToken>()).Returns(Spot);
     _moodCalculator.CalculateMoodScoreAsync(SpotId, Arg.Any<CancellationToken>()).Returns(50);
@@ -143,7 +143,7 @@ public class CalculateSpotMoodScoreTests
     // Arrange
     var SpotId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
-    var Spot = new Spot(familyId, SpotType.Cat, "Мурзик");
+    var Spot = new SpotBowsing(familyId, SpotType.Cat, "Мурзик");
 
     _SpotAppRepository.GetByIdAsync(SpotId, Arg.Any<CancellationToken>()).Returns(Spot);
     _moodCalculator.CalculateMoodScoreAsync(SpotId, Arg.Any<CancellationToken>()).Returns(100);

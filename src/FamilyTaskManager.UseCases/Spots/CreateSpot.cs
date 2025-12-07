@@ -3,7 +3,7 @@ namespace FamilyTaskManager.UseCases.Spots;
 public record CreateSpotCommand(Guid FamilyId, SpotType Type, string Name) : ICommand<Result<Guid>>;
 
 public class CreateSpotHandler(
-  IAppRepository<Spot> spotAppRepository,
+  IAppRepository<SpotBowsing> spotAppRepository,
   IAppRepository<Family> familyAppRepository,
   IAppRepository<TaskTemplate> taskTemplateAppRepository) : ICommandHandler<CreateSpotCommand, Result<Guid>>
 {
@@ -18,7 +18,7 @@ public class CreateSpotHandler(
       return Result<Guid>.Invalid(new ValidationError("Имя спота должно быть длиной от 2 до 50 символов"));
 
     // Create Spot
-    var spot = new Spot(command.FamilyId, command.Type, command.Name);
+    var spot = new SpotBowsing(command.FamilyId, command.Type, command.Name);
     await spotAppRepository.AddAsync(spot, cancellationToken);
     await spotAppRepository.SaveChangesAsync(cancellationToken);
 

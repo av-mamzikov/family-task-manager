@@ -1,19 +1,22 @@
+using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Constants;
 
 public static class CallbackData
 {
-  public static class Spot
+  public static class SpotBowsing
   {
     public const ConversationState Conversation = ConversationState.SpotBrowsing;
 
-    public static string Create => $"{Conversation}_{CallbackActions.Create}";
-    public static string CancelDelete => $"{Conversation}_{CallbackActions.List}";
+    public static string Create() => $"{Conversation}_{CallbackActions.Create}";
+    public static string CancelDelete() => $"{Conversation}_{CallbackActions.List}";
 
     public static string List() => $"{Conversation}_{CallbackActions.List}";
-    public static string View(Guid spotId) => $"{Conversation}_{CallbackActions.View}_{spotId}";
+    public static string View(Guid spotId) => $"{Conversation}_{CallbackActions.View}_{spotId.EncodeToCallbackData()}";
+
     public static string Delete(Guid spotId) => $"{Conversation}_{CallbackActions.Delete}_{spotId}";
+
     public static string ConfirmDelete(Guid spotId) => $"{Conversation}_{CallbackActions.ConfirmDelete}_{spotId}";
   }
 
@@ -143,7 +146,7 @@ public static class CallbackData
   public static class SpotType
   {
     public static string Select(string callbackCode) =>
-      $"{Spot.Conversation}_{CallbackActions.Select}_{callbackCode}"; // spot_select_{code}
+      $"{SpotBowsing.Conversation}_{CallbackActions.Select}_{callbackCode}"; // spot_select_{code}
   }
 
   public static class Stats

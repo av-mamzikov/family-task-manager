@@ -1,6 +1,6 @@
 namespace FamilyTaskManager.UseCases.Spots.Specifications;
 
-public class GetSpotByIdWithFamilySpec : Specification<Spot>
+public class GetSpotByIdWithFamilySpec : Specification<SpotBowsing>
 {
   public GetSpotByIdWithFamilySpec(Guid SpotId)
   {

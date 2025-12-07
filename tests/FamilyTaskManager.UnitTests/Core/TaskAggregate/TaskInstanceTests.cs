@@ -9,12 +9,12 @@ namespace FamilyTaskManager.UnitTests.Core.TaskAggregate;
 
 public class TaskInstanceTests
 {
-  private static Spot CreateSpotWithFamily(string SpotName = "Test Spot", string timezone = "UTC")
+  private static SpotBowsing CreateSpotWithFamily(string SpotName = "Test Spot", string timezone = "UTC")
   {
     var family = new Family("Test Family", timezone);
-    var Spot = new Spot(family.Id, SpotType.Cat, SpotName);
+    var Spot = new SpotBowsing(family.Id, SpotType.Cat, SpotName);
     // Manually set navigation property for tests
-    typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
+    typeof(SpotBowsing).GetProperty("Family")!.SetValue(Spot, family);
     return Spot;
   }
 

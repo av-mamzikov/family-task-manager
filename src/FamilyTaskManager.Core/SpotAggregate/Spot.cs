@@ -29,13 +29,13 @@ public enum SpotType
   Documents = 41
 }
 
-public class Spot : EntityBase<Spot, Guid>, IAggregateRoot
+public class SpotBowsing : EntityBase<SpotBowsing, Guid>, IAggregateRoot
 {
-  private Spot()
+  private SpotBowsing()
   {
   }
 
-  public Spot(Guid familyId, SpotType type, string name)
+  public SpotBowsing(Guid familyId, SpotType type, string name)
   {
     Guard.Against.Default(familyId);
     Guard.Against.NullOrWhiteSpace(name);

@@ -257,7 +257,7 @@ public class UpdateHandler(
     {
       "🏠 Семья" => CallbackData.Family.List(),
       "✅ Наши задачи" => CallbackData.Task.List(),
-      "🧩 Споты" => CallbackData.Spot.List(),
+      "🧩 Споты" => CallbackData.SpotBowsing.List(),
       "📊 Статистика" => CallbackData.Stats.List(),
       _ => null
     };
