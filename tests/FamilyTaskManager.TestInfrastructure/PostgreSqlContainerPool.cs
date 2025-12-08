@@ -257,20 +257,14 @@ public sealed class PostgreSqlContainerPool<TDbContext> : IAsyncDisposable
 /// <summary>
 ///   Обёртка над контейнером PostgreSQL с информацией о состоянии
 /// </summary>
-public sealed class PooledContainer
+public sealed class PooledContainer(
+  PostgreSqlContainer container,
+  string workingDatabaseName)
 {
   private int _isInUse;
 
-  public PooledContainer(
-    PostgreSqlContainer container,
-    string workingDatabaseName)
-  {
-    Container = container;
-    WorkingDatabaseName = workingDatabaseName;
-  }
-
-  public PostgreSqlContainer Container { get; }
-  public string WorkingDatabaseName { get; }
+  public PostgreSqlContainer Container { get; } = container;
+  public string WorkingDatabaseName { get; } = workingDatabaseName;
   public bool IsInUse => Interlocked.CompareExchange(ref _isInUse, 0, 0) == 1;
 
   internal void MarkAsInUse() => Interlocked.Exchange(ref _isInUse, 1);
