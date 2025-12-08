@@ -1,3 +1,4 @@
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Helpers;
@@ -10,62 +11,52 @@ public static class ScheduleKeyboardHelper
   /// <summary>
   ///   Creates inline keyboard for schedule type selection.
   /// </summary>
-  public static InlineKeyboardMarkup GetScheduleTypeKeyboard() =>
-    new(new[]
-    {
-      new[]
-      {
-        InlineKeyboardButton.WithCallbackData("📅 Ежедневно", "schedule_type_daily")
-      },
-      new[]
-      {
-        InlineKeyboardButton.WithCallbackData("💼 По будням (пн-пт)", "schedule_type_workdays")
-      },
-      new[]
-      {
-        InlineKeyboardButton.WithCallbackData("🎉 По выходным (сб-вс)", "schedule_type_weekends")
-      },
-      new[]
-      {
-        InlineKeyboardButton.WithCallbackData("📆 Еженедельно", "schedule_type_weekly")
-      },
-      new[]
-      {
-        InlineKeyboardButton.WithCallbackData("🗓️ Ежемесячно", "schedule_type_monthly")
-      },
-      new[]
-      {
-        InlineKeyboardButton.WithCallbackData("✋ Вручную", "schedule_type_manual")
-      },
-      new[]
-      {
-        InlineKeyboardButton.WithCallbackData("⬅️ Назад", "schedule_type_back")
-      }
-    });
+  public static InlineKeyboardMarkup GetScheduleTypeKeyboard(string backCallbackData) =>
+    new([
+      [
+        InlineKeyboardButton.WithCallbackData("📅 Ежедневно", CallbackData.TemplateForm.SelectScheduleType("daily"))
+      ],
+      [
+        InlineKeyboardButton.WithCallbackData("💼 По будням (пн-пт)",
+          CallbackData.TemplateForm.SelectScheduleType("workdays"))
+      ],
+      [
+        InlineKeyboardButton.WithCallbackData("🎉 По выходным (сб-вс)",
+          CallbackData.TemplateForm.SelectScheduleType("weekends"))
+      ],
+      [
+        InlineKeyboardButton.WithCallbackData("📆 Еженедельно", CallbackData.TemplateForm.SelectScheduleType("weekly"))
+      ],
+      [
+        InlineKeyboardButton.WithCallbackData("🗓️ Ежемесячно", CallbackData.TemplateForm.SelectScheduleType("monthly"))
+      ],
+      [
+        InlineKeyboardButton.WithCallbackData("✋ Вручную", CallbackData.TemplateForm.SelectScheduleType("manual"))
+      ],
+      [
+        InlineKeyboardButton.WithCallbackData("⬅️ Назад", backCallbackData)
+      ]
+    ]);
 
   /// <summary>
   ///   Creates inline keyboard for weekday selection.
   /// </summary>
   public static InlineKeyboardMarkup GetWeekdayKeyboard() =>
-    new(new[]
-    {
-      new[]
-      {
-        InlineKeyboardButton.WithCallbackData("Пн", "schedule_weekday_monday"),
-        InlineKeyboardButton.WithCallbackData("Вт", "schedule_weekday_tuesday"),
-        InlineKeyboardButton.WithCallbackData("Ср", "schedule_weekday_wednesday")
-      },
-      new[]
-      {
-        InlineKeyboardButton.WithCallbackData("Чт", "schedule_weekday_thursday"),
-        InlineKeyboardButton.WithCallbackData("Пт", "schedule_weekday_friday")
-      },
-      new[]
-      {
-        InlineKeyboardButton.WithCallbackData("Сб", "schedule_weekday_saturday"),
-        InlineKeyboardButton.WithCallbackData("Вс", "schedule_weekday_sunday")
-      }
-    });
+    new([
+      [
+        InlineKeyboardButton.WithCallbackData("Пн", CallbackData.TemplateForm.SelectWeekday("Monday")),
+        InlineKeyboardButton.WithCallbackData("Вт", CallbackData.TemplateForm.SelectWeekday("Tuesday")),
+        InlineKeyboardButton.WithCallbackData("Ср", CallbackData.TemplateForm.SelectWeekday("Wednesday"))
+      ],
+      [
+        InlineKeyboardButton.WithCallbackData("Чт", CallbackData.TemplateForm.SelectWeekday("Thursday")),
+        InlineKeyboardButton.WithCallbackData("Пт", CallbackData.TemplateForm.SelectWeekday("Friday"))
+      ],
+      [
+        InlineKeyboardButton.WithCallbackData("Сб", CallbackData.TemplateForm.SelectWeekday("Saturday")),
+        InlineKeyboardButton.WithCallbackData("Вс", CallbackData.TemplateForm.SelectWeekday("Sunday"))
+      ]
+    ]);
 
   /// <summary>
   ///   Parses weekday callback data to DayOfWeek.

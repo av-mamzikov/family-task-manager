@@ -1,5 +1,5 @@
 using FamilyTaskManager.FunctionalTests.Helpers;
-using FamilyTaskManager.Host.Modules.Bot;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 
 namespace FamilyTaskManager.FunctionalTests.BotFlow.Family;
 
@@ -54,7 +54,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     await botClient.WaitForLastMessageAsync(chatId);
 
     // Act & Assert - Step 1: Click "Create Family"
-    var createFamilyCallback = UpdateFactory.CreateCallbackUpdate(chatId, userId, "create_family");
+    var createFamilyCallback = UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.Family.Create());
     botClient.EnqueueUpdate(createFamilyCallback);
 
     var step1Messages = (await botClient.WaitForMessagesAsync(chatId, 1)).ToList();
@@ -73,7 +73,8 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     response2!.ShouldContainText("Выберите способ определения временной зоны");
 
     // Act & Assert - Step 3: Show timezone list
-    var showTimezoneList = UpdateFactory.CreateCallbackUpdate(chatId, userId, "timezone_showlist");
+    var showTimezoneList =
+      UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.FamilyCreation.ShowTimezoneList());
     botClient.EnqueueUpdate(showTimezoneList);
 
     var step3Messages =
@@ -83,7 +84,8 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     timezonePrompt!.ShouldContainText("Выберите временную зону");
 
     // Act & Assert - Step 4: Select timezone from list
-    var timezoneSelection = UpdateFactory.CreateCallbackUpdate(chatId, userId, "timezone_Europe/Moscow");
+    var timezoneSelection =
+      UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.FamilyCreation.TimeZone("Europe/Moscow"));
     botClient.EnqueueUpdate(timezoneSelection);
 
     var messages = (await botClient.WaitForMessagesAsync(chatId, 2))
@@ -112,7 +114,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     botClient.Clear();
 
     // Act - Start family creation and enter invalid name
-    var createFamilyCallback = UpdateFactory.CreateCallbackUpdate(chatId, userId, "create_family");
+    var createFamilyCallback = UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.Family.Create());
     botClient.EnqueueUpdate(createFamilyCallback);
 
     var invalidNameUpdate = UpdateFactory.CreateTextUpdate(chatId, userId, "Аб"); // < 3 chars
@@ -121,7 +123,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     // Assert - Check bot response
     var response = await botClient.WaitForLastMessageAsync(chatId);
     response.ShouldNotBeNull("Бот должен показать ошибку валидации имени семьи");
-    response!.ShouldContainText(BotConstants.Errors.FamilyNameTooShort);
+    response!.ShouldContainText(BotMessages.Errors.FamilyNameTooShort);
   }
 
   [Fact]
@@ -135,9 +137,9 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     botClient.EnqueueUpdates(new[]
     {
-      UpdateFactory.CreateCallbackUpdate(chatId, userId, "create_family"),
+      UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.Family.Create()),
       UpdateFactory.CreateTextUpdate(chatId, userId, "Test Family"),
-      UpdateFactory.CreateCallbackUpdate(chatId, userId, "timezone_detect"),
+      UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.FamilyCreation.DetectTimezone()),
       UpdateFactory.CreateLocationUpdate(chatId, userId, 55.7558, 37.6173)
     });
 

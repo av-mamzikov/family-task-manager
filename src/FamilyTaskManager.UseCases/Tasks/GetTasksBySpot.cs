@@ -6,7 +6,9 @@ namespace FamilyTaskManager.UseCases.Tasks;
 public record GetTasksBySpotQuery(Guid SpotId, Guid FamilyId, TaskStatus? Status = null)
   : IQuery<Result<List<TaskDto>>>;
 
-public class GetTasksBySpotHandler(IReadRepository<TaskInstance> taskRepository, IAppRepository<Spot> spotAppRepository)
+public class GetTasksBySpotHandler(
+  IReadRepository<TaskInstance> taskRepository,
+  IAppRepository<Spot> spotAppRepository)
   : IQueryHandler<GetTasksBySpotQuery, Result<List<TaskDto>>>
 {
   public async ValueTask<Result<List<TaskDto>>> Handle(GetTasksBySpotQuery request,

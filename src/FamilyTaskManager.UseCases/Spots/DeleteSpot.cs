@@ -11,32 +11,20 @@ public class DeleteSpotHandler(
   {
     // Verify user exists
     var user = await userAppRepository.GetByIdAsync(command.UserId, cancellationToken);
-    if (user == null)
-    {
-      return Result.NotFound("User not found");
-    }
+    if (user == null) return Result.NotFound("User not found");
 
     // Get Spot
     var spot = await spotAppRepository.GetByIdAsync(command.SpotId, cancellationToken);
-    if (spot == null)
-    {
-      return Result.NotFound("Spot not found");
-    }
+    if (spot == null) return Result.NotFound("Spot not found");
 
     // Get family with members to check permissions
     var spec = new GetFamilyWithMembersSpec(spot.FamilyId);
     var family = await familyAppRepository.FirstOrDefaultAsync(spec, cancellationToken);
-    if (family == null)
-    {
-      return Result.NotFound("Family not found");
-    }
+    if (family == null) return Result.NotFound("Family not found");
 
     // Check if user is admin of this family
     var adminMember = family.Members.FirstOrDefault(m => m.UserId == command.UserId && m.Role == FamilyRole.Admin);
-    if (adminMember == null)
-    {
-      return Result.Forbidden("Only family administrators can delete Spots");
-    }
+    if (adminMember == null) return Result.Forbidden("Only family administrators can delete Spots");
 
     // Soft delete the Spot (registers the deletion event and keeps data)
     spot.SoftDelete();

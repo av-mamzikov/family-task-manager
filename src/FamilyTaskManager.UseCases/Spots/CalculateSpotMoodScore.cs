@@ -15,10 +15,7 @@ public class CalculateSpotMoodScoreHandler(
     CancellationToken cancellationToken)
   {
     var spot = await spotAppRepository.GetByIdAsync(request.SpotId, cancellationToken);
-    if (spot == null)
-    {
-      return Result.NotFound($"Spot with ID {request.SpotId} not found.");
-    }
+    if (spot == null) return Result.NotFound($"Spot with ID {request.SpotId} not found.");
 
     var oldMoodScore = spot.MoodScore;
     var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(request.SpotId, cancellationToken);

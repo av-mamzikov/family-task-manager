@@ -25,6 +25,9 @@ public class TaskPoints : ValueObject
   public static TaskPoints Hard { get; } = new(3);
   public static TaskPoints VeryHard { get; } = new(4);
 
+  public static TaskPoints[] AllValues => [Easy, Medium, Hard, VeryHard];
+
+
   public int Value { get; }
 
   /// <summary>

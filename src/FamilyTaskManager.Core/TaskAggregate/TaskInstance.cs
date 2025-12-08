@@ -59,14 +59,14 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public FamilyMember? StartedByMember { get; private set; }
   public FamilyMember? CompletedByMember { get; private set; }
 
-  public void Start(Guid familyMemberId)
+  public void Start(FamilyMember familyMember)
   {
     if (Status != TaskStatus.Active) return;
 
-    Guard.Against.Default(familyMemberId);
+    Guard.Against.Default(familyMember.Id);
 
     Status = TaskStatus.InProgress;
-    StartedByMemberId = familyMemberId;
+    StartedByMemberId = familyMember.Id;
 
     RegisterDomainEvent(new TaskStartedEvent { TaskId = Id });
   }

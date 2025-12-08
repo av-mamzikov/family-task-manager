@@ -1,31 +1,83 @@
 using FamilyTaskManager.Core.SpotAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.UseCases.Spots;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
 public class SpotCreationHandler(
   ILogger<SpotCreationHandler> logger,
-  IMediator mediator) : BaseConversationHandler(logger, mediator)
+  IMediator mediator) : BaseConversationHandler(logger), IConversationHandler
 {
-  public async Task HandleSpotNameInputAsync(
+  private const string StateAwaitingName = "awaiting_name";
+
+  public async Task HandleMessageAsync(
     ITelegramBotClient botClient,
     Message message,
     UserSession session,
-    string SpotName,
     CancellationToken cancellationToken)
   {
-    if (string.IsNullOrWhiteSpace(SpotName) || SpotName.Length < 2 || SpotName.Length > 50)
+    var text = message.Text;
+    if (string.IsNullOrWhiteSpace(text))
+      return;
+
+    if (text is "❌ Отменить" or "/cancel" or "⬅️ Назад")
+      return;
+
+    if (session.Data.InternalState == StateAwaitingName)
+      await HandleSpotNameInputAsync(botClient, message, session, text, cancellationToken);
+  }
+
+  public async Task HandleCallbackAsync(ITelegramBotClient botClient,
+    long chatId,
+    Message? message,
+    string[] callbackParts,
+    UserSession session,
+    User fromUser,
+    CancellationToken cancellationToken)
+  {
+    if (callbackParts.IsCallbackOf(CallbackData.SpotCreation.Start))
+      await ShowSpotTypeSelectionAsync(botClient, chatId, message, session, cancellationToken);
+    else if (callbackParts.IsCallbackOf((Func<string, string>)CallbackData.SpotCreation.SelectType,
+               out var spotTypeCode))
+      await HandleSpotTypeSelectionAsync(botClient, chatId, message, spotTypeCode, session, cancellationToken);
+  }
+
+  public async Task HandleBackAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    Func<Task> sendMainMenuAction,
+    CancellationToken cancellationToken)
+  {
+    await botClient.SendTextMessageAsync(
+      message.Chat.Id,
+      "⬅️ Возврат отменён.",
+      replyMarkup: new ReplyKeyboardRemove(),
+      cancellationToken: cancellationToken);
+    await sendMainMenuAction();
+    session.ClearState();
+  }
+
+  private async Task HandleSpotNameInputAsync(
+    ITelegramBotClient botClient,
+    Message message,
+    UserSession session,
+    string spotName,
+    CancellationToken cancellationToken)
+  {
+    if (string.IsNullOrWhiteSpace(spotName) || spotName.Length < 2 || spotName.Length > 50)
     {
-      var keyboard = StateKeyboardHelper.GetKeyboardForState(ConversationState.AwaitingSpotName);
+      var keyboard = GetCancelKeyboard();
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
         "❌ Имя спота должно содержать от 2 до 50 символов. Попробуйте снова:",
-        StateKeyboardHelper.GetHintForState(ConversationState.AwaitingSpotName),
+        "\n\n💡 Используйте кнопку \"❌ Отменить\" для отмены.",
         keyboard,
         cancellationToken);
       return;
@@ -56,8 +108,8 @@ public class SpotCreationHandler(
     }
 
     // Create Spot (spot)
-    var createSpotCommand = new CreateSpotCommand(session.CurrentFamilyId.Value, SpotType, SpotName);
-    var result = await Mediator.Send(createSpotCommand, cancellationToken);
+    var createSpotCommand = new CreateSpotCommand(session.CurrentFamilyId.Value, SpotType, spotName);
+    var result = await mediator.Send(createSpotCommand, cancellationToken);
 
     if (!result.IsSuccess)
     {
@@ -70,14 +122,80 @@ public class SpotCreationHandler(
       return;
     }
 
-    var SpotEmoji = SpotTypeHelper.GetEmoji(SpotType);
+    var SpotEmoji = SpotDisplay.GetEmoji(SpotType);
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      $"✅ Спот {SpotEmoji} \"{SpotName}\" успешно создан!\n\n" +
-      BotConstants.Messages.SpotTasksAvailable,
+      $"✅ Спот {SpotEmoji} \"{spotName}\" успешно создан!\n\n" +
+      BotMessages.Messages.SpotTasksAvailable,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);
     session.ClearState();
   }
+
+  private async Task ShowSpotTypeSelectionAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    Message? message,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    var keyboard = new InlineKeyboardMarkup(GetSpotTypeSelectionButtons(true));
+
+    await botClient.SendOrEditMessageAsync(
+      chatId,
+      message,
+      "🧩 Выберите тип спота:",
+      replyMarkup: keyboard,
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleSpotTypeSelectionAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    Message? message,
+    string spotTypeCode,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    session.Data.SpotType = spotTypeCode;
+    session.Data.InternalState = StateAwaitingName;
+
+    var keyboard = GetCancelKeyboard();
+
+    await botClient.SendOrEditMessageAsync(
+      chatId,
+      message,
+      "✏️ Введите имя спота (от 2 до 50 символов):",
+      replyMarkup: keyboard,
+      cancellationToken: cancellationToken);
+  }
+
+  private static InlineKeyboardButton[][] GetSpotTypeSelectionButtons(bool includeBackButton = false)
+  {
+    var buttons = new List<InlineKeyboardButton[]>();
+    foreach (var spotType in Enum.GetValues<SpotType>().Order())
+    {
+      var (emoji, text) = SpotDisplay.GetInfo(spotType);
+      var callbackCode = spotType.ToString().ToLowerInvariant();
+      buttons.Add([
+        InlineKeyboardButton.WithCallbackData(
+          $"{emoji} {text}",
+          CallbackData.SpotCreation.SelectType(callbackCode))
+      ]);
+    }
+
+    if (includeBackButton)
+      buttons.Add([
+        InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.SpotBrowsing.List())
+      ]);
+
+    return buttons.ToArray();
+  }
+
+  private static ReplyKeyboardMarkup GetCancelKeyboard() =>
+    new([[new("❌ Отменить")]])
+    {
+      ResizeKeyboard = true
+    };
 }

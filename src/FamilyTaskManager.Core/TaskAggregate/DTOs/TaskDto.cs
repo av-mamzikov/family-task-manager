@@ -41,7 +41,7 @@ public record TaskDto(
 
   public static class Projections
   {
-    public static readonly Expression<Func<TaskInstance, TaskDto>> FromTaskInstance = t => new TaskDto(
+    public static readonly Expression<Func<TaskInstance, TaskDto>> FromTaskInstance = t => new(
       t.Id,
       t.Title,
       t.Points,

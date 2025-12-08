@@ -19,7 +19,7 @@ public record TaskTemplateDto(
   public static class Projections
   {
     public static readonly Expression<Func<TaskTemplate, TaskTemplateDto>> FromTaskTemplate =
-      t => new TaskTemplateDto(
+      t => new(
         t.Id,
         t.FamilyId,
         t.Title.Value,
