@@ -36,7 +36,7 @@ public static class InfrastructureServiceExtensions
     });
 
     services.AddScoped(typeof(IAppRepository<>), typeof(EfAppRepository<>))
-      .AddScoped(typeof(Core.Interfaces.IReadRepository<>), typeof(EfAppRepository<>));
+      .AddScoped(typeof(IAppReadRepository<>), typeof(EfAppRepository<>));
 
     // Register universal read-only repository for any entity
     services.AddScoped(typeof(IReadOnlyEntityRepository<>), typeof(EfReadOnlyEntityRepository<>));

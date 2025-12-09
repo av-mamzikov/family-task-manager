@@ -6,7 +6,7 @@ public class ActiveTaskInstancesByTemplateSpec : Specification<TaskInstance>
   {
     Query
       .Where(t => t.TemplateId == templateId)
-      .Where(t => t.CompletedAt != null)
+      .Where(t => t.CompletedAt == null)
       .Where(t => t.Status != TaskStatus.Completed);
   }
 }

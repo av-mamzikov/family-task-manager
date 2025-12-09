@@ -7,7 +7,7 @@ public record GetTaskTemplatesByFamilyQuery(Guid FamilyId, bool? IsActive = null
   : IQuery<Result<List<TaskTemplateDto>>>;
 
 public class GetTaskTemplatesByFamilyHandler(
-  IReadRepository<TaskTemplate> templateRepository)
+  IAppReadRepository<TaskTemplate> templateRepository)
   : IQueryHandler<GetTaskTemplatesByFamilyQuery, Result<List<TaskTemplateDto>>>
 {
   public async ValueTask<Result<List<TaskTemplateDto>>> Handle(GetTaskTemplatesByFamilyQuery request,

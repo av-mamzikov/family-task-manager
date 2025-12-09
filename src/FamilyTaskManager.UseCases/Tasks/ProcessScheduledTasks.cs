@@ -17,7 +17,7 @@ public record ProcessScheduledTaskCommand(DateTime CheckFrom, DateTime CheckTo) 
 ///   within the specified time window.
 /// </summary>
 public class ProcessScheduledTasksHandler(
-  IReadRepository<TaskTemplate> templateRepository,
+  IAppReadRepository<TaskTemplate> templateRepository,
   IAppRepository<TaskInstance> taskAppRepository,
   IAppRepository<Spot> SpotAppRepository,
   ITaskInstanceFactory taskInstanceFactory,
