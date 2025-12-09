@@ -18,14 +18,14 @@ public static class BotFamilyFlowHelpers
     var adminChatId = adminTelegramId;
     var actualFamilyName = familyName ?? "Test Family";
 
-    botClient.EnqueueUpdates([
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, CallbackData.Family.Create()),
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, actualFamilyName),
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, CallbackData.FamilyCreation.DetectTimezone()),
-      UpdateFactory.CreateLocationUpdate(adminChatId, adminTelegramId, latitude, longitude)
-    ]);
-
-    await botClient.WaitForMessagesUntilAsync(adminChatId, m => m.Text!.Contains("Главное меню"));
+    await botClient.SendUpdateAndWaitForMessagesAsync([
+        UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, CallbackData.Family.Create()),
+        UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, actualFamilyName),
+        UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, CallbackData.FamilyCreation.DetectTimezone()),
+        UpdateFactory.CreateLocationUpdate(adminChatId, adminTelegramId, latitude, longitude)
+      ], adminChatId,
+      m => m.Text!.Contains("Главное меню")
+    );
 
     return (actualFamilyName, adminTelegramId, adminChatId);
   }

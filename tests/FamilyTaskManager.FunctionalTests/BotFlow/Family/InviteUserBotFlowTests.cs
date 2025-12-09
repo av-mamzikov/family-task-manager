@@ -27,9 +27,9 @@ public partial class InviteUserBotFlowTests(CustomWebApplicationFactory<Program>
       await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Петровых");
 
     // Step 5: open family menu via main menu button
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🏠 Семья"));
-
-    var familyMenuMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var familyMenuMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🏠 Семья"),
+      adminTelegramId);
     familyMenuMessage.ShouldNotBeNull("Бот должен показать меню семьи после нажатия на кнопку '🏠 Семья'");
     familyMenuMessage!.ShouldContainText(familyName);
     var familyMenuKeyboard = familyMenuMessage.ShouldHaveInlineKeyboard();
@@ -37,22 +37,19 @@ public partial class InviteUserBotFlowTests(CustomWebApplicationFactory<Program>
     createInviteButton.CallbackData.ShouldNotBeNull();
 
     // Step 6: click "Create invite" button
-    botClient.EnqueueUpdate(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createInviteButton.CallbackData!));
-
     // Step 7: select role for invite (Adult)
-    var inviteRoleMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var inviteRoleMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createInviteButton.CallbackData!),
+      adminChatId);
     inviteRoleMessage.ShouldNotBeNull("Бот должен показать выбор роли для приглашения");
     inviteRoleMessage!.ShouldContainText("Создание приглашения");
     var inviteRoleKeyboard = inviteRoleMessage.ShouldHaveInlineKeyboard();
     var adultRoleButton = inviteRoleKeyboard.GetButton("Взрослый");
     adultRoleButton.CallbackData.ShouldNotBeNull();
 
-    botClient.EnqueueUpdate(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, adultRoleButton.CallbackData!));
-
-    // Step 8: get invite link with payload
-    var inviteMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var inviteMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, adultRoleButton.CallbackData!),
+      adminTelegramId);
     inviteMessage.ShouldNotBeNull("Бот должен отправить сообщение о создании приглашения");
     inviteMessage!.ShouldContainText("Приглашение создано");
 
@@ -66,10 +63,10 @@ public partial class InviteUserBotFlowTests(CustomWebApplicationFactory<Program>
 
     botClient.Clear();
 
-    botClient.EnqueueUpdate(
-      UpdateFactory.CreateTextUpdate(invitedTelegramId, invitedTelegramId, $"/start {invitePayload}"));
-
-    var invitedMessages = await botClient.WaitForMessagesAsync(invitedTelegramId, 1);
+    var invitedMessages = await botClient.SendUpdateAndWaitForMessagesAsync(
+      UpdateFactory.CreateTextUpdate(invitedTelegramId, invitedTelegramId, $"/start {invitePayload}"),
+      invitedTelegramId,
+      1);
     invitedMessages.ShouldNotBeEmpty();
 
     invitedMessages.ShouldContain(m => m.Text != null && m.Text.Contains("Добро пожаловать в семью"));
