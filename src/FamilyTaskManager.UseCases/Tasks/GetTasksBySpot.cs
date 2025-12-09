@@ -7,7 +7,7 @@ public record GetTasksBySpotQuery(Guid SpotId, Guid FamilyId, TaskStatus? Status
   : IQuery<Result<List<TaskDto>>>;
 
 public class GetTasksBySpotHandler(
-  IReadRepository<TaskInstance> taskRepository,
+  IAppReadRepository<TaskInstance> taskRepository,
   IAppRepository<Spot> spotAppRepository)
   : IQueryHandler<GetTasksBySpotQuery, Result<List<TaskDto>>>
 {

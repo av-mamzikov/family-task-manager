@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.Infrastructure.Data;
 using FamilyTaskManager.TestInfrastructure;
 
@@ -47,12 +48,12 @@ public abstract class BaseRepositoryTestFixture : IAsyncLifetime
   /// <summary>
   ///   Создает репозиторий для указанного типа агрегата
   /// </summary>
-  protected IRepository<T> GetRepository<T>() where T : class, IAggregateRoot => new EfAppRepository<T>(DbContext);
+  protected IAppRepository<T> GetRepository<T>() where T : class, IAggregateRoot => new EfAppRepository<T>(DbContext);
 
   /// <summary>
   ///   Создает read-only репозиторий для указанного типа агрегата
   /// </summary>
-  protected IReadRepository<T> GetReadRepository<T>() where T : class, IAggregateRoot =>
+  protected IAppReadRepository<T> GetReadRepository<T>() where T : class, IAggregateRoot =>
     new EfAppRepository<T>(DbContext);
 
   /// <summary>

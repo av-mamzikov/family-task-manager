@@ -5,7 +5,7 @@ namespace FamilyTaskManager.Infrastructure.Data;
 
 // inherit from Ardalis.Specification type
 public class EfAppRepository<T>(AppDbContext dbContext) :
-  RepositoryBase<T>(dbContext), Core.Interfaces.IReadRepository<T>, IAppRepository<T> where T : class, IAggregateRoot
+  RepositoryBase<T>(dbContext), IAppReadRepository<T>, IAppRepository<T> where T : class, IAggregateRoot
 {
   public async Task<T> GetOrCreateAndSaveAsync(
     ISpecification<T> findSpec,

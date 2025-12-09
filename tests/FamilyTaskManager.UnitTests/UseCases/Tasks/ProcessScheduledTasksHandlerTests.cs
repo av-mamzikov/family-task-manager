@@ -19,11 +19,11 @@ public class ProcessScheduledTasksHandlerTests
   private readonly IAppRepository<Spot> _SpotAppRepository;
   private readonly IAppRepository<TaskInstance> _taskAppRepository;
   private readonly ITaskInstanceFactory _taskInstanceFactory;
-  private readonly IReadRepository<TaskTemplate> _templateRepository;
+  private readonly IAppReadRepository<TaskTemplate> _templateRepository;
 
   public ProcessScheduledTasksHandlerTests()
   {
-    _templateRepository = Substitute.For<IReadRepository<TaskTemplate>>();
+    _templateRepository = Substitute.For<IAppReadRepository<TaskTemplate>>();
     _taskAppRepository = Substitute.For<IAppRepository<TaskInstance>>();
     _SpotAppRepository = Substitute.For<IAppRepository<Spot>>();
     _taskInstanceFactory = Substitute.For<ITaskInstanceFactory>();

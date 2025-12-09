@@ -6,7 +6,7 @@ namespace FamilyTaskManager.UseCases.TaskTemplates;
 public record GetTaskTemplateByIdQuery(Guid Id, Guid FamilyId)
   : IQuery<Result<TaskTemplateDto>>;
 
-public class GetTaskTemplateByIdHandler(IReadRepository<TaskTemplate> templateRepository)
+public class GetTaskTemplateByIdHandler(IAppReadRepository<TaskTemplate> templateRepository)
   : IQueryHandler<GetTaskTemplateByIdQuery, Result<TaskTemplateDto>>
 {
   public async ValueTask<Result<TaskTemplateDto>> Handle(GetTaskTemplateByIdQuery request,
