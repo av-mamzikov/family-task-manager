@@ -118,28 +118,25 @@ public class SpotBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
       await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Сидоровых");
 
     // Create a spot first
-    botClient.EnqueueUpdates([
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🧩 Споты")
-    ]);
-
-    var spotListMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var spotListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      new[] { UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🧩 Споты") },
+      adminChatId);
     var keyboard = spotListMessage!.ShouldHaveInlineKeyboard();
     var createButton = keyboard.GetButton("➕ Создать спота");
 
-    botClient.EnqueueUpdates([
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createButton.CallbackData!)
-    ]);
-
-    var spotTypeMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var spotTypeMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      new[] { UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createButton.CallbackData!) },
+      adminChatId);
     var spotTypeKeyboard = spotTypeMessage!.ShouldHaveInlineKeyboard();
     var catButton = spotTypeKeyboard.GetButton("🐱 Кот");
 
-    botClient.EnqueueUpdates([
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, catButton.CallbackData!),
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "Мурка")
-    ]);
-
-    await botClient.WaitForLastMessageAsync(adminChatId);
+    await botClient.SendUpdateAndWaitForLastMessageAsync(
+      new[]
+      {
+        UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, catButton.CallbackData!),
+        UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "Мурка")
+      },
+      adminChatId);
 
     // Navigate to spot details
     botClient.Clear();
@@ -149,10 +146,9 @@ public class SpotBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     var spotsKeyboard = spotsMessage!.ShouldHaveInlineKeyboard();
     var spotButton = spotsKeyboard.GetButton("🐱 Мурка");
 
-    botClient.EnqueueUpdate(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, spotButton.CallbackData!));
-
-    var spotDetailsMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var spotDetailsMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, spotButton.CallbackData!),
+      adminChatId);
     var detailsKeyboard = spotDetailsMessage!.ShouldHaveInlineKeyboard();
     var deleteButton = detailsKeyboard.GetButton("🗑️ Удалить спота");
     deleteButton.CallbackData.ShouldNotBeNull();
@@ -197,28 +193,25 @@ public class SpotBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
       await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Тестовых");
 
     // Create a spot
-    botClient.EnqueueUpdates([
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🧩 Споты")
-    ]);
-
-    var spotListMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var spotListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      new[] { UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🧩 Споты") },
+      adminChatId);
     var keyboard = spotListMessage!.ShouldHaveInlineKeyboard();
     var createButton = keyboard.GetButton("➕ Создать спота");
 
-    botClient.EnqueueUpdates([
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createButton.CallbackData!)
-    ]);
-
-    var spotTypeMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var spotTypeMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      new[] { UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createButton.CallbackData!) },
+      adminChatId);
     var spotTypeKeyboard = spotTypeMessage!.ShouldHaveInlineKeyboard();
     var plantButton = spotTypeKeyboard.GetButton("🪴 Растение");
 
-    botClient.EnqueueUpdates([
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, plantButton.CallbackData!),
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "Фикус")
-    ]);
-
-    await botClient.WaitForLastMessageAsync(adminChatId);
+    await botClient.SendUpdateAndWaitForLastMessageAsync(
+      new[]
+      {
+        UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, plantButton.CallbackData!),
+        UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "Фикус")
+      },
+      adminChatId);
 
     // Navigate to spot details and click delete
     botClient.Clear();
@@ -228,10 +221,9 @@ public class SpotBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     var spotsKeyboard = spotsMessage!.ShouldHaveInlineKeyboard();
     var spotButton = spotsKeyboard.GetButton("Фикус");
 
-    botClient.EnqueueUpdate(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, spotButton.CallbackData!));
-
-    var spotDetailsMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var spotDetailsMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, spotButton.CallbackData!),
+      adminChatId);
     var detailsKeyboard = spotDetailsMessage!.ShouldHaveInlineKeyboard();
     var deleteButton = detailsKeyboard.GetButton("🗑️ Удалить спота");
 

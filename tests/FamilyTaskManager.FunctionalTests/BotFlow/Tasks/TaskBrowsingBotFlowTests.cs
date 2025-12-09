@@ -25,9 +25,9 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
       await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Ивановых");
 
     // Act: Navigate to tasks menu
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Наши задачи"));
-
-    var taskListMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Наши задачи"),
+      adminChatId);
 
     // Assert
     taskListMessage.ShouldNotBeNull("Бот должен показать список задач");
@@ -49,37 +49,40 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     // Navigate to spot templates and create a task
     botClient.Clear();
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🧩 Споты"));
-    var spotsMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var spotsMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🧩 Споты"),
+      adminChatId);
     var spotButton = spotsMessage!.ShouldHaveInlineKeyboard().GetButton("🐶 Рекс");
 
-    botClient.EnqueueUpdate(UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, spotButton.CallbackData!));
-    var spotDetailsMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var spotDetailsMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, spotButton.CallbackData!),
+      adminChatId);
     var templatesButton = spotDetailsMessage!.ShouldHaveInlineKeyboard().GetButton("📋 Шаблоны задач");
 
-    botClient.EnqueueUpdate(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, templatesButton.CallbackData!));
-    var templatesMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var templatesMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, templatesButton.CallbackData!),
+      adminChatId);
     var templateKeyboard = templatesMessage!.ShouldHaveInlineKeyboard();
     var firstTemplateButton = templateKeyboard.InlineKeyboard.First().First();
 
     // View template details
-    botClient.EnqueueUpdate(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, firstTemplateButton.CallbackData!));
-    var templateDetailsMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var templateDetailsMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, firstTemplateButton.CallbackData!),
+      adminChatId);
     var createTaskButton = templateDetailsMessage!.ShouldHaveInlineKeyboard().GetButton("Создать задачу сейчас");
 
     // Create task from template
-    botClient.EnqueueUpdate(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createTaskButton.CallbackData!));
-    var taskCreatedMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var taskCreatedMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createTaskButton.CallbackData!),
+      adminChatId);
     taskCreatedMessage.ShouldNotBeNull();
     taskCreatedMessage!.ShouldContainText("Задача создана");
 
     // Act: Navigate to tasks and take the task
     botClient.Clear();
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Наши задачи"));
-    var taskListMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Наши задачи"),
+      adminChatId);
 
     taskListMessage.ShouldNotBeNull("Бот должен показать список задач");
     taskListMessage!.ShouldContainText("Наши задачи");
@@ -89,10 +92,9 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     var takeTaskButton = taskKeyboard.InlineKeyboard.First().First();
     takeTaskButton.Text.ShouldContain("✋ Взять");
 
-    botClient.EnqueueUpdate(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, takeTaskButton.CallbackData!));
-
-    var taskTakenMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var taskTakenMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, takeTaskButton.CallbackData!),
+      adminChatId);
 
     // Assert
     taskTakenMessage.ShouldNotBeNull("Бот должен подтвердить взятие задачи");
@@ -117,20 +119,20 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     // Take the task
     botClient.Clear();
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Наши задачи"));
-    var taskListMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Наши задачи"),
+      adminChatId);
     var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().InlineKeyboard.First().First();
 
-    botClient.EnqueueUpdate(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, takeTaskButton.CallbackData!));
-    var taskTakenMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var taskTakenMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, takeTaskButton.CallbackData!),
+      adminChatId);
 
     // Act: Complete the task
     var completeButton = taskTakenMessage!.ShouldHaveInlineKeyboard().GetButton("✅ Выполнить");
-    botClient.EnqueueUpdate(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, completeButton.CallbackData!));
-
-    var completionMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var completionMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, completeButton.CallbackData!),
+      adminChatId);
 
     // Assert
     completionMessage.ShouldNotBeNull("Бот должен подтвердить выполнение задачи");
@@ -153,20 +155,20 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     // Take the task
     botClient.Clear();
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Наши задачи"));
-    var taskListMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Наши задачи"),
+      adminChatId);
     var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().InlineKeyboard.First().First();
 
-    botClient.EnqueueUpdate(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, takeTaskButton.CallbackData!));
-    var taskTakenMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var taskTakenMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, takeTaskButton.CallbackData!),
+      adminChatId);
 
     // Act: Refuse the task
     var cancelButton = taskTakenMessage!.ShouldHaveInlineKeyboard().GetButton("❌ Отказаться");
-    botClient.EnqueueUpdate(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, cancelButton.CallbackData!));
-
-    var cancelMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var cancelMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, cancelButton.CallbackData!),
+      adminChatId);
 
     // Assert
     cancelMessage.ShouldNotBeNull("Бот должен подтвердить отказ от задачи");
@@ -177,42 +179,51 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
   private async Task CreateSpotAsync(dynamic botClient, long chatId, long telegramId,
     string spotType, string spotName)
   {
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(chatId, telegramId, "🧩 Споты"));
-    Message spotListMessage = await botClient.WaitForLastMessageAsync(chatId);
+    Message spotListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(chatId, telegramId, "🧩 Споты"),
+      chatId);
     var createButton = spotListMessage!.ShouldHaveInlineKeyboard().GetButton("➕ Создать спота");
 
-    botClient.EnqueueUpdate(UpdateFactory.CreateCallbackUpdate(chatId, telegramId, createButton.CallbackData!));
-    Message spotTypeMessage = await botClient.WaitForLastMessageAsync(chatId);
+    Message spotTypeMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(chatId, telegramId, createButton.CallbackData!),
+      chatId);
     var typeButton = spotTypeMessage!.ShouldHaveInlineKeyboard().GetButton(spotType);
 
-    botClient.EnqueueUpdate(UpdateFactory.CreateCallbackUpdate(chatId, telegramId, typeButton.CallbackData!));
-    await botClient.WaitForLastMessageAsync(chatId);
+    await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(chatId, telegramId, typeButton.CallbackData!),
+      chatId);
 
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(chatId, telegramId, spotName));
-    await botClient.WaitForLastMessageAsync(chatId);
+    await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(chatId, telegramId, spotName),
+      chatId);
   }
 
   private async Task CreateTaskFromSpotTemplateAsync(dynamic botClient, long chatId, long telegramId,
     string spotButtonText)
   {
     botClient.Clear();
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(chatId, telegramId, "🧩 Споты"));
-    Message spotsMessage = await botClient.WaitForLastMessageAsync(chatId);
+    Message spotsMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(chatId, telegramId, "🧩 Споты"),
+      chatId);
     var spotButton = spotsMessage!.ShouldHaveInlineKeyboard().GetButton(spotButtonText);
 
-    botClient.EnqueueUpdate(UpdateFactory.CreateCallbackUpdate(chatId, telegramId, spotButton.CallbackData!));
-    Message spotDetailsMessage = await botClient.WaitForLastMessageAsync(chatId);
+    Message spotDetailsMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(chatId, telegramId, spotButton.CallbackData!),
+      chatId);
     var templatesButton = spotDetailsMessage!.ShouldHaveInlineKeyboard().GetButton("📋 Шаблоны задач");
 
-    botClient.EnqueueUpdate(UpdateFactory.CreateCallbackUpdate(chatId, telegramId, templatesButton.CallbackData!));
-    Message templatesMessage = await botClient.WaitForLastMessageAsync(chatId);
+    Message templatesMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(chatId, telegramId, templatesButton.CallbackData!),
+      chatId);
     var firstTemplateButton = templatesMessage!.ShouldHaveInlineKeyboard().InlineKeyboard.First().First();
 
-    botClient.EnqueueUpdate(UpdateFactory.CreateCallbackUpdate(chatId, telegramId, firstTemplateButton.CallbackData!));
-    Message templateDetailsMessage = await botClient.WaitForLastMessageAsync(chatId);
+    Message templateDetailsMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(chatId, telegramId, firstTemplateButton.CallbackData!),
+      chatId);
     var createTaskButton = templateDetailsMessage!.ShouldHaveInlineKeyboard().GetButton("Создать задачу сейчас");
 
-    botClient.EnqueueUpdate(UpdateFactory.CreateCallbackUpdate(chatId, telegramId, createTaskButton.CallbackData!));
-    await botClient.WaitForLastMessageAsync(chatId);
+    await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(chatId, telegramId, createTaskButton.CallbackData!),
+      chatId);
   }
 }

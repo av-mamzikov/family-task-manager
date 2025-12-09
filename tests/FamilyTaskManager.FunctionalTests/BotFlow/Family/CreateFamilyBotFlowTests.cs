@@ -110,14 +110,13 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     botClient.Clear();
 
     // Act - Start family creation and enter invalid name
-    var createFamilyCallback = UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.Family.Create());
-    botClient.EnqueueUpdate(createFamilyCallback);
-
-    var invalidNameUpdate = UpdateFactory.CreateTextUpdate(chatId, userId, "Аб"); // < 3 chars
-    botClient.EnqueueUpdate(invalidNameUpdate);
-
-    // Assert - Check bot response
-    var response = await botClient.WaitForLastMessageAsync(chatId);
+    var response = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      new[]
+      {
+        UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.Family.Create()),
+        UpdateFactory.CreateTextUpdate(chatId, userId, "Аб") // < 3 chars
+      },
+      chatId);
     response.ShouldNotBeNull("Бот должен показать ошибку валидации имени семьи");
     response!.ShouldContainText(BotMessages.Errors.FamilyNameTooShort);
   }
@@ -131,15 +130,16 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     var botClient = factory.TelegramBotClient;
     botClient.Clear();
 
-    botClient.EnqueueUpdates(new[]
-    {
-      UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.Family.Create()),
-      UpdateFactory.CreateTextUpdate(chatId, userId, "Test Family"),
-      UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.FamilyCreation.DetectTimezone()),
-      UpdateFactory.CreateLocationUpdate(chatId, userId, 55.7558, 37.6173)
-    });
-
-    var messages = (await botClient.WaitForMessagesAsync(chatId, 6)).ToList();
+    var messages = (await botClient.SendUpdateAndWaitForMessagesAsync(
+      new[]
+      {
+        UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.Family.Create()),
+        UpdateFactory.CreateTextUpdate(chatId, userId, "Test Family"),
+        UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.FamilyCreation.DetectTimezone()),
+        UpdateFactory.CreateLocationUpdate(chatId, userId, 55.7558, 37.6173)
+      },
+      chatId,
+      6)).ToList();
     var successMessage = messages.LastOrDefault(m => m.Text?.Contains("успешно создана") == true);
     successMessage.ShouldNotBeNull("Должно быть сообщение с подтверждением создания семьи");
     successMessage!.ShouldContainText("Test Family");
@@ -147,8 +147,10 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     var menuMessage = messages.Last();
     menuMessage.ShouldContainText("Главное меню");
 
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(chatId, userId, "🏠 Семья"));
-    var familyMenuMessages = (await botClient.WaitForMessagesAsync(chatId, 1)).ToList();
+    var familyMenuMessages = (await botClient.SendUpdateAndWaitForMessagesAsync(
+      UpdateFactory.CreateTextUpdate(chatId, userId, "🏠 Семья"),
+      chatId,
+      1)).ToList();
     var familyMenuMessage = familyMenuMessages.LastOrDefault();
     familyMenuMessage.ShouldNotBeNull("После нажатия на кнопку 'Семья' должно отображаться меню текущей семьи");
     familyMenuMessage!.ShouldContainText("Test Family");

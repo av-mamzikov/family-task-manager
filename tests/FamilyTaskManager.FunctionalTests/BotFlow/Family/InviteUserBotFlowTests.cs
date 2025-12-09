@@ -37,11 +37,10 @@ public partial class InviteUserBotFlowTests(CustomWebApplicationFactory<Program>
     createInviteButton.CallbackData.ShouldNotBeNull();
 
     // Step 6: click "Create invite" button
-    botClient.EnqueueUpdate(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createInviteButton.CallbackData!));
-
     // Step 7: select role for invite (Adult)
-    var inviteRoleMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var inviteRoleMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createInviteButton.CallbackData!),
+      adminChatId);
     inviteRoleMessage.ShouldNotBeNull("Бот должен показать выбор роли для приглашения");
     inviteRoleMessage!.ShouldContainText("Создание приглашения");
     var inviteRoleKeyboard = inviteRoleMessage.ShouldHaveInlineKeyboard();
