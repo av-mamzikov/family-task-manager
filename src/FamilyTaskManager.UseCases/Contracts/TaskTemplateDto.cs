@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace FamilyTaskManager.UseCases.Contracts.TaskTemplates;
+namespace FamilyTaskManager.UseCases.Contracts;
 
 public record TaskTemplateDto(
   Guid Id,

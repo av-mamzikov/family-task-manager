@@ -1,3 +1,5 @@
+using FamilyTaskManager.UseCases.Contracts;
+
 namespace FamilyTaskManager.UseCases.Families;
 
 public record GetUserFamiliesQuery(Guid UserId) : IQuery<Result<List<FamilyDto>>>;

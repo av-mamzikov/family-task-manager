@@ -42,7 +42,8 @@ public class FamilyBrowsingHandler(
       await ShowFamilyListAsync(botClient, chatId, message, session.CurrentFamilyId, session, cancellationToken);
     else if (callbackParts.IsCallbackOf(CallbackData.Family.Invite))
       await HandleCreateInviteAsync(botClient, chatId, message, session.CurrentFamilyId!.Value, cancellationToken);
-    else if (callbackParts.IsCallbackOf(CallbackData.Family.InviteRole, out var inviteFamilyId, out var roleString) &&
+    else if (callbackParts.IsCallbackOf(CallbackData.Family.InviteRole,
+               out var inviteFamilyId, out string roleString) &&
              Enum.TryParse<FamilyRole>(roleString, out var role))
       await HandleInviteRoleAsync(botClient, chatId, message, inviteFamilyId, role, session, cancellationToken);
     else if (callbackParts.IsCallbackOf(CallbackData.Family.Settings))

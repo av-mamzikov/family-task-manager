@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace FamilyTaskManager.UseCases.Contracts.Families;
+namespace FamilyTaskManager.UseCases.Contracts;
 
 public record FamilyMemberDto(
   Guid Id,

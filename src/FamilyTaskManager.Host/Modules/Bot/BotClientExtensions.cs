@@ -1,4 +1,5 @@
 using Telegram.Bot;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -29,13 +30,23 @@ public static class BotClientExtensions
   {
     if (message != null && await botClient.CanEditMessageAsync(message) &&
         replyMarkup is InlineKeyboardMarkup inlineKeyboard)
-      await botClient.EditMessageTextAsync(
-        message.Chat.Id,
-        message.MessageId,
-        text,
-        parseMode,
-        replyMarkup: inlineKeyboard,
-        cancellationToken: cancellationToken);
+    {
+      try
+      {
+        await botClient.EditMessageTextAsync(
+          message.Chat.Id,
+          message.MessageId,
+          text,
+          parseMode,
+          replyMarkup: inlineKeyboard,
+          cancellationToken: cancellationToken);
+      }
+      catch (ApiRequestException ex) when (
+        ex.Message.Contains("message is not modified", StringComparison.OrdinalIgnoreCase))
+      {
+        // Игнорируем: содержимое и клавиатура уже совпадают
+      }
+    }
     else
       await botClient.SendTextMessageAsync(
         chatId,

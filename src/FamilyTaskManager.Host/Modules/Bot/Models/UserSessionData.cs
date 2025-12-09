@@ -1,4 +1,4 @@
-namespace FamilyTaskManager.UnitTests.Host.Bot.Models;
+namespace FamilyTaskManager.Host.Modules.Bot.Models;
 
 public class UserSessionData
 {

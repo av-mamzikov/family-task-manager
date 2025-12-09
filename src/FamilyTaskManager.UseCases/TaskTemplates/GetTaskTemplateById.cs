@@ -1,4 +1,4 @@
-using FamilyTaskManager.UseCases.Contracts.TaskTemplates;
+using FamilyTaskManager.UseCases.Contracts;
 using FamilyTaskManager.UseCases.TaskTemplates.Specifications;
 
 namespace FamilyTaskManager.UseCases.TaskTemplates;
@@ -12,7 +12,7 @@ public class GetTaskTemplateByIdHandler(IAppReadRepository<TaskTemplate> templat
   public async ValueTask<Result<TaskTemplateDto>> Handle(GetTaskTemplateByIdQuery request,
     CancellationToken cancellationToken)
   {
-    var spec = new TaskTemplatesDtoByIdsSpec(new[] { request.Id });
+    var spec = new TaskTemplatesDtoByIdsSpec([request.Id]);
     var template = await templateRepository.FirstOrDefaultAsync(spec, cancellationToken);
     if (template == null || template.FamilyId != request.FamilyId)
       return Result<TaskTemplateDto>.NotFound("Task template not found");

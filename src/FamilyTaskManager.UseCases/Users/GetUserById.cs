@@ -1,3 +1,5 @@
+using FamilyTaskManager.UseCases.Contracts;
+
 namespace FamilyTaskManager.UseCases.Users;
 
 public record GetUserByIdQuery(Guid UserId) : IQuery<Result<UserDto?>>;

@@ -1,3 +1,5 @@
+using FamilyTaskManager.UseCases.Contracts;
+
 namespace FamilyTaskManager.UseCases.Statistics;
 
 public record GetLeaderboardQuery(Guid FamilyId) : IQuery<Result<List<LeaderboardEntryDto>>>;

@@ -1,4 +1,4 @@
-namespace FamilyTaskManager.UseCases.Contracts.Tasks;
+namespace FamilyTaskManager.UseCases.Contracts;
 
 public record TaskReminderDto(
   Guid TaskId,

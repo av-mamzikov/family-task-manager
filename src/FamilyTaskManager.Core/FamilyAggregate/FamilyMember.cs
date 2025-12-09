@@ -1,9 +1,12 @@
+using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Core.UserAggregate;
 
 namespace FamilyTaskManager.Core.FamilyAggregate;
 
 public class FamilyMember : EntityBase<FamilyMember, Guid>
 {
+  private readonly List<Spot> _responsibleSpots = [];
+
   private FamilyMember()
   {
   }
@@ -31,15 +34,14 @@ public class FamilyMember : EntityBase<FamilyMember, Guid>
   public DateTime JoinedAt { get; private set; }
   public bool IsActive { get; private set; }
 
+  public IReadOnlyCollection<Spot> ResponsibleSpots => _responsibleSpots.AsReadOnly();
+
   public void AddPoints(int value)
   {
     Guard.Against.Negative(value);
 
     Points += value;
-    if (Points < 0)
-    {
-      Points = 0;
-    }
+    if (Points < 0) Points = 0;
   }
 
   public void Deactivate() => IsActive = false;

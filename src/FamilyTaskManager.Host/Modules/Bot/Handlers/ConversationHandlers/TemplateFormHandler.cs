@@ -74,8 +74,8 @@ public class TemplateFormHandler(
       await HandleTemplateCreateForSpotAsync(botClient, chatId, message, spotId.Value, session, cancellationToken);
     else if (callbackParts.IsCallbackOf(CallbackData.TemplateForm.Edit, out EncodedGuid editTemplateId))
       await HandleEditTemplateAsync(botClient, chatId, message, editTemplateId.Value, session, cancellationToken);
-    else if (callbackParts.IsCallbackOf(CallbackData.TemplateForm.EditField, out var templateId,
-               out var fieldName))
+    else if (callbackParts.IsCallbackOf(CallbackData.TemplateForm.EditField,
+               out var templateId, out string fieldName))
       await HandleTemplateEditFieldAsync(botClient, chatId, message, templateId.Value, fieldName, session,
         cancellationToken);
     else if (callbackParts.IsCallbackOf(CallbackData.TemplateForm.SelectPoints, out var points))

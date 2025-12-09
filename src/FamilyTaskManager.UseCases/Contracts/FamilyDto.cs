@@ -1,4 +1,4 @@
-namespace FamilyTaskManager.UseCases.Contracts.Families;
+namespace FamilyTaskManager.UseCases.Contracts;
 
 public record FamilyDto(
   Guid Id,

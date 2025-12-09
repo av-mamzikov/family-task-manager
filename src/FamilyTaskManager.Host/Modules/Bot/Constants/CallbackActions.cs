@@ -18,6 +18,8 @@ public static class CallbackActions
   // Spot-specific actions
   public const string ConfirmDelete = "confirmdelete";
   public const string List = "list";
+  public const string ResponsibleList = "rl";
+  public const string ResponsibleToggle = "rt";
 
   // Task-specific actions
   public const string Complete = "complete";

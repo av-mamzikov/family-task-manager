@@ -1,4 +1,5 @@
 using FamilyTaskManager.FunctionalTests.Helpers;
+using FamilyTaskManager.Host;
 using FamilyTaskManager.TestInfrastructure;
 using Telegram.Bot.Types;
 

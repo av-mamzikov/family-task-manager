@@ -15,6 +15,12 @@ public static class CallbackData
 
     public static string ConfirmDelete(EncodedGuid spotId) =>
       $"{Conversation}_{CallbackActions.ConfirmDelete}_{spotId}";
+
+    public static string ResponsibleList(EncodedGuid spotId) =>
+      $"{Conversation}_{CallbackActions.ResponsibleList}_{spotId}";
+
+    public static string ResponsibleToggle(EncodedGuid spotId, EncodedGuid memberId) =>
+      $"{Conversation}_{CallbackActions.ResponsibleToggle}_{spotId}_{memberId}";
   }
 
   public static class SpotCreation

@@ -1,4 +1,6 @@
+using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.SpotAggregate;
+using FamilyTaskManager.UnitTests.Helpers;
 
 namespace FamilyTaskManager.UnitTests.Core.SpotAggregate;
 
@@ -199,5 +201,84 @@ public class SpotTests
 
     Spot.UpdateMoodScore(100);
     Spot.MoodScore.ShouldBe(100);
+  }
+
+  [Fact]
+  public void AssignResponsible_WithValidMember_AddsMemberToResponsibleCollection()
+  {
+    var spot = TestHelpers.CreateSpotWithFamily();
+    var member = TestHelpers.CreateMemberWithUser();
+
+    // Ensure member belongs to the same family as spot
+    typeof(FamilyMember).GetProperty("FamilyId")!.SetValue(member, spot.FamilyId);
+
+    spot.AssignResponsible(member);
+
+    spot.ResponsibleMembers.ShouldContain(m => m.Id == member.Id);
+  }
+
+  [Fact]
+  public void AssignResponsible_SameMemberTwice_DoesNotCreateDuplicates()
+  {
+    var spot = TestHelpers.CreateSpotWithFamily();
+    var member = TestHelpers.CreateMemberWithUser();
+
+    typeof(FamilyMember).GetProperty("FamilyId")!.SetValue(member, spot.FamilyId);
+
+    spot.AssignResponsible(member);
+    spot.AssignResponsible(member);
+
+    spot.ResponsibleMembers.Count(m => m.Id == member.Id).ShouldBe(1);
+  }
+
+  [Fact]
+  public void AssignResponsible_MemberFromAnotherFamily_ThrowsException()
+  {
+    var spot = TestHelpers.CreateSpotWithFamily();
+    var member = TestHelpers.CreateMemberWithUser();
+
+    typeof(FamilyMember).GetProperty("FamilyId")!.SetValue(member, Guid.NewGuid());
+
+    Should.Throw<ArgumentException>(() => spot.AssignResponsible(member));
+  }
+
+  [Fact]
+  public void AssignResponsible_InactiveMember_ThrowsException()
+  {
+    var spot = TestHelpers.CreateSpotWithFamily();
+    var member = TestHelpers.CreateMemberWithUser();
+
+    typeof(FamilyMember).GetProperty("FamilyId")!.SetValue(member, spot.FamilyId);
+    typeof(FamilyMember).GetProperty("IsActive")!.SetValue(member, false);
+
+    Should.Throw<InvalidOperationException>(() => spot.AssignResponsible(member));
+  }
+
+  [Fact]
+  public void RemoveResponsible_WhenMemberAssigned_RemovesFromCollection()
+  {
+    var spot = TestHelpers.CreateSpotWithFamily();
+    var member = TestHelpers.CreateMemberWithUser();
+
+    typeof(FamilyMember).GetProperty("FamilyId")!.SetValue(member, spot.FamilyId);
+
+    spot.AssignResponsible(member);
+
+    spot.RemoveResponsible(member);
+
+    spot.ResponsibleMembers.ShouldNotContain(m => m.Id == member.Id);
+  }
+
+  [Fact]
+  public void RemoveResponsible_WhenMemberNotAssigned_DoesNothing()
+  {
+    var spot = TestHelpers.CreateSpotWithFamily();
+    var member = TestHelpers.CreateMemberWithUser();
+
+    var initialCount = spot.ResponsibleMembers.Count;
+
+    spot.RemoveResponsible(member);
+
+    spot.ResponsibleMembers.Count.ShouldBe(initialCount);
   }
 }

@@ -1,6 +1,6 @@
-using System.Text.RegularExpressions;
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.FunctionalTests.Helpers;
+using FamilyTaskManager.Host;
 using FamilyTaskManager.TestInfrastructure;
 using Telegram.Bot.Types;
 
@@ -34,9 +34,11 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
 
     // Add family members via invite flow
     var adultMemberId =
-      await AddFamilyMemberAsync(botClient, adminTelegramId, adminTelegramId, FamilyRole.Adult, "Взрослый участник");
+      await BotFamilyFlowHelpers.AddFamilyMemberViaInviteAsync(botClient, adminTelegramId, adminTelegramId,
+        FamilyRole.Adult, "Взрослый участник");
     var childMemberId =
-      await AddFamilyMemberAsync(botClient, adminTelegramId, adminTelegramId, FamilyRole.Child, "Ребенок участник");
+      await BotFamilyFlowHelpers.AddFamilyMemberViaInviteAsync(botClient, adminTelegramId, adminTelegramId,
+        FamilyRole.Child, "Ребенок участник");
 
     // Act: Open family menu and navigate to members
     var familyMenuMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
@@ -75,7 +77,8 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     // Arrange: Create family with multiple members
     var (familyName, adminTelegramId, adminChatId) =
       await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Петровых");
-    await AddFamilyMemberAsync(botClient, adminChatId, adminTelegramId, FamilyRole.Adult, "Тестовый взрослый");
+    await BotFamilyFlowHelpers.AddFamilyMemberViaInviteAsync(botClient, adminChatId, adminTelegramId,
+      FamilyRole.Adult, "Тестовый взрослый");
 
     // Navigate to members list
     var familyMenuMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
@@ -126,7 +129,8 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     // Arrange: Create family with adult member
     var (familyName, adminTelegramId, adminChatId) =
       await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Петровых");
-    await AddFamilyMemberAsync(botClient, adminChatId, adminTelegramId, FamilyRole.Adult, "Взрослый для смены");
+    await BotFamilyFlowHelpers.AddFamilyMemberViaInviteAsync(botClient, adminChatId, adminTelegramId,
+      FamilyRole.Adult, "Взрослый для смены");
 
     // Navigate to member details
     var memberDetailsMessage =
@@ -174,7 +178,8 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     // Arrange: Create family with adult member
     var (familyName, adminTelegramId, adminChatId) =
       await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Петровых");
-    await AddFamilyMemberAsync(botClient, adminChatId, adminTelegramId, FamilyRole.Adult, "Удаляемый участник");
+    await BotFamilyFlowHelpers.AddFamilyMemberViaInviteAsync(botClient, adminChatId, adminTelegramId,
+      FamilyRole.Adult, "Удаляемый участник");
 
     // Navigate to member details
     var memberDetailsMessage =
@@ -221,7 +226,8 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     // Arrange: Create family with adult member
     var (familyName, adminTelegramId, adminChatId) =
       await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Петровых");
-    await AddFamilyMemberAsync(botClient, adminChatId, adminTelegramId, FamilyRole.Adult, "Не удаляемый участник");
+    await BotFamilyFlowHelpers.AddFamilyMemberViaInviteAsync(botClient, adminChatId, adminTelegramId,
+      FamilyRole.Adult, "Не удаляемый участник");
 
     // Navigate to member details
     var memberDetailsMessage =
@@ -306,8 +312,8 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     var (familyName, adminTelegramId, adminChatId) =
       await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Петровых");
     var memberTelegramId =
-      await AddFamilyMemberAsync(botClient, adminChatId, adminTelegramId, FamilyRole.Adult,
-        "Участник для удаления");
+      await BotFamilyFlowHelpers.AddFamilyMemberViaInviteAsync(botClient, adminChatId, adminTelegramId,
+        FamilyRole.Adult, "Участник для удаления");
 
     // Navigate to member details and start removal
     var memberDetailsMessage =
@@ -329,45 +335,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
       adminChatId);
   }
 
-  private async Task<long> AddFamilyMemberAsync(
-    TestTelegramBotClient botClient,
-    long adminChatId,
-    long adminTelegramId,
-    FamilyRole role,
-    string memberName)
-  {
-    // Create invite
-    var familyMenuMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🏠 Семья"),
-      adminChatId);
-    var familyMenuKeyboard = familyMenuMessage!.ShouldHaveInlineKeyboard();
-    var createInviteButton = familyMenuKeyboard.GetButton("Создать приглашение");
-
-    var inviteRoleMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createInviteButton.CallbackData!),
-      adminChatId);
-    var inviteRoleKeyboard = inviteRoleMessage!.ShouldHaveInlineKeyboard();
-    var roleButton = inviteRoleKeyboard.GetButton(RoleDisplay.GetRoleCaption(role));
-
-    var inviteMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, roleButton.CallbackData!),
-      adminChatId);
-    var inviteText = inviteMessage!.Text!;
-    var match = Regex.Match(inviteText, @"invite_[A-Z0-9]+");
-    var invitePayload = match.Value;
-
-    // Join family with new user
-    var newMemberTelegramId = TestDataBuilder.GenerateTelegramId();
-    botClient.Clear();
-
-    await botClient.SendUpdateAndWaitForMessagesAsync(
-      UpdateFactory.CreateTextUpdate(newMemberTelegramId, newMemberTelegramId,
-        $"/start {invitePayload}", firstName: memberName),
-      newMemberTelegramId,
-      2);
-
-    return newMemberTelegramId;
-  }
+  // AddFamilyMemberViaInviteAsync вынесен в BotFamilyFlowHelpers
 
   private async Task<Message?> NavigateToMemberDetailsAsync(
     TestTelegramBotClient botClient,

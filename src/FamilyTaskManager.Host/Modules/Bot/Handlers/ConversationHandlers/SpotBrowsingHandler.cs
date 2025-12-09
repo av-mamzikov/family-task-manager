@@ -1,7 +1,10 @@
+using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
+using FamilyTaskManager.UseCases.Contracts;
+using FamilyTaskManager.UseCases.Families;
 using FamilyTaskManager.UseCases.Spots;
 using FamilyTaskManager.UseCases.Tasks;
 using Telegram.Bot;
@@ -42,6 +45,12 @@ public class SpotBrowsingHandler(
     else if (callbackParts.IsCallbackOf((Func<EncodedGuid, string>)CallbackData.SpotBrowsing.ConfirmDelete,
                out var confirmDeleteSpotId))
       await HandleConfirmDeleteSpotAsync(botClient, chatId, message, confirmDeleteSpotId, session, cancellationToken);
+    else if (callbackParts.IsCallbackOf((Func<EncodedGuid, string>)CallbackData.SpotBrowsing.ResponsibleList,
+               out var respSpotId))
+      await HandleResponsibleListAsync(botClient, chatId, message, respSpotId, session, cancellationToken);
+    else if (callbackParts.IsCallbackOf(CallbackData.SpotBrowsing.ResponsibleToggle,
+               out var spotId, out EncodedGuid memberId))
+      await HandleResponsibleToggleAsync(botClient, chatId, message, spotId, memberId, session, cancellationToken);
     else if (callbackParts.IsCallbackOf(CallbackData.SpotBrowsing.List))
       await ShowSpotListAsync(botClient, chatId, message, session, cancellationToken);
   }
@@ -106,6 +115,152 @@ public class SpotBrowsingHandler(
       cancellationToken);
   }
 
+  private async Task HandleResponsibleListAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    Message? message,
+    Guid spotId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (session.CurrentFamilyId == null)
+    {
+      await EditMessageWithErrorAsync(botClient, chatId, message, BotMessages.Errors.NoFamily, cancellationToken);
+      return;
+    }
+
+    var familyMembersResult = await mediator.Send(new GetFamilyMembersQuery(session.CurrentFamilyId.Value),
+      cancellationToken);
+    if (!familyMembersResult.IsSuccess || familyMembersResult.Value == null)
+    {
+      await EditMessageWithErrorAsync(botClient, chatId, message, "❌ Ошибка загрузки участников семьи",
+        cancellationToken);
+      return;
+    }
+
+    var responsibleResult = await mediator.Send(new GetSpotResponsibleMembersQuery(spotId), cancellationToken);
+    if (!responsibleResult.IsSuccess || responsibleResult.Value == null)
+    {
+      await EditMessageWithErrorAsync(botClient, chatId, message, "❌ Ошибка загрузки ответственных",
+        cancellationToken);
+      return;
+    }
+
+    var members = familyMembersResult.Value;
+    var responsibleIds = responsibleResult.Value.Select(m => m.Id).ToHashSet();
+
+    // Определяем текущего участника семьи по UserId
+    var currentMember = members.FirstOrDefault(m => m.UserId == session.UserId);
+    var isChild = currentMember?.Role == FamilyRole.Child;
+
+    if (isChild)
+    {
+      // Для детей показываем только текстовый список без кнопок-тогглов
+      var lines = new List<string>();
+      foreach (var member in members)
+      {
+        var isResponsible = responsibleIds.Contains(member.Id);
+        var prefix = isResponsible ? "✅ " : string.Empty;
+        lines.Add($"{prefix}{member.UserName}");
+      }
+
+      var text = "👥 *Ответственные за спота*\n\n" +
+                 "Только взрослые участники семьи могут изменять ответственных.\n\n" +
+                 string.Join("\n", lines);
+
+      var keyboardChild = new InlineKeyboardMarkup([
+        InlineKeyboardButton.WithCallbackData("⬅️ Назад к споту",
+          CallbackData.SpotBrowsing.View(spotId))
+      ]);
+
+      await botClient.SendOrEditMessageAsync(
+        chatId,
+        message,
+        text,
+        ParseMode.Markdown,
+        keyboardChild,
+        cancellationToken);
+      return;
+    }
+
+    // Для взрослых/админов показываем список участников как кнопки с возможностью toggle
+    var buttons = new List<InlineKeyboardButton[]>();
+
+    foreach (var member in members)
+    {
+      var isResponsible = responsibleIds.Contains(member.Id);
+      var prefix = isResponsible ? "✅ " : string.Empty;
+      var text = $"{prefix}{member.UserName}";
+      buttons.Add([
+        InlineKeyboardButton.WithCallbackData(text,
+          CallbackData.SpotBrowsing.ResponsibleToggle(spotId, member.Id))
+      ]);
+    }
+
+    buttons.Add([
+      InlineKeyboardButton.WithCallbackData("⬅️ Назад к споту",
+        CallbackData.SpotBrowsing.View(spotId))
+    ]);
+
+    var keyboard = new InlineKeyboardMarkup(buttons);
+
+    await botClient.SendOrEditMessageAsync(
+      chatId,
+      message,
+      "👥 *Ответственные за спота*\n\n" +
+      "Нажмите на участника, чтобы назначить или снять ответственность.",
+      ParseMode.Markdown,
+      keyboard,
+      cancellationToken);
+  }
+
+  private async Task HandleResponsibleToggleAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    Message? message,
+    Guid spotId,
+    Guid memberId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    // Получаем текущих ответственных, чтобы понять, нужно назначить или снять
+    var responsibleResult = await mediator.Send(new GetSpotResponsibleMembersQuery(spotId), cancellationToken);
+    if (!responsibleResult.IsSuccess || responsibleResult.Value == null)
+    {
+      await EditMessageWithErrorAsync(botClient, chatId, message, "❌ Ошибка загрузки ответственных",
+        cancellationToken);
+      return;
+    }
+
+    var isResponsible = responsibleResult.Value.Any(m => m.Id == memberId);
+
+    if (isResponsible)
+    {
+      var command = new RemoveSpotResponsibleCommand(spotId, memberId);
+      var removeResult = await mediator.Send(command, cancellationToken);
+      if (!removeResult.IsSuccess)
+      {
+        await EditMessageWithErrorAsync(botClient, chatId, message,
+          "❌ Не удалось снять ответственность с участника", cancellationToken);
+        return;
+      }
+    }
+    else
+    {
+      var command = new AssignSpotResponsibleCommand(spotId, memberId);
+      var assignResult = await mediator.Send(command, cancellationToken);
+      if (!assignResult.IsSuccess)
+      {
+        await EditMessageWithErrorAsync(botClient, chatId, message,
+          "❌ Не удалось назначить участника ответственным", cancellationToken);
+        return;
+      }
+    }
+
+    // После изменения состояния перерисовываем список
+    await HandleResponsibleListAsync(botClient, chatId, message, spotId, session, cancellationToken);
+  }
+
   private async Task HandleViewSpotAsync(
     ITelegramBotClient botClient,
     long chatId,
@@ -159,6 +314,10 @@ public class SpotBrowsingHandler(
 
     var keyboard = new InlineKeyboardMarkup([
       [InlineKeyboardButton.WithCallbackData("📋 Шаблоны задач", CallbackData.TemplateBrowsing.ListOfSpot(spotId))],
+      [
+        InlineKeyboardButton.WithCallbackData("👥 Ответственные",
+          CallbackData.SpotBrowsing.ResponsibleList(spotId))
+      ],
       [InlineKeyboardButton.WithCallbackData("🗑️ Удалить спота", CallbackData.SpotBrowsing.Delete(spotId))],
       [InlineKeyboardButton.WithCallbackData("⬅️ Назад к списку", CallbackData.SpotBrowsing.List())]
     ]);
