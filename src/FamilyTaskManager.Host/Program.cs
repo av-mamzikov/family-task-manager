@@ -4,6 +4,7 @@ using FamilyTaskManager.Host;
 using FamilyTaskManager.Host.Modules.Bot;
 using FamilyTaskManager.Host.Modules.Worker;
 using FamilyTaskManager.Infrastructure;
+using FamilyTaskManager.ServiceDefaults;
 using FamilyTaskManager.UseCases;
 using FamilyTaskManager.UseCases.Families;
 using Serilog;
@@ -78,6 +79,9 @@ Log.Information("Worker Module: Quartz.NET Jobs (TaskInstanceCreator, TaskRemind
 app.Run();
 
 // Make Program class accessible to WebApplicationFactory in tests
-public partial class Program
+namespace FamilyTaskManager.Host
 {
+  public class Program
+  {
+  }
 }

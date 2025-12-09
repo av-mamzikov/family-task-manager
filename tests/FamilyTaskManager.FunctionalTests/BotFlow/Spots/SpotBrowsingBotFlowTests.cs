@@ -1,4 +1,6 @@
+using System.Text.RegularExpressions;
 using FamilyTaskManager.FunctionalTests.Helpers;
+using FamilyTaskManager.Host;
 
 namespace FamilyTaskManager.FunctionalTests.BotFlow.Spots;
 
@@ -119,23 +121,22 @@ public class SpotBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     // Create a spot first
     var spotListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      new[] { UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🧩 Споты") },
+      [UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🧩 Споты")],
       adminChatId);
     var keyboard = spotListMessage!.ShouldHaveInlineKeyboard();
     var createButton = keyboard.GetButton("➕ Создать спота");
 
     var spotTypeMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      new[] { UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createButton.CallbackData!) },
+      [UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createButton.CallbackData!)],
       adminChatId);
     var spotTypeKeyboard = spotTypeMessage!.ShouldHaveInlineKeyboard();
     var catButton = spotTypeKeyboard.GetButton("🐱 Кот");
 
     await botClient.SendUpdateAndWaitForLastMessageAsync(
-      new[]
-      {
+      [
         UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, catButton.CallbackData!),
         UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "Мурка")
-      },
+      ],
       adminChatId);
 
     // Navigate to spot details
@@ -194,23 +195,22 @@ public class SpotBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     // Create a spot
     var spotListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      new[] { UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🧩 Споты") },
+      [UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🧩 Споты")],
       adminChatId);
     var keyboard = spotListMessage!.ShouldHaveInlineKeyboard();
     var createButton = keyboard.GetButton("➕ Создать спота");
 
     var spotTypeMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      new[] { UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createButton.CallbackData!) },
+      [UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createButton.CallbackData!)],
       adminChatId);
     var spotTypeKeyboard = spotTypeMessage!.ShouldHaveInlineKeyboard();
     var plantButton = spotTypeKeyboard.GetButton("🪴 Растение");
 
     await botClient.SendUpdateAndWaitForLastMessageAsync(
-      new[]
-      {
+      [
         UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, plantButton.CallbackData!),
         UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "Фикус")
-      },
+      ],
       adminChatId);
 
     // Navigate to spot details and click delete
@@ -241,5 +241,194 @@ public class SpotBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     spotListAfterCancel.ShouldNotBeNull("Бот должен вернуться к списку спотов");
     spotListAfterCancel!.ShouldContainText("Ваши споты");
     spotListAfterCancel.ShouldContainText("Фикус");
+  }
+
+  [Fact]
+  public async Task TS_BOT_SPOT_005_ManageResponsibles_ShouldToggleCheckboxOnMember()
+  {
+    var botClient = factory.TelegramBotClient;
+    botClient.Clear();
+
+    // Arrange: Admin creates family and one spot
+    var (_, adminTelegramId, adminChatId) =
+      await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Ответственных");
+
+    // Create a spot
+    var spotListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      [UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🧩 Споты")],
+      adminChatId);
+    var keyboard = spotListMessage!.ShouldHaveInlineKeyboard();
+    var createButton = keyboard.GetButton("➕ Создать спота");
+
+    var spotTypeMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      [UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createButton.CallbackData!)],
+      adminChatId);
+    var spotTypeKeyboard = spotTypeMessage!.ShouldHaveInlineKeyboard();
+    var catButton = spotTypeKeyboard.GetButton("🐱 Кот");
+
+    var createMessages = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      [
+        UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, catButton.CallbackData!),
+        UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "Барсик")
+      ],
+      adminChatId);
+    createMessages.ShouldNotBeNull();
+
+    // Navigate to spot details
+    botClient.Clear();
+    var spotsMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🧩 Споты"),
+      adminChatId);
+    var spotsKeyboard = spotsMessage!.ShouldHaveInlineKeyboard();
+    var spotButton = spotsKeyboard.GetButton("🐱 Барсик");
+
+    var spotDetailsMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, spotButton.CallbackData!),
+      adminChatId);
+    spotDetailsMessage.ShouldNotBeNull("Бот должен показать детали спота");
+    spotDetailsMessage!.ShouldContainText("Барсик");
+
+    var detailsKeyboard = spotDetailsMessage.ShouldHaveInlineKeyboard();
+    var responsiblesButton = detailsKeyboard.GetButton("👥 Ответственные");
+    responsiblesButton.CallbackData.ShouldNotBeNull();
+
+    // Act: open responsibles screen
+    var responsiblesMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, responsiblesButton.CallbackData!),
+      adminChatId);
+
+    // Assert: bot shows list of family members
+    responsiblesMessage.ShouldNotBeNull("Бот должен показать экран управления ответственными");
+    responsiblesMessage!.ShouldContainText("Ответственные за спота");
+    var respKeyboard = responsiblesMessage.ShouldHaveInlineKeyboard();
+
+    // Берём первого участника семьи из клавиатуры
+    var firstMemberButton = respKeyboard.InlineKeyboard.First().First();
+    firstMemberButton.CallbackData.ShouldNotBeNull();
+    var memberName = firstMemberButton.Text.Replace("✅", string.Empty).Trim();
+
+    // Изначально не должно быть галочки у имени
+    firstMemberButton.Text.ShouldNotContain("✅");
+
+    // Act: toggle responsibility for this member
+    var afterToggleMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, firstMemberButton.CallbackData!),
+      adminChatId);
+
+    // Assert: в обновлённой клавиатуре у этого участника появилась галочка
+    afterToggleMessage.ShouldNotBeNull("Бот должен обновить список ответственных");
+    var afterToggleKeyboard = afterToggleMessage!.ShouldHaveInlineKeyboard();
+
+    var updatedMemberButton = afterToggleKeyboard.InlineKeyboard
+      .SelectMany(row => row)
+      .First(btn => btn.Text.Contains(memberName));
+
+    updatedMemberButton.Text.ShouldStartWith("✅");
+  }
+
+  [Fact]
+  public async Task TS_BOT_SPOT_006_Child_ShouldSeeResponsiblesAsTextWithoutToggleButtons()
+  {
+    var botClient = factory.TelegramBotClient;
+    botClient.Clear();
+
+    // Arrange: admin creates family via bot flow
+    var (_, adminTelegramId, adminChatId) =
+      await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Детская");
+
+    // Admin opens family menu and creates invite with Child role
+    var familyMenuMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🏠 Семья"),
+      adminChatId);
+    familyMenuMessage.ShouldNotBeNull("Бот должен показать меню семьи");
+    var familyMenuKeyboard = familyMenuMessage!.ShouldHaveInlineKeyboard();
+    var createInviteButton = familyMenuKeyboard.GetButton("Создать приглашение");
+
+    var inviteRoleMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createInviteButton.CallbackData!),
+      adminChatId);
+    inviteRoleMessage.ShouldNotBeNull("Бот должен показать выбор роли для приглашения");
+    var inviteRoleKeyboard = inviteRoleMessage!.ShouldHaveInlineKeyboard();
+    var childRoleButton = inviteRoleKeyboard.GetButton("Ребёнок");
+
+    var inviteMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, childRoleButton.CallbackData!),
+      adminChatId);
+    inviteMessage.ShouldNotBeNull("Бот должен отправить сообщение о создании приглашения");
+    var inviteText = inviteMessage!.Text!;
+    var match = Regex.Match(inviteText, @"invite_[A-Z0-9]+");
+    match.Success.ShouldBeTrue("Пригласительная ссылка должна содержать payload вида invite_CODE");
+    var invitePayload = match.Value;
+
+    // Child joins family via /start invite_CODE
+    var childTelegramId = TestDataBuilder.GenerateTelegramId();
+    var childChatId = childTelegramId;
+
+    botClient.Clear();
+
+    await botClient.SendUpdateAndWaitForMessagesAsync(
+      UpdateFactory.CreateTextUpdate(childChatId, childTelegramId, $"/start {invitePayload}", firstName: "Ребёнок"),
+      childChatId,
+      2);
+
+    // Admin creates a spot via bot flow
+    botClient.Clear();
+
+    var spotListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "🧩 Споты"),
+      adminChatId);
+    var keyboard = spotListMessage!.ShouldHaveInlineKeyboard();
+    var createButton = keyboard.GetButton("➕ Создать спота");
+
+    var spotTypeMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, createButton.CallbackData!),
+      adminChatId);
+    var spotTypeKeyboard = spotTypeMessage!.ShouldHaveInlineKeyboard();
+    var catButton = spotTypeKeyboard.GetButton("🐱 Кот");
+
+    await botClient.SendUpdateAndWaitForLastMessageAsync(
+      new[]
+      {
+        UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, catButton.CallbackData!),
+        UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "Барсик")
+      },
+      adminChatId);
+
+    // Child opens spot details and responsibles screen
+    botClient.Clear();
+
+    var childSpotsMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(childChatId, childTelegramId, "🧩 Споты"),
+      childChatId);
+    childSpotsMessage.ShouldNotBeNull("Бот должен показать список спотов для ребёнка");
+    childSpotsMessage!.ShouldContainText("Барсик");
+
+    var childSpotsKeyboard = childSpotsMessage.ShouldHaveInlineKeyboard();
+    var childSpotButton = childSpotsKeyboard.GetButton("Барсик");
+
+    var childSpotDetails = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(childChatId, childTelegramId, childSpotButton.CallbackData!),
+      childChatId);
+    childSpotDetails.ShouldNotBeNull("Бот должен показать детали спота для ребёнка");
+
+    var childDetailsKeyboard = childSpotDetails!.ShouldHaveInlineKeyboard();
+    var childResponsiblesButton = childDetailsKeyboard.GetButton("👥 Ответственные");
+
+    // Act: child opens responsibles screen
+    var childResponsiblesMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(childChatId, childTelegramId, childResponsiblesButton.CallbackData!),
+      childChatId);
+
+    // Assert: ребёнок видит текстовый список, а не кнопки выбора участников
+    childResponsiblesMessage.ShouldNotBeNull("Бот должен показать экран ответственных для ребёнка");
+    childResponsiblesMessage!.ShouldContainText("Ответственные за спота");
+    childResponsiblesMessage.ShouldContainText("Только взрослые участники семьи могут изменять ответственных");
+
+    var childRespKeyboard = childResponsiblesMessage.ShouldHaveInlineKeyboard();
+
+    // На клавиатуре должна быть только кнопка "Назад к споту"
+    childRespKeyboard.InlineKeyboard.Count().ShouldBe(1);
+    childRespKeyboard.InlineKeyboard.First().Count().ShouldBe(1);
+    childRespKeyboard.InlineKeyboard.First().First().Text.ShouldContain("Назад к споту");
   }
 }

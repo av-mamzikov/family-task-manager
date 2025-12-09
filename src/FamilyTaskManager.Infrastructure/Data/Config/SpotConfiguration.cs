@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.SpotAggregate;
 
 namespace FamilyTaskManager.Infrastructure.Data.Config;
@@ -37,5 +38,27 @@ public class SpotConfiguration : IEntityTypeConfiguration<Spot>
       .WithMany()
       .HasForeignKey(p => p.FamilyId)
       .OnDelete(DeleteBehavior.Cascade);
+
+    // Many-to-many: Spot <-> responsible FamilyMembers
+    builder
+      .HasMany(p => p.ResponsibleMembers)
+      .WithMany(m => m.ResponsibleSpots)
+      .UsingEntity<Dictionary<string, object>>(
+        "SpotResponsibleMembers",
+        j => j
+          .HasOne<FamilyMember>()
+          .WithMany()
+          .HasForeignKey("FamilyMemberId")
+          .OnDelete(DeleteBehavior.Cascade),
+        j => j
+          .HasOne<Spot>()
+          .WithMany()
+          .HasForeignKey("SpotId")
+          .OnDelete(DeleteBehavior.Cascade));
+
+    builder
+      .Navigation(p => p.ResponsibleMembers)
+      .UsePropertyAccessMode(PropertyAccessMode.Field)
+      .AutoInclude();
   }
 }

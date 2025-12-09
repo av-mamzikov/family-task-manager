@@ -1,7 +1,6 @@
 global using System.Net.Mail;
 global using System.Reflection;
 global using MailKit.Net.Smtp;
-global using FamilyTaskManager.UseCases.Contracts.Tasks;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.EntityFrameworkCore.Metadata.Builders;
 global using Microsoft.Extensions.Configuration;

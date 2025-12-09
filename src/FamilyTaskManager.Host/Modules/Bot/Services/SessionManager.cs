@@ -1,6 +1,5 @@
 using System.Text.Json;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.UnitTests.Host.Bot.Models;
 using FamilyTaskManager.UseCases.Users;
 using Quartz.Util;
 using Telegram.Bot.Types;

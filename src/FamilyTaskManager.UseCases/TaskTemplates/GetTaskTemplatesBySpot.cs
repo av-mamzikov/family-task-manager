@@ -1,4 +1,4 @@
-using FamilyTaskManager.UseCases.Contracts.TaskTemplates;
+using FamilyTaskManager.UseCases.Contracts;
 using FamilyTaskManager.UseCases.TaskTemplates.Specifications;
 
 namespace FamilyTaskManager.UseCases.TaskTemplates;
@@ -12,7 +12,7 @@ public class GetTaskTemplatesBySpotHandler(IAppRepository<TaskTemplate> template
   public async ValueTask<Result<List<TaskTemplateDto>>> Handle(GetTaskTemplatesBySpotQuery request,
     CancellationToken cancellationToken)
   {
-    var spec = new TaskTemplatesDtoBySpotIdsSpec(new[] { request.SpotId });
+    var spec = new TaskTemplatesDtoBySpotIdsSpec([request.SpotId]);
     var templates = await templateAppRepository.ListAsync(spec, cancellationToken);
     return Result<List<TaskTemplateDto>>.Success(templates);
   }

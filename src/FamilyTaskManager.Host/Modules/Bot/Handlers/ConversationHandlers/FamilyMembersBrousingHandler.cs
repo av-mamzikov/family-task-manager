@@ -3,6 +3,7 @@ using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
+using FamilyTaskManager.UseCases.Contracts;
 using FamilyTaskManager.UseCases.Families;
 using Telegram.Bot;
 using Telegram.Bot.Types;

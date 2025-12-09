@@ -1,4 +1,5 @@
 using FamilyTaskManager.FunctionalTests.Helpers;
+using FamilyTaskManager.Host;
 
 namespace FamilyTaskManager.FunctionalTests.BotFlow.Stats;
 

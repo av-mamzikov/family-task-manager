@@ -1,4 +1,4 @@
-using FamilyTaskManager.Core.Interfaces;
+using FamilyTaskManager.UseCases.Contracts;
 
 namespace FamilyTaskManager.UseCases.Families;
 

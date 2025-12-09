@@ -1,4 +1,5 @@
 using FamilyTaskManager.FunctionalTests.Helpers;
+using FamilyTaskManager.Host;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
 
 namespace FamilyTaskManager.FunctionalTests.BotFlow.Family;
@@ -111,11 +112,10 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     // Act - Start family creation and enter invalid name
     var response = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      new[]
-      {
+      [
         UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.Family.Create()),
         UpdateFactory.CreateTextUpdate(chatId, userId, "Аб") // < 3 chars
-      },
+      ],
       chatId);
     response.ShouldNotBeNull("Бот должен показать ошибку валидации имени семьи");
     response!.ShouldContainText(BotMessages.Errors.FamilyNameTooShort);
@@ -131,13 +131,12 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     botClient.Clear();
 
     var messages = (await botClient.SendUpdateAndWaitForMessagesAsync(
-      new[]
-      {
+      [
         UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.Family.Create()),
         UpdateFactory.CreateTextUpdate(chatId, userId, "Test Family"),
         UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.FamilyCreation.DetectTimezone()),
         UpdateFactory.CreateLocationUpdate(chatId, userId, 55.7558, 37.6173)
-      },
+      ],
       chatId,
       6)).ToList();
     var successMessage = messages.LastOrDefault(m => m.Text?.Contains("успешно создана") == true);

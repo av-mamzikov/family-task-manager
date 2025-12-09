@@ -9,7 +9,7 @@ public class EfReadOnlyEntityRepository<T>(AppDbContext dbContext) : IReadOnlyEn
   protected AppDbContext DbContext => dbContext;
 
   public async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
-    await dbContext.Set<T>().FindAsync(new object[] { id }, cancellationToken);
+    await dbContext.Set<T>().FindAsync([id], cancellationToken);
 
   public async Task<T?> FirstOrDefaultAsync(Func<T, bool> predicate, CancellationToken cancellationToken = default) =>
     await dbContext.Set<T>().FirstOrDefaultAsync(e => predicate(e), cancellationToken);

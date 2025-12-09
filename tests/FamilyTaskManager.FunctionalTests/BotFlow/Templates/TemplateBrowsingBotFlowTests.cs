@@ -1,4 +1,5 @@
 using FamilyTaskManager.FunctionalTests.Helpers;
+using FamilyTaskManager.Host;
 using Telegram.Bot.Types;
 
 namespace FamilyTaskManager.FunctionalTests.BotFlow.Templates;

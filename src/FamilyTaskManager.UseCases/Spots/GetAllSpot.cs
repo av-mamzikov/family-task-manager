@@ -1,3 +1,5 @@
+using FamilyTaskManager.UseCases.Contracts;
+
 namespace FamilyTaskManager.UseCases.Spots;
 
 public record GetAllSpotsQuery : IQuery<Result<List<SpotDto>>>;

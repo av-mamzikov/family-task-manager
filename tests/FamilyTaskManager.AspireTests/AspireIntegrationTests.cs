@@ -1,4 +1,4 @@
-namespace FamilyTaskManager.AspireTests.Tests;
+namespace FamilyTaskManager.AspireTests;
 
 public class AspireIntegrationTests
 {

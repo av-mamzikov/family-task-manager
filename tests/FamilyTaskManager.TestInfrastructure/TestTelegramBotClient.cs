@@ -17,9 +17,10 @@ namespace FamilyTaskManager.TestInfrastructure;
 /// </summary>
 public class TestTelegramBotClient : ITelegramBotClient
 {
-  private readonly ConcurrentBag<(long ChatId, string Text)> _editedMessages = new();
+  private readonly ConcurrentBag<(long ChatId, string Text)> _editedMessages = [];
+  private readonly ConcurrentQueue<Exception> _errors = new();
   private readonly ConcurrentQueue<Update> _pendingUpdates = new();
-  private readonly ConcurrentBag<string> _sentCallbackAnswers = new();
+  private readonly ConcurrentBag<string> _sentCallbackAnswers = [];
   private readonly ConcurrentQueue<Message> _sentMessages = new();
   private readonly SemaphoreSlim _updateSignal = new(0);
 
@@ -85,6 +86,9 @@ public class TestTelegramBotClient : ITelegramBotClient
 
     while (DateTime.UtcNow - start < timeout)
     {
+      if (_errors.TryDequeue(out var error))
+        throw error;
+
       var messages = GetMessagesTo(chatId).ToList();
       var newMessages = messages.Skip(initialCount).ToList();
 
@@ -136,6 +140,9 @@ public class TestTelegramBotClient : ITelegramBotClient
 
     while (DateTime.UtcNow - start < timeout)
     {
+      if (_errors.TryDequeue(out var error))
+        throw error;
+
       var messages = GetMessagesTo(chatId).ToList();
       var newMessages = messages.Skip(initialCount).ToList();
 
@@ -179,6 +186,9 @@ public class TestTelegramBotClient : ITelegramBotClient
 
     _sentCallbackAnswers.Clear();
     _editedMessages.Clear();
+    while (_errors.TryDequeue(out _))
+    {
+    }
   }
 
   /// <summary>
@@ -232,9 +242,26 @@ public class TestTelegramBotClient : ITelegramBotClient
       return updates.ToArray();
     });
 
+  private void ValidateInlineKeyboard(InlineKeyboardMarkup? keyboard)
+  {
+    if (keyboard == null) return;
+
+    foreach (var row in keyboard.InlineKeyboard)
+    foreach (var button in row)
+      if (button.CallbackData is { } data && data.Length > 64)
+      {
+        var message =
+          $"BUTTON_DATA_INVALID: callback data length {data.Length} exceeds 64 characters. Data: '{data}'";
+        _errors.Enqueue(new ApiRequestException(message, 400));
+      }
+  }
+
   private Task<Message> HandleSendMessage(SendMessageRequest request) =>
     Task.Run(() =>
     {
+      var inlineKeyboard = request.ReplyMarkup as InlineKeyboardMarkup;
+      ValidateInlineKeyboard(inlineKeyboard);
+
       var message = new Message
       {
         MessageId = _sentMessages.Count + 1,
@@ -243,7 +270,7 @@ public class TestTelegramBotClient : ITelegramBotClient
         Text = request.Text,
         // Telegram.Bot Message.ReplyMarkup is InlineKeyboardMarkup? in this version,
         // so we can only safely store inline keyboards here.
-        ReplyMarkup = request.ReplyMarkup as InlineKeyboardMarkup
+        ReplyMarkup = inlineKeyboard
       };
 
       _sentMessages.Enqueue(message);
@@ -261,6 +288,9 @@ public class TestTelegramBotClient : ITelegramBotClient
   private Task<Message> HandleEditMessage(EditMessageTextRequest request) =>
     Task.Run(() =>
     {
+      var inlineKeyboard = request.ReplyMarkup;
+      ValidateInlineKeyboard(inlineKeyboard);
+
       _editedMessages.Add((request.ChatId.Identifier ?? 0, request.Text));
 
       var message = new Message
@@ -269,7 +299,7 @@ public class TestTelegramBotClient : ITelegramBotClient
         Date = DateTime.UtcNow,
         Chat = new() { Id = request.ChatId.Identifier ?? 0, Type = ChatType.Private },
         Text = request.Text,
-        ReplyMarkup = request.ReplyMarkup
+        ReplyMarkup = inlineKeyboard
       };
 
       _sentMessages.Enqueue(message);

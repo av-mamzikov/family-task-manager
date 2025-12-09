@@ -1,4 +1,4 @@
-using FamilyTaskManager.UseCases.Contracts.TaskTemplates;
+using FamilyTaskManager.UseCases.Contracts;
 
 namespace FamilyTaskManager.UseCases.Tasks.Specifications;
 
