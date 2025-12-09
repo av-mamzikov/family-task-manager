@@ -102,6 +102,50 @@ public class TestTelegramBotClient : ITelegramBotClient
     throw new("Timeout waiting for messages");
   }
 
+  public async Task<IReadOnlyCollection<Message>> SendUpdateAndWaitForMessagesAsync(Update update,
+    long chatId,
+    Func<List<Message>, bool> predicate)
+  {
+    var timeout = Debugger.IsAttached
+      ? TimeSpan.FromMinutes(30)
+      : TimeSpan.FromSeconds(60);
+
+    const int pollDelayMs = 500;
+
+    var initialCount = GetMessagesTo(chatId).Count();
+
+    EnqueueUpdate(update);
+
+    var start = DateTime.UtcNow;
+
+    while (DateTime.UtcNow - start < timeout)
+    {
+      var messages = GetMessagesTo(chatId).ToList();
+      var newMessages = messages.Skip(initialCount).ToList();
+
+      if (predicate(newMessages))
+        return newMessages;
+
+      await Task.Delay(pollDelayMs);
+    }
+
+    throw new("Timeout waiting for messages after sending update");
+  }
+
+  public async Task<IReadOnlyCollection<Message>> SendUpdateAndWaitForMessagesAsync(Update update,
+    long chatId,
+    int minCount) =>
+    await SendUpdateAndWaitForMessagesAsync(update, chatId, messages => messages.Count >= minCount);
+
+  public async Task<Message?> SendUpdateAndWaitForLastMessageAsync(Update update,
+    long chatId) =>
+    (await SendUpdateAndWaitForMessagesAsync(update, chatId, 1)).LastOrDefault();
+
+  public async Task<IReadOnlyCollection<Message>> SendUpdateAndWaitForMessagesUntilAsync(Update update,
+    long chatId,
+    Func<Message, bool> messagePredicate) =>
+    await SendUpdateAndWaitForMessagesAsync(update, chatId, messages => messages.Any(messagePredicate));
+
   public Task<User> GetMeAsync(CancellationToken cancellationToken = default) =>
     Task.FromResult(BotUser);
 

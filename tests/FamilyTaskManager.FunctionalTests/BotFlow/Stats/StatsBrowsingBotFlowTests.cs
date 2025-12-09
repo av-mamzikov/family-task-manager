@@ -24,9 +24,9 @@ public class StatsBrowsingBotFlowTests(CustomWebApplicationFactory<Program> fact
       await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Ивановых");
 
     // Act: Navigate to stats menu
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "📊 Статистика"));
-
-    var statsMessage = await botClient.WaitForLastMessageAsync(adminChatId);
+    var statsMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "📊 Статистика"),
+      adminChatId);
 
     // Assert
     statsMessage.ShouldNotBeNull("Бот должен показать статистику семьи");

@@ -361,10 +361,12 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     // Join family with new user
     var newMemberTelegramId = TestDataBuilder.GenerateTelegramId();
     botClient.Clear();
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(newMemberTelegramId, newMemberTelegramId,
-      $"/start {invitePayload}", firstName: memberName));
 
-    await botClient.WaitForMessagesAsync(newMemberTelegramId, 2);
+    await botClient.SendUpdateAndWaitForMessagesAsync(
+      UpdateFactory.CreateTextUpdate(newMemberTelegramId, newMemberTelegramId,
+        $"/start {invitePayload}", firstName: memberName),
+      newMemberTelegramId,
+      2);
 
     return newMemberTelegramId;
   }

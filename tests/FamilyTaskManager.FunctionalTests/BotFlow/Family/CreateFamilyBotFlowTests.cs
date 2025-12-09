@@ -28,11 +28,10 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     botClient.Clear();
 
 
-    // Act - Send /start
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(chatId, userId, "/start"));
-
-    // Assert - Check bot response (wait until message is actually sent)
-    var response = await botClient.WaitForLastMessageAsync(chatId);
+    // Act - Send /start and wait for welcome message
+    var response = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(chatId, userId, "/start"),
+      chatId);
     response.ShouldNotBeNull("Бот должен отправить приветственное сообщение при первом запуске");
     response!.ShouldContainText("Добро пожаловать");
 
@@ -50,24 +49,21 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     botClient.Clear();
 
     // Initialize user with /start command
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(chatId, userId, "/start"));
-    await botClient.WaitForLastMessageAsync(chatId);
+    await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(chatId, userId, "/start"),
+      chatId);
 
     // Act & Assert - Step 1: Click "Create Family"
     var createFamilyCallback = UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.Family.Create());
-    botClient.EnqueueUpdate(createFamilyCallback);
-
-    var step1Messages = (await botClient.WaitForMessagesAsync(chatId, 1)).ToList();
+    var step1Messages = (await botClient.SendUpdateAndWaitForMessagesAsync(createFamilyCallback, chatId, 1)).ToList();
     var response1 = step1Messages.LastOrDefault();
     response1.ShouldNotBeNull("Бот должен попросить ввести название семьи");
     response1!.ShouldContainText("Введите название семьи");
 
     // Act & Assert - Step 2: Enter family name
     var nameUpdate = UpdateFactory.CreateTextUpdate(chatId, userId, "Семья Ивановых");
-    botClient.EnqueueUpdate(nameUpdate);
-
     var step2Messages =
-      (await botClient.WaitForMessagesAsync(chatId, 1)).ToList();
+      (await botClient.SendUpdateAndWaitForMessagesAsync(nameUpdate, chatId, 1)).ToList();
     var response2 = step2Messages.LastOrDefault();
     response2.ShouldNotBeNull("Бот должен попросить выбрать способ определения временной зоны");
     response2!.ShouldContainText("Выберите способ определения временной зоны");
@@ -75,10 +71,9 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     // Act & Assert - Step 3: Show timezone list
     var showTimezoneList =
       UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.FamilyCreation.ShowTimezoneList());
-    botClient.EnqueueUpdate(showTimezoneList);
 
     var step3Messages =
-      (await botClient.WaitForMessagesAsync(chatId, 1)).ToList();
+      (await botClient.SendUpdateAndWaitForMessagesAsync(showTimezoneList, chatId, 1)).ToList();
     var timezonePrompt = step3Messages.LastOrDefault();
     timezonePrompt.ShouldNotBeNull("Бот должен показать список временных зон");
     timezonePrompt!.ShouldContainText("Выберите временную зону");
@@ -86,9 +81,8 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     // Act & Assert - Step 4: Select timezone from list
     var timezoneSelection =
       UpdateFactory.CreateCallbackUpdate(chatId, userId, CallbackData.FamilyCreation.TimeZone("Europe/Moscow"));
-    botClient.EnqueueUpdate(timezoneSelection);
 
-    var messages = (await botClient.WaitForMessagesAsync(chatId, 2))
+    var messages = (await botClient.SendUpdateAndWaitForMessagesAsync(timezoneSelection, chatId, 2))
       .ToList();
     var successMessage = messages.FirstOrDefault(m => m.Text?.Contains("Семья Ивановых") == true);
     successMessage.ShouldNotBeNull("Должно быть сообщение с подтверждением создания семьи");
@@ -97,8 +91,10 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     var menuMessage = messages.Last();
     menuMessage.ShouldContainText("Главное меню");
 
-    botClient.EnqueueUpdate(UpdateFactory.CreateTextUpdate(chatId, userId, "🏠 Семья"));
-    var familyMenuMessages = (await botClient.WaitForMessagesAsync(chatId, 1)).ToList();
+    var familyMenuMessages = (await botClient.SendUpdateAndWaitForMessagesAsync(
+      UpdateFactory.CreateTextUpdate(chatId, userId, "🏠 Семья"),
+      chatId,
+      1)).ToList();
     var familyMenuMessage = familyMenuMessages.LastOrDefault();
     familyMenuMessage.ShouldNotBeNull("После нажатия на кнопку 'Семья' должно отображаться меню текущей семьи");
     familyMenuMessage!.ShouldContainText("Семья Ивановых");
