@@ -5,8 +5,8 @@ namespace FamilyTaskManager.IntegrationTests.Data;
 
 public class FamilyRepositoryTests : BaseRepositoryTestFixture
 {
-  private IRepository<Family> Repository => GetRepository<Family>();
-  private IRepository<User> UserRepository => GetRepository<User>();
+  private IRepository<Family> Repository => RepositoryFactory.GetRepository<Family>();
+  private IRepository<User> UserRepository => RepositoryFactory.GetRepository<User>();
 
   [Fact]
   public async Task AddAsync_ShouldPersistFamilyToDatabase()
@@ -125,9 +125,9 @@ public class FamilyRepositoryTests : BaseRepositoryTestFixture
   {
     // Arrange
     await Repository.AddRangeAsync([
-      new Family("Family 1", "UTC"),
-      new Family("Family 2", "UTC"),
-      new Family("Family 3", "UTC")
+      new("Family 1", "UTC"),
+      new("Family 2", "UTC"),
+      new("Family 3", "UTC")
     ]);
     await DbContext.SaveChangesAsync();
 

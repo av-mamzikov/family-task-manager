@@ -19,13 +19,7 @@ public class ProcessScheduledTasksHandlerTests : IAsyncLifetime
   public async Task InitializeAsync()
   {
     _pooledContainer = await PostgreSqlContainerPool<AppDbContext>.Instance.AcquireContainerAsync();
-
-    var options = new DbContextOptionsBuilder<AppDbContext>()
-      .UseNpgsql(_pooledContainer.GetConnectionString())
-      .EnableSensitiveDataLogging()
-      .Options;
-
-    _dbContext = new(options);
+    _dbContext = _pooledContainer.GetDbContext();
     _repositoryFactory = new(_dbContext);
   }
 

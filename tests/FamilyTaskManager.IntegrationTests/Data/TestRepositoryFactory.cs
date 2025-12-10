@@ -5,10 +5,12 @@ namespace FamilyTaskManager.IntegrationTests.Data;
 
 public class TestRepositoryFactory(AppDbContext dbContext)
 {
-  private readonly AppDbContext _dbContext = dbContext;
-
-  public IAppRepository<T> GetRepository<T>() where T : class, IAggregateRoot => new EfAppRepository<T>(_dbContext);
+  public AppDbContext DbContext => dbContext;
+  public IAppRepository<T> GetRepository<T>() where T : class, IAggregateRoot => new EfAppRepository<T>(dbContext);
 
   public IAppReadRepository<T> GetReadRepository<T>() where T : class, IAggregateRoot =>
-    new EfAppRepository<T>(_dbContext);
+    new EfAppRepository<T>(dbContext);
+
+  public IReadOnlyEntityRepository<T> GetReadOnlyEntityRepository<T>() where T : class =>
+    new EfReadOnlyEntityRepository<T>(dbContext);
 }

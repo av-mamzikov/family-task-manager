@@ -6,20 +6,20 @@ namespace FamilyTaskManager.IntegrationTests.Data;
 
 public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
 {
-  private IRepository<TaskTemplate> Repository => GetRepository<TaskTemplate>();
+  private IRepository<TaskTemplate> Repository => RepositoryFactory.GetRepository<TaskTemplate>();
 
   private async Task<TaskTemplate> CreateTaskTemplateWithDependencies(string title = "Feed the cat", int points = 2,
     Schedule? schedule = null)
   {
     // Создаем семью
     var family = new Family($"Test Family {Guid.NewGuid():N}", "UTC");
-    var familyRepository = GetRepository<Family>();
+    var familyRepository = RepositoryFactory.GetRepository<Family>();
     await familyRepository.AddAsync(family);
     await DbContext.SaveChangesAsync();
 
     // Создаем спота для этой семьи
     var Spot = new Spot(family.Id, SpotType.Cat, "Test Spot");
-    var SpotRepository = GetRepository<Spot>();
+    var SpotRepository = RepositoryFactory.GetRepository<Spot>();
     await SpotRepository.AddAsync(Spot);
     await DbContext.SaveChangesAsync();
 

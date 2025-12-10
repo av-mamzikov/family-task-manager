@@ -1,6 +1,3 @@
-using FamilyTaskManager.Infrastructure.Data;
-using FamilyTaskManager.TestInfrastructure;
-
 namespace FamilyTaskManager.IntegrationTests.Data;
 
 /// <summary>
@@ -11,7 +8,7 @@ public sealed class PostgreSqlContainerPoolFixture : IAsyncLifetime
 {
   public Task InitializeAsync() => Task.CompletedTask;
 
-  public async Task DisposeAsync() => await PostgreSqlContainerPool<AppDbContext>.Instance.DisposeAsync();
+  public Task DisposeAsync() => Task.CompletedTask;
 }
 
 /// <summary>

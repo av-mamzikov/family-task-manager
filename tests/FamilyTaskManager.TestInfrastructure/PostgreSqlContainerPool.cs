@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using FamilyTaskManager.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Testcontainers.PostgreSql;
@@ -218,32 +219,58 @@ public sealed class PostgreSqlContainerPool<TDbContext> : IAsyncDisposable
   private static async Task ResetDatabaseAsync(PooledContainer pooledContainer)
   {
     // Очищаем пул соединений Npgsql для рабочей базы данных
-    var workingConnectionString = pooledContainer.GetConnectionString();
-    NpgsqlConnection.ClearPool(new(workingConnectionString));
+    pooledContainer.ClearConnectionPool();
 
     var postgresConnectionString = new NpgsqlConnectionStringBuilder(pooledContainer.Container.GetConnectionString())
     {
       Database = "postgres"
     }.ConnectionString;
 
-    await using var connection = new NpgsqlConnection(postgresConnectionString);
-    await connection.OpenAsync();
+    const int maxAttempts = 3;
 
-    // Удаляем рабочую базу (WITH FORCE автоматически закрывает все соединения в PostgreSQL 13+)
-    await using (var command = connection.CreateCommand())
+    for (var attempt = 1; attempt <= maxAttempts; attempt++)
     {
-      command.CommandText = $"DROP DATABASE IF EXISTS {pooledContainer.WorkingDatabaseName} WITH (FORCE)";
-      await command.ExecuteNonQueryAsync();
-    }
+      try
+      {
+        await using var connection = new NpgsqlConnection(postgresConnectionString);
+        await connection.OpenAsync();
 
-    // Создаём рабочую базу заново из template
-    await using (var command = connection.CreateCommand())
-    {
-      command.CommandText =
-        $"CREATE DATABASE {pooledContainer.WorkingDatabaseName} WITH TEMPLATE {TemplateDatabaseName}";
-      await command.ExecuteNonQueryAsync();
+        // Удаляем рабочую базу (WITH FORCE автоматически закрывает все соединения в PostgreSQL 13+)
+        await using (var dropCommand = connection.CreateCommand())
+        {
+          dropCommand.CommandText =
+            $"DROP DATABASE IF EXISTS {pooledContainer.WorkingDatabaseName} WITH (FORCE)";
+          await dropCommand.ExecuteNonQueryAsync();
+        }
+
+        // Создаём рабочую базу заново из template
+        await using (var createCommand = connection.CreateCommand())
+        {
+          createCommand.CommandText =
+            $"CREATE DATABASE {pooledContainer.WorkingDatabaseName} WITH TEMPLATE {TemplateDatabaseName}";
+          await createCommand.ExecuteNonQueryAsync();
+        }
+
+        return;
+      }
+      catch (Exception ex) when (attempt < maxAttempts && IsTransientDatabaseError(ex))
+      {
+        // Редкая транзиентная ошибка соединения (например, EndOfStream) при сбросе БД.
+        // Делаем небольшую паузу и пробуем ещё раз.
+        await Task.Delay(200);
+      }
     }
   }
+
+  private static bool IsTransientDatabaseError(Exception exception) =>
+    exception switch
+    {
+      PostgresException => true,
+      NpgsqlException => true,
+      EndOfStreamException => true,
+      _ when exception.InnerException != null => IsTransientDatabaseError(exception.InnerException),
+      _ => false
+    };
 
   /// <summary>
   ///   Сбрасывает пул (для тестирования)
@@ -283,5 +310,21 @@ public sealed class PooledContainer(
       Database = WorkingDatabaseName
     };
     return builder.ConnectionString;
+  }
+
+  public AppDbContext GetDbContext()
+  {
+    var options = new DbContextOptionsBuilder<AppDbContext>()
+      .UseNpgsql(GetConnectionString(), o => o.EnableRetryOnFailure())
+      .EnableSensitiveDataLogging()
+      .Options;
+
+    return new(options);
+  }
+
+  public void ClearConnectionPool()
+  {
+    var workingConnectionString = GetConnectionString();
+    NpgsqlConnection.ClearPool(new(workingConnectionString));
   }
 }
