@@ -27,7 +27,7 @@ public class SpotRepositoryTests : RepositoryTestsBase<Spot>
   private Spot CreateSpotWithFamily(Guid familyId, SpotType type, string name)
   {
     var family = new Family($"Test Family {familyId:N}", "UTC");
-    var familyRepository = GetRepository<Family>();
+    var familyRepository = RepositoryFactory.GetRepository<Family>();
 
     familyRepository.AddAsync(family).GetAwaiter().GetResult();
     DbContext.SaveChangesAsync().GetAwaiter().GetResult();
@@ -76,7 +76,7 @@ public class SpotRepositoryTests : RepositoryTestsBase<Spot>
   {
     // Arrange
     var family = new Family("Family With Tasks", "UTC");
-    var familyRepository = GetRepository<Family>();
+    var familyRepository = RepositoryFactory.GetRepository<Family>();
     await familyRepository.AddAsync(family);
     await DbContext.SaveChangesAsync();
 
@@ -92,7 +92,7 @@ public class SpotRepositoryTests : RepositoryTestsBase<Spot>
       new(2),
       DateTime.UtcNow.AddDays(1));
 
-    var taskRepository = GetRepository<TaskInstance>();
+    var taskRepository = RepositoryFactory.GetRepository<TaskInstance>();
     await taskRepository.AddAsync(task);
     await DbContext.SaveChangesAsync();
 

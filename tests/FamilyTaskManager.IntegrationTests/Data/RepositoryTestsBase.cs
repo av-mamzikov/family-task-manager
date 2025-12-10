@@ -7,7 +7,7 @@ namespace FamilyTaskManager.IntegrationTests.Data;
 public abstract class RepositoryTestsBase<TEntity> : BaseRepositoryTestFixture
   where TEntity : EntityBase<TEntity, Guid>, IAggregateRoot
 {
-  protected IRepository<TEntity> Repository => GetRepository<TEntity>();
+  protected IRepository<TEntity> Repository => RepositoryFactory.GetRepository<TEntity>();
 
   /// <summary>
   ///   Создает новую тестовую сущность для добавления

@@ -161,7 +161,7 @@ public class SpotBrowsingHandler(
       {
         var isResponsible = responsibleIds.Contains(member.Id);
         var prefix = isResponsible ? "✅ " : string.Empty;
-        lines.Add($"{prefix}{member.UserName}");
+        lines.Add($"{prefix}{RoleDisplay.GetRoleEmoji(member.Role)} {member.UserName}");
       }
 
       var text = "👥 *Ответственные за спота*\n\n" +
@@ -190,7 +190,7 @@ public class SpotBrowsingHandler(
     {
       var isResponsible = responsibleIds.Contains(member.Id);
       var prefix = isResponsible ? "✅ " : string.Empty;
-      var text = $"{prefix}{member.UserName}";
+      var text = $"{prefix}{RoleDisplay.GetRoleEmoji(member.Role)} {member.UserName}";
       buttons.Add([
         InlineKeyboardButton.WithCallbackData(text,
           CallbackData.SpotBrowsing.ResponsibleToggle(spotId, member.Id))

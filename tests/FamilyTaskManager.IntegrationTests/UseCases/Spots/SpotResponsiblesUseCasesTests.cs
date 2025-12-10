@@ -1,58 +1,31 @@
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Core.UserAggregate;
-using FamilyTaskManager.Infrastructure.Data;
 using FamilyTaskManager.IntegrationTests.Data;
-using FamilyTaskManager.TestInfrastructure;
 using FamilyTaskManager.UseCases.Spots;
 
 namespace FamilyTaskManager.IntegrationTests.UseCases.Spots;
 
-public class SpotResponsiblesUseCasesTests : IAsyncLifetime
+public class SpotResponsiblesUseCasesTests : BaseRepositoryTestFixture
 {
-  private AppDbContext _dbContext = null!;
-  private EfReadOnlyEntityRepository<FamilyMember> _familyMemberReadRepository = null!;
-  private PooledContainer _pooledContainer = null!;
-  private TestRepositoryFactory _repositoryFactory = null!;
-
-  public async Task InitializeAsync()
-  {
-    _pooledContainer = await PostgreSqlContainerPool<AppDbContext>.Instance.AcquireContainerAsync();
-
-    var options = new DbContextOptionsBuilder<AppDbContext>()
-      .UseNpgsql(_pooledContainer.GetConnectionString())
-      .EnableSensitiveDataLogging()
-      .Options;
-
-    _dbContext = new(options);
-    _repositoryFactory = new(_dbContext);
-    _familyMemberReadRepository = new(_dbContext);
-  }
-
-  public async Task DisposeAsync()
-  {
-    await _dbContext.Database.CloseConnectionAsync();
-    await _dbContext.DisposeAsync();
-    await PostgreSqlContainerPool<AppDbContext>.Instance.ReleaseContainerAsync(_pooledContainer);
-  }
-
   private async Task<(Family family, User user, FamilyMember member, Spot spot)> CreateFamilyMemberAndSpotAsync()
   {
     var family = new Family($"Test Family {Guid.NewGuid():N}", "UTC");
     var user = new User(123456789L, "Test User");
     var member = family.AddMember(user, FamilyRole.Child);
 
-    var familyRepository = _repositoryFactory.GetRepository<Family>();
-    var userRepository = _repositoryFactory.GetRepository<User>();
+    var familyRepository = RepositoryFactory.GetRepository<Family>();
+    var userRepository = RepositoryFactory.GetRepository<User>();
 
     await userRepository.AddAsync(user);
     await familyRepository.AddAsync(family);
-    await _dbContext.SaveChangesAsync();
+    await userRepository.SaveChangesAsync();
+    await familyRepository.SaveChangesAsync();
 
     var spot = new Spot(family.Id, SpotType.Cat, "Test Spot");
-    var spotRepository = _repositoryFactory.GetRepository<Spot>();
+    var spotRepository = RepositoryFactory.GetRepository<Spot>();
     await spotRepository.AddAsync(spot);
-    await _dbContext.SaveChangesAsync();
+    await spotRepository.SaveChangesAsync();
 
     return (family, user, member, spot);
   }
@@ -62,8 +35,9 @@ public class SpotResponsiblesUseCasesTests : IAsyncLifetime
   {
     var (_, _, member, spot) = await CreateFamilyMemberAndSpotAsync();
 
-    var spotRepository = _repositoryFactory.GetRepository<Spot>();
-    var handler = new AssignSpotResponsibleHandler(spotRepository, _familyMemberReadRepository);
+    var spotRepository = RepositoryFactory.GetRepository<Spot>();
+    var familyMemberReadRepository = RepositoryFactory.GetReadOnlyEntityRepository<FamilyMember>();
+    var handler = new AssignSpotResponsibleHandler(spotRepository, familyMemberReadRepository);
 
     var command = new AssignSpotResponsibleCommand(spot.Id, member.Id);
 
@@ -71,7 +45,7 @@ public class SpotResponsiblesUseCasesTests : IAsyncLifetime
 
     result.IsSuccess.ShouldBeTrue();
 
-    var reloadedSpot = await _dbContext.Spots
+    var reloadedSpot = await RepositoryFactory.DbContext.Spots
       .Include(s => s.ResponsibleMembers)
       .FirstAsync(s => s.Id == spot.Id);
 
@@ -83,22 +57,23 @@ public class SpotResponsiblesUseCasesTests : IAsyncLifetime
   {
     var (_, _, member, spot) = await CreateFamilyMemberAndSpotAsync();
 
-    var spotRepository = _repositoryFactory.GetRepository<Spot>();
-    var assignHandler = new AssignSpotResponsibleHandler(spotRepository, _familyMemberReadRepository);
+    var spotRepository = RepositoryFactory.GetRepository<Spot>();
+    var familyMemberReadRepository = RepositoryFactory.GetReadOnlyEntityRepository<FamilyMember>();
+    var assignHandler = new AssignSpotResponsibleHandler(spotRepository, familyMemberReadRepository);
     var assignCommand = new AssignSpotResponsibleCommand(spot.Id, member.Id);
     var assignResult = await assignHandler.Handle(assignCommand, CancellationToken.None);
     assignResult.IsSuccess.ShouldBeTrue();
 
-    _dbContext.ChangeTracker.Clear();
+    RepositoryFactory.DbContext.ChangeTracker.Clear();
 
-    var removeHandler = new RemoveSpotResponsibleHandler(spotRepository, _familyMemberReadRepository);
+    var removeHandler = new RemoveSpotResponsibleHandler(spotRepository, familyMemberReadRepository);
     var removeCommand = new RemoveSpotResponsibleCommand(spot.Id, member.Id);
 
     var removeResult = await removeHandler.Handle(removeCommand, CancellationToken.None);
 
     removeResult.IsSuccess.ShouldBeTrue();
 
-    var reloadedSpot = await _dbContext.Spots
+    var reloadedSpot = await RepositoryFactory.DbContext.Spots
       .Include(s => s.ResponsibleMembers)
       .FirstAsync(s => s.Id == spot.Id);
 
@@ -110,8 +85,9 @@ public class SpotResponsiblesUseCasesTests : IAsyncLifetime
   {
     var (_, _, member, spot) = await CreateFamilyMemberAndSpotAsync();
 
-    var spotRepository = _repositoryFactory.GetRepository<Spot>();
-    var assignHandler = new AssignSpotResponsibleHandler(spotRepository, _familyMemberReadRepository);
+    var spotRepository = RepositoryFactory.GetRepository<Spot>();
+    var familyMemberReadRepository = RepositoryFactory.GetReadOnlyEntityRepository<FamilyMember>();
+    var assignHandler = new AssignSpotResponsibleHandler(spotRepository, familyMemberReadRepository);
     var assignCommand = new AssignSpotResponsibleCommand(spot.Id, member.Id);
     var assignResult = await assignHandler.Handle(assignCommand, CancellationToken.None);
     assignResult.IsSuccess.ShouldBeTrue();
@@ -139,16 +115,18 @@ public class SpotResponsiblesUseCasesTests : IAsyncLifetime
     var inactiveUser = new User(987654321L, "Inactive User");
     var inactiveMember = family.AddMember(inactiveUser, FamilyRole.Child);
 
-    var familyRepository = _repositoryFactory.GetRepository<Family>();
-    var userRepository = _repositoryFactory.GetRepository<User>();
+    var familyRepository = RepositoryFactory.GetRepository<Family>();
+    var userRepository = RepositoryFactory.GetRepository<User>();
 
     await userRepository.AddAsync(inactiveUser);
     await familyRepository.UpdateAsync(family);
-    await _dbContext.SaveChangesAsync();
+    await userRepository.SaveChangesAsync();
+    await familyRepository.SaveChangesAsync();
 
     // Assign both members as responsible
-    var spotRepository = _repositoryFactory.GetRepository<Spot>();
-    var assignHandler = new AssignSpotResponsibleHandler(spotRepository, _familyMemberReadRepository);
+    var spotRepository = RepositoryFactory.GetRepository<Spot>();
+    var familyMemberReadRepository = RepositoryFactory.GetReadOnlyEntityRepository<FamilyMember>();
+    var assignHandler = new AssignSpotResponsibleHandler(spotRepository, familyMemberReadRepository);
 
     var assignActive = await assignHandler.Handle(
       new(spot.Id, member.Id),
@@ -163,10 +141,10 @@ public class SpotResponsiblesUseCasesTests : IAsyncLifetime
     // Deactivate second member and persist change
     inactiveMember.Deactivate();
     await familyRepository.UpdateAsync(family);
-    await _dbContext.SaveChangesAsync();
+    await familyRepository.SaveChangesAsync();
 
     // Query responsible members via use case
-    var handler = new GetSpotResponsibleMembersHandler(_familyMemberReadRepository);
+    var handler = new GetSpotResponsibleMembersHandler(familyMemberReadRepository);
     var query = new GetSpotResponsibleMembersQuery(spot.Id);
 
     var result = await handler.Handle(query, CancellationToken.None);

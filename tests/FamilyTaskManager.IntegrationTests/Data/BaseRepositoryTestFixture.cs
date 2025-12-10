@@ -1,4 +1,3 @@
-using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.Infrastructure.Data;
 using FamilyTaskManager.TestInfrastructure;
 
@@ -12,7 +11,7 @@ namespace FamilyTaskManager.IntegrationTests.Data;
 public abstract class BaseRepositoryTestFixture : IAsyncLifetime
 {
   private PooledContainer _pooledContainer = null!;
-
+  protected TestRepositoryFactory RepositoryFactory = null!;
   protected AppDbContext DbContext { get; private set; } = null!;
 
   /// <summary>
@@ -24,12 +23,8 @@ public abstract class BaseRepositoryTestFixture : IAsyncLifetime
     _pooledContainer = await PostgreSqlContainerPool<AppDbContext>.Instance.AcquireContainerAsync();
 
     // Создаём DbContext
-    var options = new DbContextOptionsBuilder<AppDbContext>()
-      .UseNpgsql(_pooledContainer.GetConnectionString())
-      .EnableSensitiveDataLogging()
-      .Options;
-
-    DbContext = new(options);
+    DbContext = _pooledContainer.GetDbContext();
+    RepositoryFactory = new(DbContext);
   }
 
   /// <summary>
@@ -44,22 +39,4 @@ public abstract class BaseRepositoryTestFixture : IAsyncLifetime
     // Возвращаем контейнер в пул для повторного использования (с предварительным сбросом БД)
     await PostgreSqlContainerPool<AppDbContext>.Instance.ReleaseContainerAsync(_pooledContainer);
   }
-
-  /// <summary>
-  ///   Создает репозиторий для указанного типа агрегата
-  /// </summary>
-  protected IAppRepository<T> GetRepository<T>() where T : class, IAggregateRoot => new EfAppRepository<T>(DbContext);
-
-  /// <summary>
-  ///   Создает read-only репозиторий для указанного типа агрегата
-  /// </summary>
-  protected IAppReadRepository<T> GetReadRepository<T>() where T : class, IAggregateRoot =>
-    new EfAppRepository<T>(DbContext);
-
-  /// <summary>
-  ///   Очищает все данные из БД между тестами (опционально)
-  /// </summary>
-  protected async Task ClearDatabaseAsync() =>
-    await DbContext.Database.ExecuteSqlRawAsync(
-      "TRUNCATE TABLE \"Families\", \"FamilyMembers\", \"Users\", \"Spots\", \"TaskTemplates\", \"TaskInstances\", \"ActionHistory\" CASCADE");
 }

@@ -15,4 +15,10 @@ public class RoleDisplay
     var info = GetRoleInfo(entryRole);
     return $"{info.emoji} {info.text}";
   }
+
+  public static string GetRoleEmoji(FamilyRole entryRole)
+  {
+    var info = GetRoleInfo(entryRole);
+    return info.emoji;
+  }
 }
