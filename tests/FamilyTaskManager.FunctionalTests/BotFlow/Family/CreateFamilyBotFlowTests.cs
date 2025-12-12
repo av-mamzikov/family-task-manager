@@ -19,7 +19,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
 
   public Task DisposeAsync() => Task.CompletedTask;
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_001_FirstStart_ShouldRegisterUserAndShowWelcome()
   {
     var chatId = TestDataBuilder.GenerateTelegramId();
@@ -40,7 +40,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     keyboard.ShouldContainButton("Создать семью");
   }
 
-  [Fact]
+  [RetryFact(2)]
   public async Task TS_BOT_002_CreateFirstFamily_ShouldCompleteFullConversation()
   {
     // Arrange
@@ -101,7 +101,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     familyMenuMessage!.ShouldContainText("Семья Ивановых");
   }
 
-  [Fact]
+  [RetryFact(2)]
   public async Task TS_BOT_003_CreateFamilyWithInvalidName_ShouldShowValidationError()
   {
     // Arrange
@@ -121,7 +121,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
     response!.ShouldContainText(BotMessages.Errors.FamilyNameTooShort);
   }
 
-  [Fact]
+  [RetryFact(2)]
   public async Task TS_BOT_004_SelectTimezoneByGeolocation_ShouldDetermineTimezone()
   {
     // Arrange

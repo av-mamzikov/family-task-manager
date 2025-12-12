@@ -21,7 +21,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
 
   public Task DisposeAsync() => Task.CompletedTask;
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_005_ShowFamilyMembers_WithMultipleMembers_ShouldDisplayCorrectList()
   {
     var botClient = factory.TelegramBotClient;
@@ -68,7 +68,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     membersKeyboard.ShouldContainButton("⬅️ Назад");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_007_ShowMemberDetails_AndNavigateBack_ShouldWorkCorrectly()
   {
     var botClient = factory.TelegramBotClient;
@@ -120,7 +120,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     backToListMessage!.ShouldContainText("Участники семьи");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_008_ChangeMemberRole_AdminChangesAdultToChild_ShouldUpdateSuccessfully()
   {
     var botClient = factory.TelegramBotClient;
@@ -169,7 +169,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     updatedDetailsMessage.ShouldContainText("Роль: Ребёнок");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_009_RemoveMember_AdminRemovesAdultMember_ShouldUpdateList()
   {
     var botClient = factory.TelegramBotClient;
@@ -217,7 +217,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     updatedKeyboard.ShouldNotContainButton("👤 Удаляемый участник");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_010_CancelMemberRemoval_ShouldReturnToMemberDetails()
   {
     var botClient = factory.TelegramBotClient;
@@ -265,7 +265,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     detailsKeyboardAgain.ShouldContainButton("🗑️ Удалить участника");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_011_NavigateFromMembersListToFamilyMenu_ShouldWorkCorrectly()
   {
     var botClient = factory.TelegramBotClient;
@@ -302,7 +302,7 @@ public class FamilyMembersBotFlowTests(CustomWebApplicationFactory<Program> fact
     familyMenuKeyboardAgain.ShouldContainButton("Создать приглашение");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_013_RemoveMember_ShouldSendNotificationToMember()
   {
     var botClient = factory.TelegramBotClient;

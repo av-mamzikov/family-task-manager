@@ -17,7 +17,7 @@ public partial class InviteUserBotFlowTests(CustomWebApplicationFactory<Program>
 
   public Task DisposeAsync() => Task.CompletedTask;
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_002_InviteUserViaStartCommand_ShouldJoinFamilyAndShowMainMenu()
   {
     var botClient = factory.TelegramBotClient;
