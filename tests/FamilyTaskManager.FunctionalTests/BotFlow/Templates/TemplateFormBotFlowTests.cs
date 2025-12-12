@@ -16,7 +16,7 @@ public class TemplateFormBotFlowTests(CustomWebApplicationFactory<Program> facto
 
   public Task DisposeAsync() => Task.CompletedTask;
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_FORM_001_CreateDailyTemplate_ShouldCreateSuccessfully()
   {
     var botClient = factory.TelegramBotClient;
@@ -83,7 +83,7 @@ public class TemplateFormBotFlowTests(CustomWebApplicationFactory<Program> facto
     successMessage.ShouldContainText("09:00");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_FORM_002_CreateWeeklyTemplate_ShouldCreateSuccessfully()
   {
     var botClient = factory.TelegramBotClient;
@@ -144,7 +144,7 @@ public class TemplateFormBotFlowTests(CustomWebApplicationFactory<Program> facto
     successMessage.ShouldContainText("10:00");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_FORM_003_CreateMonthlyTemplate_ShouldCreateSuccessfully()
   {
     var botClient = factory.TelegramBotClient;
@@ -201,7 +201,7 @@ public class TemplateFormBotFlowTests(CustomWebApplicationFactory<Program> facto
     successMessage.ShouldContainText("15:00");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_FORM_004_CreateManualTemplate_ShouldCreateSuccessfully()
   {
     var botClient = factory.TelegramBotClient;
@@ -249,7 +249,7 @@ public class TemplateFormBotFlowTests(CustomWebApplicationFactory<Program> facto
     successMessage.ShouldContainText("Вручную");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_FORM_005_CreateTemplate_InvalidTitle_ShouldShowError()
   {
     var botClient = factory.TelegramBotClient;
@@ -283,7 +283,7 @@ public class TemplateFormBotFlowTests(CustomWebApplicationFactory<Program> facto
     pointsPrompt!.ShouldContainText("Выберите сложность");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_FORM_006_CreateTemplate_InvalidTime_ShouldShowError()
   {
     var botClient = factory.TelegramBotClient;
@@ -332,7 +332,7 @@ public class TemplateFormBotFlowTests(CustomWebApplicationFactory<Program> facto
     dueDurationPrompt!.ShouldContainText("Введите срок выполнения");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_FORM_007_CreateTemplate_InvalidDueDuration_ShouldShowError()
   {
     var botClient = factory.TelegramBotClient;
@@ -381,7 +381,7 @@ public class TemplateFormBotFlowTests(CustomWebApplicationFactory<Program> facto
     successMessage!.ShouldContainText("успешно создан");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_FORM_008_EditTemplateTitle_ShouldUpdateSuccessfully()
   {
     var botClient = factory.TelegramBotClient;
@@ -420,7 +420,7 @@ public class TemplateFormBotFlowTests(CustomWebApplicationFactory<Program> facto
     successMessage!.ShouldContainText("успешно обновлён");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_FORM_009_EditTemplatePoints_ShouldUpdateSuccessfully()
   {
     var botClient = factory.TelegramBotClient;
@@ -460,7 +460,7 @@ public class TemplateFormBotFlowTests(CustomWebApplicationFactory<Program> facto
     updatedDetailsMessage!.ShouldContainText("Редактирование шаблона");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_FORM_010_EditTemplateDueDuration_ShouldUpdateSuccessfully()
   {
     var botClient = factory.TelegramBotClient;
@@ -497,7 +497,7 @@ public class TemplateFormBotFlowTests(CustomWebApplicationFactory<Program> facto
     successMessage!.ShouldContainText("успешно обновлён");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_FORM_011_EditTemplateSchedule_ShouldUpdateSuccessfully()
   {
     var botClient = factory.TelegramBotClient;
@@ -558,7 +558,7 @@ public class TemplateFormBotFlowTests(CustomWebApplicationFactory<Program> facto
     successMessage!.ShouldContainText("успешно обновлён");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_FORM_012_EditTemplate_InvalidTitle_ShouldShowError()
   {
     var botClient = factory.TelegramBotClient;

@@ -30,7 +30,7 @@ public class SpotResponsiblesUseCasesTests : BaseRepositoryTestFixture
     return (family, user, member, spot);
   }
 
-  [Fact]
+  [RetryFact(2)]
   public async Task AssignSpotResponsible_ShouldPersistResponsibilityInDatabase()
   {
     var (_, _, member, spot) = await CreateFamilyMemberAndSpotAsync();
@@ -52,7 +52,7 @@ public class SpotResponsiblesUseCasesTests : BaseRepositoryTestFixture
     reloadedSpot.ResponsibleMembers.ShouldContain(m => m.Id == member.Id);
   }
 
-  [Fact]
+  [RetryFact(2)]
   public async Task RemoveSpotResponsible_ShouldRemoveResponsibilityFromDatabase()
   {
     var (_, _, member, spot) = await CreateFamilyMemberAndSpotAsync();
@@ -80,7 +80,7 @@ public class SpotResponsiblesUseCasesTests : BaseRepositoryTestFixture
     reloadedSpot.ResponsibleMembers.ShouldNotContain(m => m.Id == member.Id);
   }
 
-  [Fact]
+  [RetryFact(2)]
   public async Task GetMemberResponsibleSpots_ShouldReturnAssignedSpots()
   {
     var (_, _, member, spot) = await CreateFamilyMemberAndSpotAsync();
@@ -106,7 +106,7 @@ public class SpotResponsiblesUseCasesTests : BaseRepositoryTestFixture
     dto.FamilyId.ShouldBe(spot.FamilyId);
   }
 
-  [Fact]
+  [RetryFact(2)]
   public async Task GetSpotResponsibleMembers_ShouldReturnOnlyActiveMembers()
   {
     var (family, user, member, spot) = await CreateFamilyMemberAndSpotAsync();

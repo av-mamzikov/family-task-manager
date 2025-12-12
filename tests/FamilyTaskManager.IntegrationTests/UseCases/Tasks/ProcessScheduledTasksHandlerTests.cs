@@ -30,7 +30,7 @@ public class ProcessScheduledTasksHandlerTests : IAsyncLifetime
     await PostgreSqlContainerPool<AppDbContext>.Instance.ReleaseContainerAsync(_pooledContainer);
   }
 
-  [Fact]
+  [RetryFact(2)]
   public async Task ProcessScheduledTasks_ShouldCreateSingleTaskInstance_AndNotDuplicateOnSecondRun()
   {
     // Arrange

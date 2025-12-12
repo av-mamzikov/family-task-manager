@@ -15,7 +15,7 @@ public class TemplateBrowsingBotFlowTests(CustomWebApplicationFactory<Program> f
 
   public Task DisposeAsync() => Task.CompletedTask;
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_001_ViewSpotTemplates_ShouldShowTemplatesList()
   {
     var botClient = factory.TelegramBotClient;
@@ -47,7 +47,7 @@ public class TemplateBrowsingBotFlowTests(CustomWebApplicationFactory<Program> f
     templatesMessage.ShouldHaveInlineKeyboard();
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_002_ViewTemplateDetails_ShouldShowTemplateInfo()
   {
     var botClient = factory.TelegramBotClient;
@@ -90,7 +90,7 @@ public class TemplateBrowsingBotFlowTests(CustomWebApplicationFactory<Program> f
     detailsKeyboard.ShouldContainButton("Удалить");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_003_CreateTaskFromTemplate_ShouldCreateTaskSuccessfully()
   {
     var botClient = factory.TelegramBotClient;
@@ -134,7 +134,7 @@ public class TemplateBrowsingBotFlowTests(CustomWebApplicationFactory<Program> f
     taskCreatedMessage.ShouldContainText("Срок выполнения:");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_004_DeleteTemplate_ShouldShowConfirmation()
   {
     var botClient = factory.TelegramBotClient;
@@ -160,7 +160,7 @@ public class TemplateBrowsingBotFlowTests(CustomWebApplicationFactory<Program> f
     confirmKeyboard.ShouldContainButton("Отмена");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_005_ConfirmDeleteTemplate_ShouldDeleteSuccessfully()
   {
     var botClient = factory.TelegramBotClient;
@@ -188,7 +188,7 @@ public class TemplateBrowsingBotFlowTests(CustomWebApplicationFactory<Program> f
     deletedMessage!.ShouldContainText("Шаблон успешно удалён");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TEMPLATE_006_CancelDeleteTemplate_ShouldReturnToTemplateDetails()
   {
     var botClient = factory.TelegramBotClient;

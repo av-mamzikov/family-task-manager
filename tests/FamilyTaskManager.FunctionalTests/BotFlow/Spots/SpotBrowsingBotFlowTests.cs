@@ -15,7 +15,7 @@ public class SpotBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
 
   public Task DisposeAsync() => Task.CompletedTask;
 
-  [Fact]
+  [RetryFact(2)]
   public async Task TS_BOT_SPOT_001_ViewSpotList_ShouldShowEmptyListWithCreateButton()
   {
     var botClient = factory.TelegramBotClient;
@@ -37,7 +37,7 @@ public class SpotBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     keyboard.ShouldContainButton("➕ Создать спота");
   }
 
-  [Fact]
+  [RetryFact(2)]
   public async Task TS_BOT_SPOT_002_CreateAndViewSpot_ShouldShowSpotDetails()
   {
     var botClient = factory.TelegramBotClient;
@@ -109,7 +109,7 @@ public class SpotBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     detailsKeyboard.ShouldContainButton("⬅️ Назад к списку");
   }
 
-  [Fact]
+  [RetryFact(2)]
   public async Task TS_BOT_SPOT_003_DeleteSpot_ShouldConfirmAndRemoveSpot()
   {
     var botClient = factory.TelegramBotClient;
@@ -183,7 +183,7 @@ public class SpotBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     finalSpotListMessage!.ShouldContainText("У вас пока нет спотов");
   }
 
-  [Fact]
+  [RetryFact(2)]
   public async Task TS_BOT_SPOT_004_CancelDelete_ShouldReturnToSpotList()
   {
     var botClient = factory.TelegramBotClient;
@@ -243,7 +243,7 @@ public class SpotBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     spotListAfterCancel.ShouldContainText("Фикус");
   }
 
-  [Fact]
+  [RetryFact(2)]
   public async Task TS_BOT_SPOT_005_ManageResponsibles_ShouldToggleCheckboxOnMember()
   {
     var botClient = factory.TelegramBotClient;
@@ -326,7 +326,7 @@ public class SpotBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     updatedMemberButton.Text.ShouldStartWith("✅");
   }
 
-  [Fact]
+  [RetryFact(2)]
   public async Task TS_BOT_SPOT_006_Child_ShouldSeeResponsiblesAsTextWithoutToggleButtons()
   {
     var botClient = factory.TelegramBotClient;

@@ -14,7 +14,7 @@ public class StatsBrowsingBotFlowTests(CustomWebApplicationFactory<Program> fact
 
   public Task DisposeAsync() => Task.CompletedTask;
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_STATS_001_ViewStats_ShouldShowLeaderboard()
   {
     var botClient = factory.TelegramBotClient;

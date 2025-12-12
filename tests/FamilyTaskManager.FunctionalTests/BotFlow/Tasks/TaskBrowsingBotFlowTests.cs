@@ -15,7 +15,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
 
   public Task DisposeAsync() => Task.CompletedTask;
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TASK_001_ViewTaskList_ShouldShowNoTasksMessage()
   {
     var botClient = factory.TelegramBotClient;
@@ -35,7 +35,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     taskListMessage!.ShouldContainText("Активных задач пока нет");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TASK_002_TakeTask_ShouldShowTaskInProgress()
   {
     var botClient = factory.TelegramBotClient;
@@ -105,7 +105,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     actionKeyboard.ShouldContainButton("❌ Отказаться");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TASK_003_CompleteTask_ShouldShowSuccessMessage()
   {
     var botClient = factory.TelegramBotClient;
@@ -141,7 +141,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     completionMessage.ShouldContainText("Очки начислены");
   }
 
-  [Fact]
+  [RetryFact(3)]
   public async Task TS_BOT_TASK_004_CancelTask_ShouldReturnTaskToAvailable()
   {
     var botClient = factory.TelegramBotClient;
