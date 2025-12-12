@@ -26,7 +26,9 @@ public enum SpotType
   Fridge = 32,
 
   Finances = 40,
-  Documents = 41
+  Documents = 41,
+
+  Other = 255
 }
 
 public class Spot : EntityBase<Spot, Guid>, IAggregateRoot
