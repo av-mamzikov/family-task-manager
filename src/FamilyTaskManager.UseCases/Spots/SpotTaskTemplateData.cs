@@ -437,6 +437,8 @@ public static class SpotTaskTemplateData
     )
   ];
 
+  private static readonly IReadOnlyList<TaskTemplateData> OtherTemplates = [];
+
   private static readonly IReadOnlyList<TaskTemplateData> DocumentsTemplates =
   [
     new(
@@ -473,6 +475,7 @@ public static class SpotTaskTemplateData
       SpotType.Fridge => FridgeTemplates,
       SpotType.Finances => FinancesTemplates,
       SpotType.Documents => DocumentsTemplates,
+      SpotType.Other => OtherTemplates,
       _ => throw new ArgumentOutOfRangeException(nameof(spotType), spotType, "Unknown Spot type")
     };
 

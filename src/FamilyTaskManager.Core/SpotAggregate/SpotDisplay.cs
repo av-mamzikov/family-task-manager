@@ -24,7 +24,8 @@ public static class SpotDisplay
     { SpotType.Fridge, new("🧊", "Холодильник", "fridge") },
 
     { SpotType.Finances, new("💰", "Финансы семьи", "finances") },
-    { SpotType.Documents, new("📁", "Документы семьи", "documents") }
+    { SpotType.Documents, new("📁", "Документы семьи", "documents") },
+    { SpotType.Other, new("🧩", "Другое", "other") }
   };
 
   public static string GetEmoji(SpotType spotType) =>
