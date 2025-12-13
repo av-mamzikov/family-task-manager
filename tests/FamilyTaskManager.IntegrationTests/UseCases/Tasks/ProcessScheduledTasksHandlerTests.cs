@@ -5,7 +5,7 @@ using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Infrastructure.Data;
 using FamilyTaskManager.IntegrationTests.Data;
 using FamilyTaskManager.TestInfrastructure;
-using FamilyTaskManager.UseCases.Tasks;
+using FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FamilyTaskManager.IntegrationTests.UseCases.Tasks;

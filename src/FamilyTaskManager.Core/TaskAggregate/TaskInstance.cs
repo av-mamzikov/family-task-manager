@@ -50,11 +50,12 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public Guid? CompletedByMemberId { get; private set; }
   public DateTime? CompletedAt { get; private set; }
   public DateTime CreatedAt { get; private set; }
+
   public DateTime DueAt { get; }
 
   // Navigation properties
   public Family Family { get; } = null!;
-  public Spot Spot { get; private set; } = null!;
+  public Spot Spot { get; } = null!;
   public TaskTemplate? Template { get; private set; }
   public FamilyMember? StartedByMember { get; private set; }
   public FamilyMember? CompletedByMember { get; private set; }
@@ -100,6 +101,24 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     Status = TaskStatus.Active;
     StartedByMemberId = null;
   }
+
+  /// <summary>
+  ///   Deletes the task instance
+  /// </summary>
+  /// <param name="deletedByMember">The family member who is deleting the task (null for system deletion)</param>
+  public void Delete(FamilyMember deletedByMember) =>
+    RegisterDomainEvent(new TaskDeletedEvent
+    {
+      TaskId = Id,
+      FamilyId = FamilyId,
+      Title = Title,
+      Points = Points.ToString(),
+      DeletedByUserId = deletedByMember.UserId,
+      DeletedByUserName = deletedByMember.User.Name,
+      DeletedByUserTelegramId = deletedByMember.User.TelegramId,
+      SpotName = Spot.Name,
+      SpotType = Spot.Type.ToString()
+    });
 
   /// <summary>
   ///   Triggers a reminder for this task

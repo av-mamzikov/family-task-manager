@@ -6,7 +6,7 @@ using FamilyTaskManager.Host.Modules.Worker;
 using FamilyTaskManager.Infrastructure;
 using FamilyTaskManager.ServiceDefaults;
 using FamilyTaskManager.UseCases;
-using FamilyTaskManager.UseCases.Families;
+using FamilyTaskManager.UseCases.Features.FamilyManagement.Commands;
 using Serilog;
 
 // Configure Serilog
@@ -53,10 +53,7 @@ builder.Services
 var app = builder.Build();
 
 // Configure HTTP pipeline
-if (app.Environment.IsDevelopment())
-{
-  app.MapGet("/", () => "FamilyTaskManager is running");
-}
+if (app.Environment.IsDevelopment()) app.MapGet("/", () => "FamilyTaskManager is running");
 
 // Health check endpoint
 app.MapGet("/health", () => Results.Ok(new
@@ -67,10 +64,7 @@ app.MapGet("/health", () => Results.Ok(new
 }));
 
 // Initialize infrastructure (database migrations, schema, etc.) only if not in Testing environment
-if (!app.Environment.IsEnvironment("Testing"))
-{
-  await app.InitializeInfrastructureAsync();
-}
+if (!app.Environment.IsEnvironment("Testing")) await app.InitializeInfrastructureAsync();
 
 Log.Information("All modules registered successfully");
 Log.Information("Bot Module: Telegram Bot with Long Polling");

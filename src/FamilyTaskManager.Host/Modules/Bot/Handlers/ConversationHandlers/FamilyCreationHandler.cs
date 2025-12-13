@@ -2,7 +2,7 @@ using FamilyTaskManager.Core.Interfaces;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.UseCases.Families;
+using FamilyTaskManager.UseCases.Features.FamilyManagement.Commands;
 using GeoTimeZone;
 using Telegram.Bot;
 using Telegram.Bot.Types;

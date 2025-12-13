@@ -1,4 +1,4 @@
-using FamilyTaskManager.UseCases.Spots;
+using FamilyTaskManager.UseCases.Features.SpotManagement.Commands;
 using Quartz;
 
 namespace FamilyTaskManager.Host.Modules.Worker.Jobs;
@@ -24,13 +24,9 @@ public class SpotMoodCalculatorJob(
       var result = await mediator.Send(new CalculateAllSpotsMoodCommand(), context.CancellationToken);
 
       if (result.IsSuccess)
-      {
         logger.LogInformation("SpotMoodCalculatorJob completed successfully");
-      }
       else
-      {
         logger.LogWarning("SpotMoodCalculatorJob completed with errors: {Errors}", result.Errors);
-      }
     }
     catch (Exception ex)
     {

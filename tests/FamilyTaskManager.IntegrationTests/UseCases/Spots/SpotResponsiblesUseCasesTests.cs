@@ -2,7 +2,8 @@ using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Core.UserAggregate;
 using FamilyTaskManager.IntegrationTests.Data;
-using FamilyTaskManager.UseCases.Spots;
+using FamilyTaskManager.UseCases.Features.SpotManagement.Commands;
+using FamilyTaskManager.UseCases.Features.SpotManagement.Queries;
 
 namespace FamilyTaskManager.IntegrationTests.UseCases.Spots;
 

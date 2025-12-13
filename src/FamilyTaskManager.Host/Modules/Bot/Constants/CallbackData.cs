@@ -127,37 +127,7 @@ public static class CallbackData
     public static string Complete(EncodedGuid taskId) => $"{Conversation}_{CallbackActions.Complete}_{taskId}";
     public static string Refuse(EncodedGuid taskId) => $"{Conversation}_{CallbackActions.Cancel}_{taskId}";
     public static string Take(EncodedGuid taskId) => $"{Conversation}_{CallbackActions.Take}_{taskId}";
-  }
-
-
-  public static class Schedule
-  {
-    public const string Entity = "schedule";
-
-    public const string TypeDaily = $"{Entity}_{CallbackActions.Type}_daily";
-    public const string TypeWorkdays = $"{Entity}_{CallbackActions.Type}_workdays";
-    public const string TypeWeekends = $"{Entity}_{CallbackActions.Type}_weekends";
-    public const string TypeWeekly = $"{Entity}_{CallbackActions.Type}_weekly";
-    public const string TypeMonthly = $"{Entity}_{CallbackActions.Type}_monthly";
-    public const string TypeManual = $"{Entity}_{CallbackActions.Type}_manual";
-
-    public const string WeekdayMonday = $"{Entity}_{CallbackActions.Weekday}_monday";
-    public const string WeekdayTuesday = $"{Entity}_{CallbackActions.Weekday}_tuesday";
-    public const string WeekdayWednesday = $"{Entity}_{CallbackActions.Weekday}_wednesday";
-    public const string WeekdayThursday = $"{Entity}_{CallbackActions.Weekday}_thursday";
-    public const string WeekdayFriday = $"{Entity}_{CallbackActions.Weekday}_friday";
-    public const string WeekdaySaturday = $"{Entity}_{CallbackActions.Weekday}_saturday";
-    public const string WeekdaySunday = $"{Entity}_{CallbackActions.Weekday}_sunday";
-  }
-
-  public static class Points
-  {
-    public const string Entity = "points";
-
-    public const string One = $"{Entity}_1";
-    public const string Two = $"{Entity}_2";
-    public const string Three = $"{Entity}_3";
-    public const string Four = $"{Entity}_4";
+    public static string Delete(EncodedGuid taskId) => $"{Conversation}_{CallbackActions.Delete}_{taskId}";
   }
 
   public static class Stats

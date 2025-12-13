@@ -142,7 +142,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
   }
 
   [RetryFact(3)]
-  public async Task TS_BOT_TASK_004_CancelTask_ShouldReturnTaskToAvailable()
+  public async Task TS_BOT_TASK_004_RefuseTask_ShouldReturnTaskToAvailable()
   {
     var botClient = factory.TelegramBotClient;
     botClient.Clear();
@@ -166,15 +166,50 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
       adminChatId);
 
     // Act: Refuse the task
-    var cancelButton = taskTakenMessage!.ShouldHaveInlineKeyboard().GetButton("❌ Отказаться");
-    var cancelMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, cancelButton.CallbackData!),
+    var refuseButton = taskTakenMessage!.ShouldHaveInlineKeyboard().GetButton("❌ Отказаться");
+    var refuseMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, refuseButton.CallbackData!),
       adminChatId);
 
     // Assert
-    cancelMessage.ShouldNotBeNull("Бот должен подтвердить отказ от задачи");
-    cancelMessage!.ShouldContainText("Вы отказались от задачи");
-    cancelMessage.ShouldContainText("Задача снова доступна");
+    refuseMessage.ShouldNotBeNull("Бот должен подтвердить отказ от задачи");
+    refuseMessage!.ShouldContainText("Вы отказались от задачи");
+    refuseMessage.ShouldContainText("Задача снова доступна");
+  }
+
+  [RetryFact(3)]
+  public async Task TS_BOT_TASK_004_DeleteTask_ShouldReturnTaskToAvailable()
+  {
+    var botClient = factory.TelegramBotClient;
+    botClient.Clear();
+
+    // Arrange: Create family, spot, and task
+    var (familyName, adminTelegramId, adminChatId) =
+      await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья Тестовых");
+
+    await CreateSpotAsync(botClient, adminChatId, adminTelegramId, "🪴 Растение", "Фикус");
+    await CreateTaskFromSpotTemplateAsync(botClient, adminChatId, adminTelegramId, "🪴 Фикус");
+
+    // Take the task
+    botClient.Clear();
+    var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Наши задачи"),
+      adminChatId);
+    var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().InlineKeyboard.First().First();
+
+    var taskTakenMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, takeTaskButton.CallbackData!),
+      adminChatId);
+
+    // Act: Refuse the task
+    var deleteButton = taskTakenMessage!.ShouldHaveInlineKeyboard().GetButton("🗑️ Удалить");
+    var deleteMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, deleteButton.CallbackData!),
+      adminChatId);
+
+    // Assert
+    deleteMessage.ShouldNotBeNull("Бот должен подтвердить отказ от задачи");
+    deleteMessage!.ShouldContainText("Вы удалили задачу");
   }
 
   private async Task CreateSpotAsync(dynamic botClient, long chatId, long telegramId,
