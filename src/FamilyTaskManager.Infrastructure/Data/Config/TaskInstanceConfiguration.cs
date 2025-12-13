@@ -70,6 +70,11 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
       .HasForeignKey(t => t.SpotId)
       .OnDelete(DeleteBehavior.Cascade);
 
+    builder
+      .Navigation(p => p.Spot)
+      .UsePropertyAccessMode(PropertyAccessMode.Field)
+      .AutoInclude();
+
     // Foreign key relationship to TaskTemplate
     builder.HasOne(t => t.Template)
       .WithMany()

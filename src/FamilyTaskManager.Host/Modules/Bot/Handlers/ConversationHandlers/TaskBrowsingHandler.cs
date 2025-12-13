@@ -39,6 +39,8 @@ public class TaskBrowsingHandler(
       await HandleCompleteTaskAsync(botClient, chatId, message, completeTaskId.Value, session, cancellationToken);
     if (callbackParts.IsCallbackOf(CallbackData.TaskBrowsing.Refuse, out EncodedGuid cancelTaskId))
       await HandleRefuseTaskAsync(botClient, chatId, message, cancelTaskId.Value, session, cancellationToken);
+    if (callbackParts.IsCallbackOf(CallbackData.TaskBrowsing.Delete, out EncodedGuid deleteTaskId))
+      await HandleDeleteTaskAsync(botClient, chatId, message, deleteTaskId.Value, session, cancellationToken);
   }
 
   private async Task HandleTaskListAsync(ITelegramBotClient botClient, long chatId, Message? message,
@@ -163,7 +165,8 @@ public class TaskBrowsingHandler(
       new InlineKeyboardMarkup([
         [
           InlineKeyboardButton.WithCallbackData("✅ Выполнить", CallbackData.TaskBrowsing.Complete(task!.Id)),
-          InlineKeyboardButton.WithCallbackData("❌ Отказаться", CallbackData.TaskBrowsing.Refuse(task.Id))
+          InlineKeyboardButton.WithCallbackData("❌ Отказаться", CallbackData.TaskBrowsing.Refuse(task.Id)),
+          InlineKeyboardButton.WithCallbackData("🗑️ Удалить", CallbackData.TaskBrowsing.Delete(task.Id))
         ]
       ]),
       cancellationToken);
@@ -205,7 +208,7 @@ public class TaskBrowsingHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var cancelTaskCommand = new CancelTaskCommand(taskId, session.UserId);
+    var cancelTaskCommand = new RefuseTaskCommand(taskId, session.UserId);
     var result = await mediator.Send(cancelTaskCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -222,6 +225,34 @@ public class TaskBrowsingHandler(
       chatId,
       message,
       "✅ Вы отказались от задачи.\n\nЗадача снова доступна для всех участников семьи.",
+      cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleDeleteTaskAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    Message? message,
+    Guid taskId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    var cancelTaskCommand = new DeleteTaskCommand(taskId, session.UserId);
+    var result = await mediator.Send(cancelTaskCommand, cancellationToken);
+
+    if (!result.IsSuccess)
+    {
+      await SendErrorAsync(
+        botClient,
+        chatId,
+        $"❌ Ошибка: {result.Errors.FirstOrDefault()}",
+        cancellationToken);
+      return;
+    }
+
+    await botClient.SendOrEditMessageAsync(
+      chatId,
+      message,
+      "✅ Вы удалили задачу.",
       cancellationToken: cancellationToken);
   }
 }

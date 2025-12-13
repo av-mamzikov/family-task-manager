@@ -106,16 +106,16 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   ///   Deletes the task instance
   /// </summary>
   /// <param name="deletedByMember">The family member who is deleting the task (null for system deletion)</param>
-  public void Delete(FamilyMember? deletedByMember = null) =>
+  public void Delete(FamilyMember deletedByMember) =>
     RegisterDomainEvent(new TaskDeletedEvent
     {
       TaskId = Id,
       FamilyId = FamilyId,
       Title = Title,
       Points = Points.ToString(),
-      DeletedByUserId = deletedByMember?.UserId,
-      DeletedByUserName = deletedByMember?.User.Name,
-      DeletedByUserTelegramId = deletedByMember?.User.TelegramId,
+      DeletedByUserId = deletedByMember.UserId,
+      DeletedByUserName = deletedByMember.User.Name,
+      DeletedByUserTelegramId = deletedByMember.User.TelegramId,
       SpotName = Spot.Name,
       SpotType = Spot.Type.ToString()
     });

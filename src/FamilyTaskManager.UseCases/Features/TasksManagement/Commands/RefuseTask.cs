@@ -2,13 +2,13 @@ using FamilyTaskManager.Core.FamilyAggregate.Specifications;
 
 namespace FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
 
-public record CancelTaskCommand(Guid TaskId, Guid UserId) : ICommand<Result>;
+public record RefuseTaskCommand(Guid TaskId, Guid UserId) : ICommand<Result>;
 
-public class CancelTaskHandler(
+public class RefuseTaskHandler(
   IAppRepository<TaskInstance> taskAppRepository,
-  IAppRepository<Family> familyAppRepository) : ICommandHandler<CancelTaskCommand, Result>
+  IAppRepository<Family> familyAppRepository) : ICommandHandler<RefuseTaskCommand, Result>
 {
-  public async ValueTask<Result> Handle(CancelTaskCommand command, CancellationToken cancellationToken)
+  public async ValueTask<Result> Handle(RefuseTaskCommand command, CancellationToken cancellationToken)
   {
     var task = await taskAppRepository.GetByIdAsync(command.TaskId, cancellationToken);
     if (task == null) return Result.NotFound("Task not found");
