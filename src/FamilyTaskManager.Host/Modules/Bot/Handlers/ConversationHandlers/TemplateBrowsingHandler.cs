@@ -1,8 +1,9 @@
 using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.UseCases.Tasks;
-using FamilyTaskManager.UseCases.TaskTemplates;
+using FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
+using FamilyTaskManager.UseCases.Features.TaskTemplatesManagement.Commands;
+using FamilyTaskManager.UseCases.Features.TaskTemplatesManagement.Queries;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;

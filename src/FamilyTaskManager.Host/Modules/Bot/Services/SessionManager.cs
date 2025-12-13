@@ -1,6 +1,6 @@
 using System.Text.Json;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.UseCases.Users;
+using FamilyTaskManager.UseCases.Features.UserManagement.Commads;
 using Quartz.Util;
 using Telegram.Bot.Types;
 
@@ -25,7 +25,7 @@ public class SessionManager(IMediator mediator, ILogger<SessionManager> logger) 
     var result = await mediator.Send(new GetOrCreateTelegramSessionCommand(telegramId, username),
       cancellationToken);
     if (!result.IsSuccess)
-      throw new Exception($"Failed to get session: {string.Join(",", result.Errors)}");
+      throw new($"Failed to get session: {string.Join(",", result.Errors)}");
     var dbSession = result.Value;
     var session = new UserSession
     {

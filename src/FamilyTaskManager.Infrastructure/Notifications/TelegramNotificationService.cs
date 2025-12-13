@@ -1,6 +1,6 @@
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.FamilyAggregate.Specifications;
 using FamilyTaskManager.Core.UserAggregate;
-using FamilyTaskManager.UseCases.Families.Specifications;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 

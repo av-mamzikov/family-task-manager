@@ -1,6 +1,6 @@
 using Ardalis.Result;
 using FamilyTaskManager.Host.Modules.Worker.Jobs;
-using FamilyTaskManager.UseCases.Tasks;
+using FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
 using Quartz;
 
 namespace FamilyTaskManager.UnitTests.Host.Worker.Jobs;
@@ -16,7 +16,7 @@ public class TaskInstanceCreatorJobTests
   {
     _mediator = Substitute.For<IMediator>();
     _logger = Substitute.For<ILogger<TaskInstanceCreatorJob>>();
-    _job = new TaskInstanceCreatorJob(_mediator, _logger);
+    _job = new(_mediator, _logger);
     _context = Substitute.For<IJobExecutionContext>();
   }
 

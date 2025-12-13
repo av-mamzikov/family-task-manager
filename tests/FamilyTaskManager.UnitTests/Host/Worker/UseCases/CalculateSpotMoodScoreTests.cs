@@ -1,7 +1,7 @@
 using Ardalis.Result;
 using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.SpotAggregate;
-using FamilyTaskManager.UseCases.Spots;
+using FamilyTaskManager.UseCases.Features.SpotManagement.Commands;
 
 namespace FamilyTaskManager.UnitTests.Host.Worker.UseCases;
 

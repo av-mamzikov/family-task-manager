@@ -1,6 +1,6 @@
 using Ardalis.Result;
 using FamilyTaskManager.Host.Modules.Worker.Jobs;
-using FamilyTaskManager.UseCases.Spots;
+using FamilyTaskManager.UseCases.Features.SpotManagement.Commands;
 using Quartz;
 
 namespace FamilyTaskManager.UnitTests.Host.Worker.Jobs;

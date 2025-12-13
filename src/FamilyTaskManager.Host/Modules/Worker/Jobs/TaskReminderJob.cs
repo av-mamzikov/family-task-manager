@@ -1,4 +1,4 @@
-using FamilyTaskManager.UseCases.Tasks;
+using FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
 using Quartz;
 
 namespace FamilyTaskManager.Host.Modules.Worker.Jobs;
@@ -25,13 +25,9 @@ public class TaskReminderJob(
       var result = await _mediator.Send(new SendTaskRemindersCommand(), context.CancellationToken);
 
       if (result.IsSuccess)
-      {
         logger.LogInformation("TaskReminderJob completed successfully");
-      }
       else
-      {
         logger.LogWarning("TaskReminderJob completed with errors: {Errors}", result.Errors);
-      }
     }
     catch (Exception ex)
     {

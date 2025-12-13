@@ -1,5 +1,5 @@
 using FamilyTaskManager.Core.TaskAggregate.Events;
-using FamilyTaskManager.UseCases.Tasks;
+using FamilyTaskManager.UseCases.Features.TasksManagement.Queries;
 using Mediator;
 
 namespace FamilyTaskManager.Infrastructure.Notifications;
