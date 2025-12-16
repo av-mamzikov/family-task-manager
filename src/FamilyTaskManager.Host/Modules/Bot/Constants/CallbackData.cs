@@ -6,7 +6,7 @@ public static class CallbackData
 {
   public static class SpotBrowsing
   {
-    public const ConversationState Conversation = ConversationState.SpotBrowsing;
+    public const ConversationState Conversation = ConversationState.Spots;
 
     public static string List() => $"{Conversation}_{CallbackActions.List}";
     public static string View(EncodedGuid spotId) => $"{Conversation}_{CallbackActions.View}_{spotId}";
@@ -49,7 +49,7 @@ public static class CallbackData
 
   public static class TemplateBrowsing
   {
-    public const ConversationState Conversation = ConversationState.TemplateBrowsing;
+    public const ConversationState Conversation = ConversationState.Templates;
 
     public static string Create(EncodedGuid spotId) =>
       $"{Conversation}_{CallbackActions.Create}_{spotId}";
@@ -67,6 +67,12 @@ public static class CallbackData
 
     public static string ConfirmDelete(EncodedGuid templateId) =>
       $"{Conversation}_{CallbackActions.ConfirmDelete}_{templateId}";
+
+    public static string ResponsibleList(EncodedGuid templateId) =>
+      $"{Conversation}_{CallbackActions.ResponsibleList}_{templateId}";
+
+    public static string ResponsibleToggle(EncodedGuid templateId, EncodedGuid memberId) =>
+      $"{Conversation}_{CallbackActions.ResponsibleToggle}_{templateId}_{memberId}";
   }
 
   public static class Family
@@ -100,7 +106,7 @@ public static class CallbackData
 
   public static class FamilyMembers
   {
-    public const ConversationState Conversation = ConversationState.FamilyMembers;
+    public const ConversationState Conversation = ConversationState.Families;
 
     public static string List() => $"{Conversation}_{CallbackActions.List}";
     public static string Member(EncodedGuid memberCode) => $"{Conversation}_{CallbackActions.Member}_{memberCode}";
@@ -120,7 +126,7 @@ public static class CallbackData
 
   public static class TaskBrowsing
   {
-    public const ConversationState Conversation = ConversationState.TaskBrowsing;
+    public const ConversationState Conversation = ConversationState.Tasks;
 
     public static string List() => $"{Conversation}_{CallbackActions.List}";
 
@@ -132,7 +138,7 @@ public static class CallbackData
 
   public static class Stats
   {
-    public const ConversationState Conversation = ConversationState.StatsBrowsing;
+    public const ConversationState Conversation = ConversationState.Stats;
 
     public static string List() => $"{Conversation}_{CallbackActions.List}";
   }

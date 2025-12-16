@@ -1,6 +1,8 @@
+using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
+using FamilyTaskManager.UseCases.Features.FamilyManagement.Queries;
 using FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
 using FamilyTaskManager.UseCases.Features.TaskTemplatesManagement.Commands;
 using FamilyTaskManager.UseCases.Features.TaskTemplatesManagement.Queries;
@@ -43,8 +45,16 @@ public class TemplateBrowsingHandler(
     else if (callbackParts.IsCallbackOf(CallbackData.TemplateBrowsing.CreateTask, out EncodedGuid createTaskTemplateId))
       await HandleCreateTaskNowAsync(botClient, chatId, message, createTaskTemplateId.Value, session,
         cancellationToken);
+    // Новые обработчики для ответственности
+    else if (callbackParts.IsCallbackOf(CallbackData.TemplateBrowsing.ResponsibleList,
+               out EncodedGuid responsibleListTemplateId))
+      await HandleResponsibleListAsync(botClient, chatId, message, responsibleListTemplateId.Value, session,
+        cancellationToken);
+    else if (callbackParts.IsCallbackOf(CallbackData.TemplateBrowsing.ResponsibleToggle,
+               out var templateId, out EncodedGuid memberId))
+      await HandleResponsibleToggleAsync(botClient, chatId, message, templateId.Value, memberId.Value, session,
+        cancellationToken);
   }
-
 
   public async Task HandleBackAsync(
     ITelegramBotClient botClient,
@@ -164,10 +174,13 @@ public class TemplateBrowsingHandler(
           CallbackData.TemplateBrowsing.CreateTask(templateId))
       ],
       [InlineKeyboardButton.WithCallbackData("✏️ Редактировать", CallbackData.TemplateForm.Edit(templateId))],
+      [
+        InlineKeyboardButton.WithCallbackData("👥 Ответственные",
+          CallbackData.TemplateBrowsing.ResponsibleList(templateId))
+      ],
       [InlineKeyboardButton.WithCallbackData("🗑️ Удалить", CallbackData.TemplateBrowsing.Delete(templateId))],
       [InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.SpotBrowsing.View(template.SpotId))]
     ]);
-
     await botClient.SendOrEditMessageAsync(chatId, message, messageText,
       ParseMode.Markdown, keyboard, cancellationToken);
   }
@@ -280,5 +293,153 @@ public class TemplateBrowsingHandler(
         [InlineKeyboardButton.WithCallbackData("⬅️ Назад к шаблону", CallbackData.TemplateBrowsing.View(templateId))]
       ]),
       cancellationToken);
+  }
+
+  private async Task HandleResponsibleListAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    Message? message,
+    Guid templateId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    if (session.CurrentFamilyId == null)
+    {
+      await SendErrorAsync(botClient, chatId, BotMessages.Errors.NoFamily, cancellationToken);
+      return;
+    }
+
+    var familyMembersResult = await mediator.Send(new GetFamilyMembersQuery(session.CurrentFamilyId.Value),
+      cancellationToken);
+    if (!familyMembersResult.IsSuccess || familyMembersResult.Value == null)
+    {
+      await SendErrorAsync(botClient, chatId, "❌ Ошибка загрузки участников семьи",
+        cancellationToken);
+      return;
+    }
+
+    var responsibleResult =
+      await mediator.Send(new GetTaskTemplateResponsibleMembersQuery(templateId), cancellationToken);
+    if (!responsibleResult.IsSuccess || responsibleResult.Value == null)
+    {
+      await SendErrorAsync(botClient, chatId, "❌ Ошибка загрузки ответственных",
+        cancellationToken);
+      return;
+    }
+
+    var members = familyMembersResult.Value;
+    var responsibleIds = responsibleResult.Value.Select(m => m.Id).ToHashSet();
+
+    // Определяем текущего участника семьи по UserId
+    var currentMember = members.FirstOrDefault(m => m.UserId == session.UserId);
+    var isChild = currentMember?.Role == FamilyRole.Child;
+
+    if (isChild)
+    {
+      // Для детей показываем только текстовый список без кнопок-тогглов
+      var lines = new List<string>();
+      foreach (var member in members)
+      {
+        var isResponsible = responsibleIds.Contains(member.Id);
+        var prefix = isResponsible ? "✅ " : string.Empty;
+        lines.Add($"{prefix}{RoleDisplay.GetRoleEmoji(member.Role)} {member.UserName}");
+      }
+
+      var text = "👥 *Ответственные за шаблон задачи*\n\n" +
+                 "Только взрослые участники семьи могут изменять ответственных.\n\n" +
+                 string.Join("\n", lines);
+
+      var keyboardChild = new InlineKeyboardMarkup([
+        InlineKeyboardButton.WithCallbackData("⬅️ Назад к шаблону",
+          CallbackData.TemplateBrowsing.View(templateId))
+      ]);
+
+      await botClient.SendOrEditMessageAsync(
+        chatId,
+        message,
+        text,
+        ParseMode.Markdown,
+        keyboardChild,
+        cancellationToken);
+      return;
+    }
+
+    // Для взрослых/админов показываем список участников как кнопки с возможностью toggle
+    var buttons = new List<InlineKeyboardButton[]>();
+
+    foreach (var member in members)
+    {
+      var isResponsible = responsibleIds.Contains(member.Id);
+      var prefix = isResponsible ? "✅ " : string.Empty;
+      var text = $"{prefix}{RoleDisplay.GetRoleEmoji(member.Role)} {member.UserName}";
+      buttons.Add([
+        InlineKeyboardButton.WithCallbackData(text,
+          CallbackData.TemplateBrowsing.ResponsibleToggle(templateId, member.Id))
+      ]);
+    }
+
+    buttons.Add([
+      InlineKeyboardButton.WithCallbackData("⬅️ Назад к шаблону",
+        CallbackData.TemplateBrowsing.View(templateId))
+    ]);
+
+    var keyboard = new InlineKeyboardMarkup(buttons);
+
+    await botClient.SendOrEditMessageAsync(
+      chatId,
+      message,
+      "👥 *Ответственные за шаблон задачи*\n\n" +
+      "Нажмите на участника, чтобы назначить или снять ответственность.",
+      ParseMode.Markdown,
+      keyboard,
+      cancellationToken);
+  }
+
+  private async Task HandleResponsibleToggleAsync(
+    ITelegramBotClient botClient,
+    long chatId,
+    Message? message,
+    Guid templateId,
+    Guid memberId,
+    UserSession session,
+    CancellationToken cancellationToken)
+  {
+    // Получаем текущих ответственных, чтобы понять, нужно назначить или снять
+    var responsibleResult =
+      await mediator.Send(new GetTaskTemplateResponsibleMembersQuery(templateId), cancellationToken);
+    if (!responsibleResult.IsSuccess || responsibleResult.Value == null)
+    {
+      await SendErrorAsync(botClient, chatId, "❌ Ошибка загрузки ответственных",
+        cancellationToken);
+      return;
+    }
+
+    var isResponsible = responsibleResult.Value.Any(m => m.Id == memberId);
+
+    if (isResponsible)
+    {
+      var command = new RemoveTaskTemplateResponsibleCommand(templateId, memberId);
+      var removeResult = await mediator.Send(command, cancellationToken);
+      if (!removeResult.IsSuccess)
+      {
+        await SendErrorAsync(botClient, chatId,
+          "❌ Не удалось снять ответственность с участника", cancellationToken);
+        return;
+      }
+    }
+    else
+    {
+      var command = new AssignTaskTemplateResponsibleCommand(templateId, memberId);
+      var assignResult = await mediator.Send(command, cancellationToken);
+      if (!assignResult.IsSuccess)
+      {
+        await SendErrorAsync(botClient, chatId,
+          "❌ Не удалось назначить участника ответственным", cancellationToken);
+        return;
+      }
+    }
+
+    // После изменения состояния перерисовываем список
+    await HandleResponsibleListAsync(botClient, chatId, message, templateId, session, cancellationToken);
   }
 }

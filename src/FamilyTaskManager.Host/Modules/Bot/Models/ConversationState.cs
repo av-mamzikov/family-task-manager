@@ -9,9 +9,9 @@ public enum ConversationState
 
   // Browsing conversations
   Family,
-  FamilyMembers,
-  SpotBrowsing,
-  TaskBrowsing,
-  TemplateBrowsing,
-  StatsBrowsing
+  Families,
+  Spots,
+  Tasks,
+  Templates,
+  Stats
 }
