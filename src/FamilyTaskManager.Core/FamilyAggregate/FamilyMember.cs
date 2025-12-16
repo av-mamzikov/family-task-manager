@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.SpotAggregate;
+using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Core.UserAggregate;
 
 namespace FamilyTaskManager.Core.FamilyAggregate;
@@ -6,6 +7,7 @@ namespace FamilyTaskManager.Core.FamilyAggregate;
 public class FamilyMember : EntityBase<FamilyMember, Guid>
 {
   private readonly List<Spot> _responsibleSpots = [];
+  private readonly List<TaskTemplate> _responsibleTaskTemplates = [];
 
   private FamilyMember()
   {
@@ -35,6 +37,7 @@ public class FamilyMember : EntityBase<FamilyMember, Guid>
   public bool IsActive { get; private set; }
 
   public IReadOnlyCollection<Spot> ResponsibleSpots => _responsibleSpots.AsReadOnly();
+  public IReadOnlyCollection<TaskTemplate> ResponsibleTaskTemplates => _responsibleTaskTemplates.AsReadOnly();
 
   public void AddPoints(int value)
   {
@@ -48,3 +51,4 @@ public class FamilyMember : EntityBase<FamilyMember, Guid>
 
   public void UpdateRole(FamilyRole role) => Role = role;
 }
+
