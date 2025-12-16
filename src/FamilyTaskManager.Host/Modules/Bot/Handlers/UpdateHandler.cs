@@ -147,12 +147,12 @@ public class UpdateHandler(
       ConversationState.FamilyCreation => serviceProvider.GetRequiredService<FamilyCreationHandler>(),
       ConversationState.SpotCreation => serviceProvider.GetRequiredService<SpotCreationHandler>(),
       ConversationState.TemplateForm => serviceProvider.GetRequiredService<TemplateFormHandler>(),
-      ConversationState.TaskBrowsing => serviceProvider.GetRequiredService<TaskBrowsingHandler>(),
-      ConversationState.TemplateBrowsing => serviceProvider.GetRequiredService<TemplateBrowsingHandler>(),
-      ConversationState.SpotBrowsing => serviceProvider.GetRequiredService<SpotBrowsingHandler>(),
+      ConversationState.Tasks => serviceProvider.GetRequiredService<TaskBrowsingHandler>(),
+      ConversationState.Templates => serviceProvider.GetRequiredService<TemplateBrowsingHandler>(),
+      ConversationState.Spots => serviceProvider.GetRequiredService<SpotBrowsingHandler>(),
       ConversationState.Family => serviceProvider.GetRequiredService<FamilyBrowsingHandler>(),
-      ConversationState.FamilyMembers => serviceProvider.GetRequiredService<FamilyMembersBrousingHandler>(),
-      ConversationState.StatsBrowsing => serviceProvider.GetRequiredService<StatsBrowsingHandler>(),
+      ConversationState.Families => serviceProvider.GetRequiredService<FamilyMembersBrousingHandler>(),
+      ConversationState.Stats => serviceProvider.GetRequiredService<StatsBrowsingHandler>(),
       _ => null
     };
 

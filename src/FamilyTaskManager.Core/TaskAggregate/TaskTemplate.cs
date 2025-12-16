@@ -5,6 +5,8 @@ namespace FamilyTaskManager.Core.TaskAggregate;
 
 public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
 {
+  private readonly List<FamilyMember> _responsibleMembers = [];
+
   private TaskTemplate()
   {
   }
@@ -42,6 +44,8 @@ public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
   public Guid CreatedBy { get; private set; }
   public DateTime CreatedAt { get; private set; }
 
+  public IReadOnlyCollection<FamilyMember> ResponsibleMembers => _responsibleMembers.AsReadOnly();
+
   public void Update(TaskTitle title, TaskPoints points, Schedule schedule, DueDuration dueDuration)
   {
     Guard.Against.Null(title);
@@ -54,4 +58,37 @@ public class TaskTemplate : EntityBase<TaskTemplate, Guid>, IAggregateRoot
     Schedule = schedule;
     DueDuration = dueDuration;
   }
+
+  public void AssignResponsible(FamilyMember member)
+  {
+    Guard.Against.Null(member);
+
+    if (member.FamilyId != FamilyId)
+      throw new ArgumentException("Family member must belong to the same family as the TaskTemplate.", nameof(member));
+
+    if (!member.IsActive)
+      throw new InvalidOperationException("Inactive family member cannot be assigned as responsible.");
+
+    if (_responsibleMembers.Any(m => m.Id == member.Id))
+      return;
+
+    _responsibleMembers.Add(member);
+  }
+
+  public void RemoveResponsible(FamilyMember member)
+  {
+    Guard.Against.Null(member);
+
+    var existing = _responsibleMembers.FirstOrDefault(m => m.Id == member.Id);
+    if (existing is null)
+      return;
+
+    _responsibleMembers.Remove(existing);
+  }
+
+  public void ClearAllResponsible()
+  {
+    _responsibleMembers.Clear();
+  }
 }
+

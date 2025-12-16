@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 
 namespace FamilyTaskManager.Infrastructure.Data.Config;
@@ -78,5 +79,28 @@ public class TaskTemplateConfiguration : IEntityTypeConfiguration<TaskTemplate>
       .WithMany()
       .HasForeignKey(t => t.SpotId)
       .OnDelete(DeleteBehavior.Cascade);
+
+    // Many-to-many: TaskTemplate <-> responsible FamilyMembers
+    builder
+      .HasMany(t => t.ResponsibleMembers)
+      .WithMany(m => m.ResponsibleTaskTemplates)
+      .UsingEntity<Dictionary<string, object>>(
+        "TaskTemplateResponsibleMembers",
+        j => j
+          .HasOne<FamilyMember>()
+          .WithMany()
+          .HasForeignKey("FamilyMemberId")
+          .OnDelete(DeleteBehavior.Cascade),
+        j => j
+          .HasOne<TaskTemplate>()
+          .WithMany()
+          .HasForeignKey("TaskTemplateId")
+          .OnDelete(DeleteBehavior.Cascade));
+
+    builder
+      .Navigation(t => t.ResponsibleMembers)
+      .UsePropertyAccessMode(PropertyAccessMode.Field)
+      .AutoInclude();
   }
 }
+
