@@ -15,8 +15,11 @@ public record TaskDto(
   Guid SpotId,
   string SpotName,
   Guid? StartedByUserId,
+  Guid? AssignedToUserId,
   string FamilyTimezone,
   string? StartedByUserName = null,
+  string? AssignedToUserName = null,
+  long? AssignedToUserTelegramId = null,
   SpotType SpotType = SpotType.OtherPet)
 {
   /// <summary>
@@ -49,9 +52,12 @@ public record TaskDto(
       t.DueAt,
       t.SpotId,
       t.Spot.Name,
-      t.StartedByMember!.UserId,
+      t.StartedByMember != null ? t.StartedByMember.UserId : null,
+      t.AssignedToMember != null ? t.AssignedToMember.UserId : null,
       t.Family.Timezone,
       t.StartedByMember != null ? t.StartedByMember.User!.Name : null,
+      t.AssignedToMember != null ? t.AssignedToMember.User!.Name : null,
+      t.AssignedToMember != null ? t.AssignedToMember.User!.TelegramId : null,
       t.Spot.Type);
   }
 }

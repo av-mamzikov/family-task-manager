@@ -5,10 +5,13 @@ namespace FamilyTaskManager.Core.TaskAggregate.Events;
 /// </summary>
 public sealed class TaskReminderDueEvent : DomainEventBase
 {
-  public Guid TaskId { get; init; }
-  public Guid FamilyId { get; init; }
-  public Guid? TemplateId { get; init; }
-  public string Title { get; init; } = string.Empty;
-  public DateTime DueAt { get; init; }
-  public string Timezone { get; init; } = string.Empty;
+  public required Guid TaskId { get; init; }
+  public required Guid FamilyId { get; init; }
+  public required Guid? TemplateId { get; init; }
+  public required string SpotName { get; init; } = string.Empty;
+  public required string Title { get; init; } = string.Empty;
+  public required DateTime DueAt { get; init; }
+  public required string Timezone { get; init; } = string.Empty;
+  public required string? AssignedUserName { get; init; }
+  public required long? AssignedUserTelegramId { get; init; }
 }

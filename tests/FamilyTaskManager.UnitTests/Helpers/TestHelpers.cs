@@ -6,13 +6,13 @@ namespace FamilyTaskManager.UnitTests.Helpers;
 
 public static class TestHelpers
 {
-  public static Spot CreateSpotWithFamily(string SpotName = "Test Spot", string timezone = "UTC")
+  public static Spot CreateSpotWithFamily(string spotName = "Test Spot", string timezone = "UTC")
   {
     var family = new Family("Test Family", timezone);
-    var Spot = new Spot(family.Id, SpotType.Cat, SpotName);
+    var spot = new Spot(family.Id, SpotType.Cat, spotName);
     // Manually set navigation property for tests
-    typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
-    return Spot;
+    typeof(Spot).GetProperty("Family")!.SetValue(spot, family);
+    return spot;
   }
 
   public static FamilyMember CreateMemberWithUser(string userName = "Test User")

@@ -10,4 +10,6 @@ public sealed class TaskCreatedEvent : DomainEventBase
   public required string Points { get; init; } = string.Empty;
   public required DateTime DueAt { get; init; }
   public required string Timezone { get; init; } = string.Empty;
+  public required string? AssignedUserName { get; init; }
+  public required long? AssignedUserTelegramId { get; init; }
 }

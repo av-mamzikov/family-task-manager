@@ -1,6 +1,4 @@
 using FamilyTaskManager.Core.FamilyAggregate;
-using FamilyTaskManager.Core.FamilyAggregate.Specifications;
-using FamilyTaskManager.Core.UserAggregate;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 
@@ -12,7 +10,6 @@ namespace FamilyTaskManager.Infrastructure.Notifications;
 public class TelegramNotificationService(
   ITelegramBotClient botClient,
   IAppRepository<Family> familyAppRepository,
-  IAppRepository<User> userAppRepository,
   ILogger<TelegramNotificationService> logger) : ITelegramNotificationService
 {
   /// <summary>
@@ -22,8 +19,7 @@ public class TelegramNotificationService(
     CancellationToken cancellationToken)
   {
     // Get family with members
-    var spec = new GetFamilyWithMembersSpec(familyId);
-    var family = await familyAppRepository.FirstOrDefaultAsync(spec, cancellationToken);
+    var family = await familyAppRepository.GetByIdAsync(familyId, cancellationToken);
 
     if (family == null)
     {
@@ -42,36 +38,29 @@ public class TelegramNotificationService(
     // Send to each member
     var tasks = new List<Task>();
     foreach (var member in activeMembers.Where(m => !excludeUserId.Contains(m.UserId)))
-      tasks.Add(SendToUserAsync(member.UserId, message, cancellationToken));
+      tasks.Add(SendToUserAsync(member.User.TelegramId, message, cancellationToken));
 
     await Task.WhenAll(tasks);
   }
 
   /// <summary>
-  ///   Send message to a specific user by userId
+  ///   Send message to a specific user by telegramId
   /// </summary>
-  public async Task SendToUserAsync(Guid userId, string message, CancellationToken cancellationToken)
+  public async Task SendToUserAsync(long telegramId, string message, CancellationToken cancellationToken)
   {
     try
     {
-      var user = await userAppRepository.GetByIdAsync(userId, cancellationToken);
-      if (user == null)
-      {
-        logger.LogWarning("User {UserId} not found for notification", userId);
-        return;
-      }
-
       await botClient.SendTextMessageAsync(
-        user.TelegramId,
+        telegramId,
         message,
         parseMode: ParseMode.Markdown,
         cancellationToken: cancellationToken);
 
-      logger.LogDebug("Notification sent to user {UserId} (TelegramId: {TelegramId})", userId, user.TelegramId);
+      logger.LogDebug("Notification sent to user TelegramId: {TelegramId}", telegramId);
     }
     catch (Exception ex)
     {
-      logger.LogError(ex, "Failed to send notification to user {UserId}", userId);
+      logger.LogError(ex, "Failed to send notification to user {UserId}", telegramId);
       // Don't throw - we want to continue sending to other users
     }
   }

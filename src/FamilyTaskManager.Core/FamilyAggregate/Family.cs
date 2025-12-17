@@ -35,7 +35,7 @@ public class Family : EntityBase<Family, Guid>, IAggregateRoot
   {
     Guard.Against.Null(user);
 
-    var member = new FamilyMember(user.Id, Id, role);
+    var member = new FamilyMember(user, this, role);
     _members.Add(member);
 
     RegisterDomainEvent(new MemberAddedEvent

@@ -1,5 +1,3 @@
-using FamilyTaskManager.Core.FamilyAggregate.Specifications;
-
 namespace FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
 
 public record RefuseTaskCommand(Guid TaskId, Guid UserId) : ICommand<Result>;
@@ -16,8 +14,7 @@ public class RefuseTaskHandler(
     if (task.Status != TaskStatus.InProgress) return Result.Error("Task is not in progress");
 
     // Get family with members to validate user belongs to family
-    var familySpec = new GetFamilyWithMembersSpec(task.FamilyId);
-    var family = await familyAppRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
+    var family = await familyAppRepository.GetByIdAsync(task.FamilyId, cancellationToken);
     if (family == null) return Result.NotFound("Family not found");
 
     // Find member

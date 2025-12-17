@@ -1,4 +1,3 @@
-using FamilyTaskManager.Core.FamilyAggregate.Specifications;
 using FamilyTaskManager.Core.TaskAggregate.Specifications;
 using FamilyTaskManager.UseCases.Features.TasksManagement.Dtos;
 
@@ -25,8 +24,7 @@ public class GetTasksDueForReminderHandler(
     foreach (var familyGroup in tasksByFamily)
     {
       // Get family with members
-      var familySpec = new GetFamilyWithMembersSpec(familyGroup.Key);
-      var family = await familyAppRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
+      var family = await familyAppRepository.GetByIdAsync(familyGroup.Key, cancellationToken);
 
       if (family == null) continue;
 

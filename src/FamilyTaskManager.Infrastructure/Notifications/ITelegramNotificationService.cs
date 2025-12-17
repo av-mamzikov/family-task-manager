@@ -9,5 +9,5 @@ public interface ITelegramNotificationService
   Task SendToFamilyMembersAsync(Guid familyId, string message, Guid[] excludeUserId,
     CancellationToken cancellationToken);
 
-  Task SendToUserAsync(Guid userId, string message, CancellationToken cancellationToken);
+  Task SendToUserAsync(long telegramId, string message, CancellationToken cancellationToken);
 }

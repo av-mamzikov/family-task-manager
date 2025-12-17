@@ -31,5 +31,7 @@ public class FamilyConfiguration : IEntityTypeConfiguration<Family>
       .WithOne(m => m.Family)
       .HasForeignKey(m => m.FamilyId)
       .OnDelete(DeleteBehavior.Cascade);
+
+    builder.Navigation(f => f.Members).AutoInclude();
   }
 }

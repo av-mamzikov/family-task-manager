@@ -18,15 +18,15 @@ public class TaskTemplateRepositoryTests : BaseRepositoryTestFixture
     await DbContext.SaveChangesAsync();
 
     // Создаем спота для этой семьи
-    var Spot = new Spot(family.Id, SpotType.Cat, "Test Spot");
-    var SpotRepository = RepositoryFactory.GetRepository<Spot>();
-    await SpotRepository.AddAsync(Spot);
+    var spot = new Spot(family.Id, SpotType.Cat, "Test Spot");
+    var spotRepository = RepositoryFactory.GetRepository<Spot>();
+    await spotRepository.AddAsync(spot);
     await DbContext.SaveChangesAsync();
 
     // Создаем шаблон задачи с валидными ID
     var createdBy = Guid.NewGuid();
     var defaultSchedule = schedule ?? Schedule.CreateDaily(new(8, 0)).Value;
-    return new(family.Id, Spot.Id, new(title), new(points), defaultSchedule, new(TimeSpan.FromHours(12)),
+    return new(family.Id, spot.Id, new(title), new(points), defaultSchedule, new(TimeSpan.FromHours(12)),
       createdBy);
   }
 

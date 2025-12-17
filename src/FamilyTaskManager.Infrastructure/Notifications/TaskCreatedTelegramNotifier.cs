@@ -1,5 +1,4 @@
 using FamilyTaskManager.Core.TaskAggregate.Events;
-using FamilyTaskManager.UseCases.Features.TasksManagement.Queries;
 using Mediator;
 
 namespace FamilyTaskManager.Infrastructure.Notifications;
@@ -10,42 +9,31 @@ namespace FamilyTaskManager.Infrastructure.Notifications;
 /// </summary>
 public class TaskCreatedTelegramNotifier(
   ITimeZoneService timeZoneService,
-  ITelegramNotificationService telegramNotificationService,
-  IMediator mediator)
+  ITelegramNotificationService telegramNotificationService)
   : INotificationHandler<TaskCreatedEvent>
 {
   public async ValueTask Handle(TaskCreatedEvent notification, CancellationToken cancellationToken)
   {
+    if (notification.AssignedUserTelegramId is null)
+      return;
+
     // Convert DueAt from UTC to family timezone for display
     var dueAtLocal = timeZoneService.ConvertFromUtc(notification.DueAt, notification.Timezone);
 
-    var mentionLine = await BuildMentionLineAsync(notification, cancellationToken);
+    var mentionLine =
+      $"Сегодня очередь героя: [{notification.AssignedUserName}](tg://user?id={notification.AssignedUserTelegramId})\n";
 
     // Format message using data from event
-    var message = $"🎯 *Новая миссия для {notification.SpotName}!*\n\n" +
-                  $"Задача: {notification.Title}\n" +
+    var message = $"🦸 *Личная миссия для героя!*\n" +
+                  $"(это сообщение видишь только ты)\n\n" +
+                  $"Задача: {notification.Title} для {notification.SpotName}\n" +
                   $"Награда: {notification.Points}\n" +
-                  $"Срок выполнения: {dueAtLocal:dd.MM.yyyy HH:mm}\n" +
+                  $"Срок выполнения: {dueAtLocal:HH:mm}\n" +
                   mentionLine;
 
-    await telegramNotificationService.SendToFamilyMembersAsync(
-      notification.FamilyId,
+    await telegramNotificationService.SendToUserAsync(
+      notification.AssignedUserTelegramId.Value,
       message,
-      [],
       cancellationToken);
-  }
-
-  private async Task<string> BuildMentionLineAsync(TaskCreatedEvent notification,
-    CancellationToken cancellationToken)
-  {
-    var result = await mediator.Send(
-      new GetNextTaskExecutorQuery(notification.FamilyId, notification.TaskId),
-      cancellationToken);
-
-    if (!result.IsSuccess || result.Value is null)
-      return string.Empty;
-
-    var executor = result.Value;
-    return $"Сегодня очередь героя: [{executor.UserName}](tg://user?id={executor.TelegramId})\n";
   }
 }

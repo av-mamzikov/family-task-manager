@@ -1,7 +1,3 @@
-using FamilyTaskManager.Core.FamilyAggregate.Specifications;
-
-namespace FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
-
 public record DeleteTaskCommand(Guid TaskId, Guid UserId) : ICommand<Result>;
 
 public class DeleteTaskHandler(
@@ -14,8 +10,9 @@ public class DeleteTaskHandler(
     if (task == null) return Result.NotFound("Task not found");
 
     // Get family with members to validate user belongs to family and check permissions
-    var familySpec = new GetFamilyWithMembersAndUsersSpec(task.FamilyId);
-    var family = await familyAppRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
+
+
+    var family = await familyAppRepository.GetByIdAsync(task.FamilyId, cancellationToken);
     if (family == null) return Result.NotFound("Family not found");
 
     // Find member

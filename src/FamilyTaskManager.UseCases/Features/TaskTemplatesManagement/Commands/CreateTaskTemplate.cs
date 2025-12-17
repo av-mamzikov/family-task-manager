@@ -14,15 +14,15 @@ public record CreateTaskTemplateCommand(
 
 public class CreateTaskTemplateHandler(
   IAppRepository<TaskTemplate> templateAppRepository,
-  IAppRepository<Spot> SpotAppRepository) : ICommandHandler<CreateTaskTemplateCommand, Result<Guid>>
+  IAppRepository<Spot> spotAppRepository) : ICommandHandler<CreateTaskTemplateCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreateTaskTemplateCommand command, CancellationToken cancellationToken)
   {
     // Verify Spot exists and belongs to family
-    var Spot = await SpotAppRepository.GetByIdAsync(command.SpotId, cancellationToken);
-    if (Spot == null) return Result<Guid>.NotFound("Спот не найден");
+    var spot = await spotAppRepository.GetByIdAsync(command.SpotId, cancellationToken);
+    if (spot == null) return Result<Guid>.NotFound("Спот не найден");
 
-    if (Spot.FamilyId != command.FamilyId) return Result<Guid>.Error("Спот не принадлежит этой семье");
+    if (spot.FamilyId != command.FamilyId) return Result<Guid>.Error("Спот не принадлежит этой семье");
 
     // Create schedule
     var scheduleResult = command.ScheduleType.Name switch

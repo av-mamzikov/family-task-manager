@@ -1,6 +1,7 @@
 using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.SpotAggregate.Specifications;
 using FamilyTaskManager.Core.TaskAggregate.Specifications;
+using FamilyTaskManager.UseCases.Features.TasksManagement.Services;
 
 namespace FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
 
@@ -10,8 +11,9 @@ public class CreateTaskInstanceFromTemplateHandler(
   IAppRepository<TaskTemplate> templateAppRepository,
   IAppRepository<TaskInstance> taskAppRepository,
   ITaskInstanceFactory taskInstanceFactory,
-  IAppRepository<Spot> SpotAppRepository,
-  ISpotMoodCalculator moodCalculator)
+  IAppRepository<Spot> spotAppRepository,
+  ISpotMoodCalculator moodCalculator,
+  IAssignedMemberSelector assignedMemberSelector)
   : ICommandHandler<CreateTaskInstanceFromTemplateCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreateTaskInstanceFromTemplateCommand request,
@@ -22,14 +24,19 @@ public class CreateTaskInstanceFromTemplateHandler(
       return Result.NotFound($"TaskTemplate with ID {request.TemplateId} not found.");
 
     // Load Spot with family (needed for TaskCreatedEvent)
-    var SpotSpec = new GetSpotByIdWithFamilySpec(template.SpotId);
-    var Spot = await SpotAppRepository.FirstOrDefaultAsync(SpotSpec, cancellationToken);
-    if (Spot == null)
+    var spotSpec = new GetSpotByIdWithFamilySpec(template.SpotId);
+    var spot = await spotAppRepository.FirstOrDefaultAsync(spotSpec, cancellationToken);
+    if (spot == null)
       return Result.NotFound($"Spot with ID {template.SpotId} not found.");
 
     var spec = new TaskInstancesByTemplateSpec(request.TemplateId);
     var existingInstances = await taskAppRepository.ListAsync(spec, cancellationToken);
-    var createResult = taskInstanceFactory.CreateFromTemplate(template, Spot, request.DueAt, existingInstances);
+
+    var assignedToMemberId =
+      await assignedMemberSelector.SelectAssignedMemberIdAsync(template, spot, cancellationToken);
+
+    var createResult = taskInstanceFactory.CreateFromTemplate(template, spot, request.DueAt, existingInstances,
+      assignedToMemberId);
     if (!createResult.IsSuccess)
       return Result.Error(string.Join(", ", createResult.Errors));
 
@@ -37,9 +44,9 @@ public class CreateTaskInstanceFromTemplateHandler(
     await taskAppRepository.SaveChangesAsync(cancellationToken);
 
     // Trigger immediate mood recalculation for the Spot
-    var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(Spot.Id, cancellationToken);
-    Spot.UpdateMoodScore(newMoodScore);
-    await SpotAppRepository.SaveChangesAsync(cancellationToken);
+    var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(spot.Id, cancellationToken);
+    spot.UpdateMoodScore(newMoodScore);
+    await spotAppRepository.SaveChangesAsync(cancellationToken);
 
     return Result.Success(createResult.Value.Id);
   }

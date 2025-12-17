@@ -13,14 +13,15 @@ public class FamilyMember : EntityBase<FamilyMember, Guid>
   {
   }
 
-  public FamilyMember(Guid userId, Guid familyId, FamilyRole role)
+  public FamilyMember(User user, Family family, FamilyRole role)
   {
-    Guard.Against.Default(userId);
-    Guard.Against.Default(familyId);
+    Guard.Against.Default(user.Id);
+    Guard.Against.Default(family.Id);
 
     Id = Guid.NewGuid();
-    UserId = userId;
-    FamilyId = familyId;
+    UserId = user.Id;
+    User = user;
+    FamilyId = family.Id;
     Role = role;
     Points = 0;
     JoinedAt = DateTime.UtcNow;
@@ -51,4 +52,3 @@ public class FamilyMember : EntityBase<FamilyMember, Guid>
 
   public void UpdateRole(FamilyRole role) => Role = role;
 }
-

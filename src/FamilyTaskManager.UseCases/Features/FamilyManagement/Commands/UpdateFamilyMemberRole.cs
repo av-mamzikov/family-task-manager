@@ -1,10 +1,8 @@
-using FamilyTaskManager.Core.FamilyAggregate.Specifications;
-
 namespace FamilyTaskManager.UseCases.Features.FamilyManagement.Commands;
 
 public record UpdateFamilyMemberRoleCommand(
   Guid FamilyId,
-  Guid memberId,
+  Guid MemberId,
   Guid RequestedBy,
   FamilyRole NewRole) : ICommand<Result>;
 
@@ -13,8 +11,7 @@ public class UpdateFamilyMemberRoleHandler(IAppRepository<Family> familyAppRepos
 {
   public async ValueTask<Result> Handle(UpdateFamilyMemberRoleCommand command, CancellationToken cancellationToken)
   {
-    var spec = new GetFamilyWithMembersSpec(command.FamilyId);
-    var family = await familyAppRepository.FirstOrDefaultAsync(spec, cancellationToken);
+    var family = await familyAppRepository.GetByIdAsync(command.FamilyId, cancellationToken);
     if (family == null) return Result.NotFound("Семья не найдена");
 
     var requester = family.Members.FirstOrDefault(m => m.UserId == command.RequestedBy && m.IsActive);
@@ -23,7 +20,7 @@ public class UpdateFamilyMemberRoleHandler(IAppRepository<Family> familyAppRepos
     if (requester.Role != FamilyRole.Admin)
       return Result.Forbidden("Только администратор может менять роли участников");
 
-    var member = family.Members.FirstOrDefault(m => m.Id == command.memberId && m.IsActive);
+    var member = family.Members.FirstOrDefault(m => m.Id == command.MemberId && m.IsActive);
     if (member == null) return Result.NotFound("Участник не найден");
 
     if (member.UserId == command.RequestedBy) return Result.Forbidden("Нельзя изменять собственную роль");

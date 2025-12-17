@@ -6,6 +6,7 @@ using FamilyTaskManager.Infrastructure.Data;
 using FamilyTaskManager.IntegrationTests.Data;
 using FamilyTaskManager.TestInfrastructure;
 using FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
+using FamilyTaskManager.UseCases.Features.TasksManagement.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FamilyTaskManager.IntegrationTests.UseCases.Tasks;
@@ -65,12 +66,18 @@ public class ProcessScheduledTasksHandlerTests : IAsyncLifetime
     var taskInstanceFactory = new TaskInstanceFactory();
     var logger = NullLogger<ProcessScheduledTasksHandler>.Instance;
 
+    var assignedMemberSelector = Substitute.For<IAssignedMemberSelector>();
+    assignedMemberSelector
+      .SelectAssignedMemberIdAsync(Arg.Any<TaskTemplate>(), Arg.Any<Spot>(), Arg.Any<CancellationToken>())
+      .Returns(ValueTask.FromResult<Guid?>(null));
+
     var handler = new ProcessScheduledTasksHandler(
       templateReadRepository,
       taskInstanceRepository,
       spotRepository,
       taskInstanceFactory,
-      logger);
+      logger,
+      assignedMemberSelector);
 
     var today = DateTime.UtcNow.Date;
     var checkFrom = today.AddHours(18);

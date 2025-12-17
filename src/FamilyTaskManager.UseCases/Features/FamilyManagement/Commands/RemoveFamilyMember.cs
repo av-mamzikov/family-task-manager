@@ -1,5 +1,3 @@
-using FamilyTaskManager.Core.FamilyAggregate.Specifications;
-
 namespace FamilyTaskManager.UseCases.Features.FamilyManagement.Commands;
 
 public record RemoveFamilyMemberCommand(Guid FamilyId, Guid MemberId, Guid RequestedBy)
@@ -10,8 +8,7 @@ public class RemoveFamilyMemberHandler(IAppRepository<Family> familyAppRepositor
 {
   public async ValueTask<Result> Handle(RemoveFamilyMemberCommand command, CancellationToken cancellationToken)
   {
-    var spec = new GetFamilyWithMembersSpec(command.FamilyId);
-    var family = await familyAppRepository.FirstOrDefaultAsync(spec, cancellationToken);
+    var family = await familyAppRepository.GetByIdAsync(command.FamilyId, cancellationToken);
     if (family == null) return Result.NotFound("Семья не найдена");
 
     var requester = family.Members.FirstOrDefault(m => m.UserId == command.RequestedBy && m.IsActive);

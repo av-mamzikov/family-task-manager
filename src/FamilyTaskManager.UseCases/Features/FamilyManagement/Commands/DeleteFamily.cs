@@ -1,5 +1,3 @@
-using FamilyTaskManager.Core.FamilyAggregate.Specifications;
-
 namespace FamilyTaskManager.UseCases.Features.FamilyManagement.Commands;
 
 public record DeleteFamilyCommand(Guid FamilyId, Guid UserId) : ICommand<Result>;
@@ -14,9 +12,7 @@ public class DeleteFamilyHandler(
     var user = await userAppRepository.GetByIdAsync(command.UserId, cancellationToken);
     if (user == null) return Result.NotFound("User not found");
 
-    // Get family with members using specification
-    var spec = new GetFamilyWithMembersSpec(command.FamilyId);
-    var family = await familyAppRepository.FirstOrDefaultAsync(spec, cancellationToken);
+    var family = await familyAppRepository.GetByIdAsync(command.FamilyId, cancellationToken);
     if (family == null) return Result.NotFound("Family not found");
 
     // Check if user is admin of this family

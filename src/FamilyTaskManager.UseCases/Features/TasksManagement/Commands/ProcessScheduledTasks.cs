@@ -1,6 +1,7 @@
 using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.SpotAggregate.Specifications;
 using FamilyTaskManager.Core.TaskAggregate.Specifications;
+using FamilyTaskManager.UseCases.Features.TasksManagement.Services;
 using Microsoft.Extensions.Logging;
 
 namespace FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
@@ -20,9 +21,10 @@ public record ProcessScheduledTaskCommand(DateTime CheckFrom, DateTime CheckTo) 
 public class ProcessScheduledTasksHandler(
   IAppReadRepository<TaskTemplate> templateRepository,
   IAppRepository<TaskInstance> taskAppRepository,
-  IAppRepository<Spot> SpotAppRepository,
+  IAppRepository<Spot> spotAppRepository,
   ITaskInstanceFactory taskInstanceFactory,
-  ILogger<ProcessScheduledTasksHandler> logger)
+  ILogger<ProcessScheduledTasksHandler> logger,
+  IAssignedMemberSelector assignedMemberSelector)
   : ICommandHandler<ProcessScheduledTaskCommand, Result<int>>
 {
   public async ValueTask<Result<int>> Handle(ProcessScheduledTaskCommand request, CancellationToken cancellationToken)
@@ -52,9 +54,9 @@ public class ProcessScheduledTasksHandler(
             template.Id, template.Title, triggerTime.Value, dueAt, template.Family.Timezone);
 
           // Load Spot with family (needed for TaskCreatedEvent)
-          var SpotSpec = new GetSpotByIdWithFamilySpec(template.SpotId);
-          var Spot = await SpotAppRepository.FirstOrDefaultAsync(SpotSpec, cancellationToken);
-          if (Spot == null)
+          var spotSpec = new GetSpotByIdWithFamilySpec(template.SpotId);
+          var spot = await spotAppRepository.FirstOrDefaultAsync(spotSpec, cancellationToken);
+          if (spot == null)
           {
             logger.LogWarning("Spot {SpotId} not found for template {TemplateId}, skipping", template.SpotId,
               template.Id);
@@ -64,7 +66,12 @@ public class ProcessScheduledTasksHandler(
           // Get existing instances for this template
           var existingSpec = new ActiveTaskInstancesByTemplateSpec(template.Id);
           var existingInstances = await taskAppRepository.ListAsync(existingSpec, cancellationToken);
-          var createResult = taskInstanceFactory.CreateFromTemplate(template, Spot, dueAt, existingInstances);
+
+          var assignedToMemberId =
+            await assignedMemberSelector.SelectAssignedMemberIdAsync(template, spot, cancellationToken);
+
+          var createResult = taskInstanceFactory.CreateFromTemplate(template, spot, dueAt, existingInstances,
+            assignedToMemberId);
 
           if (createResult.IsSuccess)
           {
