@@ -16,6 +16,7 @@ public static class ScheduleFormatter
       nameof(ScheduleType.Monthly) => $"Ежемесячно {schedule.DayOfMonth}-го числа в {schedule.Time:HH:mm}",
       nameof(ScheduleType.Workdays) => $"По будням в {schedule.Time:HH:mm}",
       nameof(ScheduleType.Weekends) => $"По выходным в {schedule.Time:HH:mm}",
+      nameof(ScheduleType.Manual) => "Вручную",
       _ => "Неизвестное расписание"
     };
 
@@ -31,6 +32,7 @@ public static class ScheduleFormatter
         : "Ежемесячно (день не указан)",
       nameof(ScheduleType.Workdays) => $"По будням в {time:HH:mm}",
       nameof(ScheduleType.Weekends) => $"По выходным в {time:HH:mm}",
+      nameof(ScheduleType.Manual) => "Вручную",
       _ => "Неизвестное расписание"
     };
 

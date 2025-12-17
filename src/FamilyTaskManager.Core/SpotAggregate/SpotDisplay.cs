@@ -18,6 +18,8 @@ public static class SpotDisplay
     { SpotType.Bathroom, new("🛁", "Ванная", "bathroom") },
     { SpotType.KidsRoom, new("🧸", "Детская", "kidsroom") },
     { SpotType.Hallway, new("🚪", "Прихожая", "hallway") },
+    { SpotType.Bedroom, new("🛏️", "Спальня", "bedroom") },
+    { SpotType.LivingRoom, new("🛋️", "Гостиная", "livingroom") },
 
     { SpotType.WashingMachine, new("🧺", "Стиральная машина", "washingmachine") },
     { SpotType.Dishwasher, new("🍽", "Посудомойка", "dishwasher") },

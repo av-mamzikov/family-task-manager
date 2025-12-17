@@ -20,6 +20,8 @@ public enum SpotType
   Bathroom = 21,
   KidsRoom = 22,
   Hallway = 23,
+  Bedroom = 24,
+  LivingRoom = 25,
 
   WashingMachine = 30,
   Dishwasher = 31,
