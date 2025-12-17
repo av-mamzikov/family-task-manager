@@ -1,6 +1,7 @@
 using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.SpotAggregate.Specifications;
 using FamilyTaskManager.Core.TaskAggregate.Specifications;
+using FamilyTaskManager.UseCases.Features.TasksManagement.Services;
 
 namespace FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
 
@@ -11,7 +12,8 @@ public class CreateTaskInstanceFromTemplateHandler(
   IAppRepository<TaskInstance> taskAppRepository,
   ITaskInstanceFactory taskInstanceFactory,
   IAppRepository<Spot> spotAppRepository,
-  ISpotMoodCalculator moodCalculator)
+  ISpotMoodCalculator moodCalculator,
+  IAssignedMemberSelector assignedMemberSelector)
   : ICommandHandler<CreateTaskInstanceFromTemplateCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreateTaskInstanceFromTemplateCommand request,
@@ -29,7 +31,12 @@ public class CreateTaskInstanceFromTemplateHandler(
 
     var spec = new TaskInstancesByTemplateSpec(request.TemplateId);
     var existingInstances = await taskAppRepository.ListAsync(spec, cancellationToken);
-    var createResult = taskInstanceFactory.CreateFromTemplate(template, spot, request.DueAt, existingInstances);
+
+    var assignedToMemberId =
+      await assignedMemberSelector.SelectAssignedMemberIdAsync(template, spot, cancellationToken);
+
+    var createResult = taskInstanceFactory.CreateFromTemplate(template, spot, request.DueAt, existingInstances,
+      assignedToMemberId);
     if (!createResult.IsSuccess)
       return Result.Error(string.Join(", ", createResult.Errors));
 

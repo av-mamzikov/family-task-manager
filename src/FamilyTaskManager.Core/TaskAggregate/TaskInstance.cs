@@ -11,7 +11,8 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   }
 
   public TaskInstance(Spot spot, string title, TaskPoints points, DateTime dueAt,
-    Guid? templateId = null)
+    Guid? templateId = null,
+    Guid? assignedToMemberId = null)
   {
     Guard.Against.Null(spot);
     Guard.Against.NullOrWhiteSpace(title);
@@ -26,12 +27,14 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     Status = TaskStatus.Active;
     CreatedAt = DateTime.UtcNow;
     DueAt = dueAt;
+    AssignedToMemberId = assignedToMemberId;
 
     RegisterDomainEvent(new TaskCreatedEvent
     {
       TaskId = Id,
       FamilyId = spot.FamilyId,
       SpotId = spot.Id,
+      AssignedToMemberId = AssignedToMemberId,
       Title = title.Trim(),
       SpotName = spot.Name,
       Points = points.ToString(),
@@ -46,6 +49,7 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public TaskPoints Points { get; } = null!;
   public Guid? TemplateId { get; }
   public TaskStatus Status { get; private set; }
+  public Guid? AssignedToMemberId { get; private set; }
   public Guid? StartedByMemberId { get; private set; }
   public Guid? CompletedByMemberId { get; private set; }
   public DateTime? CompletedAt { get; private set; }
@@ -57,8 +61,23 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public Family Family { get; } = null!;
   public Spot Spot { get; } = null!;
   public TaskTemplate? Template { get; private set; }
+  public FamilyMember? AssignedToMember { get; private set; }
   public FamilyMember? StartedByMember { get; private set; }
   public FamilyMember? CompletedByMember { get; private set; }
+
+  public Result AssignToMember(FamilyMember familyMember)
+  {
+    Guard.Against.Null(familyMember);
+    Guard.Against.Default(familyMember.Id);
+
+    if (!familyMember.IsActive) return Result.Error("Inactive family member cannot be assigned.");
+    if (FamilyId != familyMember.FamilyId) return Result.Error("User is not a member of this family");
+
+    AssignedToMemberId = familyMember.Id;
+    AssignedToMember = familyMember;
+
+    return Result.Success();
+  }
 
   public Result StartByUserId(Guid userId, Family family)
   {

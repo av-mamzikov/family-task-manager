@@ -11,7 +11,7 @@ namespace FamilyTaskManager.Core.Services;
 public class TaskInstanceFactory : ITaskInstanceFactory
 {
   public Result<TaskInstance> CreateFromTemplate(TaskTemplate template, Spot spot, DateTime dueAt,
-    IEnumerable<TaskInstance> existingInstances)
+    IEnumerable<TaskInstance> existingInstances, Guid? assignedToMemberId = null)
   {
     Guard.Against.Null(spot);
 
@@ -26,7 +26,8 @@ public class TaskInstanceFactory : ITaskInstanceFactory
       template.Title.Value,
       template.Points,
       dueAt,
-      template.Id
+      template.Id,
+      assignedToMemberId
     );
 
     return Result.Success(taskInstance);

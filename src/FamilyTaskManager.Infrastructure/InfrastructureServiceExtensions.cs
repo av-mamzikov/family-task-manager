@@ -1,11 +1,13 @@
 using Ardalis.SharedKernel;
 using FamilyTaskManager.Infrastructure.Behaviors;
 using FamilyTaskManager.Infrastructure.Data;
+using FamilyTaskManager.Infrastructure.Data.Queries;
 using FamilyTaskManager.Infrastructure.Database;
 using FamilyTaskManager.Infrastructure.Interfaces;
 using FamilyTaskManager.Infrastructure.Jobs;
 using FamilyTaskManager.Infrastructure.Notifications;
 using FamilyTaskManager.Infrastructure.Services;
+using FamilyTaskManager.UseCases.Features.TasksManagement.Services;
 using Mediator;
 using Quartz;
 
@@ -40,6 +42,8 @@ public static class InfrastructureServiceExtensions
 
     // Register universal read-only repository for any entity
     services.AddScoped(typeof(IReadOnlyEntityRepository<>), typeof(EfReadOnlyEntityRepository<>));
+
+    services.AddScoped<ITaskCompletionStatsQuery, TaskCompletionStatsQuery>();
 
     // Register Mediator Pipeline Behaviors
     services.AddSingleton(typeof(IPipelineBehavior<,>), typeof(MediatorLoggingBehavior<,>));

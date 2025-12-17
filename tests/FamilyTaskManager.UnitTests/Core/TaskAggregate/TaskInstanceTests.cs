@@ -38,6 +38,7 @@ public class TaskInstanceTests
     task.DueAt.ShouldBe(dueAt);
     task.Status.ShouldBe(TaskStatus.Active);
     task.TemplateId.ShouldBeNull();
+    task.AssignedToMemberId.ShouldBeNull();
     task.CompletedByMember.ShouldBeNull();
     task.CompletedAt.ShouldBeNull();
     task.CreatedAt.ShouldBeInRange(DateTime.UtcNow.AddSeconds(-1), DateTime.UtcNow.AddSeconds(1));
@@ -60,6 +61,25 @@ public class TaskInstanceTests
 
     // Assert
     task.TemplateId.ShouldBe(templateId);
+    task.AssignedToMemberId.ShouldBeNull();
+  }
+
+  [Fact]
+  public void Constructor_WithAssignedToMemberId_SetsAssignedToMemberId()
+  {
+    // Arrange
+    var title = "Feed the Spot";
+    var points = 2;
+    var dueAt = DateTime.UtcNow.AddHours(2);
+    var templateId = Guid.NewGuid();
+    var assignedToMemberId = Guid.NewGuid();
+
+    // Act
+    var spot = CreateSpotWithFamily();
+    var task = new TaskInstance(spot, title, new(points), dueAt, templateId, assignedToMemberId);
+
+    // Assert
+    task.AssignedToMemberId.ShouldBe(assignedToMemberId);
   }
 
   [Fact]

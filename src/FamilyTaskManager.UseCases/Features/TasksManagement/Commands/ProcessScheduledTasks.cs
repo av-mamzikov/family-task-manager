@@ -1,6 +1,7 @@
 using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.SpotAggregate.Specifications;
 using FamilyTaskManager.Core.TaskAggregate.Specifications;
+using FamilyTaskManager.UseCases.Features.TasksManagement.Services;
 using Microsoft.Extensions.Logging;
 
 namespace FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
@@ -22,7 +23,8 @@ public class ProcessScheduledTasksHandler(
   IAppRepository<TaskInstance> taskAppRepository,
   IAppRepository<Spot> spotAppRepository,
   ITaskInstanceFactory taskInstanceFactory,
-  ILogger<ProcessScheduledTasksHandler> logger)
+  ILogger<ProcessScheduledTasksHandler> logger,
+  IAssignedMemberSelector assignedMemberSelector)
   : ICommandHandler<ProcessScheduledTaskCommand, Result<int>>
 {
   public async ValueTask<Result<int>> Handle(ProcessScheduledTaskCommand request, CancellationToken cancellationToken)
@@ -64,7 +66,12 @@ public class ProcessScheduledTasksHandler(
           // Get existing instances for this template
           var existingSpec = new ActiveTaskInstancesByTemplateSpec(template.Id);
           var existingInstances = await taskAppRepository.ListAsync(existingSpec, cancellationToken);
-          var createResult = taskInstanceFactory.CreateFromTemplate(template, spot, dueAt, existingInstances);
+
+          var assignedToMemberId =
+            await assignedMemberSelector.SelectAssignedMemberIdAsync(template, spot, cancellationToken);
+
+          var createResult = taskInstanceFactory.CreateFromTemplate(template, spot, dueAt, existingInstances,
+            assignedToMemberId);
 
           if (createResult.IsSuccess)
           {

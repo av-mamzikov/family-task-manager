@@ -34,6 +34,9 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
       .HasConversion<string>()
       .HasMaxLength(20);
 
+    builder.Property(t => t.AssignedToMemberId)
+      .IsRequired(false);
+
     builder.Property(t => t.StartedByMemberId)
       .IsRequired(false);
 
@@ -53,6 +56,7 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
     builder.HasIndex(t => t.FamilyId);
     builder.HasIndex(t => t.SpotId);
     builder.HasIndex(t => t.TemplateId);
+    builder.HasIndex(t => t.AssignedToMemberId);
     builder.HasIndex(t => t.StartedByMemberId);
     builder.HasIndex(t => t.CompletedByMemberId);
     builder.HasIndex(t => new { t.FamilyId, t.Status });
@@ -79,6 +83,12 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
     builder.HasOne(t => t.Template)
       .WithMany()
       .HasForeignKey(t => t.TemplateId)
+      .OnDelete(DeleteBehavior.SetNull);
+
+    // Foreign key relationship to FamilyMember (AssignedTo)
+    builder.HasOne(t => t.AssignedToMember)
+      .WithMany()
+      .HasForeignKey(t => t.AssignedToMemberId)
       .OnDelete(DeleteBehavior.SetNull);
 
     // Foreign key relationship to FamilyMember (StartedBy)

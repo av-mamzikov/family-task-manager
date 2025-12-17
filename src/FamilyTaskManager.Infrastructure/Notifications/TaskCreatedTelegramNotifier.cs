@@ -1,5 +1,5 @@
 using FamilyTaskManager.Core.TaskAggregate.Events;
-using FamilyTaskManager.UseCases.Features.TasksManagement.Queries;
+using FamilyTaskManager.UseCases.Features.FamilyManagement.Queries;
 using Mediator;
 
 namespace FamilyTaskManager.Infrastructure.Notifications;
@@ -19,7 +19,7 @@ public class TaskCreatedTelegramNotifier(
     // Convert DueAt from UTC to family timezone for display
     var dueAtLocal = timeZoneService.ConvertFromUtc(notification.DueAt, notification.Timezone);
 
-    var mentionLine = await BuildMentionLineAsync(notification, cancellationToken);
+    var mentionLine = await BuildMentionLineAsync(notification.AssignedToMemberId, cancellationToken);
 
     // Format message using data from event
     var message = $"🎯 *Новая миссия для {notification.SpotName}!*\n\n" +
@@ -35,11 +35,12 @@ public class TaskCreatedTelegramNotifier(
       cancellationToken);
   }
 
-  private async Task<string> BuildMentionLineAsync(TaskCreatedEvent notification,
+  private async Task<string> BuildMentionLineAsync(Guid? assignedToMemberId,
     CancellationToken cancellationToken)
   {
-    var result = await mediator.Send(
-      new GetNextTaskExecutorQuery(notification.FamilyId, notification.TaskId),
+    if (assignedToMemberId == null)
+      return "";
+    var result = await mediator.Send(new GetFamilyMemberByIdQuery(assignedToMemberId.Value),
       cancellationToken);
 
     if (!result.IsSuccess || result.Value is null)
