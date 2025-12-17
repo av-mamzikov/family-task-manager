@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 
@@ -16,8 +17,8 @@ public interface ITaskInstanceFactory
   /// <param name="spot">The Spot entity (with Family loaded) for the task</param>
   /// <param name="dueAt">The due date for the task instance</param>
   /// <param name="existingInstances">Existing task instances for this template</param>
-  /// <param name="assignedToMemberId">Optional family member to assign the task to</param>
+  /// <param name="assignedToMember">Optional family member to assign the task to</param>
   /// <returns>Result containing the created task instance or error</returns>
   Result<TaskInstance> CreateFromTemplate(TaskTemplate template, Spot spot, DateTime dueAt,
-    IEnumerable<TaskInstance> existingInstances, Guid? assignedToMemberId = null);
+    IEnumerable<TaskInstance> existingInstances, FamilyMember? assignedToMember = null);
 }

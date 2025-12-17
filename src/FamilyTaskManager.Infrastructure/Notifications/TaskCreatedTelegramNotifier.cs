@@ -21,7 +21,7 @@ public class TaskCreatedTelegramNotifier(
     var dueAtLocal = timeZoneService.ConvertFromUtc(notification.DueAt, notification.Timezone);
 
     var mentionLine =
-      $"Сегодня очередь героя: [{notification.AssignedUserName}](tg://user?id={notification.AssignedUserTelegramId})\n";
+      $"Сегодня твоя очередь, [{notification.AssignedUserName}](tg://user?id={notification.AssignedUserTelegramId})\n";
 
     // Format message using data from event
     var message = $"🦸 *Личная миссия для героя!*\n" +

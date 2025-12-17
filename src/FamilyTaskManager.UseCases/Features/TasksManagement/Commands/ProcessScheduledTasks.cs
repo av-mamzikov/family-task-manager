@@ -68,7 +68,7 @@ public class ProcessScheduledTasksHandler(
           var existingInstances = await taskAppRepository.ListAsync(existingSpec, cancellationToken);
 
           var assignedToMemberId =
-            await assignedMemberSelector.SelectAssignedMemberIdAsync(template, spot, cancellationToken);
+            await assignedMemberSelector.SelectAssignedMemberAsync(template, spot, cancellationToken);
 
           var createResult = taskInstanceFactory.CreateFromTemplate(template, spot, dueAt, existingInstances,
             assignedToMemberId);

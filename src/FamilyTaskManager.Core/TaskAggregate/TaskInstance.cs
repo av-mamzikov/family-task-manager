@@ -12,7 +12,7 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
 
   public TaskInstance(Spot spot, string title, TaskPoints points, DateTime dueAt,
     Guid? templateId = null,
-    Guid? assignedToMemberId = null)
+    FamilyMember? assignedToMember = null)
   {
     Guard.Against.Null(spot);
     Guard.Against.NullOrWhiteSpace(title);
@@ -27,7 +27,8 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     Status = TaskStatus.Active;
     CreatedAt = DateTime.UtcNow;
     DueAt = dueAt;
-    AssignedToMemberId = assignedToMemberId;
+    AssignedToMember = assignedToMember;
+    AssignedToMemberId = assignedToMember?.Id;
 
     RegisterDomainEvent(new TaskCreatedEvent
     {
@@ -39,8 +40,8 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
       Points = points.ToString(),
       DueAt = dueAt,
       Timezone = spot.Family.Timezone,
-      AssignedUserName = AssignedToMember?.User?.Name,
-      AssignedUserTelegramId = AssignedToMember?.User?.TelegramId
+      AssignedUserName = assignedToMember?.User?.Name,
+      AssignedUserTelegramId = assignedToMember?.User?.TelegramId
     });
   }
 

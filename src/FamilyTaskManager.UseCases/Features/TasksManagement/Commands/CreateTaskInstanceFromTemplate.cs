@@ -33,7 +33,7 @@ public class CreateTaskInstanceFromTemplateHandler(
     var existingInstances = await taskAppRepository.ListAsync(spec, cancellationToken);
 
     var assignedToMemberId =
-      await assignedMemberSelector.SelectAssignedMemberIdAsync(template, spot, cancellationToken);
+      await assignedMemberSelector.SelectAssignedMemberAsync(template, spot, cancellationToken);
 
     var createResult = taskInstanceFactory.CreateFromTemplate(template, spot, request.DueAt, existingInstances,
       assignedToMemberId);

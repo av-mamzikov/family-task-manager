@@ -2,7 +2,7 @@ namespace FamilyTaskManager.UseCases.Features.TasksManagement.Services;
 
 public class AssignedMemberSelector(ITaskCompletionStatsQuery statsQuery) : IAssignedMemberSelector
 {
-  public async ValueTask<Guid?> SelectAssignedMemberIdAsync(TaskTemplate template, Spot spot,
+  public async ValueTask<FamilyMember?> SelectAssignedMemberAsync(TaskTemplate template, Spot spot,
     CancellationToken cancellationToken)
   {
     var templateCandidates = template.ResponsibleMembers
@@ -37,13 +37,13 @@ public class AssignedMemberSelector(ITaskCompletionStatsQuery statsQuery) : IAss
     return SelectCandidateIdByOldestLastCompletion(spotCandidates, spotLastCompletedByMember);
   }
 
-  private static Guid? SelectCandidateIdByOldestLastCompletion(
+  private static FamilyMember? SelectCandidateIdByOldestLastCompletion(
     IReadOnlyCollection<FamilyMember> candidates,
     IReadOnlyDictionary<Guid, DateTime> lastCompletedByMember)
   {
     if (candidates.Count == 0) return null;
 
-    Guid? candidateId = null;
+    FamilyMember? candidate = null;
     var candidateLastCompleted = DateTime.MaxValue;
 
     foreach (var member in candidates)
@@ -51,13 +51,13 @@ public class AssignedMemberSelector(ITaskCompletionStatsQuery statsQuery) : IAss
       var hasLast = lastCompletedByMember.TryGetValue(member.Id, out var lastCompleted);
       var effectiveLastCompleted = hasLast ? lastCompleted : DateTime.MinValue;
 
-      if (!candidateId.HasValue || effectiveLastCompleted < candidateLastCompleted)
+      if (candidate == null || effectiveLastCompleted < candidateLastCompleted)
       {
-        candidateId = member.Id;
+        candidate = member;
         candidateLastCompleted = effectiveLastCompleted;
       }
     }
 
-    return candidateId;
+    return candidate;
   }
 }

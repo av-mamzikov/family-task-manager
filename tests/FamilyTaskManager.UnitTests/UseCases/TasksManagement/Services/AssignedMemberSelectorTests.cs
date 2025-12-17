@@ -1,7 +1,6 @@
 using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
-using FamilyTaskManager.Core.UserAggregate;
 using FamilyTaskManager.UseCases.Features.TasksManagement.Services;
 
 namespace FamilyTaskManager.UnitTests.UseCases.TasksManagement.Services;
@@ -50,10 +49,10 @@ public class AssignedMemberSelectorTests
     var sut = new AssignedMemberSelector(statsQuery);
 
     // Act
-    var result = await sut.SelectAssignedMemberIdAsync(template, spot, CancellationToken.None);
+    var result = await sut.SelectAssignedMemberAsync(template, spot, CancellationToken.None);
 
     // Assert
-    result.ShouldBe(m2.Id);
+    result!.Id.ShouldBe(m2.Id);
 
     await statsQuery.Received(1).GetLastCompletedAtByMemberForTemplateAsync(
       template.FamilyId,
@@ -91,10 +90,10 @@ public class AssignedMemberSelectorTests
     var sut = new AssignedMemberSelector(statsQuery);
 
     // Act
-    var result = await sut.SelectAssignedMemberIdAsync(template, spot, CancellationToken.None);
+    var result = await sut.SelectAssignedMemberAsync(template, spot, CancellationToken.None);
 
     // Assert
-    result.ShouldBe(m2.Id);
+    result!.Id.ShouldBe(m2.Id);
   }
 
   [Fact]
@@ -106,7 +105,7 @@ public class AssignedMemberSelectorTests
     var sut = new AssignedMemberSelector(statsQuery);
 
     // Act
-    var result = await sut.SelectAssignedMemberIdAsync(template, spot, CancellationToken.None);
+    var result = await sut.SelectAssignedMemberAsync(template, spot, CancellationToken.None);
 
     // Assert
     result.ShouldBeNull();

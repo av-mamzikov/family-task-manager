@@ -303,13 +303,13 @@ public class SpotBrowsingHandler(
 
     if (tasksResult.IsSuccess && tasksResult.Value.Any())
     {
-      messageText += $"📝 *{spot.Name} хочет чтобы вы ему помогли:*\n";
+      messageText += $"📝 *{spot.Name} нуждается в помощи:*\n";
       foreach (var task in tasksResult.Value)
         messageText += $"• {task.Title} {task.Points.ToStars()} до {task.DueAtLocal:dd.MM.yyyy HH:mm}💖\n";
     }
     else
     {
-      messageText += $"📝 *Все задачи выполнены, {spot.Name} доволен!*\n";
+      messageText += $"📝 *Все миссии для {spot.Name} выполнены!*\n";
       messageText += "Нет активных задач. Создайте задачи из шаблонов!";
     }
 

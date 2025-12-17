@@ -20,7 +20,7 @@ public class TaskReminderTelegramNotifier(
     // Convert DueAt from UTC to family timezone for display
     var dueAtLocal = timeZoneService.ConvertFromUtc(notification.DueAt, notification.Timezone);
     var mentionLine =
-      $"Сегодня очередь героя: [{notification.AssignedUserName}](tg://user?id={notification.AssignedUserTelegramId})\n";
+      $"Сегодня твоя очередь, [{notification.AssignedUserName}](tg://user?id={notification.AssignedUserTelegramId})\n";
 
     // Format message using data from event
     var message = $"⏰ *Личное напоминание герою миссии!*\n" +

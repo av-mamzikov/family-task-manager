@@ -42,6 +42,7 @@ public class TaskInstanceTests
     task.CompletedByMember.ShouldBeNull();
     task.CompletedAt.ShouldBeNull();
     task.CreatedAt.ShouldBeInRange(DateTime.UtcNow.AddSeconds(-1), DateTime.UtcNow.AddSeconds(1));
+    task.DomainEvents.ShouldContain(e => e is TaskCreatedEvent);
   }
 
   [Fact]
@@ -65,21 +66,44 @@ public class TaskInstanceTests
   }
 
   [Fact]
-  public void Constructor_WithAssignedToMemberId_SetsAssignedToMemberId()
+  public void Constructor_WithAssignedToMember_SetsAssignedToMemberId()
   {
     // Arrange
     var title = "Feed the Spot";
     var points = 2;
     var dueAt = DateTime.UtcNow.AddHours(2);
     var templateId = Guid.NewGuid();
-    var assignedToMemberId = Guid.NewGuid();
+    var assignedToMember = new FamilyMember(new(1, "name"), new("family", "UTC"), FamilyRole.Admin);
 
     // Act
     var spot = CreateSpotWithFamily();
-    var task = new TaskInstance(spot, title, new(points), dueAt, templateId, assignedToMemberId);
+    var task = new TaskInstance(spot, title, new(points), dueAt, templateId, assignedToMember);
 
     // Assert
-    task.AssignedToMemberId.ShouldBe(assignedToMemberId);
+    task.AssignedToMemberId.ShouldBe(assignedToMember.Id);
+  }
+
+  [Fact]
+  public void Constructor_WithAssignedToMember_PopulatesTaskCreatedEventAssignedUserFields()
+  {
+    // Arrange
+    var spot = CreateSpotWithFamily();
+    var family = spot.Family;
+    var user = new User(123456789, "Test User");
+    var assignedToMember = family.AddMember(user, FamilyRole.Admin);
+
+    const string title = "Feed the Spot";
+    const int points = 2;
+    var dueAt = DateTime.UtcNow.AddHours(2);
+    var templateId = Guid.NewGuid();
+
+    // Act
+    var task = new TaskInstance(spot, title, new(points), dueAt, templateId, assignedToMember);
+    var createdEvent = task.DomainEvents.OfType<TaskCreatedEvent>().Single();
+
+    // Assert
+    createdEvent.AssignedUserName.ShouldBe(user.Name);
+    createdEvent.AssignedUserTelegramId.ShouldBe(user.TelegramId);
   }
 
   [Fact]

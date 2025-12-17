@@ -68,8 +68,8 @@ public class ProcessScheduledTasksHandlerTests : IAsyncLifetime
 
     var assignedMemberSelector = Substitute.For<IAssignedMemberSelector>();
     assignedMemberSelector
-      .SelectAssignedMemberIdAsync(Arg.Any<TaskTemplate>(), Arg.Any<Spot>(), Arg.Any<CancellationToken>())
-      .Returns(ValueTask.FromResult<Guid?>(null));
+      .SelectAssignedMemberAsync(Arg.Any<TaskTemplate>(), Arg.Any<Spot>(), Arg.Any<CancellationToken>())
+      .Returns(ValueTask.FromResult<FamilyMember?>(null));
 
     var handler = new ProcessScheduledTasksHandler(
       templateReadRepository,

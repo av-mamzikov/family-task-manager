@@ -47,9 +47,9 @@ public class ProcessScheduledTasksHandlerUnitTests
     taskRepo.ListAsync(Arg.Any<ActiveTaskInstancesByTemplateSpec>(), Arg.Any<CancellationToken>())
       .Returns([]);
 
-    var assignedId = Guid.NewGuid();
-    assignedMemberSelector.SelectAssignedMemberIdAsync(template, spot, Arg.Any<CancellationToken>())
-      .Returns(ValueTask.FromResult<Guid?>(assignedId));
+    var assigned = family.AddMember(new(1, "name"), FamilyRole.Admin);
+    assignedMemberSelector.SelectAssignedMemberAsync(template, spot, Arg.Any<CancellationToken>())
+      .Returns(ValueTask.FromResult<FamilyMember?>(assigned));
 
     // dueAt = trigger (19:00) + dueDuration (1 hour) => 20:00
     var today = DateTime.UtcNow.Date;
@@ -59,9 +59,9 @@ public class ProcessScheduledTasksHandlerUnitTests
     var expectedDueAt = today.AddHours(20);
 
     var createdTask =
-      new TaskInstance(spot, template.Title.Value, template.Points, expectedDueAt, template.Id, assignedId);
+      new TaskInstance(spot, template.Title.Value, template.Points, expectedDueAt, template.Id, assigned);
 
-    factory.CreateFromTemplate(template, spot, expectedDueAt, Arg.Any<IEnumerable<TaskInstance>>(), assignedId)
+    factory.CreateFromTemplate(template, spot, expectedDueAt, Arg.Any<IEnumerable<TaskInstance>>(), assigned)
       .Returns(Result.Success(createdTask));
 
     var sut = new ProcessScheduledTasksHandler(
@@ -80,9 +80,9 @@ public class ProcessScheduledTasksHandlerUnitTests
     result.Value.ShouldBe(1);
 
     await assignedMemberSelector.Received(1)
-      .SelectAssignedMemberIdAsync(template, spot, Arg.Any<CancellationToken>());
+      .SelectAssignedMemberAsync(template, spot, Arg.Any<CancellationToken>());
 
     factory.Received(1)
-      .CreateFromTemplate(template, spot, expectedDueAt, Arg.Any<IEnumerable<TaskInstance>>(), assignedId);
+      .CreateFromTemplate(template, spot, expectedDueAt, Arg.Any<IEnumerable<TaskInstance>>(), assigned);
   }
 }

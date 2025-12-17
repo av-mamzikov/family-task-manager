@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Core.TaskAggregate;
 using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
@@ -11,7 +12,7 @@ namespace FamilyTaskManager.Core.Services;
 public class TaskInstanceFactory : ITaskInstanceFactory
 {
   public Result<TaskInstance> CreateFromTemplate(TaskTemplate template, Spot spot, DateTime dueAt,
-    IEnumerable<TaskInstance> existingInstances, Guid? assignedToMemberId = null)
+    IEnumerable<TaskInstance> existingInstances, FamilyMember? assignedToMember = null)
   {
     Guard.Against.Null(spot);
 
@@ -27,7 +28,7 @@ public class TaskInstanceFactory : ITaskInstanceFactory
       template.Points,
       dueAt,
       template.Id,
-      assignedToMemberId
+      assignedToMember
     );
 
     return Result.Success(taskInstance);

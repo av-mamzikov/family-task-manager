@@ -4,6 +4,7 @@ using FamilyTaskManager.Core.Services;
 using FamilyTaskManager.Core.SpotAggregate;
 using FamilyTaskManager.Core.SpotAggregate.Specifications;
 using FamilyTaskManager.Core.TaskAggregate;
+using FamilyTaskManager.Core.TaskAggregate.Events;
 using FamilyTaskManager.Core.TaskAggregate.Specifications;
 using FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
 using FamilyTaskManager.UseCases.Features.TasksManagement.Services;
@@ -37,20 +38,20 @@ public class CreateTaskInstanceFromTemplateHandlerTests
     var assignedMemberSelector = Substitute.For<IAssignedMemberSelector>();
 
     var dueAt = DateTime.UtcNow.AddHours(2);
-    var assignedId = Guid.NewGuid();
+    var assigned = family.AddMember(new(1, "name"), FamilyRole.Admin);
 
     templateRepo.GetByIdAsync(template.Id, Arg.Any<CancellationToken>()).Returns(template);
     spotRepo.FirstOrDefaultAsync(Arg.Any<GetSpotByIdWithFamilySpec>(), Arg.Any<CancellationToken>()).Returns(spot);
     taskRepo.ListAsync(Arg.Any<TaskInstancesByTemplateSpec>(), Arg.Any<CancellationToken>()).Returns([]);
 
     assignedMemberSelector
-      .SelectAssignedMemberIdAsync(template, spot, Arg.Any<CancellationToken>())
-      .Returns(ValueTask.FromResult<Guid?>(assignedId));
+      .SelectAssignedMemberAsync(template, spot, Arg.Any<CancellationToken>())
+      .Returns(ValueTask.FromResult<FamilyMember?>(assigned));
 
-    var createdTask = new TaskInstance(spot, template.Title.Value, template.Points, dueAt, template.Id, assignedId);
+    var createdTask = new TaskInstance(spot, template.Title.Value, template.Points, dueAt, template.Id, assigned);
 
     factory
-      .CreateFromTemplate(template, spot, dueAt, Arg.Any<IEnumerable<TaskInstance>>(), assignedId)
+      .CreateFromTemplate(template, spot, dueAt, Arg.Any<IEnumerable<TaskInstance>>(), assigned)
       .Returns(Result.Success(createdTask));
 
     moodCalculator.CalculateMoodScoreAsync(spot.Id, Arg.Any<CancellationToken>()).Returns(100);
@@ -70,11 +71,15 @@ public class CreateTaskInstanceFromTemplateHandlerTests
     result.IsSuccess.ShouldBeTrue();
 
     await assignedMemberSelector.Received(1)
-      .SelectAssignedMemberIdAsync(template, spot, Arg.Any<CancellationToken>());
+      .SelectAssignedMemberAsync(template, spot, Arg.Any<CancellationToken>());
 
-    factory.Received(1).CreateFromTemplate(template, spot, dueAt, Arg.Any<IEnumerable<TaskInstance>>(), assignedId);
+    factory.Received(1).CreateFromTemplate(template, spot, dueAt, Arg.Any<IEnumerable<TaskInstance>>(), assigned);
 
     await taskRepo.Received(1)
-      .AddAsync(Arg.Is<TaskInstance>(t => t.AssignedToMemberId == assignedId), Arg.Any<CancellationToken>());
+      .AddAsync(
+        Arg.Is<TaskInstance>(t =>
+          assigned.Id == t.AssignedToMember!.Id
+          && t.DomainEvents.Any(e => e is TaskCreatedEvent)),
+        Arg.Any<CancellationToken>());
   }
 }
