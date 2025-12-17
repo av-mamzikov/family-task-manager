@@ -14,26 +14,41 @@ public class TaskCreatedTelegramNotifier(
 {
   public async ValueTask Handle(TaskCreatedEvent notification, CancellationToken cancellationToken)
   {
-    if (notification.AssignedUserTelegramId is null)
-      return;
-
     // Convert DueAt from UTC to family timezone for display
     var dueAtLocal = timeZoneService.ConvertFromUtc(notification.DueAt, notification.Timezone);
 
-    var mentionLine =
-      $"Сегодня твоя очередь, [{notification.AssignedUserName}](tg://user?id={notification.AssignedUserTelegramId})\n";
+    if (notification.AssignedUserTelegramId is null)
+    {
+      var message = $"🗺️ *Общая миссия открыта!*\n" +
+                    $"Никто ещё не назначен — кто-то из вас может взять квест.\n\n" +
+                    $"Задача: {notification.Title} для {notification.SpotName}\n" +
+                    $"Награда: {notification.Points}\n" +
+                    $"Срок выполнения: {dueAtLocal:HH:mm}\n\n" +
+                    $"Первый герой, который выполнит — забирает славу и очки!";
 
-    // Format message using data from event
-    var message = $"🦸 *Личная миссия для героя!*\n" +
-                  $"(это сообщение видишь только ты)\n\n" +
-                  $"Задача: {notification.Title} для {notification.SpotName}\n" +
-                  $"Награда: {notification.Points}\n" +
-                  $"Срок выполнения: {dueAtLocal:HH:mm}\n" +
-                  mentionLine;
+      await telegramNotificationService.SendToFamilyMembersAsync(
+        notification.FamilyId,
+        message,
+        [],
+        cancellationToken);
+    }
+    else
+    {
+      var mentionLine =
+        $"Сегодня твоя очередь, [{notification.AssignedUserName}](tg://user?id={notification.AssignedUserTelegramId})\n";
 
-    await telegramNotificationService.SendToUserAsync(
-      notification.AssignedUserTelegramId.Value,
-      message,
-      cancellationToken);
+      // Format message using data from event
+      var assignedMessage = $"🦸 *Личная миссия для героя!*\n" +
+                            $"(это сообщение видишь только ты)\n\n" +
+                            $"Задача: {notification.Title} для {notification.SpotName}\n" +
+                            $"Награда: {notification.Points}\n" +
+                            $"Срок выполнения: {dueAtLocal:HH:mm}\n" +
+                            mentionLine;
+
+      await telegramNotificationService.SendToUserAsync(
+        notification.AssignedUserTelegramId.Value,
+        assignedMessage,
+        cancellationToken);
+    }
   }
 }
