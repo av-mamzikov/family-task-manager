@@ -2,10 +2,10 @@ namespace FamilyTaskManager.Core.SpotAggregate.Specifications;
 
 public class GetSpotWithFamilySpec : Specification<Spot>
 {
-  public GetSpotWithFamilySpec(Guid SpotId)
+  public GetSpotWithFamilySpec(Guid spotId)
   {
     Query
-      .Where(p => p.Id == SpotId)
+      .Where(p => p.Id == spotId)
       .Include(p => p.Family);
   }
 }

@@ -15,14 +15,14 @@ public class SpotTests
     var name = "Whiskers";
 
     // Act
-    var Spot = new Spot(familyId, type, name);
+    var spot = new Spot(familyId, type, name);
 
     // Assert
-    Spot.FamilyId.ShouldBe(familyId);
-    Spot.Type.ShouldBe(type);
-    Spot.Name.ShouldBe(name);
-    Spot.MoodScore.ShouldBe(100);
-    Spot.CreatedAt.ShouldBeInRange(DateTime.UtcNow.AddSeconds(-1), DateTime.UtcNow.AddSeconds(1));
+    spot.FamilyId.ShouldBe(familyId);
+    spot.Type.ShouldBe(type);
+    spot.Name.ShouldBe(name);
+    spot.MoodScore.ShouldBe(100);
+    spot.CreatedAt.ShouldBeInRange(DateTime.UtcNow.AddSeconds(-1), DateTime.UtcNow.AddSeconds(1));
   }
 
   [Fact]
@@ -34,10 +34,10 @@ public class SpotTests
     var name = "  Buddy  ";
 
     // Act
-    var Spot = new Spot(familyId, type, name);
+    var spot = new Spot(familyId, type, name);
 
     // Assert
-    Spot.Name.ShouldBe("Buddy");
+    spot.Name.ShouldBe("Buddy");
   }
 
   [Theory]
@@ -51,10 +51,10 @@ public class SpotTests
     var name = "TestSpot";
 
     // Act
-    var Spot = new Spot(familyId, type, name);
+    var spot = new Spot(familyId, type, name);
 
     // Assert
-    Spot.Type.ShouldBe(type);
+    spot.Type.ShouldBe(type);
   }
 
   [Fact]
@@ -87,28 +87,28 @@ public class SpotTests
   public void UpdateName_WithValidName_UpdatesName()
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
     var newName = "Fluffy";
 
     // Act
-    Spot.UpdateName(newName);
+    spot.UpdateName(newName);
 
     // Assert
-    Spot.Name.ShouldBe(newName);
+    spot.Name.ShouldBe(newName);
   }
 
   [Fact]
   public void UpdateName_WithWhitespace_TrimsName()
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
     var newName = "  Fluffy  ";
 
     // Act
-    Spot.UpdateName(newName);
+    spot.UpdateName(newName);
 
     // Assert
-    Spot.Name.ShouldBe("Fluffy");
+    spot.Name.ShouldBe("Fluffy");
   }
 
   [Theory]
@@ -118,10 +118,10 @@ public class SpotTests
   public void UpdateName_WithInvalidName_ThrowsException(string? invalidName)
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
 
     // Act & Assert
-    Should.Throw<ArgumentException>(() => Spot.UpdateName(invalidName!));
+    Should.Throw<ArgumentException>(() => spot.UpdateName(invalidName!));
   }
 
   [Theory]
@@ -133,74 +133,74 @@ public class SpotTests
   public void UpdateMoodScore_WithValidScore_UpdatesMoodScore(int score)
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
 
     // Act
-    Spot.UpdateMoodScore(score);
+    spot.UpdateMoodScore(score);
 
     // Assert
-    Spot.MoodScore.ShouldBe(score);
+    spot.MoodScore.ShouldBe(score);
   }
 
   [Fact]
   public void UpdateMoodScore_WithScoreAbove100_ClampsTo100()
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
 
     // Act
-    Spot.UpdateMoodScore(150);
+    spot.UpdateMoodScore(150);
 
     // Assert
-    Spot.MoodScore.ShouldBe(100);
+    spot.MoodScore.ShouldBe(100);
   }
 
   [Fact]
   public void UpdateMoodScore_WithScoreBelow0_ClampsTo0()
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
 
     // Act
-    Spot.UpdateMoodScore(-50);
+    spot.UpdateMoodScore(-50);
 
     // Assert
-    Spot.MoodScore.ShouldBe(0);
+    spot.MoodScore.ShouldBe(0);
   }
 
   [Fact]
   public void UpdateMoodScore_Multiple_UpdatesToLatestValue()
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
 
     // Act
-    Spot.UpdateMoodScore(80);
-    Spot.UpdateMoodScore(30);
-    Spot.UpdateMoodScore(60);
+    spot.UpdateMoodScore(80);
+    spot.UpdateMoodScore(30);
+    spot.UpdateMoodScore(60);
 
     // Assert
-    Spot.MoodScore.ShouldBe(60);
+    spot.MoodScore.ShouldBe(60);
   }
 
   [Fact]
   public void UpdateMoodScore_WithBoundaryValues_ClampsCorrectly()
   {
     // Arrange
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
+    var spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Whiskers");
 
     // Act & Assert
-    Spot.UpdateMoodScore(-1);
-    Spot.MoodScore.ShouldBe(0);
+    spot.UpdateMoodScore(-1);
+    spot.MoodScore.ShouldBe(0);
 
-    Spot.UpdateMoodScore(101);
-    Spot.MoodScore.ShouldBe(100);
+    spot.UpdateMoodScore(101);
+    spot.MoodScore.ShouldBe(100);
 
-    Spot.UpdateMoodScore(0);
-    Spot.MoodScore.ShouldBe(0);
+    spot.UpdateMoodScore(0);
+    spot.MoodScore.ShouldBe(0);
 
-    Spot.UpdateMoodScore(100);
-    Spot.MoodScore.ShouldBe(100);
+    spot.UpdateMoodScore(100);
+    spot.MoodScore.ShouldBe(100);
   }
 
   [Fact]

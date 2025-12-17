@@ -4,9 +4,9 @@ namespace FamilyTaskManager.Core.TaskAggregate.Specifications;
 
 public class SpotsByIdsSpec : Specification<Spot>
 {
-  public SpotsByIdsSpec(IEnumerable<Guid> SpotIds)
+  public SpotsByIdsSpec(IEnumerable<Guid> spotIds)
   {
-    var ids = SpotIds.ToList();
+    var ids = spotIds.ToList();
     if (ids.Count == 0)
     {
       Query.Where(p => false); // Return no results if no IDs provided

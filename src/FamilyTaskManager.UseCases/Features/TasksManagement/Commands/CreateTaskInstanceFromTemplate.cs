@@ -10,7 +10,7 @@ public class CreateTaskInstanceFromTemplateHandler(
   IAppRepository<TaskTemplate> templateAppRepository,
   IAppRepository<TaskInstance> taskAppRepository,
   ITaskInstanceFactory taskInstanceFactory,
-  IAppRepository<Spot> SpotAppRepository,
+  IAppRepository<Spot> spotAppRepository,
   ISpotMoodCalculator moodCalculator)
   : ICommandHandler<CreateTaskInstanceFromTemplateCommand, Result<Guid>>
 {
@@ -22,14 +22,14 @@ public class CreateTaskInstanceFromTemplateHandler(
       return Result.NotFound($"TaskTemplate with ID {request.TemplateId} not found.");
 
     // Load Spot with family (needed for TaskCreatedEvent)
-    var SpotSpec = new GetSpotByIdWithFamilySpec(template.SpotId);
-    var Spot = await SpotAppRepository.FirstOrDefaultAsync(SpotSpec, cancellationToken);
-    if (Spot == null)
+    var spotSpec = new GetSpotByIdWithFamilySpec(template.SpotId);
+    var spot = await spotAppRepository.FirstOrDefaultAsync(spotSpec, cancellationToken);
+    if (spot == null)
       return Result.NotFound($"Spot with ID {template.SpotId} not found.");
 
     var spec = new TaskInstancesByTemplateSpec(request.TemplateId);
     var existingInstances = await taskAppRepository.ListAsync(spec, cancellationToken);
-    var createResult = taskInstanceFactory.CreateFromTemplate(template, Spot, request.DueAt, existingInstances);
+    var createResult = taskInstanceFactory.CreateFromTemplate(template, spot, request.DueAt, existingInstances);
     if (!createResult.IsSuccess)
       return Result.Error(string.Join(", ", createResult.Errors));
 
@@ -37,9 +37,9 @@ public class CreateTaskInstanceFromTemplateHandler(
     await taskAppRepository.SaveChangesAsync(cancellationToken);
 
     // Trigger immediate mood recalculation for the Spot
-    var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(Spot.Id, cancellationToken);
-    Spot.UpdateMoodScore(newMoodScore);
-    await SpotAppRepository.SaveChangesAsync(cancellationToken);
+    var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(spot.Id, cancellationToken);
+    spot.UpdateMoodScore(newMoodScore);
+    await spotAppRepository.SaveChangesAsync(cancellationToken);
 
     return Result.Success(createResult.Value.Id);
   }

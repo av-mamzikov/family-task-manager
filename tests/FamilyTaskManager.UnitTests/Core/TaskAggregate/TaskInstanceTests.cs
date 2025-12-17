@@ -9,30 +9,30 @@ namespace FamilyTaskManager.UnitTests.Core.TaskAggregate;
 
 public class TaskInstanceTests
 {
-  private static Spot CreateSpotWithFamily(string SpotName = "Test Spot", string timezone = "UTC")
+  private static Spot CreateSpotWithFamily(string spotName = "Test Spot", string timezone = "UTC")
   {
     var family = new Family("Test Family", timezone);
-    var Spot = new Spot(family.Id, SpotType.Cat, SpotName);
+    var spot = new Spot(family.Id, SpotType.Cat, spotName);
     // Manually set navigation property for tests
-    typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
-    return Spot;
+    typeof(Spot).GetProperty("Family")!.SetValue(spot, family);
+    return spot;
   }
 
   [Fact]
   public void Constructor_WithValidParameters_CreatesTaskInstance()
   {
     // Arrange
-    var Spot = CreateSpotWithFamily();
+    var spot = CreateSpotWithFamily();
     var title = "Feed the Spot";
     var points = 2;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act
-    var task = new TaskInstance(Spot, title, new(points), dueAt);
+    var task = new TaskInstance(spot, title, new(points), dueAt);
 
     // Assert
-    task.FamilyId.ShouldBe(Spot.FamilyId);
-    task.SpotId.ShouldBe(Spot.Id);
+    task.FamilyId.ShouldBe(spot.FamilyId);
+    task.SpotId.ShouldBe(spot.Id);
     task.Title.ShouldBe(title);
     task.Points.Value.ShouldBe(points);
     task.DueAt.ShouldBe(dueAt);
@@ -48,15 +48,15 @@ public class TaskInstanceTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var SpotId = Guid.NewGuid();
+    var spotId = Guid.NewGuid();
     var title = "Feed the Spot";
     var points = 2;
     var dueAt = DateTime.UtcNow.AddHours(2);
     var templateId = Guid.NewGuid();
 
     // Act
-    var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, title, new(points), dueAt, templateId);
+    var spot = CreateSpotWithFamily();
+    var task = new TaskInstance(spot, title, new(points), dueAt, templateId);
 
     // Assert
     task.TemplateId.ShouldBe(templateId);
@@ -67,14 +67,14 @@ public class TaskInstanceTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var SpotId = Guid.NewGuid();
+    var spotId = Guid.NewGuid();
     var title = "  Feed the Spot  ";
     var points = 2;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act
-    var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, title, new(points), dueAt);
+    var spot = CreateSpotWithFamily();
+    var task = new TaskInstance(spot, title, new(points), dueAt);
 
     // Assert
     task.Title.ShouldBe("Feed the Spot");
@@ -85,14 +85,14 @@ public class TaskInstanceTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var SpotId = Guid.NewGuid();
+    var spotId = Guid.NewGuid();
     var title = "Feed the Spot";
     var points = 2;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act
-    var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, title, new(points), dueAt);
+    var spot = CreateSpotWithFamily();
+    var task = new TaskInstance(spot, title, new(points), dueAt);
 
     // Assert
     task.DomainEvents.ShouldContain(e => e is TaskCreatedEvent);
@@ -103,7 +103,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var familyId = Guid.Empty;
-    var SpotId = Guid.NewGuid();
+    var spotId = Guid.NewGuid();
     var title = "Feed the Spot";
     var points = 10;
     var dueAt = DateTime.UtcNow.AddHours(2);
@@ -118,7 +118,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var SpotId = Guid.Empty;
+    var spotId = Guid.Empty;
     var title = "Feed the Spot";
     var points = 10;
     var dueAt = DateTime.UtcNow.AddHours(2);
@@ -136,7 +136,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var SpotId = Guid.NewGuid();
+    var spotId = Guid.NewGuid();
     var points = 10;
     var dueAt = DateTime.UtcNow.AddHours(2);
 
@@ -152,7 +152,7 @@ public class TaskInstanceTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var SpotId = Guid.NewGuid();
+    var spotId = Guid.NewGuid();
     var title = "Feed the Spot";
     var dueAt = DateTime.UtcNow.AddHours(2);
 
@@ -170,13 +170,13 @@ public class TaskInstanceTests
   {
     // Arrange
     var familyId = Guid.NewGuid();
-    var SpotId = Guid.NewGuid();
+    var spotId = Guid.NewGuid();
     var title = "Feed the Spot";
     var dueAt = DateTime.UtcNow.AddHours(2);
 
     // Act
-    var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, title, new(validPoints), dueAt);
+    var spot = CreateSpotWithFamily();
+    var task = new TaskInstance(spot, title, new(validPoints), dueAt);
 
     // Assert
     task.Points.Value.ShouldBe(validPoints);
@@ -323,8 +323,8 @@ public class TaskInstanceTests
   public void Complete_WithNullMember_ThrowsException()
   {
     // Arrange
-    var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
+    var spot = CreateSpotWithFamily();
+    var task = new TaskInstance(spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
     var completedAt = DateTime.UtcNow;
 
     // Act & Assert

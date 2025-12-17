@@ -43,11 +43,11 @@ public class CompleteTaskHandler(
     await taskAppRepository.SaveChangesAsync(cancellationToken);
 
     // Trigger immediate mood recalculation for the Spot
-    var Spot = await spotAppRepository.GetByIdAsync(task.SpotId, cancellationToken);
-    if (Spot != null)
+    var spot = await spotAppRepository.GetByIdAsync(task.SpotId, cancellationToken);
+    if (spot != null)
     {
       var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(task.SpotId, cancellationToken);
-      Spot.UpdateMoodScore(newMoodScore);
+      spot.UpdateMoodScore(newMoodScore);
       await spotAppRepository.SaveChangesAsync(cancellationToken);
     }
 

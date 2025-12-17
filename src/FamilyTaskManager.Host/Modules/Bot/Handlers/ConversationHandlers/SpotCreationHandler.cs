@@ -96,7 +96,7 @@ public class SpotCreationHandler(
     }
 
     // Parse Spot type
-    if (!Enum.TryParse<SpotType>(session.Data.SpotType, true, out var SpotType))
+    if (!Enum.TryParse<SpotType>(session.Data.SpotType, true, out var spotType))
     {
       await SendErrorAndClearStateAsync(
         botClient,
@@ -108,7 +108,7 @@ public class SpotCreationHandler(
     }
 
     // Create Spot (spot)
-    var createSpotCommand = new CreateSpotCommand(session.CurrentFamilyId.Value, SpotType, spotName);
+    var createSpotCommand = new CreateSpotCommand(session.CurrentFamilyId.Value, spotType, spotName);
     var result = await mediator.Send(createSpotCommand, cancellationToken);
 
     if (!result.IsSuccess)
@@ -122,11 +122,11 @@ public class SpotCreationHandler(
       return;
     }
 
-    var SpotEmoji = SpotDisplay.GetEmoji(SpotType);
+    var spotEmoji = SpotDisplay.GetEmoji(spotType);
 
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      $"✅ Спот {SpotEmoji} \"{spotName}\" успешно создан!\n\n" +
+      $"✅ Спот {spotEmoji} \"{spotName}\" успешно создан!\n\n" +
       BotMessages.Messages.SpotTasksAvailable,
       replyMarkup: MainMenuHelper.GetMainMenuKeyboard(),
       cancellationToken: cancellationToken);

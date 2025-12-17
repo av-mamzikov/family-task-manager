@@ -6,7 +6,7 @@ namespace FamilyTaskManager.UseCases.Features.SpotManagement.Dtos;
 /// </summary>
 public static class SpotTaskTemplateData
 {
-  private static readonly IReadOnlyList<TaskTemplateData> CatTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _catTemplates =
   [
     // Ежедневные задачи
     new(
@@ -62,7 +62,7 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> DogTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _dogTemplates =
   [
     // Ежедневные задачи
     new(
@@ -105,7 +105,7 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> HamsterTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _hamsterTemplates =
   [
     // Ежедневные задачи
     new(
@@ -142,7 +142,7 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> ParrotTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _parrotTemplates =
   [
     // Ежедневные задачи
     new(
@@ -185,7 +185,7 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> OtherPetTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _otherPetTemplates =
   [
     // Ежедневные задачи (универсальные для другого питомца)
     new(
@@ -216,7 +216,7 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> FishTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _fishTemplates =
   [
     // Ежедневные задачи
     new(
@@ -241,7 +241,7 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> TurtleTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _turtleTemplates =
   [
     new(
       "Покормить черепаху",
@@ -263,7 +263,7 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> PlantTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _plantTemplates =
   [
     new(
       "Полить комнатные растения",
@@ -285,7 +285,7 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> KitchenTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _kitchenTemplates =
   [
     new(
       "Помыть посуду и раковину на кухне",
@@ -313,7 +313,7 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> BathroomTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _bathroomTemplates =
   [
     new(
       "Протереть раковину и зеркало в ванной",
@@ -335,7 +335,7 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> KidsRoomTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _kidsRoomTemplates =
   [
     new(
       "Собрать и разложить игрушки в детской",
@@ -357,7 +357,7 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> HallwayTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _hallwayTemplates =
   [
     new(
       "Разложить обувь и верхнюю одежду в прихожей",
@@ -373,7 +373,7 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> WashingMachineTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _washingMachineTemplates =
   [
     new(
       "Запустить стирку вещей",
@@ -389,7 +389,7 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> DishwasherTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _dishwasherTemplates =
   [
     new(
       "Запустить посудомойку с грязной посудой",
@@ -405,7 +405,7 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> FridgeTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _fridgeTemplates =
   [
     new(
       "Проверить продукты в холодильнике и выбросить испорченное",
@@ -421,7 +421,7 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> FinancesTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _financesTemplates =
   [
     new(
       "Проверить семейный бюджет и траты",
@@ -437,9 +437,9 @@ public static class SpotTaskTemplateData
     )
   ];
 
-  private static readonly IReadOnlyList<TaskTemplateData> OtherTemplates = [];
+  private static readonly IReadOnlyList<TaskTemplateData> _otherTemplates = [];
 
-  private static readonly IReadOnlyList<TaskTemplateData> DocumentsTemplates =
+  private static readonly IReadOnlyList<TaskTemplateData> _documentsTemplates =
   [
     new(
       "Разобрать бумажные документы и убрать лишнее",
@@ -458,24 +458,24 @@ public static class SpotTaskTemplateData
   public static IReadOnlyList<TaskTemplateData> GetDefaultTemplates(SpotType spotType) =>
     spotType switch
     {
-      SpotType.Cat => CatTemplates,
-      SpotType.Dog => DogTemplates,
-      SpotType.Hamster => HamsterTemplates,
-      SpotType.Parrot => ParrotTemplates,
-      SpotType.OtherPet => OtherPetTemplates,
-      SpotType.Fish => FishTemplates,
-      SpotType.Turtle => TurtleTemplates,
-      SpotType.Plant => PlantTemplates,
-      SpotType.Kitchen => KitchenTemplates,
-      SpotType.Bathroom => BathroomTemplates,
-      SpotType.KidsRoom => KidsRoomTemplates,
-      SpotType.Hallway => HallwayTemplates,
-      SpotType.WashingMachine => WashingMachineTemplates,
-      SpotType.Dishwasher => DishwasherTemplates,
-      SpotType.Fridge => FridgeTemplates,
-      SpotType.Finances => FinancesTemplates,
-      SpotType.Documents => DocumentsTemplates,
-      SpotType.Other => OtherTemplates,
+      SpotType.Cat => _catTemplates,
+      SpotType.Dog => _dogTemplates,
+      SpotType.Hamster => _hamsterTemplates,
+      SpotType.Parrot => _parrotTemplates,
+      SpotType.OtherPet => _otherPetTemplates,
+      SpotType.Fish => _fishTemplates,
+      SpotType.Turtle => _turtleTemplates,
+      SpotType.Plant => _plantTemplates,
+      SpotType.Kitchen => _kitchenTemplates,
+      SpotType.Bathroom => _bathroomTemplates,
+      SpotType.KidsRoom => _kidsRoomTemplates,
+      SpotType.Hallway => _hallwayTemplates,
+      SpotType.WashingMachine => _washingMachineTemplates,
+      SpotType.Dishwasher => _dishwasherTemplates,
+      SpotType.Fridge => _fridgeTemplates,
+      SpotType.Finances => _financesTemplates,
+      SpotType.Documents => _documentsTemplates,
+      SpotType.Other => _otherTemplates,
       _ => throw new ArgumentOutOfRangeException(nameof(spotType), spotType, "Unknown Spot type")
     };
 

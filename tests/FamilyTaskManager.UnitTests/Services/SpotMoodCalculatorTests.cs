@@ -9,28 +9,28 @@ namespace FamilyTaskManager.UnitTests.Services;
 public class SpotMoodCalculatorTests
 {
   private readonly SpotMoodCalculator _calculator;
-  private readonly IAppRepository<Spot> _SpotAppRepository;
+  private readonly IAppRepository<Spot> _spotAppRepository;
   private readonly IAppRepository<TaskInstance> _taskAppRepository;
 
   public SpotMoodCalculatorTests()
   {
-    _SpotAppRepository = Substitute.For<IAppRepository<Spot>>();
+    _spotAppRepository = Substitute.For<IAppRepository<Spot>>();
     _taskAppRepository = Substitute.For<IAppRepository<TaskInstance>>();
-    _calculator = new(_SpotAppRepository, _taskAppRepository);
+    _calculator = new(_spotAppRepository, _taskAppRepository);
   }
 
   [Fact]
   public async Task CalculateMoodScoreAsync_Returns100_WhenNoTasksDue()
   {
     // Arrange
-    var SpotId = Guid.NewGuid();
-    var Spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Мурзик");
+    var spotId = Guid.NewGuid();
+    var spot = new Spot(Guid.NewGuid(), SpotType.Cat, "Мурзик");
 
-    _SpotAppRepository.GetByIdAsync(SpotId, Arg.Any<CancellationToken>()).Returns(Spot);
+    _spotAppRepository.GetByIdAsync(spotId, Arg.Any<CancellationToken>()).Returns(spot);
     _taskAppRepository.ListAsync(Arg.Any<TasksBySpotSpec>(), Arg.Any<CancellationToken>()).Returns([]);
 
     // Act
-    var result = await _calculator.CalculateMoodScoreAsync(SpotId, CancellationToken.None);
+    var result = await _calculator.CalculateMoodScoreAsync(spotId, CancellationToken.None);
 
     // Assert
     result.ShouldBe(100);
@@ -40,9 +40,9 @@ public class SpotMoodCalculatorTests
   public async Task CalculateMoodScoreAsync_Returns100_WhenTaskCompletedOnTime()
   {
     // Arrange
-    var SpotId = Guid.NewGuid();
+    var spotId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
-    var Spot = new Spot(familyId, SpotType.Cat, "Мурзик");
+    var spot = new Spot(familyId, SpotType.Cat, "Мурзик");
 
     var now = DateTime.UtcNow;
     var dueAt = now.AddHours(-2);
@@ -50,14 +50,14 @@ public class SpotMoodCalculatorTests
 
     var tasks = new List<TaskInstance>
     {
-      CreateCompletedTask(familyId, SpotId, new(2), dueAt, completedAt)
+      CreateCompletedTask(familyId, spotId, new(2), dueAt, completedAt)
     };
 
-    _SpotAppRepository.GetByIdAsync(SpotId, Arg.Any<CancellationToken>()).Returns(Spot);
+    _spotAppRepository.GetByIdAsync(spotId, Arg.Any<CancellationToken>()).Returns(spot);
     _taskAppRepository.ListAsync(Arg.Any<TasksBySpotSpec>(), Arg.Any<CancellationToken>()).Returns(tasks);
 
     // Act
-    var result = await _calculator.CalculateMoodScoreAsync(SpotId, CancellationToken.None);
+    var result = await _calculator.CalculateMoodScoreAsync(spotId, CancellationToken.None);
 
     // Assert
     // On-time completion gives full points: effectiveSum = 10, maxPoints = 10
@@ -69,9 +69,9 @@ public class SpotMoodCalculatorTests
   public async Task CalculateMoodScoreAsync_Returns50_WhenTaskCompletedLate()
   {
     // Arrange
-    var SpotId = Guid.NewGuid();
+    var spotId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
-    var Spot = new Spot(familyId, SpotType.Cat, "Мурзик");
+    var spot = new Spot(familyId, SpotType.Cat, "Мурзик");
 
     var now = DateTime.UtcNow;
     var dueAt = now.AddHours(-2);
@@ -79,14 +79,14 @@ public class SpotMoodCalculatorTests
 
     var tasks = new List<TaskInstance>
     {
-      CreateCompletedTask(familyId, SpotId, new(2), dueAt, completedAt)
+      CreateCompletedTask(familyId, spotId, new(2), dueAt, completedAt)
     };
 
-    _SpotAppRepository.GetByIdAsync(SpotId, Arg.Any<CancellationToken>()).Returns(Spot);
+    _spotAppRepository.GetByIdAsync(spotId, Arg.Any<CancellationToken>()).Returns(spot);
     _taskAppRepository.ListAsync(Arg.Any<TasksBySpotSpec>(), Arg.Any<CancellationToken>()).Returns(tasks);
 
     // Act
-    var result = await _calculator.CalculateMoodScoreAsync(SpotId, CancellationToken.None);
+    var result = await _calculator.CalculateMoodScoreAsync(spotId, CancellationToken.None);
 
     // Assert
     // Late completion gives 50% of points (kLate = 0.5)
@@ -99,23 +99,23 @@ public class SpotMoodCalculatorTests
   public async Task CalculateMoodScoreAsync_Returns0_WhenTaskOverdueMoreThan7Days()
   {
     // Arrange
-    var SpotId = Guid.NewGuid();
+    var spotId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
-    var Spot = new Spot(familyId, SpotType.Cat, "Мурзик");
+    var spot = new Spot(familyId, SpotType.Cat, "Мурзик");
 
     var now = DateTime.UtcNow;
     var dueAt = now.AddDays(-10); // Overdue by 10 days
 
     var tasks = new List<TaskInstance>
     {
-      CreateOverdueTask(familyId, SpotId, new(2), dueAt)
+      CreateOverdueTask(familyId, spotId, new(2), dueAt)
     };
 
-    _SpotAppRepository.GetByIdAsync(SpotId, Arg.Any<CancellationToken>()).Returns(Spot);
+    _spotAppRepository.GetByIdAsync(spotId, Arg.Any<CancellationToken>()).Returns(spot);
     _taskAppRepository.ListAsync(Arg.Any<TasksBySpotSpec>(), Arg.Any<CancellationToken>()).Returns(tasks);
 
     // Act
-    var result = await _calculator.CalculateMoodScoreAsync(SpotId, CancellationToken.None);
+    var result = await _calculator.CalculateMoodScoreAsync(spotId, CancellationToken.None);
 
     // Assert
     // Overdue > 7 days gives full negative penalty: f = 1.0
@@ -128,9 +128,9 @@ public class SpotMoodCalculatorTests
   public async Task CalculateMoodScoreAsync_CalculatesMixedScenariosCorrectly()
   {
     // Arrange
-    var SpotId = Guid.NewGuid();
+    var spotId = Guid.NewGuid();
     var familyId = Guid.NewGuid();
-    var Spot = new Spot(familyId, SpotType.Cat, "Мурзик");
+    var spot = new Spot(familyId, SpotType.Cat, "Мурзик");
 
     var now = DateTime.UtcNow;
 
@@ -147,16 +147,16 @@ public class SpotMoodCalculatorTests
 
     var tasks = new List<TaskInstance>
     {
-      CreateCompletedTask(familyId, SpotId, new(2), task1DueAt, task1CompletedAt),
-      CreateCompletedTask(familyId, SpotId, new(2), task2DueAt, task2CompletedAt),
-      CreateOverdueTask(familyId, SpotId, new(2), task3DueAt)
+      CreateCompletedTask(familyId, spotId, new(2), task1DueAt, task1CompletedAt),
+      CreateCompletedTask(familyId, spotId, new(2), task2DueAt, task2CompletedAt),
+      CreateOverdueTask(familyId, spotId, new(2), task3DueAt)
     };
 
-    _SpotAppRepository.GetByIdAsync(SpotId, Arg.Any<CancellationToken>()).Returns(Spot);
+    _spotAppRepository.GetByIdAsync(spotId, Arg.Any<CancellationToken>()).Returns(spot);
     _taskAppRepository.ListAsync(Arg.Any<TasksBySpotSpec>(), Arg.Any<CancellationToken>()).Returns(tasks);
 
     // Act
-    var result = await _calculator.CalculateMoodScoreAsync(SpotId, CancellationToken.None);
+    var result = await _calculator.CalculateMoodScoreAsync(spotId, CancellationToken.None);
 
     // Assert
     // Task 1: on-time = +10
@@ -168,19 +168,19 @@ public class SpotMoodCalculatorTests
   }
 
   // Helper methods
-  private TaskInstance CreateCompletedTask(Guid familyId, Guid SpotId, TaskPoints points, DateTime dueAt,
+  private TaskInstance CreateCompletedTask(Guid familyId, Guid spotId, TaskPoints points, DateTime dueAt,
     DateTime completedAt)
   {
-    var Spot = TestHelpers.CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Test Task", points, dueAt);
+    var spot = TestHelpers.CreateSpotWithFamily();
+    var task = new TaskInstance(spot, "Test Task", points, dueAt);
     var member = TestHelpers.CreateMemberWithUser();
     task.Complete(member, completedAt);
     return task;
   }
 
-  private TaskInstance CreateOverdueTask(Guid familyId, Guid SpotId, TaskPoints points, DateTime dueAt)
+  private TaskInstance CreateOverdueTask(Guid familyId, Guid spotId, TaskPoints points, DateTime dueAt)
   {
-    var Spot = TestHelpers.CreateSpotWithFamily();
-    return new(Spot, "Test Task", points, dueAt);
+    var spot = TestHelpers.CreateSpotWithFamily();
+    return new(spot, "Test Task", points, dueAt);
   }
 }

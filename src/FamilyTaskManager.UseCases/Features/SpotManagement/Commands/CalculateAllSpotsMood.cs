@@ -13,14 +13,14 @@ public class CalculateAllSpotsMoodHandler(IMediator mediator)
   public async ValueTask<Result> Handle(CalculateAllSpotsMoodCommand command, CancellationToken cancellationToken)
   {
     // Get all Spots
-    var SpotsResult = await mediator.Send(new GetAllSpotsQuery(), cancellationToken);
+    var spotsResult = await mediator.Send(new GetAllSpotsQuery(), cancellationToken);
 
-    if (!SpotsResult.IsSuccess) return Result.Error("Failed to retrieve Spots");
+    if (!spotsResult.IsSuccess) return Result.Error("Failed to retrieve Spots");
 
-    var Spots = SpotsResult.Value;
+    var spots = spotsResult.Value;
 
     // Calculate mood for each spot (will register domain events if needed)
-    foreach (var Spot in Spots) await mediator.Send(new CalculateSpotMoodScoreCommand(Spot.Id), cancellationToken);
+    foreach (var spot in spots) await mediator.Send(new CalculateSpotMoodScoreCommand(spot.Id), cancellationToken);
 
     return Result.Success();
   }

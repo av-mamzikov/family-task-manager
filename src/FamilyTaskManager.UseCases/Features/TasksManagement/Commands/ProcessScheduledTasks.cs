@@ -20,7 +20,7 @@ public record ProcessScheduledTaskCommand(DateTime CheckFrom, DateTime CheckTo) 
 public class ProcessScheduledTasksHandler(
   IAppReadRepository<TaskTemplate> templateRepository,
   IAppRepository<TaskInstance> taskAppRepository,
-  IAppRepository<Spot> SpotAppRepository,
+  IAppRepository<Spot> spotAppRepository,
   ITaskInstanceFactory taskInstanceFactory,
   ILogger<ProcessScheduledTasksHandler> logger)
   : ICommandHandler<ProcessScheduledTaskCommand, Result<int>>
@@ -52,9 +52,9 @@ public class ProcessScheduledTasksHandler(
             template.Id, template.Title, triggerTime.Value, dueAt, template.Family.Timezone);
 
           // Load Spot with family (needed for TaskCreatedEvent)
-          var SpotSpec = new GetSpotByIdWithFamilySpec(template.SpotId);
-          var Spot = await SpotAppRepository.FirstOrDefaultAsync(SpotSpec, cancellationToken);
-          if (Spot == null)
+          var spotSpec = new GetSpotByIdWithFamilySpec(template.SpotId);
+          var spot = await spotAppRepository.FirstOrDefaultAsync(spotSpec, cancellationToken);
+          if (spot == null)
           {
             logger.LogWarning("Spot {SpotId} not found for template {TemplateId}, skipping", template.SpotId,
               template.Id);
@@ -64,7 +64,7 @@ public class ProcessScheduledTasksHandler(
           // Get existing instances for this template
           var existingSpec = new ActiveTaskInstancesByTemplateSpec(template.Id);
           var existingInstances = await taskAppRepository.ListAsync(existingSpec, cancellationToken);
-          var createResult = taskInstanceFactory.CreateFromTemplate(template, Spot, dueAt, existingInstances);
+          var createResult = taskInstanceFactory.CreateFromTemplate(template, spot, dueAt, existingInstances);
 
           if (createResult.IsSuccess)
           {

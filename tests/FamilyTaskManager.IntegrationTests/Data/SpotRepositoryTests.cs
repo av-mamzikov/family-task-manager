@@ -39,14 +39,14 @@ public class SpotRepositoryTests : RepositoryTestsBase<Spot>
   public async Task Spot_ShouldHaveDefaultMoodScore()
   {
     // Arrange
-    var Spot = CreateSpotWithFamily(Guid.NewGuid(), SpotType.Hamster, "Hammy");
+    var spot = CreateSpotWithFamily(Guid.NewGuid(), SpotType.Hamster, "Hammy");
 
     // Act
-    await Repository.AddAsync(Spot);
+    await Repository.AddAsync(spot);
     await DbContext.SaveChangesAsync();
 
     // Assert
-    var retrieved = await Repository.GetByIdAsync(Spot.Id);
+    var retrieved = await Repository.GetByIdAsync(spot.Id);
     retrieved.ShouldNotBeNull();
     retrieved.MoodScore.ShouldBe(100);
     retrieved.Type.ShouldBe(SpotType.Hamster);
@@ -56,17 +56,17 @@ public class SpotRepositoryTests : RepositoryTestsBase<Spot>
   public async Task UpdateMoodScore_ShouldClampBetween0And100()
   {
     // Arrange
-    var Spot = CreateSpotWithFamily(Guid.NewGuid(), SpotType.Cat, "Test Cat");
-    await Repository.AddAsync(Spot);
+    var spot = CreateSpotWithFamily(Guid.NewGuid(), SpotType.Cat, "Test Cat");
+    await Repository.AddAsync(spot);
     await DbContext.SaveChangesAsync();
 
     // Act
-    Spot.UpdateMoodScore(150); // Should clamp to 100
-    await Repository.UpdateAsync(Spot);
+    spot.UpdateMoodScore(150); // Should clamp to 100
+    await Repository.UpdateAsync(spot);
     await DbContext.SaveChangesAsync();
 
     // Assert
-    var retrieved = await Repository.GetByIdAsync(Spot.Id);
+    var retrieved = await Repository.GetByIdAsync(spot.Id);
     retrieved.ShouldNotBeNull();
     retrieved.MoodScore.ShouldBe(100);
   }
@@ -80,14 +80,14 @@ public class SpotRepositoryTests : RepositoryTestsBase<Spot>
     await familyRepository.AddAsync(family);
     await DbContext.SaveChangesAsync();
 
-    var Spot = new Spot(family.Id, SpotType.Cat, "Busy Cat");
+    var spot = new Spot(family.Id, SpotType.Cat, "Busy Cat");
     // Set navigation property for test
-    typeof(Spot).GetProperty("Family")!.SetValue(Spot, family);
-    await Repository.AddAsync(Spot);
+    typeof(Spot).GetProperty("Family")!.SetValue(spot, family);
+    await Repository.AddAsync(spot);
     await DbContext.SaveChangesAsync();
 
     var task = new TaskInstance(
-      Spot,
+      spot,
       "Feed Busy Cat",
       new(2),
       DateTime.UtcNow.AddDays(1));
@@ -97,11 +97,11 @@ public class SpotRepositoryTests : RepositoryTestsBase<Spot>
     await DbContext.SaveChangesAsync();
 
     // Act
-    await Repository.DeleteAsync(Spot);
+    await Repository.DeleteAsync(spot);
     await DbContext.SaveChangesAsync();
 
     // Assert
-    (await Repository.GetByIdAsync(Spot.Id)).ShouldBeNull();
+    (await Repository.GetByIdAsync(spot.Id)).ShouldBeNull();
     (await taskRepository.GetByIdAsync(task.Id)).ShouldBeNull();
   }
 }
