@@ -19,7 +19,8 @@ public class GetFamilyMembersHandler(
       .Where(m => m.IsActive)
       .OrderBy(m => m.Role).ThenBy(m => m.User.Name)
       .Select(member =>
-        new FamilyMemberDto(member.Id, member.UserId, member.FamilyId, member.User.Name, member.Role, member.Points))
+        new FamilyMemberDto(member.Id, member.UserId, member.FamilyId, member.User.Name, member.User.TelegramId,
+          member.Role, member.Points))
       .ToList();
 
     return Result<List<FamilyMemberDto>>.Success(members);

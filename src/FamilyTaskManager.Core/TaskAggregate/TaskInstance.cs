@@ -34,12 +34,13 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
       TaskId = Id,
       FamilyId = spot.FamilyId,
       SpotId = spot.Id,
-      AssignedToMemberId = AssignedToMemberId,
       Title = title.Trim(),
       SpotName = spot.Name,
       Points = points.ToString(),
       DueAt = dueAt,
-      Timezone = spot.Family.Timezone
+      Timezone = spot.Family.Timezone,
+      AssignedUserName = AssignedToMember?.User?.Name,
+      AssignedUserTelegramId = AssignedToMember?.User?.TelegramId
     });
   }
 
@@ -163,8 +164,11 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
       FamilyId = FamilyId,
       TemplateId = TemplateId,
       Title = Title,
+      SpotName = Spot.Name,
       DueAt = DueAt,
-      Timezone = Family.Timezone
+      Timezone = Family.Timezone,
+      AssignedUserName = AssignedToMember?.User?.Name,
+      AssignedUserTelegramId = AssignedToMember?.User?.TelegramId
     });
   }
 }

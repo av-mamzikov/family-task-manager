@@ -102,5 +102,9 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
       .WithMany()
       .HasForeignKey(t => t.CompletedByMemberId)
       .OnDelete(DeleteBehavior.SetNull);
+
+    builder.Navigation(e => e.AssignedToMember).AutoInclude();
+    builder.Navigation(e => e.StartedByMember).AutoInclude();
+    builder.Navigation(e => e.CompletedByMember).AutoInclude();
   }
 }

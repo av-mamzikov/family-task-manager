@@ -88,7 +88,12 @@ public class TaskBrowsingHandler(
         var spotEmoji = SpotDisplay.GetEmoji(task.SpotType);
         messageText += $"{overdueMarker} *{task.Title}*\n";
         messageText += $"   {spotEmoji} {task.SpotName} | {task.Points.ToStars()}\n";
-        messageText += $"   📅 До: {task.DueAtLocal:dd.MM.yyyy HH:mm}\n\n";
+        messageText += $"   📅 До: {task.DueAtLocal:dd.MM.yyyy HH:mm}\n";
+        if (!string.IsNullOrEmpty(task.AssignedToUserName) && task.AssignedToUserTelegramId is not null)
+          messageText +=
+            $"   🦸 Герой миссии: [{task.AssignedToUserName}](tg://user?id={task.AssignedToUserTelegramId})\n";
+
+        messageText += "\n";
       }
     }
 
@@ -101,6 +106,9 @@ public class TaskBrowsingHandler(
         messageText += $"🔄 *{task.Title}*\n";
         messageText += $"   {spotEmoji} {task.SpotName} | {task.Points.ToStars()}\n";
         if (!string.IsNullOrEmpty(task.StartedByUserName)) messageText += $"   👤 Взял(а): {task.StartedByUserName}\n";
+        if (!string.IsNullOrEmpty(task.AssignedToUserName) && task.AssignedToUserTelegramId is not null)
+          messageText +=
+            $"   🦸 Герой миссии: [{task.AssignedToUserName}](tg://user?id={task.AssignedToUserTelegramId})\n";
 
         messageText += "\n";
       }
