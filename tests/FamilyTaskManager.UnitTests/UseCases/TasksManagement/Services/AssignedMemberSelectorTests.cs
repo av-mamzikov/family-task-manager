@@ -38,7 +38,7 @@ public class AssignedMemberSelectorTests
     spot.AssignResponsible(m1);
 
     var statsQuery = Substitute.For<ITaskCompletionStatsQuery>();
-    statsQuery.GetLastCompletedAtByMemberForTemplateAsync(
+    statsQuery.GetLastCreatedAtByAssignedForTemplateAsync(
         template.FamilyId,
         template.Id,
         Arg.Any<IReadOnlyCollection<Guid>>(),
@@ -54,13 +54,13 @@ public class AssignedMemberSelectorTests
     // Assert
     result!.Id.ShouldBe(m2.Id);
 
-    await statsQuery.Received(1).GetLastCompletedAtByMemberForTemplateAsync(
+    await statsQuery.Received(1).GetLastCreatedAtByAssignedForTemplateAsync(
       template.FamilyId,
       template.Id,
       Arg.Is<IReadOnlyCollection<Guid>>(ids => ids.Count == 2 && ids.Contains(m1.Id) && ids.Contains(m2.Id)),
       Arg.Any<CancellationToken>());
 
-    await statsQuery.DidNotReceive().GetLastCompletedAtByMemberForSpotAsync(
+    await statsQuery.DidNotReceive().GetLastCreatedAtByAssignedForSpotAsync(
       Arg.Any<Guid>(),
       Arg.Any<Guid>(),
       Arg.Any<IReadOnlyCollection<Guid>>(),
@@ -79,7 +79,7 @@ public class AssignedMemberSelectorTests
     var newer = DateTime.UtcNow.AddDays(-1);
 
     var statsQuery = Substitute.For<ITaskCompletionStatsQuery>();
-    statsQuery.GetLastCompletedAtByMemberForSpotAsync(
+    statsQuery.GetLastCreatedAtByAssignedForSpotAsync(
         spot.FamilyId,
         spot.Id,
         Arg.Any<IReadOnlyCollection<Guid>>(),

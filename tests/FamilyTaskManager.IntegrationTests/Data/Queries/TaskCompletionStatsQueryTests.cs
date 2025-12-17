@@ -9,7 +9,7 @@ namespace FamilyTaskManager.IntegrationTests.Data.Queries;
 public class TaskCompletionStatsQueryTests : BaseRepositoryTestFixture
 {
   [Fact]
-  public async Task GetLastCompletedAtByMemberForTemplateAsync_ReturnsMaxCompletedAtPerMember()
+  public async Task GetLastCompletedAtByMemberForTemplateAsync_ReturnsMaxCreatedAtPerAssignee()
   {
     // Arrange
     var family = new Family("Test Family", "UTC");
@@ -46,19 +46,19 @@ public class TaskCompletionStatsQueryTests : BaseRepositoryTestFixture
     var m2 = DateTime.UtcNow.AddDays(-5);
     var m3 = DateTime.UtcNow.AddDays(-1);
 
-    var task1 = new TaskInstance(spot, "t1", new(1), dueAt, template.Id);
-    task1.Complete(member1, m1Old);
+    var task1 = new TaskInstance(spot, "t1", new(1), dueAt, template.Id, member1);
+    typeof(TaskInstance).GetProperty(nameof(TaskInstance.CreatedAt))!.SetValue(task1, m1Old);
 
-    var task2 = new TaskInstance(spot, "t2", new(1), dueAt, template.Id);
-    task2.Complete(member1, m1New);
+    var task2 = new TaskInstance(spot, "t2", new(1), dueAt, template.Id, member1);
+    typeof(TaskInstance).GetProperty(nameof(TaskInstance.CreatedAt))!.SetValue(task2, m1New);
 
-    var task3 = new TaskInstance(spot, "t3", new(1), dueAt, template.Id);
-    task3.Complete(member2, m2);
+    var task3 = new TaskInstance(spot, "t3", new(1), dueAt, template.Id, member2);
+    typeof(TaskInstance).GetProperty(nameof(TaskInstance.CreatedAt))!.SetValue(task3, m2);
 
-    var task4 = new TaskInstance(spot, "t4", new(1), dueAt, template.Id);
-    task4.Complete(member3, m3);
+    var task4 = new TaskInstance(spot, "t4", new(1), dueAt, template.Id, member3);
+    typeof(TaskInstance).GetProperty(nameof(TaskInstance.CreatedAt))!.SetValue(task4, m3);
 
-    // Not completed -> must be ignored
+    // Not assigned -> must be ignored
     var taskNotCompleted = new TaskInstance(spot, "t5", new(1), dueAt, template.Id);
 
     // Different template -> must be ignored
@@ -74,8 +74,9 @@ public class TaskCompletionStatsQueryTests : BaseRepositoryTestFixture
 
     await DbContext.TaskTemplates.AddAsync(otherTemplate);
 
-    var taskOtherTemplate = new TaskInstance(spot, "t6", new(1), dueAt, otherTemplate.Id);
-    taskOtherTemplate.Complete(member1, DateTime.UtcNow.AddDays(-3));
+    var taskOtherTemplate = new TaskInstance(spot, "t6", new(1), dueAt, otherTemplate.Id, member1);
+    typeof(TaskInstance).GetProperty(nameof(TaskInstance.CreatedAt))!.SetValue(taskOtherTemplate,
+      DateTime.UtcNow.AddDays(-3));
 
     await DbContext.TaskInstances.AddRangeAsync(task1, task2, task3, task4, taskNotCompleted, taskOtherTemplate);
     await DbContext.SaveChangesAsync();
@@ -83,7 +84,7 @@ public class TaskCompletionStatsQueryTests : BaseRepositoryTestFixture
     var sut = new TaskCompletionStatsQuery(DbContext);
 
     // Act
-    var result = await sut.GetLastCompletedAtByMemberForTemplateAsync(
+    var result = await sut.GetLastCreatedAtByAssignedForTemplateAsync(
       family.Id,
       template.Id,
       new[] { member1.Id, member2.Id },

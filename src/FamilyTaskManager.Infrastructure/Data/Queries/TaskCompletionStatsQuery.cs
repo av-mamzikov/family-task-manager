@@ -1,11 +1,10 @@
 using FamilyTaskManager.UseCases.Features.TasksManagement.Services;
-using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
 
 namespace FamilyTaskManager.Infrastructure.Data.Queries;
 
 public class TaskCompletionStatsQuery(AppDbContext dbContext) : ITaskCompletionStatsQuery
 {
-  public async ValueTask<IReadOnlyDictionary<Guid, DateTime>> GetLastCompletedAtByMemberForTemplateAsync(
+  public async ValueTask<IReadOnlyDictionary<Guid, DateTime>> GetLastCreatedAtByAssignedForTemplateAsync(
     Guid familyId,
     Guid templateId,
     IReadOnlyCollection<Guid> memberIds,
@@ -18,17 +17,16 @@ public class TaskCompletionStatsQuery(AppDbContext dbContext) : ITaskCompletionS
       .AsNoTracking()
       .Where(t => t.FamilyId == familyId)
       .Where(t => t.TemplateId == templateId)
-      .Where(t => t.Status == TaskStatus.Completed)
-      .Where(t => t.CompletedByMemberId != null && t.CompletedAt != null)
-      .Where(t => memberIds.Contains(t.CompletedByMemberId!.Value))
-      .GroupBy(t => t.CompletedByMemberId!.Value)
-      .Select(g => new { MemberId = g.Key, LastCompletedAt = g.Max(x => x.CompletedAt!.Value) })
+      .Where(t => t.AssignedToMemberId != null)
+      .Where(t => memberIds.Contains(t.AssignedToMemberId!.Value))
+      .GroupBy(t => t.AssignedToMemberId!.Value)
+      .Select(g => new { MemberId = g.Key, LastCompletedAt = g.Max(x => x.CreatedAt) })
       .ToListAsync(cancellationToken);
 
     return rows.ToDictionary(x => x.MemberId, x => x.LastCompletedAt);
   }
 
-  public async ValueTask<IReadOnlyDictionary<Guid, DateTime>> GetLastCompletedAtByMemberForSpotAsync(
+  public async ValueTask<IReadOnlyDictionary<Guid, DateTime>> GetLastCreatedAtByAssignedForSpotAsync(
     Guid familyId,
     Guid spotId,
     IReadOnlyCollection<Guid> memberIds,
@@ -41,11 +39,10 @@ public class TaskCompletionStatsQuery(AppDbContext dbContext) : ITaskCompletionS
       .AsNoTracking()
       .Where(t => t.FamilyId == familyId)
       .Where(t => t.SpotId == spotId)
-      .Where(t => t.Status == TaskStatus.Completed)
-      .Where(t => t.CompletedByMemberId != null && t.CompletedAt != null)
-      .Where(t => memberIds.Contains(t.CompletedByMemberId!.Value))
-      .GroupBy(t => t.CompletedByMemberId!.Value)
-      .Select(g => new { MemberId = g.Key, LastCompletedAt = g.Max(x => x.CompletedAt!.Value) })
+      .Where(t => t.AssignedToMemberId != null)
+      .Where(t => memberIds.Contains(t.AssignedToMemberId!.Value))
+      .GroupBy(t => t.AssignedToMemberId!.Value)
+      .Select(g => new { MemberId = g.Key, LastCompletedAt = g.Max(x => x.CreatedAt) })
       .ToListAsync(cancellationToken);
 
     return rows.ToDictionary(x => x.MemberId, x => x.LastCompletedAt);

@@ -11,7 +11,7 @@ public class AssignedMemberSelector(ITaskCompletionStatsQuery statsQuery) : IAss
 
     if (templateCandidates.Count > 0)
     {
-      var lastCompletedByMember = await statsQuery.GetLastCompletedAtByMemberForTemplateAsync(
+      var lastCompletedByMember = await statsQuery.GetLastCreatedAtByAssignedForTemplateAsync(
         template.FamilyId,
         template.Id,
         templateCandidates.Select(m => m.Id).ToList(),
@@ -28,7 +28,7 @@ public class AssignedMemberSelector(ITaskCompletionStatsQuery statsQuery) : IAss
     if (spotCandidates.Count == 0)
       return null;
 
-    var spotLastCompletedByMember = await statsQuery.GetLastCompletedAtByMemberForSpotAsync(
+    var spotLastCompletedByMember = await statsQuery.GetLastCreatedAtByAssignedForSpotAsync(
       spot.FamilyId,
       spot.Id,
       spotCandidates.Select(m => m.Id).ToList(),
