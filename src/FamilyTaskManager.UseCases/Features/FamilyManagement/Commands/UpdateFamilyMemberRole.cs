@@ -1,5 +1,3 @@
-using FamilyTaskManager.Core.FamilyAggregate.Specifications;
-
 namespace FamilyTaskManager.UseCases.Features.FamilyManagement.Commands;
 
 public record UpdateFamilyMemberRoleCommand(
@@ -13,8 +11,7 @@ public class UpdateFamilyMemberRoleHandler(IAppRepository<Family> familyAppRepos
 {
   public async ValueTask<Result> Handle(UpdateFamilyMemberRoleCommand command, CancellationToken cancellationToken)
   {
-    var spec = new GetFamilyWithMembersSpec(command.FamilyId);
-    var family = await familyAppRepository.FirstOrDefaultAsync(spec, cancellationToken);
+    var family = await familyAppRepository.GetByIdAsync(command.FamilyId, cancellationToken);
     if (family == null) return Result.NotFound("Семья не найдена");
 
     var requester = family.Members.FirstOrDefault(m => m.UserId == command.RequestedBy && m.IsActive);

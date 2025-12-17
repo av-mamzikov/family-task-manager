@@ -1,5 +1,3 @@
-using FamilyTaskManager.Core.FamilyAggregate.Specifications;
-
 namespace FamilyTaskManager.UseCases.Features.FamilyManagement.Commands;
 
 public record CreateInviteCodeCommand(Guid FamilyId, FamilyRole Role, Guid CreatedBy, int ExpirationDays = 7)
@@ -11,9 +9,7 @@ public class CreateInviteCodeHandler(
 {
   public async ValueTask<Result<string>> Handle(CreateInviteCodeCommand command, CancellationToken cancellationToken)
   {
-    // Load family with members to validate creator membership and role
-    var familySpec = new GetFamilyWithMembersSpec(command.FamilyId);
-    var family = await familyAppRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
+    var family = await familyAppRepository.GetByIdAsync(command.FamilyId, cancellationToken);
     if (family == null) return Result<string>.NotFound("Family not found");
 
     // Verify creator is a member of the family with appropriate permissions

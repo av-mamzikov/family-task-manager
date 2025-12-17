@@ -18,16 +18,6 @@ public class TaskInstanceTests
     return Spot;
   }
 
-  private static FamilyMember CreateMemberWithUser(Guid? familyId = null, string userName = "Test User")
-  {
-    var user = new User(123456789L, userName);
-    var family = new Family("Test Family", "UTC");
-    var member = family.AddMember(user, FamilyRole.Child);
-    // Manually set navigation property for tests
-    typeof(FamilyMember).GetProperty("User")!.SetValue(member, user);
-    return member;
-  }
-
   [Fact]
   public void Constructor_WithValidParameters_CreatesTaskInstance()
   {
@@ -196,17 +186,18 @@ public class TaskInstanceTests
   public void Start_WhenActive_ChangesStatusToInProgress()
   {
     // Arrange
-    var Spot = CreateSpotWithFamily();
-    var family = new Family("Test Family", "UTC");
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
+    var spot = CreateSpotWithFamily();
+    var family = spot.Family;
+    var task = new TaskInstance(spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
     var user = new User(123, "Test User");
-    var member = new FamilyMember(user.Id, family.Id, FamilyRole.Admin);
+    var member = family.AddMember(user, FamilyRole.Admin);
     task.Status.ShouldBe(TaskStatus.Active);
 
     // Act
-    task.Start(member);
+    var result = task.StartByUserId(user.Id, family);
 
     // Assert
+    result.IsSuccess.ShouldBe(true);
     task.Status.ShouldBe(TaskStatus.InProgress);
     task.StartedByMemberId.ShouldBe(member.Id);
   }
@@ -215,15 +206,15 @@ public class TaskInstanceTests
   public void Start_WhenAlreadyInProgress_RemainsInProgress()
   {
     // Arrange
-    var Spot = CreateSpotWithFamily();
-    var family = new Family("Test Family", "UTC");
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
+    var spot = CreateSpotWithFamily();
+    var family = spot.Family;
+    var task = new TaskInstance(spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
     var user = new User(123, "Test User");
-    var member = new FamilyMember(user.Id, family.Id, FamilyRole.Admin);
-    task.Start(member);
+    var member = family.AddMember(user, FamilyRole.Admin);
+    task.StartByMember(member);
 
     // Act
-    task.Start(member);
+    task.StartByMember(member);
 
     // Assert
     task.Status.ShouldBe(TaskStatus.InProgress);
@@ -234,16 +225,16 @@ public class TaskInstanceTests
   {
     // Arrange
 
-    var Spot = CreateSpotWithFamily();
-    var family = new Family("Test Family", "UTC");
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
+    var spot = CreateSpotWithFamily();
+    var family = spot.Family;
+    var task = new TaskInstance(spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
     var user = new User(123, "Test User");
-    var member = new FamilyMember(user.Id, family.Id, FamilyRole.Admin);
-    var completedByMember = CreateMemberWithUser();
+    var member = family.AddMember(user, FamilyRole.Admin);
+    var completedByMember = family.AddMember(user, FamilyRole.Admin);
     task.Complete(completedByMember, DateTime.UtcNow);
 
     // Act
-    task.Start(member);
+    task.StartByMember(member);
 
     // Assert
     task.Status.ShouldBe(TaskStatus.Completed);
@@ -253,9 +244,9 @@ public class TaskInstanceTests
   public void Complete_WhenActive_CompletesTask()
   {
     // Arrange
-    var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
-    var completedByMember = CreateMemberWithUser();
+    var spot = CreateSpotWithFamily();
+    var task = new TaskInstance(spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
+    var completedByMember = spot.Family.AddMember(new(0, "NewUser"), FamilyRole.Admin);
     var completedAt = DateTime.UtcNow;
 
     // Act
@@ -271,13 +262,13 @@ public class TaskInstanceTests
   public void Complete_WhenInProgress_CompletesTask()
   {
     // Arrange
-    var Spot = CreateSpotWithFamily();
-    var family = new Family("Test Family", "UTC");
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
+    var spot = CreateSpotWithFamily();
+    var family = spot.Family;
+    var task = new TaskInstance(spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
     var user = new User(123, "Test User");
-    var member = new FamilyMember(user.Id, family.Id, FamilyRole.Admin);
-    task.Start(member);
-    var completedByMember = CreateMemberWithUser();
+    var member = family.AddMember(user, FamilyRole.Admin);
+    task.StartByMember(member);
+    var completedByMember = family.AddMember(user, FamilyRole.Admin);
     var completedAt = DateTime.UtcNow;
 
     // Act
@@ -293,9 +284,9 @@ public class TaskInstanceTests
   public void Complete_RaisesTaskCompletedEvent()
   {
     // Arrange
-    var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
-    var completedByMember = CreateMemberWithUser();
+    var spot = CreateSpotWithFamily();
+    var task = new TaskInstance(spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
+    var completedByMember = spot.Family.AddMember(new(0, "NewUser"), FamilyRole.Admin);
     var completedAt = DateTime.UtcNow;
 
     // Act
@@ -309,13 +300,14 @@ public class TaskInstanceTests
   public void Complete_WhenAlreadyCompleted_DoesNotChangeState()
   {
     // Arrange
-    var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
-    var firstCompletedByMember = CreateMemberWithUser();
+    var spot = CreateSpotWithFamily();
+    var task = new TaskInstance(spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
+    var firstCompletedByMember = spot.Family.AddMember(new(0, "firstUser"), FamilyRole.Admin);
     var firstCompletedAt = DateTime.UtcNow;
     task.Complete(firstCompletedByMember, firstCompletedAt);
 
-    var secondCompletedByMember = CreateMemberWithUser();
+    var secondCompletedByMember = spot.Family.AddMember(new(0, "secondUser"), FamilyRole.Admin);
+    ;
     var secondCompletedAt = DateTime.UtcNow.AddHours(1);
 
     // Act
@@ -343,10 +335,10 @@ public class TaskInstanceTests
   public void TaskLifecycle_FromActiveToCompleted_WorksCorrectly()
   {
     // Arrange
-    var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
-    var family = new Family("Test Family", "UTC");
-    var completedByMember = CreateMemberWithUser(family.Id, "CompetedUser");
+    var spot = CreateSpotWithFamily();
+    var task = new TaskInstance(spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
+    var family = spot.Family;
+    var completedByMember = family.AddMember(new(0, "CompetedUser"), FamilyRole.Admin);
     var completedAt = DateTime.UtcNow;
 
     // Act & Assert - Initial state
@@ -354,10 +346,10 @@ public class TaskInstanceTests
     task.CompletedByMember.ShouldBeNull();
     task.CompletedAt.ShouldBeNull();
 
-    // Act & Assert - Start
-    var member = CreateMemberWithUser(family.Id, "NewUser");
+    // Act & Assert - StartByMember
+    var member = family.AddMember(new(1, "NewUser"), FamilyRole.Admin);
 
-    task.Start(member);
+    task.StartByMember(member);
     task.Status.ShouldBe(TaskStatus.InProgress);
 
     // Act & Assert - Complete
@@ -371,9 +363,9 @@ public class TaskInstanceTests
   public void TaskLifecycle_DirectlyCompleteWithoutStart_WorksCorrectly()
   {
     // Arrange
-    var Spot = CreateSpotWithFamily();
-    var task = new TaskInstance(Spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
-    var completedByMember = CreateMemberWithUser();
+    var spot = CreateSpotWithFamily();
+    var task = new TaskInstance(spot, "Feed the Spot", new(2), DateTime.UtcNow.AddHours(2));
+    var completedByMember = spot.Family.AddMember(new(0, "user"), FamilyRole.Admin);
     var completedAt = DateTime.UtcNow;
 
     // Act

@@ -1,4 +1,3 @@
-using FamilyTaskManager.Core.FamilyAggregate.Specifications;
 using FamilyTaskManager.Core.Services;
 
 namespace FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
@@ -8,7 +7,7 @@ public record CompleteTaskCommand(Guid TaskId, Guid UserId) : ICommand<Result>;
 public class CompleteTaskHandler(
   IAppRepository<TaskInstance> taskAppRepository,
   IAppRepository<Family> familyAppRepository,
-  IAppRepository<Spot> SpotAppRepository,
+  IAppRepository<Spot> spotAppRepository,
   ISpotMoodCalculator moodCalculator) : ICommandHandler<CompleteTaskCommand, Result>
 {
   public async ValueTask<Result> Handle(CompleteTaskCommand command, CancellationToken cancellationToken)
@@ -20,8 +19,7 @@ public class CompleteTaskHandler(
     if (task.Status == TaskStatus.Completed) return Result.Error("Task is already completed");
 
     // Get family with members (including User for event)
-    var familySpec = new GetFamilyWithMembersAndUsersSpec(task.FamilyId);
-    var family = await familyAppRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
+    var family = await familyAppRepository.GetByIdAsync(task.FamilyId, cancellationToken);
     if (family == null) return Result.NotFound("Family not found");
 
     // Find member
@@ -45,12 +43,12 @@ public class CompleteTaskHandler(
     await taskAppRepository.SaveChangesAsync(cancellationToken);
 
     // Trigger immediate mood recalculation for the Spot
-    var Spot = await SpotAppRepository.GetByIdAsync(task.SpotId, cancellationToken);
+    var Spot = await spotAppRepository.GetByIdAsync(task.SpotId, cancellationToken);
     if (Spot != null)
     {
       var newMoodScore = await moodCalculator.CalculateMoodScoreAsync(task.SpotId, cancellationToken);
       Spot.UpdateMoodScore(newMoodScore);
-      await SpotAppRepository.SaveChangesAsync(cancellationToken);
+      await spotAppRepository.SaveChangesAsync(cancellationToken);
     }
 
     return Result.Success();

@@ -1,4 +1,3 @@
-using FamilyTaskManager.Core.FamilyAggregate.Specifications;
 using FamilyTaskManager.Core.UserAggregate.Specifications;
 using FamilyTaskManager.UseCases.Features.Statistics.Dtos;
 
@@ -14,8 +13,7 @@ public class GetLeaderboardHandler(
     CancellationToken cancellationToken)
   {
     // Get family with members
-    var spec = new GetFamilyWithMembersSpec(query.FamilyId);
-    var family = await familyAppRepository.FirstOrDefaultAsync(spec, cancellationToken);
+    var family = await familyAppRepository.GetByIdAsync(query.FamilyId, cancellationToken);
 
     if (family == null) return Result<List<LeaderboardEntryDto>>.NotFound("Family not found");
 

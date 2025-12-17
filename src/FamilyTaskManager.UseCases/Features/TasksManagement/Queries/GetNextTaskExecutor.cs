@@ -1,4 +1,3 @@
-using FamilyTaskManager.Core.FamilyAggregate.Specifications;
 using FamilyTaskManager.Core.TaskAggregate.Specifications;
 
 namespace FamilyTaskManager.UseCases.Features.TasksManagement.Queries;
@@ -27,8 +26,7 @@ public class GetNextTaskExecutorHandler(
     if (task.FamilyId != query.FamilyId)
       return Result.Success<NextTaskExecutorResult?>(null);
 
-    var familySpec = new GetFamilyWithMembersAndUsersSpec(query.FamilyId);
-    var family = await familyAppRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
+    var family = await familyAppRepository.GetByIdAsync(query.FamilyId, cancellationToken);
     if (family is null)
       return Result.Success<NextTaskExecutorResult?>(null);
 

@@ -1,7 +1,3 @@
-using FamilyTaskManager.Core.FamilyAggregate.Specifications;
-
-namespace FamilyTaskManager.UseCases.Features.SpotManagement.Commands;
-
 public record DeleteSpotCommand(Guid SpotId, Guid UserId) : ICommand<Result>;
 
 public class DeleteSpotHandler(
@@ -20,8 +16,7 @@ public class DeleteSpotHandler(
     if (spot == null) return Result.NotFound("Spot not found");
 
     // Get family with members to check permissions
-    var spec = new GetFamilyWithMembersSpec(spot.FamilyId);
-    var family = await familyAppRepository.FirstOrDefaultAsync(spec, cancellationToken);
+    var family = await familyAppRepository.GetByIdAsync(spot.FamilyId, cancellationToken);
     if (family == null) return Result.NotFound("Family not found");
 
     // Check if user is admin of this family

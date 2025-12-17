@@ -1,5 +1,3 @@
-using FamilyTaskManager.Core.FamilyAggregate.Specifications;
-
 namespace FamilyTaskManager.UseCases.Features.FamilyManagement.Commands;
 
 public record JoinFamilyCommand(Guid UserId, Guid FamilyId, FamilyRole Role) : ICommand<Result<Guid>>;
@@ -15,8 +13,7 @@ public class JoinFamilyHandler(
     if (user == null) return Result<Guid>.NotFound("User not found");
 
     // Get family
-    var spec = new GetFamilyWithMembersSpec(command.FamilyId);
-    var family = await familyAppRepository.FirstOrDefaultAsync(spec, cancellationToken);
+    var family = await familyAppRepository.GetByIdAsync(command.FamilyId, cancellationToken);
     if (family == null) return Result<Guid>.NotFound("Family not found");
 
     // Check if user is already a member

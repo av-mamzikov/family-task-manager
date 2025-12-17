@@ -1,5 +1,4 @@
 using FamilyTaskManager.Core.FamilyAggregate;
-using FamilyTaskManager.Core.FamilyAggregate.Specifications;
 using FamilyTaskManager.Core.UserAggregate;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
@@ -22,8 +21,7 @@ public class TelegramNotificationService(
     CancellationToken cancellationToken)
   {
     // Get family with members
-    var spec = new GetFamilyWithMembersSpec(familyId);
-    var family = await familyAppRepository.FirstOrDefaultAsync(spec, cancellationToken);
+    var family = await familyAppRepository.GetByIdAsync(familyId, cancellationToken);
 
     if (family == null)
     {

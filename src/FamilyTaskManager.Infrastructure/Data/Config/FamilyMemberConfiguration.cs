@@ -46,5 +46,7 @@ public class FamilyMemberConfiguration : IEntityTypeConfiguration<FamilyMember>
       .WithMany()
       .HasForeignKey(m => m.UserId)
       .OnDelete(DeleteBehavior.NoAction);
+
+    builder.Navigation(m => m.User).AutoInclude();
   }
 }

@@ -32,9 +32,7 @@ public class JoinByInviteCodeHandler(
       return Result<JoinResult>.Error("Invitation is not active");
     }
 
-    // Get family with members
-    var familySpec = new GetFamilyWithMembersSpec(invitation.FamilyId);
-    var family = await familyAppRepository.FirstOrDefaultAsync(familySpec, cancellationToken);
+    var family = await familyAppRepository.GetByIdAsync(invitation.FamilyId, cancellationToken);
 
     if (family == null) return Result<JoinResult>.NotFound("Family not found");
 

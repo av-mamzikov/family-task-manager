@@ -60,16 +60,26 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public FamilyMember? StartedByMember { get; private set; }
   public FamilyMember? CompletedByMember { get; private set; }
 
-  public void Start(FamilyMember familyMember)
+  public Result StartByUserId(Guid userId, Family family)
   {
-    if (Status != TaskStatus.Active) return;
+    var member = family.Members.FirstOrDefault(m => m.UserId == userId && m.IsActive);
+    return member == null
+      ? Result.Error("User is not a member of this family")
+      : StartByMember(member);
+  }
 
+  public Result StartByMember(FamilyMember familyMember)
+  {
     Guard.Against.Default(familyMember.Id);
+    if (Status != TaskStatus.Active) return Result.Error("Task is not available");
+    if (FamilyId != familyMember.FamilyId) return Result.Error("User is not a member of this family");
 
     Status = TaskStatus.InProgress;
     StartedByMemberId = familyMember.Id;
 
     RegisterDomainEvent(new TaskStartedEvent { TaskId = Id });
+
+    return Result.Success();
   }
 
   public void Complete(FamilyMember completedByMember, DateTime completedAtUtc)
