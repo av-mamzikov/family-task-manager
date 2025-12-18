@@ -56,4 +56,22 @@ public class Family : EntityBase<Family, Guid>, IAggregateRoot
     LeaderboardEnabled = leaderboardEnabled;
     Timezone = timezone;
   }
+
+  public void RegisterDailyOverdueTasksSummary(FamilyMember member, int overdueTasksCount)
+  {
+    Guard.Against.Null(member);
+
+    if (overdueTasksCount <= 0)
+      return;
+
+    RegisterDomainEvent(new DailyOverdueTasksSummaryDueEvent
+    {
+      FamilyId = Id,
+      Timezone = Timezone,
+      UserId = member.UserId,
+      UserName = member.User.Name,
+      UserTelegramId = member.User.TelegramId,
+      OverdueTasksCount = overdueTasksCount
+    });
+  }
 }

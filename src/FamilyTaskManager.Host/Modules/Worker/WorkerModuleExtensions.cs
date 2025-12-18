@@ -44,7 +44,16 @@ public static class WorkerModuleExtensions
         .WithCronSchedule("10 */15 * * * ?")
         .WithDescription("Sends reminders for tasks due within the next hour"));
 
-      // Job 3: SpotMoodCalculatorJob - runs every 30 minutes
+      // Job 3: DailyOverdueTasksReminderJob - runs every 15 minutes
+      var dailyOverdueJobKey = new JobKey("DailyOverdueTasksReminderJob");
+      q.AddJob<DailyOverdueTasksReminderJob>(opts => opts.WithIdentity(dailyOverdueJobKey));
+      q.AddTrigger(opts => opts
+        .ForJob(dailyOverdueJobKey)
+        .WithIdentity("DailyOverdueTasksReminderJob-trigger")
+        .WithCronSchedule("10 */15 * * * ?")
+        .WithDescription("Sends daily overdue tasks summary around 19:00 in each family timezone"));
+
+      // Job 4: SpotMoodCalculatorJob - runs every 30 minutes
       var moodJobKey = new JobKey("SpotMoodCalculatorJob");
       q.AddJob<SpotMoodCalculatorJob>(opts => opts.WithIdentity(moodJobKey));
       q.AddTrigger(opts => opts
@@ -61,7 +70,7 @@ public static class WorkerModuleExtensions
     services.AddQuartzHostedService(options => { options.WaitForJobsToComplete = true; });
 
     logger?.LogInformation(
-      "Worker Module registered: Quartz.NET Jobs (TaskInstanceCreator, TaskReminder, SpotMoodCalculator, NotificationBatch)");
+      "Worker Module registered: Quartz.NET Jobs (TaskInstanceCreator, TaskReminder, DailyOverdueTasksReminder, SpotMoodCalculator, NotificationBatch)");
 
     return services;
   }

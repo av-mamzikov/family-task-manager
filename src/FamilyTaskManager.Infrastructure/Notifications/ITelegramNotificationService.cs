@@ -1,3 +1,5 @@
+using Telegram.Bot.Types.ReplyMarkups;
+
 namespace FamilyTaskManager.Infrastructure.Notifications;
 
 /// <summary>
@@ -10,4 +12,7 @@ public interface ITelegramNotificationService
     CancellationToken cancellationToken);
 
   Task SendToUserAsync(long telegramId, string message, CancellationToken cancellationToken);
+
+  Task SendToUserAsync(long telegramId, string message, InlineKeyboardMarkup replyMarkup,
+    CancellationToken cancellationToken);
 }

@@ -1,6 +1,7 @@
 using FamilyTaskManager.Core.FamilyAggregate;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Infrastructure.Notifications;
 
@@ -62,6 +63,26 @@ public class TelegramNotificationService(
     {
       logger.LogError(ex, "Failed to send notification to user {UserId}", telegramId);
       // Don't throw - we want to continue sending to other users
+    }
+  }
+
+  public async Task SendToUserAsync(long telegramId, string message, InlineKeyboardMarkup replyMarkup,
+    CancellationToken cancellationToken)
+  {
+    try
+    {
+      await botClient.SendTextMessageAsync(
+        telegramId,
+        message,
+        parseMode: ParseMode.Markdown,
+        replyMarkup: replyMarkup,
+        cancellationToken: cancellationToken);
+
+      logger.LogDebug("Notification with markup sent to user TelegramId: {TelegramId}", telegramId);
+    }
+    catch (Exception ex)
+    {
+      logger.LogError(ex, "Failed to send notification with markup to user {UserId}", telegramId);
     }
   }
 }
