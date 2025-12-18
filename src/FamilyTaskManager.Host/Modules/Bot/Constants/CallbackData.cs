@@ -129,6 +129,7 @@ public static class CallbackData
     public const ConversationState Conversation = ConversationState.Tasks;
 
     public static string List() => $"{Conversation}_{CallbackActions.List}";
+    public static string OtherList() => $"{Conversation}_{CallbackActions.Other}";
 
     public static string Complete(EncodedGuid taskId) => $"{Conversation}_{CallbackActions.Complete}_{taskId}";
     public static string Refuse(EncodedGuid taskId) => $"{Conversation}_{CallbackActions.Cancel}_{taskId}";

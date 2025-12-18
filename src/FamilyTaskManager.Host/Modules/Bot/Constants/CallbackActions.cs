@@ -24,6 +24,7 @@ public static class CallbackActions
   // Task-specific actions
   public const string Complete = "complete";
   public const string Take = "take";
+  public const string Other = "other";
 
   // Family member actions
   public const string Member = "member";

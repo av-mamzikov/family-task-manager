@@ -35,6 +35,8 @@ public class TaskBrowsingHandler(
   {
     if (callbackParts.IsCallbackOf(CallbackData.TaskBrowsing.List))
       await HandleTaskListAsync(botClient, chatId, message, session, cancellationToken);
+    else if (callbackParts.IsCallbackOf(CallbackData.TaskBrowsing.OtherList))
+      await HandleOtherTasksListAsync(botClient, chatId, message, session, cancellationToken);
     else if (callbackParts.IsCallbackOf(CallbackData.TaskBrowsing.Take, out EncodedGuid takeTaskId))
       await HandleTakeTaskAsync(botClient, chatId, message, takeTaskId.Value, session, cancellationToken);
     if (callbackParts.IsCallbackOf(CallbackData.TaskBrowsing.Complete, out EncodedGuid completeTaskId))
@@ -96,6 +98,10 @@ public class TaskBrowsingHandler(
     // Build inline keyboard
     var buttons = new List<InlineKeyboardButton[]>();
 
+    buttons.Add([
+      InlineKeyboardButton.WithCallbackData("👀 Другие задачи", CallbackData.TaskBrowsing.OtherList())
+    ]);
+
     foreach (var task in activeTasks) // Limit to 10 tasks
       buttons.Add([
         InlineKeyboardButton.WithCallbackData($"✋ Взять: {task.Title}", CallbackData.TaskBrowsing.Take(task.Id))
@@ -117,6 +123,45 @@ public class TaskBrowsingHandler(
       parseMode: ParseMode.Markdown,
       replyMarkup: buttons.Any() ? new InlineKeyboardMarkup(buttons) : null,
       cancellationToken: cancellationToken);
+  }
+
+  private async Task HandleOtherTasksListAsync(ITelegramBotClient botClient, long chatId, Message? message,
+    UserSession session, CancellationToken cancellationToken)
+  {
+    if (session.CurrentFamilyId == null)
+      return;
+
+    var query = new GetOtherTasksQuery(session.CurrentFamilyId.Value, session.UserId);
+    var tasksResult = await mediator.Send(query, cancellationToken);
+
+    if (!tasksResult.IsSuccess)
+    {
+      await botClient.SendTextMessageAsync(
+        chatId,
+        BotMessages.Errors.TasksLoadError,
+        cancellationToken: cancellationToken);
+      return;
+    }
+
+    var tasks = tasksResult.Value;
+
+    var messageText = "👀 *Другие задачи*\n\n";
+
+    if (!tasks.Any())
+      messageText += "Пока никто не взял миссии в работу.";
+    else
+      foreach (var task in tasks)
+        messageText += FormatTaskBlock(task);
+
+    await botClient.SendOrEditMessageAsync(
+      chatId,
+      message,
+      messageText,
+      ParseMode.Markdown,
+      new InlineKeyboardMarkup([
+        [InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.TaskBrowsing.List())]
+      ]),
+      cancellationToken);
   }
 
   private static string FormatTaskBlock(TaskDto task)

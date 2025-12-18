@@ -1,5 +1,7 @@
+using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.FunctionalTests.Helpers;
 using FamilyTaskManager.Host;
+using FamilyTaskManager.Host.Modules.Bot.Constants;
 using Telegram.Bot.Types;
 
 namespace FamilyTaskManager.FunctionalTests.BotFlow.Tasks;
@@ -90,8 +92,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     taskListMessage.ShouldContainText("Доступные задачи");
 
     var taskKeyboard = taskListMessage.ShouldHaveInlineKeyboard();
-    var takeTaskButton = taskKeyboard.InlineKeyboard.First().First();
-    takeTaskButton.Text.ShouldContain("✋ Взять");
+    var takeTaskButton = taskKeyboard.GetButton("✋ Взять");
 
     var taskTakenMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, takeTaskButton.CallbackData!),
@@ -123,7 +124,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
       adminChatId);
-    var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().InlineKeyboard.First().First();
+    var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().GetButton("✋ Взять");
 
     var taskTakenMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, takeTaskButton.CallbackData!),
@@ -159,7 +160,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
       adminChatId);
-    var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().InlineKeyboard.First().First();
+    var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().GetButton("✋ Взять");
 
     var taskTakenMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, takeTaskButton.CallbackData!),
@@ -195,7 +196,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
       adminChatId);
-    var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().InlineKeyboard.First().First();
+    var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().GetButton("✋ Взять");
 
     var taskTakenMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, takeTaskButton.CallbackData!),
@@ -210,6 +211,65 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     // Assert
     deleteMessage.ShouldNotBeNull("Бот должен подтвердить отказ от задачи");
     deleteMessage!.ShouldContainText("Вы удалили задачу");
+  }
+
+  [RetryFact(3)]
+  public async Task TS_BOT_TASK_005_ViewOtherTasks_ShouldShowTasksTakenByOthers_WithoutActionButtons()
+  {
+    var botClient = factory.TelegramBotClient;
+    botClient.Clear();
+
+    // Arrange: Create family and spot
+    var (familyName, adminTelegramId, adminChatId) =
+      await BotFamilyFlowHelpers.CreateFamilyByGeolocationAsync(factory, "Семья для других задач");
+
+    await CreateSpotAsync(botClient, adminChatId, adminTelegramId, "🐶 Собака", "Рекс");
+
+    // Create two tasks so that admin still has at least one task in "My tasks" screen
+    await CreateTaskFromSpotTemplateAsync(botClient, adminChatId, adminTelegramId, "🐶 Рекс");
+    await CreateTaskFromSpotTemplateAsync(botClient, adminChatId, adminTelegramId, "🐶 Рекс");
+
+    // Add second member and let them take one task
+    var otherTelegramId = await BotFamilyFlowHelpers.AddFamilyMemberViaInviteAsync(
+      botClient,
+      adminChatId,
+      adminTelegramId,
+      FamilyRole.Adult,
+      "Другой участник");
+    var otherChatId = otherTelegramId;
+
+    botClient.Clear();
+    var otherTaskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(otherChatId, otherTelegramId, "✅ Мои задачи"),
+      otherChatId);
+    otherTaskListMessage.ShouldNotBeNull("Другой участник должен увидеть список задач");
+    var otherTaskKeyboard = otherTaskListMessage!.ShouldHaveInlineKeyboard();
+    var otherTakeButton = otherTaskKeyboard.GetButton("✋ Взять");
+
+    var takenTaskTitle = otherTakeButton.Text.Replace("✋ Взять: ", string.Empty).Trim();
+    takenTaskTitle.ShouldNotBeNullOrWhiteSpace();
+
+    await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(otherChatId, otherTelegramId, otherTakeButton.CallbackData!),
+      otherChatId);
+
+    // Act: Admin opens "Other tasks" list (invoke callback directly to avoid dependency on MyTasks keyboard)
+    botClient.Clear();
+    var otherTasksMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, CallbackData.TaskBrowsing.OtherList()),
+      adminChatId);
+
+    // Assert: Other tasks list shows taken task and has no action buttons
+    otherTasksMessage.ShouldNotBeNull("Админ должен увидеть список других задач");
+    otherTasksMessage!.ShouldContainText("Другие задачи");
+    otherTasksMessage.ShouldContainText(takenTaskTitle);
+
+    var otherTasksKeyboard = otherTasksMessage.ShouldHaveInlineKeyboard();
+    otherTasksKeyboard.ShouldContainButton("⬅️ Назад");
+    otherTasksKeyboard.ShouldNotContainButton("✋ Взять");
+    otherTasksKeyboard.ShouldNotContainButton("✅ Выполнить");
+    otherTasksKeyboard.ShouldNotContainButton("❌ Отказаться");
+    otherTasksKeyboard.ShouldNotContainButton("🗑️");
   }
 
   private async Task CreateSpotAsync(dynamic botClient, long chatId, long telegramId,
