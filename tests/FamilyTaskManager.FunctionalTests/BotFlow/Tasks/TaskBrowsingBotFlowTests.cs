@@ -27,7 +27,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     // Act: Navigate to tasks menu
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Наши задачи"),
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
       adminChatId);
 
     // Assert
@@ -82,11 +82,11 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     // Act: Navigate to tasks and take the task
     botClient.Clear();
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Наши задачи"),
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
       adminChatId);
 
     taskListMessage.ShouldNotBeNull("Бот должен показать список задач");
-    taskListMessage!.ShouldContainText("Наши задачи");
+    taskListMessage!.ShouldContainText("Мои задачи");
     taskListMessage.ShouldContainText("Доступные задачи");
 
     var taskKeyboard = taskListMessage.ShouldHaveInlineKeyboard();
@@ -121,7 +121,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     // Take the task
     botClient.Clear();
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Наши задачи"),
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
       adminChatId);
     var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().InlineKeyboard.First().First();
 
@@ -157,7 +157,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     // Take the task
     botClient.Clear();
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Наши задачи"),
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
       adminChatId);
     var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().InlineKeyboard.First().First();
 
@@ -193,7 +193,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     // Take the task
     botClient.Clear();
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Наши задачи"),
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
       adminChatId);
     var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().InlineKeyboard.First().First();
 

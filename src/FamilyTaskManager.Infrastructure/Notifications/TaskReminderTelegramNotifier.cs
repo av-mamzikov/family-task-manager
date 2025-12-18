@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.TaskAggregate.Events;
+using FamilyTaskManager.Core.Utils;
 using Mediator;
 
 namespace FamilyTaskManager.Infrastructure.Notifications;
@@ -20,7 +21,7 @@ public class TaskReminderTelegramNotifier(
     // Convert DueAt from UTC to family timezone for display
     var dueAtLocal = timeZoneService.ConvertFromUtc(notification.DueAt, notification.Timezone);
     var mentionLine =
-      $"Сегодня твоя очередь, [{notification.AssignedUserName}](tg://user?id={notification.AssignedUserTelegramId})\n";
+      $"Сегодня твоя очередь, {WikiHelper.GetUserLink(notification.AssignedUserName!, notification.AssignedUserTelegramId!.Value)}\n";
 
     // Format message using data from event
     var message = $"⏰ *Личное напоминание герою миссии!*\n" +

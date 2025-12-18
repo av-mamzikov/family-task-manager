@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.TaskAggregate.Events;
+using FamilyTaskManager.Core.Utils;
 using Mediator;
 
 namespace FamilyTaskManager.Infrastructure.Notifications;
@@ -15,7 +16,7 @@ public class TaskDeletedTelegramNotifier(
   {
     var message = "🗑️ *Задача удалена*\n\n" +
                   (notification.DeletedByUserId.HasValue
-                    ? $"👤 Удалил(а): [{notification.DeletedByUserName}](tg://user?id={notification.DeletedByUserTelegramId})\n"
+                    ? $"👤 Удалил(а): {WikiHelper.GetUserLink(notification.DeletedByUserName!, notification.DeletedByUserTelegramId!.Value)}\n"
                     : "") +
                   $"📋 Миссия: {notification.Title}\n" +
                   $"⭐ Сложность: {notification.Points}\n" +

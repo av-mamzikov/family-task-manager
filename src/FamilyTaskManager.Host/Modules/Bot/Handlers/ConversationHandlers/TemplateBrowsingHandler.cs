@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Core.Utils;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
@@ -272,6 +273,7 @@ public class TemplateBrowsingHandler(
     var dueAt = now.Add(template.DueDuration);
     var createCommand = new CreateTaskInstanceFromTemplateCommand(templateId, dueAt);
     var result = await mediator.Send(createCommand, cancellationToken);
+    var task = result.Value;
 
     if (!result.IsSuccess)
     {
@@ -286,6 +288,9 @@ public class TemplateBrowsingHandler(
       $"📝 Название: {template.Title}\n" +
       $"🧩 Спот: {template.SpotName}\n" +
       $"💯 Очки: {template.Points.ToStars()}\n" +
+      (task.AssignedToMember?.User != null
+        ? $"🦸 Герой: {WikiHelper.GetUserLink(result.Value.AssignedToMember!.User)}\n"
+        : "⚔️ Миссия ждёт героя\n") +
       $"⏰ Срок выполнения: {dueAt:dd.MM.yyyy HH:mm}\n\n" +
       "Задача добавлена в список активных задач спота.",
       ParseMode.Markdown,

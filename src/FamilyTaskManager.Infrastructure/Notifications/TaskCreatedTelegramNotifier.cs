@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.TaskAggregate.Events;
+using FamilyTaskManager.Core.Utils;
 using Mediator;
 
 namespace FamilyTaskManager.Infrastructure.Notifications;
@@ -35,7 +36,7 @@ public class TaskCreatedTelegramNotifier(
     else
     {
       var mentionLine =
-        $"Сегодня твоя очередь, [{notification.AssignedUserName}](tg://user?id={notification.AssignedUserTelegramId})\n";
+        $"Сегодня твоя очередь, {WikiHelper.GetUserLink(notification.AssignedUserName!, notification.AssignedUserTelegramId!.Value)}\n";
 
       // Format message using data from event
       var assignedMessage = $"🦸 *Личная миссия для героя!*\n" +

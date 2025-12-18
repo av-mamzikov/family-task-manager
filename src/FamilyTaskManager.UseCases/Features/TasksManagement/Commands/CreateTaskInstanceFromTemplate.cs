@@ -5,7 +5,7 @@ using FamilyTaskManager.UseCases.Features.TasksManagement.Services;
 
 namespace FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
 
-public record CreateTaskInstanceFromTemplateCommand(Guid TemplateId, DateTime DueAt) : ICommand<Result<Guid>>;
+public record CreateTaskInstanceFromTemplateCommand(Guid TemplateId, DateTime DueAt) : ICommand<Result<TaskInstance>>;
 
 public class CreateTaskInstanceFromTemplateHandler(
   IAppRepository<TaskTemplate> templateAppRepository,
@@ -14,9 +14,9 @@ public class CreateTaskInstanceFromTemplateHandler(
   IAppRepository<Spot> spotAppRepository,
   ISpotMoodCalculator moodCalculator,
   IAssignedMemberSelector assignedMemberSelector)
-  : ICommandHandler<CreateTaskInstanceFromTemplateCommand, Result<Guid>>
+  : ICommandHandler<CreateTaskInstanceFromTemplateCommand, Result<TaskInstance>>
 {
-  public async ValueTask<Result<Guid>> Handle(CreateTaskInstanceFromTemplateCommand request,
+  public async ValueTask<Result<TaskInstance>> Handle(CreateTaskInstanceFromTemplateCommand request,
     CancellationToken cancellationToken)
   {
     var template = await templateAppRepository.GetByIdAsync(request.TemplateId, cancellationToken);
@@ -48,6 +48,6 @@ public class CreateTaskInstanceFromTemplateHandler(
     spot.UpdateMoodScore(newMoodScore);
     await spotAppRepository.SaveChangesAsync(cancellationToken);
 
-    return Result.Success(createResult.Value.Id);
+    return Result.Success(createResult.Value);
   }
 }

@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.TaskAggregate.Events;
+using FamilyTaskManager.Core.Utils;
 using Mediator;
 
 namespace FamilyTaskManager.Infrastructure.Notifications;
@@ -15,7 +16,7 @@ public class TaskCompletedTelegramNotifier(
   {
     // Format message using data from event
     var message = $"🎉 *Задача выполнена!*\n\n" +
-                  $"👤 Герой: [{notification.CompletedByUserName}](tg://user?id={notification.CompletedByUserTelegramId})\n" +
+                  $"👤 Герой: {WikiHelper.GetUserLink(notification.CompletedByUserName, notification.CompletedByUserTelegramId)}\n" +
                   $"📋 Миссия: {notification.Title}\n" +
                   $"⭐ Награда: {notification.Points}\n" +
                   "Команда семьи стала ещё сильнее!";

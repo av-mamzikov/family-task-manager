@@ -1,4 +1,6 @@
 using FamilyTaskManager.Core.SpotAggregate;
+using FamilyTaskManager.Core.TaskAggregate.DTOs;
+using FamilyTaskManager.Core.Utils;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
@@ -50,7 +52,7 @@ public class TaskBrowsingHandler(
       return;
 
     // Get active tasks
-    var getTasksQuery = new GetActiveTasksQuery(session.CurrentFamilyId.Value, session.UserId);
+    var getTasksQuery = new GetMyAvailableTasksQuery(session.CurrentFamilyId.Value, session.UserId);
     var tasksResult = await mediator.Send(getTasksQuery, cancellationToken);
 
     if (!tasksResult.IsSuccess)
@@ -77,40 +79,18 @@ public class TaskBrowsingHandler(
     var activeTasks = tasks.Where(t => t.Status == TaskStatus.Active).ToList();
     var inProgressTasks = tasks.Where(t => t.Status == TaskStatus.InProgress).ToList();
 
-    var messageText = "✅ *Наши задачи*\n\n";
+    var messageText = "✅ *Мои задачи*\n\n";
 
     if (activeTasks.Any())
     {
       messageText += "*Доступные задачи:*\n";
-      foreach (var task in activeTasks)
-      {
-        var overdueMarker = task.DueAtLocal < DateTime.Now ? "⚠️" : "";
-        var spotEmoji = SpotDisplay.GetEmoji(task.SpotType);
-        messageText += $"{overdueMarker} *{task.Title}*\n";
-        messageText += $"   {spotEmoji} {task.SpotName} | {task.Points.ToStars()}\n";
-        messageText += $"   📅 До: {task.DueAtLocal:dd.MM.yyyy HH:mm}\n";
-        if (!string.IsNullOrEmpty(task.AssignedToUserName) && task.AssignedToUserTelegramId is not null)
-          messageText +=
-            $"   🦸 Герой миссии: [{task.AssignedToUserName}](tg://user?id={task.AssignedToUserTelegramId})\n";
-
-        messageText += "\n";
-      }
+      foreach (var task in activeTasks) messageText += FormatTaskBlock(task);
     }
 
     if (inProgressTasks.Any())
     {
       messageText += "\n*В работе:*\n";
-      foreach (var task in inProgressTasks)
-      {
-        var spotEmoji = SpotDisplay.GetEmoji(task.SpotType);
-        messageText += $"🔄 *{task.Title}*\n";
-        messageText += $"   {spotEmoji} {task.SpotName} | {task.Points.ToStars()}\n";
-        if (!string.IsNullOrEmpty(task.AssignedToUserName) && task.AssignedToUserTelegramId is not null)
-          messageText +=
-            $"   🦸 Герой миссии: [{task.AssignedToUserName}](tg://user?id={task.AssignedToUserTelegramId})\n";
-
-        messageText += "\n";
-      }
+      foreach (var task in inProgressTasks) messageText += FormatTaskBlock(task);
     }
 
     // Build inline keyboard
@@ -137,6 +117,28 @@ public class TaskBrowsingHandler(
       parseMode: ParseMode.Markdown,
       replyMarkup: buttons.Any() ? new InlineKeyboardMarkup(buttons) : null,
       cancellationToken: cancellationToken);
+  }
+
+  private static string FormatTaskBlock(TaskDto task)
+  {
+    var spotEmoji = SpotDisplay.GetEmoji(task.SpotType);
+    var statusEmoji = task.Status == TaskStatus.InProgress ? "🔄" : "";
+    var overdueMarker = task.Status == TaskStatus.Active && task.DueAtLocal < DateTime.Now ? "⚠️" : "";
+
+    var text = $"{statusEmoji}{overdueMarker} *{task.Title}*\n";
+    text += $"   {spotEmoji} {task.SpotName} | {task.Points.ToStars()}\n";
+
+    if (task.Status == TaskStatus.Active)
+      text += $"   📅 До: {task.DueAtLocal:dd.MM.yyyy HH:mm}\n";
+
+    if (!string.IsNullOrEmpty(task.AssignedToUserName) && task.AssignedToUserTelegramId is not null)
+      text +=
+        $"   🦸 Герой миссии: {WikiHelper.GetUserLink(task.AssignedToUserName, task.AssignedToUserTelegramId.Value)}\n";
+    else
+      text += "   ⚔️ Миссия ждёт героя\n";
+
+    text += "\n";
+    return text;
   }
 
   private async Task HandleTakeTaskAsync(
