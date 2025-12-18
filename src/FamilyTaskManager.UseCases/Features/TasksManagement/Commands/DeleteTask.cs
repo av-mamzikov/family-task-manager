@@ -20,7 +20,7 @@ public class DeleteTaskHandler(
     if (member == null) return Result.Error("User is not a member of this family");
 
     // Users can only delete tasks they started
-    if (!task.StartedByMemberId.HasValue || task.StartedByMemberId.Value != member.Id)
+    if (!task.AssignedToMemberId.HasValue || task.AssignedToMemberId.Value != member.Id)
       return Result.Error("Only admins or the user who started this task can delete it");
 
     // Delete the task (domain event will be registered automatically)

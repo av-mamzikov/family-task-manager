@@ -8,8 +8,8 @@ public class CompletedTaskInstancesByTemplateAndFamilySpec : Specification<TaskI
       .Where(t => t.FamilyId == familyId)
       .Where(t => t.TemplateId == templateId)
       .Where(t => t.Status == TaskStatus.Completed)
-      .Where(t => t.CompletedByMemberId != null && t.CompletedAt != null)
-      .Include(t => t.CompletedByMember)
+      .Where(t => t.AssignedToMemberId != null && t.CompletedAt != null)
+      .Include(t => t.AssignedToMember)
       .ThenInclude(m => m!.User);
   }
 }

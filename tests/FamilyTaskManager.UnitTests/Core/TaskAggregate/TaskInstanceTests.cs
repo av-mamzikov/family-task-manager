@@ -39,7 +39,6 @@ public class TaskInstanceTests
     task.Status.ShouldBe(TaskStatus.Active);
     task.TemplateId.ShouldBeNull();
     task.AssignedToMemberId.ShouldBeNull();
-    task.CompletedByMember.ShouldBeNull();
     task.CompletedAt.ShouldBeNull();
     task.CreatedAt.ShouldBeInRange(DateTime.UtcNow.AddSeconds(-1), DateTime.UtcNow.AddSeconds(1));
     task.DomainEvents.ShouldContain(e => e is TaskCreatedEvent);
@@ -243,7 +242,7 @@ public class TaskInstanceTests
     // Assert
     result.IsSuccess.ShouldBe(true);
     task.Status.ShouldBe(TaskStatus.InProgress);
-    task.StartedByMemberId.ShouldBe(member.Id);
+    task.AssignedToMemberId.ShouldBe(member.Id);
   }
 
   [Fact]
@@ -298,7 +297,7 @@ public class TaskInstanceTests
 
     // Assert
     task.Status.ShouldBe(TaskStatus.Completed);
-    task.CompletedByMemberId.ShouldBe(completedByMember.Id);
+    task.AssignedToMemberId.ShouldBe(completedByMember.Id);
     task.CompletedAt.ShouldBe(completedAt);
   }
 
@@ -320,7 +319,7 @@ public class TaskInstanceTests
 
     // Assert
     task.Status.ShouldBe(TaskStatus.Completed);
-    task.CompletedByMemberId.ShouldBe(completedByMember.Id);
+    task.AssignedToMemberId.ShouldBe(completedByMember.Id);
     task.CompletedAt.ShouldBe(completedAt);
   }
 
@@ -359,7 +358,7 @@ public class TaskInstanceTests
 
     // Assert
     task.Status.ShouldBe(TaskStatus.Completed);
-    task.CompletedByMemberId.ShouldBe(firstCompletedByMember.Id);
+    task.AssignedToMemberId.ShouldBe(firstCompletedByMember.Id);
     task.CompletedAt.ShouldBe(firstCompletedAt);
   }
 
@@ -387,7 +386,7 @@ public class TaskInstanceTests
 
     // Act & Assert - Initial state
     task.Status.ShouldBe(TaskStatus.Active);
-    task.CompletedByMember.ShouldBeNull();
+    task.AssignedToMemberId.ShouldBeNull();
     task.CompletedAt.ShouldBeNull();
 
     // Act & Assert - StartByMember
@@ -399,7 +398,7 @@ public class TaskInstanceTests
     // Act & Assert - Complete
     task.Complete(completedByMember, completedAt);
     task.Status.ShouldBe(TaskStatus.Completed);
-    task.CompletedByMemberId.ShouldBe(completedByMember.Id);
+    task.AssignedToMemberId.ShouldBe(completedByMember.Id);
     task.CompletedAt.ShouldBe(completedAt);
   }
 
@@ -417,7 +416,7 @@ public class TaskInstanceTests
 
     // Assert
     task.Status.ShouldBe(TaskStatus.Completed);
-    task.CompletedByMemberId.ShouldBe(completedByMember.Id);
+    task.AssignedToMemberId.ShouldBe(completedByMember.Id);
     task.CompletedAt.ShouldBe(completedAt);
   }
 }

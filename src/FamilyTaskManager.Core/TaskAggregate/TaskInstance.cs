@@ -52,8 +52,6 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public Guid? TemplateId { get; }
   public TaskStatus Status { get; private set; }
   public Guid? AssignedToMemberId { get; private set; }
-  public Guid? StartedByMemberId { get; private set; }
-  public Guid? CompletedByMemberId { get; private set; }
   public DateTime? CompletedAt { get; private set; }
   public DateTime CreatedAt { get; private set; }
 
@@ -64,8 +62,6 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public Spot Spot { get; } = null!;
   public TaskTemplate? Template { get; private set; }
   public FamilyMember? AssignedToMember { get; private set; }
-  public FamilyMember? StartedByMember { get; private set; }
-  public FamilyMember? CompletedByMember { get; private set; }
 
   public Result AssignToMember(FamilyMember familyMember)
   {
@@ -96,7 +92,8 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     if (FamilyId != familyMember.FamilyId) return Result.Error("User is not a member of this family");
 
     Status = TaskStatus.InProgress;
-    StartedByMemberId = familyMember.Id;
+    AssignedToMemberId = familyMember.Id;
+    AssignedToMember = familyMember;
 
     RegisterDomainEvent(new TaskStartedEvent { TaskId = Id });
 
@@ -110,7 +107,8 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     Guard.Against.Null(completedByMember);
 
     Status = TaskStatus.Completed;
-    CompletedByMemberId = completedByMember.Id;
+    AssignedToMemberId = completedByMember.Id;
+    AssignedToMember = completedByMember;
     CompletedAt = completedAtUtc;
 
     RegisterDomainEvent(new TaskCompletedEvent
@@ -130,7 +128,8 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     if (Status != TaskStatus.InProgress) return;
 
     Status = TaskStatus.Active;
-    StartedByMemberId = null;
+    AssignedToMemberId = null;
+    AssignedToMember = null;
   }
 
   /// <summary>

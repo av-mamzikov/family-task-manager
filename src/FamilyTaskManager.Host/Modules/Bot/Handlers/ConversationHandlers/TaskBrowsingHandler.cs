@@ -105,7 +105,6 @@ public class TaskBrowsingHandler(
         var spotEmoji = SpotDisplay.GetEmoji(task.SpotType);
         messageText += $"🔄 *{task.Title}*\n";
         messageText += $"   {spotEmoji} {task.SpotName} | {task.Points.ToStars()}\n";
-        if (!string.IsNullOrEmpty(task.StartedByUserName)) messageText += $"   👤 Взял(а): {task.StartedByUserName}\n";
         if (!string.IsNullOrEmpty(task.AssignedToUserName) && task.AssignedToUserTelegramId is not null)
           messageText +=
             $"   🦸 Герой миссии: [{task.AssignedToUserName}](tg://user?id={task.AssignedToUserTelegramId})\n";
@@ -122,7 +121,7 @@ public class TaskBrowsingHandler(
         InlineKeyboardButton.WithCallbackData($"✋ Взять: {task.Title}", CallbackData.TaskBrowsing.Take(task.Id))
       ]);
 
-    foreach (var task in inProgressTasks.Where(t => t.StartedByUserId == session.UserId))
+    foreach (var task in inProgressTasks.Where(t => t.AssignedToUserId == session.UserId))
     {
       buttons.Add([
         InlineKeyboardButton.WithCallbackData($"✅ Выполнить: {task.Title}", CallbackData.TaskBrowsing.Complete(task.Id))
@@ -216,8 +215,8 @@ public class TaskBrowsingHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var cancelTaskCommand = new RefuseTaskCommand(taskId, session.UserId);
-    var result = await mediator.Send(cancelTaskCommand, cancellationToken);
+    var refuseTaskCommand = new RefuseTaskCommand(taskId, session.UserId);
+    var result = await mediator.Send(refuseTaskCommand, cancellationToken);
 
     if (!result.IsSuccess)
     {

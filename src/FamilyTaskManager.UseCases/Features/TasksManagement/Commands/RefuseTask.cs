@@ -22,8 +22,8 @@ public class RefuseTaskHandler(
     if (member == null) return Result.Error("User is not a member of this family");
 
     // Check if current user is the one who started the task
-    if (task.StartedByMemberId.HasValue && task.StartedByMemberId.Value != member.Id)
-      return Result.Error("Only the user who started this task can cancel it");
+    if (task.AssignedToMemberId.HasValue && task.AssignedToMemberId.Value != member.Id)
+      return Result.Error("Only the user who started this task can refuse it");
 
     task.Release();
     await taskAppRepository.UpdateAsync(task, cancellationToken);

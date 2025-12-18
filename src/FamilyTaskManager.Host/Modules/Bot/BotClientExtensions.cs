@@ -28,9 +28,7 @@ public static class BotClientExtensions
     IReplyMarkup? replyMarkup = null,
     CancellationToken cancellationToken = default)
   {
-    if (message != null && await botClient.CanEditMessageAsync(message) &&
-        replyMarkup is InlineKeyboardMarkup inlineKeyboard)
-    {
+    if (message != null && await botClient.CanEditMessageAsync(message) && replyMarkup is null or InlineKeyboardMarkup)
       try
       {
         await botClient.EditMessageTextAsync(
@@ -38,7 +36,7 @@ public static class BotClientExtensions
           message.MessageId,
           text,
           parseMode,
-          replyMarkup: inlineKeyboard,
+          replyMarkup: replyMarkup as InlineKeyboardMarkup,
           cancellationToken: cancellationToken);
       }
       catch (ApiRequestException ex) when (
@@ -46,7 +44,6 @@ public static class BotClientExtensions
       {
         // Игнорируем: содержимое и клавиатура уже совпадают
       }
-    }
     else
       await botClient.SendTextMessageAsync(
         chatId,

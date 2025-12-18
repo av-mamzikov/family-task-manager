@@ -37,12 +37,6 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
     builder.Property(t => t.AssignedToMemberId)
       .IsRequired(false);
 
-    builder.Property(t => t.StartedByMemberId)
-      .IsRequired(false);
-
-    builder.Property(t => t.CompletedByMemberId)
-      .IsRequired(false);
-
     builder.Property(t => t.CompletedAt)
       .IsRequired(false);
 
@@ -57,8 +51,6 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
     builder.HasIndex(t => t.SpotId);
     builder.HasIndex(t => t.TemplateId);
     builder.HasIndex(t => t.AssignedToMemberId);
-    builder.HasIndex(t => t.StartedByMemberId);
-    builder.HasIndex(t => t.CompletedByMemberId);
     builder.HasIndex(t => new { t.FamilyId, t.Status });
     builder.HasIndex(t => new { t.Status, t.DueAt });
 
@@ -91,20 +83,6 @@ public class TaskInstanceConfiguration : IEntityTypeConfiguration<TaskInstance>
       .HasForeignKey(t => t.AssignedToMemberId)
       .OnDelete(DeleteBehavior.SetNull);
 
-    // Foreign key relationship to FamilyMember (StartedBy)
-    builder.HasOne(t => t.StartedByMember)
-      .WithMany()
-      .HasForeignKey(t => t.StartedByMemberId)
-      .OnDelete(DeleteBehavior.SetNull);
-
-    // Foreign key relationship to FamilyMember (CompletedBy)
-    builder.HasOne(t => t.CompletedByMember)
-      .WithMany()
-      .HasForeignKey(t => t.CompletedByMemberId)
-      .OnDelete(DeleteBehavior.SetNull);
-
     builder.Navigation(e => e.AssignedToMember).AutoInclude();
-    builder.Navigation(e => e.StartedByMember).AutoInclude();
-    builder.Navigation(e => e.CompletedByMember).AutoInclude();
   }
 }

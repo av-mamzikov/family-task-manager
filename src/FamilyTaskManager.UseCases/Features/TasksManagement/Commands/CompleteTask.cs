@@ -27,8 +27,8 @@ public class CompleteTaskHandler(
     if (member == null) return Result.Error("User is not a member of this family");
 
     // Check if task is in progress and if current user is the one who started it
-    if (task.Status == TaskStatus.InProgress && task.StartedByMemberId.HasValue &&
-        task.StartedByMemberId.Value != member.Id)
+    if (task.Status == TaskStatus.InProgress && task.AssignedToMemberId.HasValue &&
+        task.AssignedToMemberId.Value != member.Id)
       return Result.Error("Only the user who started this task can complete it");
 
     // Complete task (registers TaskCompletedEvent with member.User.Name)
