@@ -66,7 +66,7 @@ public class TaskBrowsingHandler(
       return;
     }
 
-    var messageText = "✅ *Мои задачи*\n\n";
+    var messageText = "✅ *Мои миссии*\n\n";
 
     var tasks = tasksResult.Value;
 
@@ -80,7 +80,7 @@ public class TaskBrowsingHandler(
 
     if (activeTasks.Count != 0)
     {
-      messageText += "*Доступные задачи:*\n";
+      messageText += "*Доступные миссии:*\n";
       foreach (var task in activeTasks) messageText += FormatTaskBlock(task);
     }
 
@@ -94,7 +94,7 @@ public class TaskBrowsingHandler(
     var buttons = new List<InlineKeyboardButton[]>();
 
     buttons.Add([
-      InlineKeyboardButton.WithCallbackData("👀 Другие задачи", CallbackData.TaskBrowsing.OtherList())
+      InlineKeyboardButton.WithCallbackData("👀 Другие миссии", CallbackData.TaskBrowsing.OtherList())
     ]);
 
     foreach (var task in activeTasks)
@@ -143,10 +143,10 @@ public class TaskBrowsingHandler(
 
     var tasks = tasksResult.Value;
 
-    var messageText = "👀 *Другие задачи*\n\n";
+    var messageText = "👀 *Другие миссии*\n\n";
 
     if (!tasks.Any())
-      messageText += "Пока никто не взял миссии в работу.";
+      messageText += "Пока других миссий нет.";
     else
       foreach (var task in tasks)
         messageText += FormatTaskBlock(task);
@@ -168,7 +168,7 @@ public class TaskBrowsingHandler(
     var statusEmoji = task.Status == TaskStatus.InProgress ? "🔄" : "";
     var overdueMarker = task.Status == TaskStatus.Active && task.DueAtLocal < DateTime.Now ? "⚠️" : "";
 
-    var text = $"{statusEmoji}{overdueMarker} *{task.SpotName} {task.Title}*\n";
+    var text = $"{statusEmoji}{overdueMarker} *{task.Title}*\n";
     text += $"   {spotEmoji} {task.SpotName} | {task.Points.ToStars()}\n";
 
     if (task.Status == TaskStatus.Active)
@@ -176,7 +176,7 @@ public class TaskBrowsingHandler(
 
     if (!string.IsNullOrEmpty(task.AssignedToUserName) && task.AssignedToUserTelegramId is not null)
       text +=
-        $"   🦸 Герой миссии: {WikiHelper.GetUserLink(task.AssignedToUserName, task.AssignedToUserTelegramId.Value)}\n";
+        $"   🦸 {WikiHelper.GetUserLink(task.AssignedToUserName, task.AssignedToUserTelegramId.Value)}\n";
     else
       text += "   ⚔️ Миссия ждёт героя\n";
 
@@ -212,7 +212,7 @@ public class TaskBrowsingHandler(
     await botClient.SendOrEditMessageAsync(
       chatId,
       messageId,
-      $" ✅ Задача взята в работу!\n\n{task?.Title} {task?.Points.ToStars()}\n",
+      $" ✅ Миссия выполняется!\n\n{task?.Title} {task?.Points.ToStars()}\n",
       ParseMode.Markdown,
       new InlineKeyboardMarkup([
         [
@@ -248,7 +248,7 @@ public class TaskBrowsingHandler(
     await botClient.SendOrEditMessageAsync(
       chatId,
       message,
-      "🎉 Задача выполнена!\n\n⭐ Очки начислены!",
+      "🎉 Миссия выполнена!\n\n⭐ Очки начислены!",
       cancellationToken: cancellationToken);
   }
 
@@ -276,7 +276,7 @@ public class TaskBrowsingHandler(
     await botClient.SendOrEditMessageAsync(
       chatId,
       message,
-      "✅ Вы отказались от задачи.\n\nЗадача снова доступна для всех участников семьи.",
+      "✅ Вы отказались от миссии.\n\nМиссия снова доступна для всех участников семьи.",
       cancellationToken: cancellationToken);
   }
 
@@ -304,7 +304,7 @@ public class TaskBrowsingHandler(
     await botClient.SendOrEditMessageAsync(
       chatId,
       message,
-      "✅ Вы удалили задачу.",
+      "✅ Вы удалили миссию.",
       cancellationToken: cancellationToken);
   }
 }
