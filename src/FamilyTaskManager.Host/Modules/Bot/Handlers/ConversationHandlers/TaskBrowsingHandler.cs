@@ -66,30 +66,25 @@ public class TaskBrowsingHandler(
       return;
     }
 
+    var messageText = "✅ *Мои задачи*\n\n";
+
     var tasks = tasksResult.Value;
 
-    if (!tasks.Any())
-    {
-      await botClient.SendTextMessageAsync(
-        chatId,
-        BotMessages.Messages.NoActiveTasks,
-        cancellationToken: cancellationToken);
-      return;
-    }
+    if (tasks.Count == 0)
+      messageText += BotMessages.Messages.NoActiveTasks + "\n";
 
     // Group tasks by status
     var activeTasks = tasks.Where(t => t.Status == TaskStatus.Active).ToList();
     var inProgressTasks = tasks.Where(t => t.Status == TaskStatus.InProgress).ToList();
 
-    var messageText = "✅ *Мои задачи*\n\n";
 
-    if (activeTasks.Any())
+    if (activeTasks.Count != 0)
     {
       messageText += "*Доступные задачи:*\n";
       foreach (var task in activeTasks) messageText += FormatTaskBlock(task);
     }
 
-    if (inProgressTasks.Any())
+    if (inProgressTasks.Count != 0)
     {
       messageText += "\n*В работе:*\n";
       foreach (var task in inProgressTasks) messageText += FormatTaskBlock(task);
@@ -102,7 +97,7 @@ public class TaskBrowsingHandler(
       InlineKeyboardButton.WithCallbackData("👀 Другие задачи", CallbackData.TaskBrowsing.OtherList())
     ]);
 
-    foreach (var task in activeTasks) // Limit to 10 tasks
+    foreach (var task in activeTasks)
       buttons.Add([
         InlineKeyboardButton.WithCallbackData($"✋ {task.SpotName}: {task.Title}",
           CallbackData.TaskBrowsing.Take(task.Id))

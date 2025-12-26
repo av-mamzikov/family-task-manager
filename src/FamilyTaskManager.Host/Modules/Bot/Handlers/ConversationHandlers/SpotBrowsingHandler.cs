@@ -307,10 +307,11 @@ public class SpotBrowsingHandler(
       foreach (var task in tasksResult.Value)
       {
         messageText += $"• {task.Title} {task.Points.ToStars()} до {task.DueAtLocal:dd.MM.yyyy HH:mm}💖\n";
-        takeTaskButtons.Add([
-          InlineKeyboardButton.WithCallbackData($"✋ {task.Title}",
-            CallbackData.TaskBrowsing.Take(task.Id))
-        ]);
+        if (task.AssignedToUserId == session.UserId || task.AssignedToUserId == null)
+          takeTaskButtons.Add([
+            InlineKeyboardButton.WithCallbackData($"✋ {task.Title}",
+              CallbackData.TaskBrowsing.Take(task.Id))
+          ]);
       }
     }
     else
