@@ -62,7 +62,7 @@ public class StatsBrowsingHandler(
         var marker = isCurrentUser ? "➡️ " : "";
 
         messageText +=
-          $"{marker}{medal} *{RoleDisplay.GetRoleCaption(entry.Role)} {entry.UserName}* - ⭐ {entry.Points}\n";
+          $"{marker}{medal} *{RoleDisplay.GetRoleEmoji(entry.Role)} {entry.UserName}* - ⭐ {entry.Points}\n";
         position++;
       }
     }
