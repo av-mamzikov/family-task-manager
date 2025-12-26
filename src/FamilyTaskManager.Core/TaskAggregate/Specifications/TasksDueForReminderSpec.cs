@@ -7,7 +7,7 @@ public class TasksDueForReminderSpec : Specification<TaskInstance>
     Query
       .Where(t => t.Status == TaskStatus.Active ||
                   t.Status == TaskStatus.InProgress)
-      .Where(t => t.DueAt >= fromTime && t.DueAt <= toTime)
+      .Where(t => t.DueAt >= fromTime && t.DueAt < toTime)
       .OrderBy(t => t.DueAt);
   }
 }

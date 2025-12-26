@@ -21,8 +21,10 @@ public class TaskReminderJob(
 
     try
     {
-      // Simply call the UseCase - it handles all the logic
-      var result = await _mediator.Send(new SendTaskRemindersCommand(), context.CancellationToken);
+      var result = await _mediator.Send(new SendTaskRemindersCommand(
+          context.FireTimeUtc.DateTime,
+          context.NextFireTimeUtc?.UtcDateTime ?? context.FireTimeUtc.DateTime.AddMinutes(15)),
+        context.CancellationToken);
 
       if (result.IsSuccess)
         logger.LogInformation("TaskReminderJob completed successfully");

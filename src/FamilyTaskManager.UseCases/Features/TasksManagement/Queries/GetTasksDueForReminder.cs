@@ -23,7 +23,6 @@ public class GetTasksDueForReminderHandler(
 
     foreach (var familyGroup in tasksByFamily)
     {
-      // Get family with members
       var family = await familyAppRepository.GetByIdAsync(familyGroup.Key, cancellationToken);
 
       if (family == null) continue;
