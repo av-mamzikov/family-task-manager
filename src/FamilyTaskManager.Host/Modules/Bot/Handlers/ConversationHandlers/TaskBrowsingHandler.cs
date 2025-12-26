@@ -168,7 +168,7 @@ public class TaskBrowsingHandler(
     var statusEmoji = task.Status == TaskStatus.InProgress ? "🔄" : "";
     var overdueMarker = task.Status == TaskStatus.Active && task.DueAtLocal < DateTime.Now ? "⚠️" : "";
 
-    var text = $"{statusEmoji}{overdueMarker} *{task.Title}*\n";
+    var text = $"{statusEmoji}{overdueMarker} *{task.SpotName} {task.Title}*\n";
     text += $"   {spotEmoji} {task.SpotName} | {task.Points.ToStars()}\n";
 
     if (task.Status == TaskStatus.Active)
