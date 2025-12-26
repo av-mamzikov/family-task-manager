@@ -12,7 +12,7 @@ public static class MainMenuHelper
   /// </summary>
   public static ReplyKeyboardMarkup GetMainMenuKeyboard() =>
     new([
-      ["🏠 Семья", "✅ Мои задачи"],
+      ["🏠 Семья", "✅ Мои миссии"],
       ["🧩 Споты", "📊 Статистика"]
     ])
     {

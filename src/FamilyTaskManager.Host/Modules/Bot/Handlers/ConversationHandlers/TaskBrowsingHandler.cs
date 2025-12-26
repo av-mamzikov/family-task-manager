@@ -106,11 +106,11 @@ public class TaskBrowsingHandler(
     foreach (var task in inProgressTasks.Where(t => t.AssignedToUserId == session.UserId))
     {
       buttons.Add([
-        InlineKeyboardButton.WithCallbackData($"✅: {task.SpotName}: {task.Title}",
+        InlineKeyboardButton.WithCallbackData($"✅ {task.SpotName}: {task.Title}",
           CallbackData.TaskBrowsing.Complete(task.Id))
       ]);
       buttons.Add([
-        InlineKeyboardButton.WithCallbackData($"❌: {task.SpotName}: {task.Title}",
+        InlineKeyboardButton.WithCallbackData($"❌ {task.SpotName}: {task.Title}",
           CallbackData.TaskBrowsing.Refuse(task.Id))
       ]);
     }

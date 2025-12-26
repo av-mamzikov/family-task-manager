@@ -23,7 +23,7 @@ public class DailyOverdueTasksTelegramNotifier(
                   "Пора действовать — загляни в свои миссии и закрой хвосты, чтобы семья гордилась тобой!";
 
     var replyMarkup = new InlineKeyboardMarkup([
-      [InlineKeyboardButton.WithCallbackData("✅ Мои задачи", "Tasks_list")]
+      [InlineKeyboardButton.WithCallbackData("✅ Мои миссии", "Tasks_list")]
     ]);
 
     await telegramNotificationService.SendToUserAsync(

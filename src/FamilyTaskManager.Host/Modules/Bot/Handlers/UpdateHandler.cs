@@ -258,6 +258,7 @@ public class UpdateHandler(
     var callBackData = text switch
     {
       "🏠 Семья" => CallbackData.Family.List(),
+      "✅ Мои миссии" => CallbackData.TaskBrowsing.List(),
       "✅ Мои задачи" => CallbackData.TaskBrowsing.List(),
       "🧩 Споты" => CallbackData.SpotBrowsing.List(),
       "📊 Статистика" => CallbackData.Stats.List(),

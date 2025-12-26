@@ -29,7 +29,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     // Act: Navigate to tasks menu
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои миссии"),
       adminChatId);
 
     // Assert
@@ -84,12 +84,12 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     // Act: Navigate to tasks and take the task
     botClient.Clear();
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои миссии"),
       adminChatId);
 
-    taskListMessage.ShouldNotBeNull("Бот должен показать список задач");
-    taskListMessage!.ShouldContainText("Мои задачи");
-    taskListMessage.ShouldContainText("Доступные задачи");
+    taskListMessage.ShouldNotBeNull("Бот должен показать список миссий");
+    taskListMessage!.ShouldContainText("Мои миссии");
+    taskListMessage.ShouldContainText("Доступные миссии");
 
     var taskKeyboard = taskListMessage.ShouldHaveInlineKeyboard();
     var takeTaskButton = taskKeyboard.GetButton("✋");
@@ -99,8 +99,8 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
       adminChatId);
 
     // Assert
-    taskTakenMessage.ShouldNotBeNull("Бот должен подтвердить взятие задачи");
-    taskTakenMessage!.ShouldContainText("Задача взята в работу");
+    taskTakenMessage.ShouldNotBeNull("Бот должен подтвердить взятие миссии");
+    taskTakenMessage!.ShouldContainText("Миссия выполняется");
     var actionKeyboard = taskTakenMessage.ShouldHaveInlineKeyboard();
     actionKeyboard.ShouldContainButton("✅");
     actionKeyboard.ShouldContainButton("❌");
@@ -122,7 +122,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     // Take the task
     botClient.Clear();
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои миссии"),
       adminChatId);
     var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().GetButton("✋");
 
@@ -138,7 +138,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     // Assert
     completionMessage.ShouldNotBeNull("Бот должен подтвердить выполнение задачи");
-    completionMessage!.ShouldContainText("Задача выполнена");
+    completionMessage!.ShouldContainText("Миссия выполнена");
     completionMessage.ShouldContainText("Очки начислены");
   }
 
@@ -158,7 +158,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     // Take the task
     botClient.Clear();
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои миссии"),
       adminChatId);
     var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().GetButton("✋");
 
@@ -173,9 +173,9 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
       adminChatId);
 
     // Assert
-    refuseMessage.ShouldNotBeNull("Бот должен подтвердить отказ от задачи");
-    refuseMessage!.ShouldContainText("Вы отказались от задачи");
-    refuseMessage.ShouldContainText("Задача снова доступна");
+    refuseMessage.ShouldNotBeNull("Бот должен подтвердить отказ от миссии");
+    refuseMessage!.ShouldContainText("Вы отказались от миссии");
+    refuseMessage.ShouldContainText("Миссия снова доступна");
   }
 
   [RetryFact(3)]
@@ -194,7 +194,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     // Take the task
     botClient.Clear();
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои миссии"),
       adminChatId);
     var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().GetButton("✋");
 
@@ -210,7 +210,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     // Assert
     deleteMessage.ShouldNotBeNull("Бот должен подтвердить отказ от задачи");
-    deleteMessage!.ShouldContainText("Вы удалили задачу");
+    deleteMessage!.ShouldContainText("Вы удалили миссию");
   }
 
   [RetryFact(3)]
@@ -240,7 +240,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     botClient.Clear();
     var otherTaskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateTextUpdate(otherChatId, otherTelegramId, "✅ Мои задачи"),
+      UpdateFactory.CreateTextUpdate(otherChatId, otherTelegramId, "✅ Мои миссии"),
       otherChatId);
     otherTaskListMessage.ShouldNotBeNull("Другой участник должен увидеть список задач");
     var otherTaskKeyboard = otherTaskListMessage!.ShouldHaveInlineKeyboard();
@@ -260,8 +260,8 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
       adminChatId);
 
     // Assert: Other tasks list shows taken task and has no action buttons
-    otherTasksMessage.ShouldNotBeNull("Админ должен увидеть список других задач");
-    otherTasksMessage!.ShouldContainText("Другие задачи");
+    otherTasksMessage.ShouldNotBeNull("Админ должен увидеть список других миссий");
+    otherTasksMessage!.ShouldContainText("Другие миссии");
     otherTasksMessage.ShouldContainText(takenTaskTitle);
 
     var otherTasksKeyboard = otherTasksMessage.ShouldHaveInlineKeyboard();
