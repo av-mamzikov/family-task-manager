@@ -300,12 +300,18 @@ public class SpotBrowsingHandler(
 
     var messageText = $"{spotEmoji} *{spot.Name}*\n\n" +
                       $"💖 Настроение: {moodEmoji} - {moodText}\n\n";
-
+    var takeTaskButtons = new List<InlineKeyboardButton[]>();
     if (tasksResult.IsSuccess && tasksResult.Value.Any())
     {
       messageText += $"📝 *{spot.Name} нуждается в помощи:*\n";
       foreach (var task in tasksResult.Value)
+      {
         messageText += $"• {task.Title} {task.Points.ToStars()} до {task.DueAtLocal:dd.MM.yyyy HH:mm}💖\n";
+        takeTaskButtons.Add([
+          InlineKeyboardButton.WithCallbackData($"✋ {task.Title}",
+            CallbackData.TaskBrowsing.Take(task.Id))
+        ]);
+      }
     }
     else
     {
@@ -314,6 +320,7 @@ public class SpotBrowsingHandler(
     }
 
     var keyboard = new InlineKeyboardMarkup([
+      ..takeTaskButtons,
       [InlineKeyboardButton.WithCallbackData("📋 Шаблоны задач", CallbackData.TemplateBrowsing.ListOfSpot(spotId))],
       [
         InlineKeyboardButton.WithCallbackData("👥 Ответственные",

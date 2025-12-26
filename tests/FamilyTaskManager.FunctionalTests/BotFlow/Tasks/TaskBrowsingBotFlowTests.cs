@@ -92,7 +92,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     taskListMessage.ShouldContainText("Доступные задачи");
 
     var taskKeyboard = taskListMessage.ShouldHaveInlineKeyboard();
-    var takeTaskButton = taskKeyboard.GetButton("✋ Взять");
+    var takeTaskButton = taskKeyboard.GetButton("✋");
 
     var taskTakenMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, takeTaskButton.CallbackData!),
@@ -102,8 +102,8 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     taskTakenMessage.ShouldNotBeNull("Бот должен подтвердить взятие задачи");
     taskTakenMessage!.ShouldContainText("Задача взята в работу");
     var actionKeyboard = taskTakenMessage.ShouldHaveInlineKeyboard();
-    actionKeyboard.ShouldContainButton("✅ Выполнить");
-    actionKeyboard.ShouldContainButton("❌ Отказаться");
+    actionKeyboard.ShouldContainButton("✅");
+    actionKeyboard.ShouldContainButton("❌");
   }
 
   [RetryFact(3)]
@@ -124,14 +124,14 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
       adminChatId);
-    var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().GetButton("✋ Взять");
+    var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().GetButton("✋");
 
     var taskTakenMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, takeTaskButton.CallbackData!),
       adminChatId);
 
     // Act: Complete the task
-    var completeButton = taskTakenMessage!.ShouldHaveInlineKeyboard().GetButton("✅ Выполнить");
+    var completeButton = taskTakenMessage!.ShouldHaveInlineKeyboard().GetButton("✅");
     var completionMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, completeButton.CallbackData!),
       adminChatId);
@@ -160,14 +160,14 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
       adminChatId);
-    var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().GetButton("✋ Взять");
+    var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().GetButton("✋");
 
     var taskTakenMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, takeTaskButton.CallbackData!),
       adminChatId);
 
     // Act: Refuse the task
-    var refuseButton = taskTakenMessage!.ShouldHaveInlineKeyboard().GetButton("❌ Отказаться");
+    var refuseButton = taskTakenMessage!.ShouldHaveInlineKeyboard().GetButton("❌");
     var refuseMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, refuseButton.CallbackData!),
       adminChatId);
@@ -196,7 +196,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     var taskListMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "✅ Мои задачи"),
       adminChatId);
-    var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().GetButton("✋ Взять");
+    var takeTaskButton = taskListMessage!.ShouldHaveInlineKeyboard().GetButton("✋");
 
     var taskTakenMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, takeTaskButton.CallbackData!),
@@ -244,9 +244,9 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
       otherChatId);
     otherTaskListMessage.ShouldNotBeNull("Другой участник должен увидеть список задач");
     var otherTaskKeyboard = otherTaskListMessage!.ShouldHaveInlineKeyboard();
-    var otherTakeButton = otherTaskKeyboard.GetButton("✋ Взять");
+    var otherTakeButton = otherTaskKeyboard.GetButton("✋");
 
-    var takenTaskTitle = otherTakeButton.Text.Replace("✋ Взять: ", string.Empty).Trim();
+    var takenTaskTitle = otherTakeButton.Text.Replace("✋", string.Empty).Trim().Split(": ").Skip(1).First();
     takenTaskTitle.ShouldNotBeNullOrWhiteSpace();
 
     await botClient.SendUpdateAndWaitForLastMessageAsync(
@@ -266,9 +266,9 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     var otherTasksKeyboard = otherTasksMessage.ShouldHaveInlineKeyboard();
     otherTasksKeyboard.ShouldContainButton("⬅️ Назад");
-    otherTasksKeyboard.ShouldNotContainButton("✋ Взять");
-    otherTasksKeyboard.ShouldNotContainButton("✅ Выполнить");
-    otherTasksKeyboard.ShouldNotContainButton("❌ Отказаться");
+    otherTasksKeyboard.ShouldNotContainButton("✋");
+    otherTasksKeyboard.ShouldNotContainButton("✅");
+    otherTasksKeyboard.ShouldNotContainButton("❌");
     otherTasksKeyboard.ShouldNotContainButton("🗑️");
   }
 

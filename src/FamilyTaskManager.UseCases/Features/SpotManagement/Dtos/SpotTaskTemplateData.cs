@@ -9,51 +9,51 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _catTemplates =
   [
     new(
-      "Убрать какахи из лотка кота",
+      "Убрать какахи из лотка",
       TaskPoints.Hard,
       Schedule.CreateDaily(new(5, 30)).Value,
       TimeSpan.FromHours(2)
     ),
     new(
-      "Убрать комки из лотка кота",
+      "Убрать комки из лотка",
       TaskPoints.Medium,
       Schedule.CreateDaily(new(20, 0)).Value,
       TimeSpan.FromHours(2)
     ),
     new(
-      "Налить свежую воду коту",
+      "Налить свежую воду",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(6, 0)).Value,
       TimeSpan.FromHours(2)
     ),
     new(
-      "Насыпать корм коту",
+      "Насыпать корм",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(6, 0)).Value,
       TimeSpan.FromHours(1)
     ),
 
     new(
-      "Полностью заменить наполнитель в лотке кота",
+      "Полностью заменить наполнитель в лотке",
       TaskPoints.VeryHard,
       Schedule.CreateWeekly(new(12, 0), DayOfWeek.Sunday).Value,
       TimeSpan.FromHours(10)
     ),
     new(
-      "Помыть миски кота",
+      "Помыть миски",
       TaskPoints.Medium,
       Schedule.CreateWeekly(new(19, 0), DayOfWeek.Monday)
         .Value,
       TimeSpan.FromHours(3)
     ),
     new(
-      "Почистить место для сна кота",
+      "Почистить место для сна",
       TaskPoints.Medium,
       Schedule.CreateWeekly(new(12, 0), DayOfWeek.Sunday).Value,
       TimeSpan.FromHours(10)
     ),
     new(
-      "Поиграть с котом",
+      "Поиграть",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(19, 0)).Value,
       TimeSpan.FromHours(3)
@@ -63,38 +63,38 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _dogTemplates =
   [
     new(
-      "Выгулять собаку утром",
+      "Выгулять утром",
       TaskPoints.Hard,
       Schedule.CreateDaily(new(6, 0)).Value,
       TimeSpan.FromHours(1.5)
     ),
     new(
-      "Выгулять собаку вечером",
+      "Выгулять вечером",
       TaskPoints.Hard,
       Schedule.CreateDaily(new(19, 0)).Value,
       TimeSpan.FromHours(3)
     ),
     new(
-      "Накормить собаку",
+      "Накормить",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(6, 0)).Value,
       TimeSpan.FromHours(2)
     ),
 
     new(
-      "Помыть миски собаки",
+      "Помыть миски",
       TaskPoints.Medium,
       Schedule.CreateWeekly(new(19, 0), DayOfWeek.Monday).Value,
       TimeSpan.FromHours(3)
     ),
     new(
-      "Расчесать собаку",
+      "Расчесать",
       TaskPoints.Medium,
       Schedule.CreateWeekly(new(19, 0), DayOfWeek.Saturday).Value,
       TimeSpan.FromHours(3)
     ),
     new(
-      "Искупать собаку",
+      "Искупать",
       TaskPoints.VeryHard,
       Schedule.CreateMonthly(new(12, 0), 1).Value,
       TimeSpan.FromHours(10)
@@ -104,32 +104,32 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _hamsterTemplates =
   [
     new(
-      "Насыпать корм хомяку",
+      "Насыпать корм",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(6, 0)).Value,
       TimeSpan.FromHours(2)
     ),
     new(
-      "Проверить и долить воду хомяку",
+      "Проверить и долить воду",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(6, 0)).Value,
       TimeSpan.FromHours(2)
     ),
 
     new(
-      "Убрать клетку хомяка",
+      "Убрать клетку",
       TaskPoints.Hard,
       Schedule.CreateWeekly(new(12, 0), DayOfWeek.Saturday).Value,
       TimeSpan.FromHours(10)
     ),
     new(
-      "Полностью помыть клетку хомяка",
+      "Полностью помыть клетку",
       TaskPoints.VeryHard,
       Schedule.CreateMonthly(new(12, 0), 1).Value,
       TimeSpan.FromHours(10)
     ),
     new(
-      "Проверить игрушки и колесо хомяка",
+      "Проверить игрушки и колесо",
       TaskPoints.Medium,
       Schedule.CreateWeekly(new(19, 0), DayOfWeek.Sunday).Value,
       TimeSpan.FromHours(3)
@@ -139,38 +139,38 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _parrotTemplates =
   [
     new(
-      "Покормить попугая",
+      "Покормить",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(8, 0)).Value,
       TimeSpan.FromHours(2)
     ),
     new(
-      "Поменять воду попугаю",
+      "Поменять воду",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(8, 0)).Value,
       TimeSpan.FromHours(2)
     ),
     new(
-      "Поиграть и пообщаться с попугаем",
+      "Поиграть и пообщаться",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(18, 0)).Value,
       TimeSpan.FromHours(3)
     ),
 
     new(
-      "Убрать поддон клетки попугая",
+      "Убрать поддон клетки",
       TaskPoints.Medium,
       Schedule.CreateWeekly(new(10, 0), DayOfWeek.Saturday).Value,
       TimeSpan.FromHours(6)
     ),
     new(
-      "Проверить игрушки и жердочки попугая",
+      "Проверить игрушки и жердочки",
       TaskPoints.Medium,
       Schedule.CreateWeekly(new(19, 0), DayOfWeek.Wednesday).Value,
       TimeSpan.FromHours(4)
     ),
     new(
-      "Полностью помыть клетку попугая",
+      "Полностью помыть клетку",
       TaskPoints.VeryHard,
       Schedule.CreateMonthly(new(12, 0), 1).Value,
       TimeSpan.FromHours(12)
@@ -180,26 +180,26 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _otherPetTemplates =
   [
     new(
-      "Накормить питомца",
+      "Накормить",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(8, 0)).Value,
       TimeSpan.FromHours(2)
     ),
     new(
-      "Поменять воду питомцу",
+      "Поменять воду",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(8, 30)).Value,
       TimeSpan.FromHours(2)
     ),
 
     new(
-      "Убрать место проживания питомца",
+      "Убрать место проживания",
       TaskPoints.Hard,
       Schedule.CreateWeekly(new(12, 0), DayOfWeek.Saturday).Value,
       TimeSpan.FromHours(10)
     ),
     new(
-      "Поиграть и пообщаться с питомцем",
+      "Поиграть и пообщаться",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(19, 0)).Value,
       TimeSpan.FromHours(3)
@@ -209,7 +209,7 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _fishTemplates =
   [
     new(
-      "Покормить рыбок в аквариуме",
+      "Покормить",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(8, 0)).Value,
       TimeSpan.FromHours(2)
@@ -232,7 +232,7 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _turtleTemplates =
   [
     new(
-      "Покормить черепаху",
+      "Покормить",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(9, 0)).Value,
       TimeSpan.FromHours(2)
@@ -254,19 +254,19 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _plantTemplates =
   [
     new(
-      "Полить комнатные растения",
+      "Полить",
       TaskPoints.Easy,
       Schedule.CreateWeekly(new(10, 0), DayOfWeek.Saturday).Value,
       TimeSpan.FromHours(8)
     ),
     new(
-      "Опрыскать листья растений",
+      "Опрыскать листья",
       TaskPoints.Easy,
       Schedule.CreateWeekly(new(19, 0), DayOfWeek.Wednesday).Value,
       TimeSpan.FromHours(4)
     ),
     new(
-      "Подкормить и удобрить растения",
+      "Подкормить и удобрить",
       TaskPoints.Medium,
       Schedule.CreateMonthly(new(12, 0), 1).Value,
       TimeSpan.FromHours(12)
@@ -276,25 +276,25 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _kitchenTemplates =
   [
     new(
-      "Помыть посуду и раковину на кухне",
+      "Помыть посуду и раковину",
       TaskPoints.Medium,
       Schedule.CreateDaily(new(20, 0)).Value,
       TimeSpan.FromHours(3)
     ),
     new(
-      "Протереть стол и рабочие поверхности на кухне",
+      "Протереть стол и рабочие поверхности",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(20, 30)).Value,
       TimeSpan.FromHours(3)
     ),
     new(
-      "Выбросить мусор с кухни",
+      "Выбросить мусор",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(21, 0)).Value,
       TimeSpan.FromHours(3)
     ),
     new(
-      "Сделать небольшую генеральную уборку на кухне",
+      "Сделать небольшую генеральную уборку",
       TaskPoints.VeryHard,
       Schedule.CreateWeekly(new(12, 0), DayOfWeek.Saturday).Value,
       TimeSpan.FromHours(10)
@@ -304,7 +304,7 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _bathroomTemplates =
   [
     new(
-      "Протереть раковину и зеркало в ванной",
+      "Протереть раковину и зеркало",
       TaskPoints.Easy,
       Schedule.CreateWeekly(new(20, 0), DayOfWeek.Saturday).Value,
       TimeSpan.FromHours(4)
@@ -316,7 +316,7 @@ public static class SpotTaskTemplateData
       TimeSpan.FromHours(8)
     ),
     new(
-      "Вымыть пол в ванной",
+      "Вымыть пол",
       TaskPoints.Medium,
       Schedule.CreateWeekly(new(11, 30), DayOfWeek.Saturday).Value,
       TimeSpan.FromHours(8)
@@ -326,13 +326,13 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _kidsRoomTemplates =
   [
     new(
-      "Собрать и разложить игрушки в детской",
+      "Собрать и разложить игрушки",
       TaskPoints.Medium,
       Schedule.CreateDaily(new(19, 30)).Value,
       TimeSpan.FromHours(3)
     ),
     new(
-      "Заправить кровать в детской",
+      "Заправить кровать",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(8, 0)).Value,
       TimeSpan.FromHours(3)
@@ -348,13 +348,13 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _hallwayTemplates =
   [
     new(
-      "Разложить обувь и верхнюю одежду в прихожей",
+      "Разложить обувь и верхнюю одежду",
       TaskPoints.Easy,
       Schedule.CreateWeekly(new(20, 0), DayOfWeek.Sunday).Value,
       TimeSpan.FromHours(3)
     ),
     new(
-      "Подмести или пропылесосить в прихожей",
+      "Подмести или пропылесосить",
       TaskPoints.Medium,
       Schedule.CreateWeekly(new(20, 30), DayOfWeek.Saturday).Value,
       TimeSpan.FromHours(4)
@@ -364,19 +364,19 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _bedroomTemplates =
   [
     new(
-      "Заправить кровать в спальне",
+      "Заправить кровать",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(8, 0)).Value,
       TimeSpan.FromHours(3)
     ),
     new(
-      "Протереть пыль в спальне",
+      "Протереть пыль",
       TaskPoints.Easy,
       Schedule.CreateWeekly(new(12, 0), DayOfWeek.Saturday).Value,
       TimeSpan.FromHours(10)
     ),
     new(
-      "Сменить постельное бельё в спальне",
+      "Сменить постельное бельё",
       TaskPoints.Medium,
       Schedule.CreateWeekly(new(12, 0), DayOfWeek.Saturday).Value,
       TimeSpan.FromHours(10)
@@ -386,13 +386,13 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _livingRoomTemplates =
   [
     new(
-      "Протереть пыль в гостиной",
+      "Протереть пыль",
       TaskPoints.Easy,
       Schedule.CreateWeekly(new(12, 0), DayOfWeek.Saturday).Value,
       TimeSpan.FromHours(10)
     ),
     new(
-      "Пропылесосить/помыть пол в гостиной",
+      "Пропылесосить/помыть пол",
       TaskPoints.Medium,
       Schedule.CreateWeekly(new(12, 30), DayOfWeek.Saturday).Value,
       TimeSpan.FromHours(10)
@@ -408,7 +408,7 @@ public static class SpotTaskTemplateData
       TimeSpan.FromHours(6)
     ),
     new(
-      "Почистить фильтр стиральной машины",
+      "Почистить фильтр",
       TaskPoints.Hard,
       Schedule.CreateMonthly(new(18, 0), 1).Value,
       TimeSpan.FromHours(12)
@@ -418,13 +418,13 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _dishwasherTemplates =
   [
     new(
-      "Запустить посудомойку с грязной посудой",
+      "Запустить мойку посуды",
       TaskPoints.Easy,
       Schedule.CreateDaily(new(21, 0)).Value,
       TimeSpan.FromHours(6)
     ),
     new(
-      "Почистить фильтр посудомойки",
+      "Почистить фильтр",
       TaskPoints.Hard,
       Schedule.CreateWeekly(new(18, 0), DayOfWeek.Sunday).Value,
       TimeSpan.FromHours(12)
@@ -434,13 +434,13 @@ public static class SpotTaskTemplateData
   private static readonly IReadOnlyList<TaskTemplateData> _fridgeTemplates =
   [
     new(
-      "Проверить продукты в холодильнике и выбросить испорченное",
+      "Проверить продукты и выбросить испорченное",
       TaskPoints.Medium,
       Schedule.CreateWeekly(new(18, 0), DayOfWeek.Friday).Value,
       TimeSpan.FromHours(6)
     ),
     new(
-      "Протереть полки и стенки в холодильнике",
+      "Протереть полки и стенки",
       TaskPoints.Hard,
       Schedule.CreateWeekly(new(12, 0), DayOfWeek.Saturday).Value,
       TimeSpan.FromHours(12)
@@ -454,6 +454,12 @@ public static class SpotTaskTemplateData
       TaskPoints.Medium,
       Schedule.CreateWeekly(new(20, 0), DayOfWeek.Sunday).Value,
       TimeSpan.FromHours(12)
+    ),
+    new(
+      "Передать показания счётчиков",
+      TaskPoints.Medium,
+      Schedule.CreateMonthly(new(19, 0), 1).Value,
+      TimeSpan.FromHours(48)
     ),
     new(
       "Оплатить регулярные счета семьи",

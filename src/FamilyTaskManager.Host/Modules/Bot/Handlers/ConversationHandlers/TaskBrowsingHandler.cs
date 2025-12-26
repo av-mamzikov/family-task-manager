@@ -104,16 +104,19 @@ public class TaskBrowsingHandler(
 
     foreach (var task in activeTasks) // Limit to 10 tasks
       buttons.Add([
-        InlineKeyboardButton.WithCallbackData($"✋ Взять: {task.Title}", CallbackData.TaskBrowsing.Take(task.Id))
+        InlineKeyboardButton.WithCallbackData($"✋ {task.SpotName}: {task.Title}",
+          CallbackData.TaskBrowsing.Take(task.Id))
       ]);
 
     foreach (var task in inProgressTasks.Where(t => t.AssignedToUserId == session.UserId))
     {
       buttons.Add([
-        InlineKeyboardButton.WithCallbackData($"✅ Выполнить: {task.Title}", CallbackData.TaskBrowsing.Complete(task.Id))
+        InlineKeyboardButton.WithCallbackData($"✅: {task.SpotName}: {task.Title}",
+          CallbackData.TaskBrowsing.Complete(task.Id))
       ]);
       buttons.Add([
-        InlineKeyboardButton.WithCallbackData($"❌ Отказаться: {task.Title}", CallbackData.TaskBrowsing.Refuse(task.Id))
+        InlineKeyboardButton.WithCallbackData($"❌: {task.SpotName}: {task.Title}",
+          CallbackData.TaskBrowsing.Refuse(task.Id))
       ]);
     }
 
@@ -218,8 +221,8 @@ public class TaskBrowsingHandler(
       ParseMode.Markdown,
       new InlineKeyboardMarkup([
         [
-          InlineKeyboardButton.WithCallbackData("✅ Выполнить", CallbackData.TaskBrowsing.Complete(task!.Id)),
-          InlineKeyboardButton.WithCallbackData("❌ Отказаться", CallbackData.TaskBrowsing.Refuse(task.Id)),
+          InlineKeyboardButton.WithCallbackData("✅", CallbackData.TaskBrowsing.Complete(task!.Id)),
+          InlineKeyboardButton.WithCallbackData("❌", CallbackData.TaskBrowsing.Refuse(task.Id)),
           InlineKeyboardButton.WithCallbackData("🗑️ Удалить", CallbackData.TaskBrowsing.Delete(task.Id))
         ]
       ]),

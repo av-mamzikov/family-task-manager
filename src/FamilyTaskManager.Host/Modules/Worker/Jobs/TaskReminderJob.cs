@@ -22,7 +22,7 @@ public class TaskReminderJob(
     try
     {
       var result = await _mediator.Send(new SendTaskRemindersCommand(
-          context.FireTimeUtc.DateTime,
+          context.FireTimeUtc.UtcDateTime,
           context.NextFireTimeUtc?.UtcDateTime ?? context.FireTimeUtc.DateTime.AddMinutes(15)),
         context.CancellationToken);
 
