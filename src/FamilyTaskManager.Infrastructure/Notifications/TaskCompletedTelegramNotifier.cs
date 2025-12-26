@@ -24,7 +24,7 @@ public class TaskCompletedTelegramNotifier(
     await telegramNotificationService.SendToFamilyMembersAsync(
       notification.FamilyId,
       message,
-      [notification.CompletedByUserId],
+      [],
       cancellationToken);
   }
 }
