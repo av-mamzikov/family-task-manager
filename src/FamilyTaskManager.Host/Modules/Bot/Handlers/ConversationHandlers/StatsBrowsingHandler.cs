@@ -61,9 +61,8 @@ public class StatsBrowsingHandler(
         var isCurrentUser = entry.UserId == session.UserId;
         var marker = isCurrentUser ? "➡️ " : "";
 
-        messageText += $"{marker}{medal} *{entry.UserName}* - ⭐ {entry.Points}\n";
-        messageText += $"   Роль: {RoleDisplay.GetRoleCaption(entry.Role)}\n\n";
-
+        messageText +=
+          $"{marker}{medal} *{RoleDisplay.GetRoleCaption(entry.Role)} {entry.UserName}* - ⭐ {entry.Points}\n";
         position++;
       }
     }
