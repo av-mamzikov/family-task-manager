@@ -130,8 +130,8 @@ public class TaskBrowsingHandler(
     if (session.CurrentFamilyId == null)
       return;
 
-    var query = new GetOtherTasksQuery(session.CurrentFamilyId.Value, session.UserId);
-    var tasksResult = await mediator.Send(query, cancellationToken);
+    var tasksResult = await mediator.Send(new GetOtherTasksQuery(session.CurrentFamilyId.Value, session.UserId),
+      cancellationToken);
 
     if (!tasksResult.IsSuccess)
     {
@@ -143,14 +143,21 @@ public class TaskBrowsingHandler(
     }
 
     var tasks = tasksResult.Value;
-
     var messageText = "👀 *Другие миссии*\n\n";
-
-    if (!tasks.Any())
+    if (tasks.Count == 0)
       messageText += "Пока других миссий нет.";
     else
       foreach (var task in tasks)
         messageText += FormatTaskBlock(task);
+
+    var buttons = tasks
+      .Where(t => t.Status == TaskStatus.Active)
+      .Select(task => new[]
+      {
+        InlineKeyboardButton.WithCallbackData($"✋ {task.SpotName}: {task.Title}",
+          CallbackData.TaskBrowsing.Take(task.Id))
+      })
+      .ToList();
 
     await botClient.SendOrEditMessageAsync(
       chatId,
@@ -158,6 +165,7 @@ public class TaskBrowsingHandler(
       messageText,
       ParseMode.Markdown,
       new InlineKeyboardMarkup([
+        ..buttons,
         [InlineKeyboardButton.WithCallbackData("⬅️ Назад", CallbackData.TaskBrowsing.List())]
       ]),
       cancellationToken);
