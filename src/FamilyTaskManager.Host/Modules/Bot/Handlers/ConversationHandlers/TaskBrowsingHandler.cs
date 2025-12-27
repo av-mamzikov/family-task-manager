@@ -115,12 +115,13 @@ public class TaskBrowsingHandler(
       ]);
     }
 
-    await botClient.SendTextMessageAsync(
+    await botClient.SendOrEditMessageAsync(
       chatId,
+      message,
       messageText,
-      parseMode: ParseMode.Markdown,
-      replyMarkup: buttons.Any() ? new InlineKeyboardMarkup(buttons) : null,
-      cancellationToken: cancellationToken);
+      ParseMode.Markdown,
+      buttons.Count != 0 ? new InlineKeyboardMarkup(buttons) : null,
+      cancellationToken);
   }
 
   private async Task HandleOtherTasksListAsync(ITelegramBotClient botClient, long chatId, Message? message,
@@ -216,8 +217,8 @@ public class TaskBrowsingHandler(
       ParseMode.Markdown,
       new InlineKeyboardMarkup([
         [
-          InlineKeyboardButton.WithCallbackData("✅", CallbackData.TaskBrowsing.Complete(task!.Id)),
-          InlineKeyboardButton.WithCallbackData("❌", CallbackData.TaskBrowsing.Refuse(task.Id)),
+          InlineKeyboardButton.WithCallbackData("✅ Выполнить", CallbackData.TaskBrowsing.Complete(task!.Id)),
+          InlineKeyboardButton.WithCallbackData("❌ Отказаться", CallbackData.TaskBrowsing.Refuse(task.Id)),
           InlineKeyboardButton.WithCallbackData("🗑️ Удалить", CallbackData.TaskBrowsing.Delete(task.Id))
         ]
       ]),
