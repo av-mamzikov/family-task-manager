@@ -1,4 +1,4 @@
-using FamilyTaskManager.Host.Modules.Bot.Models;
+using FamilyTaskManager.Infrastructure.Telegram;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Helpers;
 

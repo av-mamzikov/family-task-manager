@@ -1,4 +1,4 @@
-namespace FamilyTaskManager.Host.Modules.Bot.Models;
+namespace FamilyTaskManager.Infrastructure.Telegram;
 
 public enum ConversationState
 {

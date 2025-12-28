@@ -4,6 +4,7 @@ using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
 using FamilyTaskManager.Host.Modules.Bot.Services;
+using FamilyTaskManager.Infrastructure.Telegram;
 using FamilyTaskManager.UseCases.Features.FamilyManagement.Commands;
 using FamilyTaskManager.UseCases.Features.FamilyManagement.Queries;
 using Telegram.Bot;
@@ -11,6 +12,7 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using CallbackData = FamilyTaskManager.Infrastructure.Telegram.CallbackData;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 

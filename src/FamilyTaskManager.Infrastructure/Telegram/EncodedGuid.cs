@@ -1,4 +1,4 @@
-namespace FamilyTaskManager.Host.Modules.Bot.Models;
+namespace FamilyTaskManager.Infrastructure.Telegram;
 
 public readonly record struct EncodedGuid(Guid Value)
 {

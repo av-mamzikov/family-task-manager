@@ -1,6 +1,8 @@
 using FamilyTaskManager.Core.TaskAggregate.Events;
 using FamilyTaskManager.Core.Utils;
+using FamilyTaskManager.Infrastructure.Telegram;
 using Mediator;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Infrastructure.Notifications;
 
@@ -34,6 +36,13 @@ public class TaskReminderTelegramNotifier(
     await telegramNotificationService.SendToUserAsync(
       notification.AssignedUserTelegramId.Value,
       message,
+      new([
+        [
+          InlineKeyboardButton.WithCallbackData("✅ Выполнить", CallbackData.TaskBrowsing.Complete(notification.TaskId)),
+          InlineKeyboardButton.WithCallbackData("❌ Отказаться", CallbackData.TaskBrowsing.Refuse(notification.TaskId)),
+          InlineKeyboardButton.WithCallbackData("🗑️ Удалить", CallbackData.TaskBrowsing.Delete(notification.TaskId))
+        ]
+      ]),
       cancellationToken);
   }
 }

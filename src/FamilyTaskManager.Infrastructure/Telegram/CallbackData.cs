@@ -1,6 +1,4 @@
-using FamilyTaskManager.Infrastructure.Telegram;
-
-namespace FamilyTaskManager.Host.Modules.Bot.Constants;
+namespace FamilyTaskManager.Infrastructure.Telegram;
 
 public static class CallbackData
 {

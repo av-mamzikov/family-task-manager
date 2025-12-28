@@ -1,3 +1,5 @@
+using FamilyTaskManager.Infrastructure.Telegram;
+
 namespace FamilyTaskManager.Host.Modules.Bot.Models;
 
 public class UserSession

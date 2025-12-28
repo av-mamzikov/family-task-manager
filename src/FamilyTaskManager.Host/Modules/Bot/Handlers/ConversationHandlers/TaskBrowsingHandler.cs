@@ -4,12 +4,14 @@ using FamilyTaskManager.Core.Utils;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
+using FamilyTaskManager.Infrastructure.Telegram;
 using FamilyTaskManager.UseCases.Features.TasksManagement.Commands;
 using FamilyTaskManager.UseCases.Features.TasksManagement.Queries;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using CallbackData = FamilyTaskManager.Host.Modules.Bot.Constants.CallbackData;
 using TaskStatus = FamilyTaskManager.Core.TaskAggregate.TaskStatus;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
@@ -201,15 +203,14 @@ public class TaskBrowsingHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var takeTaskCommand = new TakeTaskCommand(taskId, session.UserId);
-    var result = await mediator.Send(takeTaskCommand, cancellationToken);
+    var takeTaskResult = await mediator.Send(new TakeTaskCommand(taskId, session.UserId), cancellationToken);
 
-    if (!result.IsSuccess)
+    if (!takeTaskResult.IsSuccess)
     {
       await SendErrorAsync(
         botClient,
         chatId,
-        $"❌ Ошибка: {result.Errors.FirstOrDefault()}",
+        $"❌ Ошибка: {takeTaskResult.Errors.FirstOrDefault()}",
         cancellationToken);
       return;
     }
@@ -221,7 +222,7 @@ public class TaskBrowsingHandler(
     await botClient.SendOrEditMessageAsync(
       chatId,
       messageId,
-      $" ✅ Миссия выполняется!\n\n{task?.Title} {task?.Points.ToStars()}\n",
+      $" ✅ Миссия выполняется!\n\n{task?.SpotName}: {task?.Title} {task?.Points.ToStars()}\n",
       ParseMode.Markdown,
       new InlineKeyboardMarkup([
         [
@@ -241,23 +242,26 @@ public class TaskBrowsingHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var completeTaskCommand = new CompleteTaskCommand(taskId, session.UserId);
-    var result = await mediator.Send(completeTaskCommand, cancellationToken);
+    var completeResult = await mediator.Send(new CompleteTaskCommand(taskId, session.UserId), cancellationToken);
 
-    if (!result.IsSuccess)
+    if (!completeResult.IsSuccess)
     {
       await SendErrorAsync(
         botClient,
         chatId,
-        $"❌ Ошибка: {result.Errors.FirstOrDefault()}",
+        $"❌ Ошибка: {completeResult.Errors.FirstOrDefault()}",
         cancellationToken);
       return;
     }
 
+    var getTaskResult = await mediator.Send(
+      new GetTaskByIdQuery(taskId, session.CurrentFamilyId ?? Guid.Empty), cancellationToken);
+    var task = getTaskResult.IsSuccess ? getTaskResult.Value : null;
+
     await botClient.SendOrEditMessageAsync(
       chatId,
       message,
-      "🎉 Миссия выполнена!\n\n⭐ Очки начислены!",
+      $"🎉 Миссия выполнена!\n\n⭐ Очки начислены!\n\n{task?.SpotName}: {task?.Title} {task?.Points.ToStars()}",
       cancellationToken: cancellationToken);
   }
 

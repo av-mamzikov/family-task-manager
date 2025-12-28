@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.FamilyAggregate.Events;
+using FamilyTaskManager.Infrastructure.Telegram;
 using Mediator;
 using Telegram.Bot.Types.ReplyMarkups;
 
@@ -23,7 +24,7 @@ public class DailyOverdueTasksTelegramNotifier(
                   "Пора действовать — загляни в свои миссии и закрой хвосты, чтобы семья гордилась тобой!";
 
     var replyMarkup = new InlineKeyboardMarkup([
-      [InlineKeyboardButton.WithCallbackData("✅ Мои миссии", "Tasks_list")]
+      [InlineKeyboardButton.WithCallbackData("✅ Мои миссии", CallbackData.TaskBrowsing.List())]
     ]);
 
     await telegramNotificationService.SendToUserAsync(

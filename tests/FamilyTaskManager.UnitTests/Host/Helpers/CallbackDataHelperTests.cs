@@ -1,5 +1,5 @@
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
-using FamilyTaskManager.Host.Modules.Bot.Models;
+using FamilyTaskManager.Infrastructure.Telegram;
 
 namespace FamilyTaskManager.UnitTests.Host.Helpers;
 

@@ -2,12 +2,14 @@ using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
+using FamilyTaskManager.Infrastructure.Telegram;
 using FamilyTaskManager.UseCases.Features.TaskTemplatesManagement.Commands;
 using FamilyTaskManager.UseCases.Features.TaskTemplatesManagement.Queries;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using CallbackData = FamilyTaskManager.Infrastructure.Telegram.CallbackData;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
