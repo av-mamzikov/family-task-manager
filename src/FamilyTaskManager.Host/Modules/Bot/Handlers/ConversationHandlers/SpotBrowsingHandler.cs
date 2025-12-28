@@ -149,6 +149,9 @@ public class SpotBrowsingHandler(
       return;
     }
 
+    var spotResult = await mediator.Send(new GetSpotByIdQuery(spotId));
+    var spot = spotResult.IsSuccess ? spotResult.Value : null;
+
     var members = familyMembersResult.Value;
     var responsibleIds = responsibleResult.Value.Select(m => m.Id).ToHashSet();
 
@@ -167,7 +170,7 @@ public class SpotBrowsingHandler(
         lines.Add($"{prefix}{RoleDisplay.GetRoleEmoji(member.Role)} {member.UserName}");
       }
 
-      var text = "👥 *Ответственные за спота*\n\n" +
+      var text = $"👥 *Ответственные за спота {spot?.Name}*\n\n" +
                  "Только взрослые участники семьи могут изменять ответственных.\n\n" +
                  string.Join("\n", lines);
 

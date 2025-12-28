@@ -334,6 +334,10 @@ public class TemplateBrowsingHandler(
       return;
     }
 
+    var taskTemplateResult =
+      await mediator.Send(new GetTaskTemplateByIdQuery(templateId, session.CurrentFamilyId.Value), cancellationToken);
+    var taskTemplate = taskTemplateResult.IsSuccess ? taskTemplateResult.Value : null;
+
     var members = familyMembersResult.Value;
     var responsibleIds = responsibleResult.Value.Select(m => m.Id).ToHashSet();
 
@@ -352,7 +356,7 @@ public class TemplateBrowsingHandler(
         lines.Add($"{prefix}{RoleDisplay.GetRoleEmoji(member.Role)} {member.UserName}");
       }
 
-      var text = "👥 *Ответственные за шаблон задачи*\n\n" +
+      var text = $"👥 *Ответственные за шаблон задачи {taskTemplate?.SpotName}: {taskTemplate?.Title}*\n\n" +
                  "Только взрослые участники семьи могут изменять ответственных.\n\n" +
                  string.Join("\n", lines);
 
