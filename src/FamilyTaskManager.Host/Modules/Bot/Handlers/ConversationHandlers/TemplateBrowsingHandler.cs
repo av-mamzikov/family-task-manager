@@ -399,7 +399,7 @@ public class TemplateBrowsingHandler(
     await botClient.SendOrEditMessageAsync(
       chatId,
       message,
-      "👥 *Ответственные за шаблон задачи*\n\n" +
+      $"👥 *Ответственные за шаблон задачи {taskTemplate?.SpotName}: {taskTemplate?.Title}*\n\n" +
       "Нажмите на участника, чтобы назначить или снять ответственность.",
       ParseMode.Markdown,
       keyboard,

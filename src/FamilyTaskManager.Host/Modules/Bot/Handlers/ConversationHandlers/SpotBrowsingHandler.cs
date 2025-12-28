@@ -213,7 +213,7 @@ public class SpotBrowsingHandler(
     await botClient.SendOrEditMessageAsync(
       chatId,
       message,
-      "👥 *Ответственные за спота*\n\n" +
+      $"👥 *Ответственные за спота {spot?.Name}*\n\n" +
       "Нажмите на участника, чтобы назначить или снять ответственность.",
       ParseMode.Markdown,
       keyboard,
