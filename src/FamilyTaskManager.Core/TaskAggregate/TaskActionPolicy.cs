@@ -31,8 +31,9 @@ public static class TaskActionPolicy
   }
 
   private static bool CanTake(TaskStatus status, Guid? assignedToUserId, Guid? actorUserId) =>
-    status is TaskStatus.Active or TaskStatus.InProgress
-    && (assignedToUserId == null || IsAssignedToActor(assignedToUserId, actorUserId));
+    status == TaskStatus.Active
+    || (status == TaskStatus.InProgress
+        && (assignedToUserId == null || !IsAssignedToActor(assignedToUserId, actorUserId)));
 
   private static bool CanComplete(TaskStatus status, Guid? assignedToUserId, Guid? actorUserId) =>
     IsAssignedToActor(assignedToUserId, actorUserId) && IsInProgress(status);
