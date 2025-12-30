@@ -1,18 +1,14 @@
-using FamilyTaskManager.Core.FamilyAggregate;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
 using FamilyTaskManager.Host.Modules.Bot.Models;
-using FamilyTaskManager.UseCases.Features.Statistics.Queries;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
-public class StatsBrowsingHandler(
-  ILogger<StatsBrowsingHandler> logger,
-  IMediator mediator)
+public class StoreHandler(
+  ILogger<StoreHandler> logger)
   : BaseConversationHandler(logger), IConversationHandler
 {
   public Task HandleMessageAsync(
@@ -29,7 +25,7 @@ public class StatsBrowsingHandler(
     User fromUser,
     CancellationToken cancellationToken)
   {
-    if (callbackParts.IsCallbackOf(CallbackData.Stats.List))
+    if (callbackParts.IsCallbackOf(CallbackData.Store.List))
       await HandleListCallbackAsync(botClient, chatId, message, callbackParts, session, fromUser, cancellationToken);
   }
 
@@ -42,43 +38,11 @@ public class StatsBrowsingHandler(
       return;
     }
 
-    var getLeaderboardQuery = new GetLeaderboardQuery(session.CurrentFamilyId.Value);
-    var leaderboardResult = await mediator.Send(getLeaderboardQuery, cancellationToken);
-
-    var messageText = "📊 *Статистика семьи*\n\n";
-
-    if (leaderboardResult.IsSuccess)
-    {
-      var entries = leaderboardResult.Value;
-
-      messageText += "*🏆 Лидерборд:*\n\n";
-
-      var position = 1;
-      foreach (var entry in entries)
-      {
-        var medal = position switch
-        {
-          1 => "🥇",
-          2 => "🥈",
-          3 => "🥉",
-          _ => $"{position}."
-        };
-
-        var isCurrentUser = entry.UserId == session.UserId;
-        var marker = isCurrentUser ? "➡️ " : "";
-
-        messageText +=
-          $"{marker}{medal} *{RoleDisplay.GetRoleEmoji(entry.Role)} {entry.UserName}* - ⭐ {entry.Points}\n";
-        position++;
-      }
-    }
-
     await botClient.SendOrEditMessageAsync(
       chatId,
       message,
-      messageText,
+      "Магазин в разработке",
       ParseMode.Markdown,
-      new InlineKeyboardMarkup([[InlineKeyboardButton.WithCallbackData("🛒 Магазин", CallbackData.Store.List())]]),
-      cancellationToken);
+      cancellationToken: cancellationToken);
   }
 }

@@ -13,5 +13,6 @@ public enum ConversationState
   Spots,
   Tasks,
   Templates,
-  Stats
+  Stats,
+  Store
 }

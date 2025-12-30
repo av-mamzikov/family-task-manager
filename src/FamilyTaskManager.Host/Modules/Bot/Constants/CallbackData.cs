@@ -143,4 +143,11 @@ public static class CallbackData
 
     public static string List() => $"{Conversation}_{CallbackActions.List}";
   }
+
+  public static class Store
+  {
+    public const ConversationState Conversation = ConversationState.Store;
+
+    public static string List() => $"{Conversation}_{CallbackActions.List}";
+  }
 }

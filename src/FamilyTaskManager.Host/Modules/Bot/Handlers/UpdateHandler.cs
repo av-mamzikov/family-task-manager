@@ -155,6 +155,7 @@ public class UpdateHandler(
       ConversationState.Family => serviceProvider.GetRequiredService<FamilyBrowsingHandler>(),
       ConversationState.Families => serviceProvider.GetRequiredService<FamilyMembersBrousingHandler>(),
       ConversationState.Stats => serviceProvider.GetRequiredService<StatsBrowsingHandler>(),
+      ConversationState.Store => serviceProvider.GetRequiredService<StoreHandler>(),
       _ => null
     };
 

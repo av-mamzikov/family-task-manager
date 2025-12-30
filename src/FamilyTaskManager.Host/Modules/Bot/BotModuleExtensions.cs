@@ -41,25 +41,21 @@ public static class BotModuleExtensions
     services.AddScoped<IUpdateHandler, UpdateHandler>();
 
     // Conversation Handlers
-    services.AddScoped<FamilyCreationHandler>();
-    services.AddScoped<SpotCreationHandler>();
-    services.AddScoped<TemplateFormHandler>();
-    services.AddScoped<TaskBrowsingHandler>();
-    services.AddScoped<TemplateBrowsingHandler>();
-    services.AddScoped<SpotBrowsingHandler>();
-    services.AddScoped<FamilyBrowsingHandler>();
-    services.AddScoped<FamilyMembersBrousingHandler>();
-    services.AddScoped<StatsBrowsingHandler>();
+    var conversationHandlerInterface = typeof(IConversationHandler);
+    var conversationHandlerAssembly = conversationHandlerInterface.Assembly;
+    var conversationHandlerTypes = conversationHandlerAssembly
+      .GetTypes()
+      .Where(t =>
+        t.IsClass &&
+        !t.IsAbstract &&
+        !t.IsGenericTypeDefinition &&
+        conversationHandlerInterface.IsAssignableFrom(t));
 
-    // Все CallbackHandlers удалены - логика перенесена в ConversationHandlers:
-    // - TaskCallbackHandler -> TaskBrowsingHandler
-    // - TemplateCallbackHandler -> TemplateBrowsingHandler
-    // - SpotCallbackHandler -> SpotBrowsingHandler
-    // - FamilyCallbackHandler -> FamilyBrowsingHandler
-    // - FamilyMembersCallbackHandler -> FamilyMembersBrowsingHandler
-    // - PointsCallbackHandler -> Creation/Edit handlers
-    // - TimezoneCallbackHandler -> FamilyCreationHandler
-    // - ScheduleCallbackHandler -> Creation/Edit handlers
+    foreach (var handlerType in conversationHandlerTypes)
+    {
+      services.AddScoped(handlerType);
+      services.AddScoped(conversationHandlerInterface, handlerType);
+    }
 
     logger?.LogInformation("Bot Module registered: Telegram Bot with Long Polling");
 
