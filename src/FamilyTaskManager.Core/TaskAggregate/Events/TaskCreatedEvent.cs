@@ -9,7 +9,7 @@ public sealed class TaskCreatedEvent : DomainEventBase
   public required TaskStatus TaskStatus { get; init; }
   public required string SpotName { get; init; } = string.Empty;
   public required string Points { get; init; } = string.Empty;
-  public required DateTime DueAt { get; init; }
+  public required DateTime DueAtUtc { get; init; }
   public required string Timezone { get; init; } = string.Empty;
   public required Guid? AssignedUserId { get; init; }
   public required string? AssignedUserName { get; init; }

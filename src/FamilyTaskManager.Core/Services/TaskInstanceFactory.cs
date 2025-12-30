@@ -12,7 +12,7 @@ namespace FamilyTaskManager.Core.Services;
 public class TaskInstanceFactory : ITaskInstanceFactory
 {
   public Result<TaskInstance> CreateFromTemplate(TaskTemplate template, Spot spot, DateTime dueAt,
-    IEnumerable<TaskInstance> existingInstances, FamilyMember? assignedToMember = null)
+    IEnumerable<TaskInstance> existingInstances, FamilyMember? assignedToMember)
   {
     Guard.Against.Null(spot);
 

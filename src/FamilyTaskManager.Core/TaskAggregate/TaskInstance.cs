@@ -10,8 +10,7 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   {
   }
 
-  public TaskInstance(Spot spot, string title, TaskPoints points, DateTime dueAt,
-    Guid? templateId = null,
+  public TaskInstance(Spot spot, string title, TaskPoints points, DateTime dueAt, Guid? templateId = null,
     FamilyMember? assignedToMember = null)
   {
     Guard.Against.Null(spot);
@@ -40,7 +39,7 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
       AssignedUserId = assignedToMember?.UserId,
       SpotName = spot.Name,
       Points = points.ToString(),
-      DueAt = dueAt,
+      DueAtUtc = dueAt,
       Timezone = spot.Family.Timezone,
       AssignedUserName = assignedToMember?.User?.Name,
       AssignedUserTelegramId = assignedToMember?.User?.TelegramId
@@ -64,6 +63,9 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
   public Spot Spot { get; } = null!;
   public TaskTemplate? Template { get; private set; }
   public FamilyMember? AssignedToMember { get; private set; }
+
+  public IReadOnlyCollection<TaskAction> GetAvailableActions(Guid actorUserId) =>
+    TaskActionPolicy.GetAvailableActions(this, actorUserId);
 
   public Result AssignToMember(FamilyMember familyMember)
   {

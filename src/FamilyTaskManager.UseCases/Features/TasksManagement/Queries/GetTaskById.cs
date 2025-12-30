@@ -12,7 +12,7 @@ public class GetTaskByIdHandler(IAppRepository<TaskInstance> taskAppRepository)
   public async ValueTask<Result<TaskDto>> Handle(GetTaskByIdQuery request,
     CancellationToken cancellationToken)
   {
-    var spec = new GetTaskByIdWithMembersSpec(request.Id);
+    var spec = new GetTaskDtoByIdWithMembersSpec(request.Id);
     var task = await taskAppRepository.FirstOrDefaultAsync(spec, cancellationToken);
 
     if (task == null) return Result<TaskDto>.NotFound("Task not found");

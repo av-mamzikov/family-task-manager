@@ -13,13 +13,12 @@ public record CreateTaskCommand(
   Guid SpotId,
   string Title,
   TaskPoints Points,
-  DateTime DueAt,
+  DateTime DueAtUtc,
   Guid CreatedBy) : ICommand<Result<Guid>>;
 
 public class CreateTaskHandler(
   IAppRepository<TaskInstance> taskAppRepository,
   IAppRepository<Spot> spotAppRepository,
-  ITimeZoneService timeZoneService,
   ISpotMoodCalculator moodCalculator) : ICommandHandler<CreateTaskCommand, Result<Guid>>
 {
   public async ValueTask<Result<Guid>> Handle(CreateTaskCommand command, CancellationToken cancellationToken)
@@ -35,23 +34,12 @@ public class CreateTaskHandler(
     if (command.Title.Length < 3 || command.Title.Length > 100)
       return Result<Guid>.Invalid(new ValidationError("Название должно быть длиной от 3 до 100 символов"));
 
-    // Convert DueAt from family timezone to UTC for storage
-    DateTime dueAtUtc;
-    try
-    {
-      dueAtUtc = timeZoneService.ConvertToUtc(command.DueAt, spot.Family.Timezone);
-    }
-    catch (ArgumentException ex)
-    {
-      return Result<Guid>.Invalid(new ValidationError($"Ошибка преобразования часового пояса: {ex.Message}"));
-    }
-
     // Create one-time task (Spot has Family loaded for event)
     var task = new TaskInstance(
       spot,
       command.Title,
       command.Points,
-      dueAtUtc);
+      command.DueAtUtc);
 
     await taskAppRepository.AddAsync(task, cancellationToken);
     await taskAppRepository.SaveChangesAsync(cancellationToken);

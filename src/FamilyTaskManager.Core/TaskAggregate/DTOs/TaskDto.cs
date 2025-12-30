@@ -15,11 +15,14 @@ public record TaskDto(
   Guid SpotId,
   string SpotName,
   Guid? AssignedToUserId,
+  string? AssignedToUserName,
+  long? AssignedToUserTelegramId,
+  Guid FamilyId,
   string FamilyTimezone,
-  string? AssignedToUserName = null,
-  long? AssignedToUserTelegramId = null,
-  SpotType SpotType = SpotType.OtherPet)
+  SpotType SpotType)
 {
+  private DateTime? _dueAtLocal;
+
   /// <summary>
   ///   DueAt converted to family's local timezone
   /// </summary>
@@ -27,10 +30,13 @@ public record TaskDto(
   {
     get
     {
+      if (_dueAtLocal is not null)
+        return _dueAtLocal.Value;
       try
       {
         var timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(FamilyTimezone);
-        return TimeZoneInfo.ConvertTimeFromUtc(DueAtUtc, timeZoneInfo);
+        _dueAtLocal = TimeZoneInfo.ConvertTimeFromUtc(DueAtUtc, timeZoneInfo);
+        return _dueAtLocal.Value;
       }
       catch
       {
@@ -51,9 +57,10 @@ public record TaskDto(
       t.SpotId,
       t.Spot.Name,
       t.AssignedToMember != null ? t.AssignedToMember.UserId : null,
-      t.Family.Timezone,
       t.AssignedToMember != null ? t.AssignedToMember.User!.Name : null,
       t.AssignedToMember != null ? t.AssignedToMember.User!.TelegramId : null,
+      t.FamilyId,
+      t.Family.Timezone,
       t.Spot.Type);
   }
 }
