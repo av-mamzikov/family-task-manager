@@ -387,11 +387,10 @@ public class SpotBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
     var catButton = spotTypeKeyboard.GetButton("🐱 Кот");
 
     await botClient.SendUpdateAndWaitForLastMessageAsync(
-      new[]
-      {
+      [
         UpdateFactory.CreateCallbackUpdate(adminChatId, adminTelegramId, catButton.CallbackData!),
         UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "Барсик")
-      },
+      ],
       adminChatId);
 
     // Child opens spot details and responsibles screen

@@ -9,9 +9,11 @@ public sealed class TaskReminderDueEvent : DomainEventBase
   public required Guid FamilyId { get; init; }
   public required Guid? TemplateId { get; init; }
   public required string SpotName { get; init; } = string.Empty;
-  public required string Title { get; init; } = string.Empty;
+  public required string TaskTitle { get; init; } = string.Empty;
+  public required TaskStatus TaskStatus { get; init; }
   public required DateTime DueAt { get; init; }
   public required string Timezone { get; init; } = string.Empty;
+  public required Guid? AssignedUserId { get; init; }
   public required string? AssignedUserName { get; init; }
   public required long? AssignedUserTelegramId { get; init; }
 }

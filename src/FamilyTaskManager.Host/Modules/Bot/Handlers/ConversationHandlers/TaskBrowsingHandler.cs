@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.SpotAggregate;
+using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Core.TaskAggregate.DTOs;
 using FamilyTaskManager.Core.Utils;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
@@ -99,22 +100,25 @@ public class TaskBrowsingHandler(
       InlineKeyboardButton.WithCallbackData("👀 Другие миссии", CallbackData.TaskBrowsing.OtherList())
     ]);
 
-    foreach (var task in activeTasks)
+    foreach (var task in activeTasks.Where(t =>
+               TaskActionPolicy.GetAvailableActions(t, session.UserId).Contains(TaskAction.Take)))
       buttons.Add([
-        InlineKeyboardButton.WithCallbackData($"✋ {task.SpotName}: {task.Title}",
-          CallbackData.TaskBrowsing.Take(task.Id))
+        TaskActionTelegramButtonFactory.Create(
+          TaskAction.Take,
+          task.Id,
+          $"✋ {task.SpotName}: {task.Title}")
       ]);
 
-    foreach (var task in inProgressTasks.Where(t => t.AssignedToUserId == session.UserId))
+    foreach (var task in inProgressTasks)
     {
-      buttons.Add([
-        InlineKeyboardButton.WithCallbackData($"✅ {task.SpotName}: {task.Title}",
-          CallbackData.TaskBrowsing.Complete(task.Id))
-      ]);
-      buttons.Add([
-        InlineKeyboardButton.WithCallbackData($"❌ {task.SpotName}: {task.Title}",
-          CallbackData.TaskBrowsing.Refuse(task.Id))
-      ]);
+      var actions = TaskActionPolicy.GetAvailableActions(task, session.UserId);
+      buttons.AddRange(actions.Select(action => (InlineKeyboardButton[])
+      [
+        TaskActionTelegramButtonFactory.Create(
+          action,
+          task.Id,
+          $"{TaskActionTelegramButtonFactory.GetEmoji(action)} {task.SpotName}: {task.Title}")
+      ]));
     }
 
     await botClient.SendOrEditMessageAsync(
@@ -153,12 +157,16 @@ public class TaskBrowsingHandler(
         messageText += FormatTaskBlock(task);
 
     var buttons = tasks
-      .Where(t => t.Status == TaskStatus.Active)
-      .Select(task => new[]
-      {
-        InlineKeyboardButton.WithCallbackData($"✋ {task.SpotName}: {task.Title}",
-          CallbackData.TaskBrowsing.Take(task.Id))
-      })
+      .SelectMany(task =>
+        TaskActionPolicy.GetAvailableActions(task, session.UserId)
+          .Where(a => a == TaskAction.Take)
+          .Select(_ => new[]
+          {
+            TaskActionTelegramButtonFactory.Create(
+              TaskAction.Take,
+              task.Id,
+              $"✋ {task.SpotName}: {task.Title}")
+          }))
       .ToList();
 
     await botClient.SendOrEditMessageAsync(

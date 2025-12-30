@@ -87,7 +87,7 @@ public class TaskCompletionStatsQueryTests : BaseRepositoryTestFixture
     var result = await sut.GetLastCreatedAtByAssignedForTemplateAsync(
       family.Id,
       template.Id,
-      new[] { member1.Id, member2.Id },
+      [member1.Id, member2.Id],
       CancellationToken.None);
 
     // Assert

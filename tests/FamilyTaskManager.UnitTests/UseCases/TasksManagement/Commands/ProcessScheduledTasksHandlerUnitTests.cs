@@ -39,7 +39,7 @@ public class ProcessScheduledTasksHandlerUnitTests
     var assignedMemberSelector = Substitute.For<IAssignedMemberSelector>();
 
     templateReadRepo.ListAsync(Arg.Any<TaskTemplatesWithFamilyAndScheduleSpec>(), Arg.Any<CancellationToken>())
-      .Returns(new List<TaskTemplate> { template });
+      .Returns([template]);
 
     spotRepo.FirstOrDefaultAsync(Arg.Any<GetSpotByIdWithFamilySpec>(), Arg.Any<CancellationToken>())
       .Returns(spot);

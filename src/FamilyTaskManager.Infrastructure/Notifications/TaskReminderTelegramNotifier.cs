@@ -1,3 +1,4 @@
+using FamilyTaskManager.Core.TaskAggregate;
 using FamilyTaskManager.Core.TaskAggregate.Events;
 using FamilyTaskManager.Core.Utils;
 using FamilyTaskManager.Infrastructure.Telegram;
@@ -20,6 +21,9 @@ public class TaskReminderTelegramNotifier(
     if (notification.AssignedUserTelegramId is null)
       return;
 
+    if (notification.AssignedUserId is null)
+      return;
+
     // Convert DueAt from UTC to family timezone for display
     var dueAtLocal = timeZoneService.ConvertFromUtc(notification.DueAt, notification.Timezone);
     var mentionLine =
@@ -28,21 +32,29 @@ public class TaskReminderTelegramNotifier(
     // Format message using data from event
     var message = $"⏰ *Личное напоминание герою миссии!*\n" +
                   $"(это сообщение видишь только ты)\n\n" +
-                  $"Задача: {notification.Title} для {notification.SpotName}\n" +
+                  $"Задача: {notification.TaskTitle} для {notification.SpotName}\n" +
                   $"Срок выполнения: {dueAtLocal:HH:mm}\n" +
                   mentionLine +
                   "Пора действовать — выполни миссию и получи баллы!";
 
+    var t = notification.TaskTitle;
+
+    var actions = TaskActionPolicy.GetAvailableActions(
+      notification.TaskStatus,
+      notification.AssignedUserId,
+      notification.AssignedUserId.Value);
+
+    var buttons = actions
+      .Where(a => a != TaskAction.Delete)
+      .Select(action => TaskActionTelegramButtonFactory.Create(action, notification.TaskId))
+      .ToList();
+
     await telegramNotificationService.SendToUserAsync(
       notification.AssignedUserTelegramId.Value,
       message,
-      new([
-        [
-          InlineKeyboardButton.WithCallbackData("✅ Выполнить", CallbackData.TaskBrowsing.Complete(notification.TaskId)),
-          InlineKeyboardButton.WithCallbackData("❌ Отказаться", CallbackData.TaskBrowsing.Refuse(notification.TaskId)),
-          InlineKeyboardButton.WithCallbackData("🗑️ Удалить", CallbackData.TaskBrowsing.Delete(notification.TaskId))
-        ]
-      ]),
+      buttons.Count != 0
+        ? new InlineKeyboardMarkup([buttons.ToArray()])
+        : null,
       cancellationToken);
   }
 }

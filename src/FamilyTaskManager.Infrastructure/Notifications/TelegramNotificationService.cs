@@ -16,7 +16,15 @@ public class TelegramNotificationService(
   /// <summary>
   ///   Send message to all active members of a family
   /// </summary>
+  public Task SendToFamilyMembersAsync(Guid familyId, string message, Guid[] excludeUserId,
+    CancellationToken cancellationToken)
+    => SendToFamilyMembersAsync(familyId, message, excludeUserId, null, cancellationToken);
+
+  /// <summary>
+  ///   Send message to all active members of a family
+  /// </summary>
   public async Task SendToFamilyMembersAsync(Guid familyId, string message, Guid[] excludeUserId,
+    InlineKeyboardMarkup? replyMarkup,
     CancellationToken cancellationToken)
   {
     // Get family with members
@@ -47,26 +55,13 @@ public class TelegramNotificationService(
   /// <summary>
   ///   Send message to a specific user by telegramId
   /// </summary>
-  public async Task SendToUserAsync(long telegramId, string message, CancellationToken cancellationToken)
-  {
-    try
-    {
-      await botClient.SendTextMessageAsync(
-        telegramId,
-        message,
-        parseMode: ParseMode.Markdown,
-        cancellationToken: cancellationToken);
+  public Task SendToUserAsync(long telegramId, string message, CancellationToken cancellationToken)
+    => SendToUserAsync(telegramId, message, null, cancellationToken);
 
-      logger.LogDebug("Notification sent to user TelegramId: {TelegramId}", telegramId);
-    }
-    catch (Exception ex)
-    {
-      logger.LogError(ex, "Failed to send notification to user {UserId}", telegramId);
-      // Don't throw - we want to continue sending to other users
-    }
-  }
-
-  public async Task SendToUserAsync(long telegramId, string message, InlineKeyboardMarkup replyMarkup,
+  /// <summary>
+  ///   Send message to a specific user by telegramId
+  /// </summary>
+  public async Task SendToUserAsync(long telegramId, string message, InlineKeyboardMarkup? replyMarkup,
     CancellationToken cancellationToken)
   {
     try
@@ -78,11 +73,11 @@ public class TelegramNotificationService(
         replyMarkup: replyMarkup,
         cancellationToken: cancellationToken);
 
-      logger.LogDebug("Notification with markup sent to user TelegramId: {TelegramId}", telegramId);
+      logger.LogDebug("Notification sent to user TelegramId: {TelegramId}", telegramId);
     }
     catch (Exception ex)
     {
-      logger.LogError(ex, "Failed to send notification with markup to user {UserId}", telegramId);
+      logger.LogError(ex, "Failed to send notification to user {UserId}", telegramId);
     }
   }
 }
