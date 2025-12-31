@@ -266,7 +266,7 @@ public class TaskBrowsingBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     var otherTasksKeyboard = otherTasksMessage.ShouldHaveInlineKeyboard();
     otherTasksKeyboard.ShouldContainButton("⬅️ Назад");
-    otherTasksKeyboard.ShouldNotContainButton("✋");
+    otherTasksKeyboard.ShouldContainButton("✋"); // Специально сделана возможность отобрать задачу
     otherTasksKeyboard.ShouldNotContainButton("✅");
     otherTasksKeyboard.ShouldNotContainButton("❌");
     otherTasksKeyboard.ShouldNotContainButton("🗑️");
