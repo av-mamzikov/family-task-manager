@@ -19,7 +19,7 @@ public static class TaskActionTelegramButtonFactory
 
   private static string GetDefaultText(TaskAction action) => action switch
   {
-    TaskAction.Take => "Взять",
+    TaskAction.Take => "Начать",
     TaskAction.Complete => "Выполнить",
     TaskAction.Refuse => "Отказаться",
     TaskAction.Delete => "Удалить",
