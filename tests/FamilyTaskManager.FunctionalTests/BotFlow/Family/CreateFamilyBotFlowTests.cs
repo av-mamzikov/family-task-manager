@@ -1,6 +1,8 @@
 using FamilyTaskManager.FunctionalTests.Helpers;
 using FamilyTaskManager.Host;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
+using FamilyTaskManager.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace FamilyTaskManager.FunctionalTests.BotFlow.Family;
 
@@ -38,6 +40,30 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
 
     var keyboard = response.ShouldHaveInlineKeyboard();
     keyboard.ShouldContainButton("Создать семью");
+  }
+
+  [RetryFact(3)]
+  public async Task TS_BOT_001A_FirstStart_WithCampaign_ShouldPersistCampaignId()
+  {
+    var chatId = TestDataBuilder.GenerateTelegramId();
+    var telegramUserId = TestDataBuilder.GenerateTelegramId();
+    const string campaignId = "123";
+
+    var botClient = factory.TelegramBotClient;
+    botClient.Clear();
+
+    var response = await botClient.SendUpdateAndWaitForLastMessageAsync(
+      UpdateFactory.CreateTextUpdate(chatId, telegramUserId, $"/start campaign_{campaignId}"),
+      chatId);
+
+    response.ShouldNotBeNull("Бот должен отправить приветственное сообщение при первом запуске");
+
+    await using var scope = factory.Services.CreateAsyncScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    var user = await dbContext.Users.SingleOrDefaultAsync(u => u.TelegramId == telegramUserId);
+    user.ShouldNotBeNull("Пользователь должен быть создан после первого запуска бота");
+    user!.CampaignId.ShouldBe(campaignId, "Идентификатор кампании должен быть сохранен");
   }
 
   [RetryFact(2)]

@@ -2,7 +2,8 @@ using FamilyTaskManager.Core.UserAggregate.Specifications;
 
 namespace FamilyTaskManager.UseCases.Features.UserManagement.Commads;
 
-public record GetOrCreateTelegramSessionCommand(long TelegramId, string UserName) : ICommand<Result<TelegramSession>>;
+public record GetOrCreateTelegramSessionCommand(long TelegramId, string UserName, string? CampaignId)
+  : ICommand<Result<TelegramSession>>;
 
 public class GetOrCreateTelegramSessionHandler(
   IAppRepository<User> userAppRepository,
@@ -15,7 +16,7 @@ public class GetOrCreateTelegramSessionHandler(
   {
     var user = await userAppRepository.GetOrCreateAndSaveAsync(
       new GetUserByTelegramIdSpec(command.TelegramId),
-      () => new(command.TelegramId, command.UserName),
+      () => new(command.TelegramId, command.UserName, command.CampaignId),
       cancellationToken);
     if (user.Name != command.UserName)
     {
