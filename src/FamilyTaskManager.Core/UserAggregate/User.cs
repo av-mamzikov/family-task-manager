@@ -6,7 +6,7 @@ public class User : EntityBase<User, Guid>, IAggregateRoot
   {
   }
 
-  public User(long telegramId, string name)
+  public User(long telegramId, string name, string? campaignId = null)
   {
     Guard.Against.NullOrWhiteSpace(name);
 
@@ -14,11 +14,14 @@ public class User : EntityBase<User, Guid>, IAggregateRoot
     TelegramId = telegramId;
     Name = name.Trim();
     CreatedAt = DateTime.UtcNow;
+    CampaignId = campaignId?.Trim();
   }
 
   public long TelegramId { get; private set; }
   public string Name { get; private set; } = null!;
   public DateTime CreatedAt { get; private set; }
+
+  public string? CampaignId { get; private set; }
 
   public void UpdateName(string name)
   {

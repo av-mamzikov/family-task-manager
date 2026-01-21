@@ -62,11 +62,13 @@ public class UpdateHandler(
       return;
     }
 
-    var session = await sessionManager.GetSessionAsync(message.From, cancellationToken);
-    session.UpdateActivity();
-
     var messageText = message.Text ?? string.Empty;
     logger.LogInformation("Received message from {ChatId}: {MessageText}", chatId, messageText);
+
+    var startPayload = StartPayload.Parse(messageText);
+
+    var session = await sessionManager.GetSessionAsync(message.From, startPayload, cancellationToken);
+    session.UpdateActivity();
 
     // Обработка команд и кнопок главного меню
     if (messageText.StartsWith('/'))
@@ -76,7 +78,7 @@ public class UpdateHandler(
 
       await (command switch
       {
-        "/start" => HandleStartCommandAsync(botClient, message, args, session, cancellationToken),
+        "/start" => HandleStartCommandAsync(botClient, message, session, startPayload, cancellationToken),
         "/help" => HandleHelpCommandAsync(botClient, message, cancellationToken),
         _ => HandleUnknownCommandAsync(botClient, message, cancellationToken)
       });
@@ -105,7 +107,7 @@ public class UpdateHandler(
   {
     if (callbackQuery.Data is not { } data)
       return;
-    var session = await sessionManager.GetSessionAsync(callbackQuery.From, cancellationToken);
+    var session = await sessionManager.GetSessionAsync(callbackQuery.From, null, cancellationToken);
     session.UpdateActivity();
 
     var message = callbackQuery.Message!;
@@ -164,20 +166,15 @@ public class UpdateHandler(
       ? newState
       : ConversationState.None;
 
-  private async Task HandleStartCommandAsync(
-    ITelegramBotClient botClient,
-    Message message,
-    string[] args,
-    UserSession session,
+  private async Task HandleStartCommandAsync(ITelegramBotClient botClient, Message message, UserSession session,
+    StartPayload startPayload,
     CancellationToken cancellationToken)
   {
     var mediator = serviceProvider.GetRequiredService<IMediator>();
 
-    // Проверка на invite code
-    if (args.Length > 0 && args[0].StartsWith("invite_"))
+    if (startPayload.Type == StartPayloadType.Invite && !string.IsNullOrWhiteSpace(startPayload.Value))
     {
-      var code = args[0].Replace("invite_", "");
-      var joinCommand = new JoinByInviteCodeCommand(session.UserId, code);
+      var joinCommand = new JoinByInviteCodeCommand(session.UserId, startPayload.Value);
       var invitationResult = await mediator.Send(joinCommand, cancellationToken);
 
       if (invitationResult.IsSuccess)

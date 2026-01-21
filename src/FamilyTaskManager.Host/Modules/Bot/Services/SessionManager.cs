@@ -9,21 +9,24 @@ namespace FamilyTaskManager.Host.Modules.Bot.Services;
 
 public interface ISessionManager
 {
-  Task<UserSession> GetSessionAsync(User fromUser, CancellationToken cancellationToken = default);
+  Task<UserSession> GetSessionAsync(User fromUser, StartPayload? startPayload = null,
+    CancellationToken cancellationToken = default);
 
   Task SaveSessionAsync(UserSession session, CancellationToken cancellationToken = default);
 }
 
 public class SessionManager(IMediator mediator, ILogger<SessionManager> logger) : ISessionManager
 {
-  public async Task<UserSession> GetSessionAsync(User fromUser,
+  public async Task<UserSession> GetSessionAsync(User fromUser, StartPayload? startPayload,
     CancellationToken cancellationToken = default)
   {
     var telegramId = fromUser.Id;
     var username = string.Join(" ", new[] { fromUser.FirstName, fromUser.LastName });
     if (username.IsNullOrWhiteSpace())
       username = fromUser.Username ?? $"user{telegramId}";
-    var result = await mediator.Send(new GetOrCreateTelegramSessionCommand(telegramId, username),
+    var result = await mediator.Send(
+      new GetOrCreateTelegramSessionCommand(telegramId, username,
+        startPayload?.Type == StartPayloadType.Campaign ? startPayload.Value : null),
       cancellationToken);
     if (!result.IsSuccess)
       throw new($"Failed to get session: {string.Join(",", result.Errors)}");
