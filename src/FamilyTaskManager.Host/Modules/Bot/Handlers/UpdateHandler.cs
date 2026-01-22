@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.FamilyAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Configuration;
 using FamilyTaskManager.Host.Modules.Bot.Constants;
 using FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 using FamilyTaskManager.Host.Modules.Bot.Helpers;
@@ -17,7 +18,8 @@ namespace FamilyTaskManager.Host.Modules.Bot.Handlers;
 public class UpdateHandler(
   ILogger<UpdateHandler> logger,
   IServiceProvider serviceProvider,
-  ISessionManager sessionManager)
+  ISessionManager sessionManager,
+  BotConfiguration botConfiguration)
   : IUpdateHandler
 {
   public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
@@ -230,7 +232,7 @@ public class UpdateHandler(
     CancellationToken cancellationToken) =>
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotMessages.Help.Commands,
+      BotMessages.Help.Message(botConfiguration.ChatUrl),
       parseMode: ParseMode.Markdown,
       cancellationToken: cancellationToken);
 

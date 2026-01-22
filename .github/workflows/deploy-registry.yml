@@ -49,6 +49,7 @@ jobs:
       deploy_dir: ${{ steps.env.outputs.deploy_dir }}
       bot_token_secret: ${{ steps.env.outputs.bot_token_secret }}
       bot_username_secret: ${{ steps.env.outputs.bot_username_secret }}
+      chat_url_secret: ${{ steps.env.outputs.chat_url_secret }}
       postgres_user_secret: ${{ steps.env.outputs.postgres_user_secret }}
       postgres_password_secret: ${{ steps.env.outputs.postgres_password_secret }}
       clean_db: ${{ steps.labels.outputs.clean_db }}
@@ -83,6 +84,7 @@ jobs:
             echo "deploy_dir=/opt/family-task-manager" >> $GITHUB_OUTPUT
             echo "bot_token_secret=TELEGRAM_BOT_TOKEN" >> $GITHUB_OUTPUT
             echo "bot_username_secret=TELEGRAM_BOT_USERNAME" >> $GITHUB_OUTPUT
+            echo "chat_url_secret=CHAT_URL" >> $GITHUB_OUTPUT
             echo "postgres_user_secret=POSTGRES_USER" >> $GITHUB_OUTPUT
             echo "postgres_password_secret=POSTGRES_PASSWORD" >> $GITHUB_OUTPUT
           else
@@ -98,6 +100,7 @@ jobs:
             echo "deploy_dir=/opt/family-task-manager-preview" >> $GITHUB_OUTPUT
             echo "bot_token_secret=PR_BOT_TOKEN" >> $GITHUB_OUTPUT
             echo "bot_username_secret=PR_BOT_USERNAME" >> $GITHUB_OUTPUT
+            echo "chat_url_secret=PR_CHAT_URL" >> $GITHUB_OUTPUT
             echo "postgres_user_secret=PR_POSTGRES_USER" >> $GITHUB_OUTPUT
             echo "postgres_password_secret=PR_POSTGRES_PASSWORD" >> $GITHUB_OUTPUT
           fi
@@ -241,6 +244,7 @@ jobs:
           CLEAN_DB: ${{ needs.setup.outputs.clean_db }}
           BOT_TOKEN: ${{ secrets[needs.setup.outputs.bot_token_secret] }}
           BOT_USERNAME: ${{ secrets[needs.setup.outputs.bot_username_secret] }}
+          CHAT_URL: ${{ secrets[needs.setup.outputs.chat_url_secret] }}
           POSTGRES_USER: ${{ secrets[needs.setup.outputs.postgres_user_secret] }}
           POSTGRES_PASSWORD: ${{ secrets[needs.setup.outputs.postgres_password_secret] }}
           REGISTRY_USER: ${{ secrets.REGISTRY_USERNAME }}
@@ -251,7 +255,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: DEPLOY_DIR,IMAGE_TAG,IS_PRODUCTION,IS_PR_PREVIEW,PR_NUMBER,CLEAN_DB,BOT_TOKEN,BOT_USERNAME,POSTGRES_USER,POSTGRES_PASSWORD,REGISTRY_USER,REGISTRY_PASS,DOCKERHUB_USER,DOCKERHUB_PASS
+          envs: DEPLOY_DIR,IMAGE_TAG,IS_PRODUCTION,IS_PR_PREVIEW,PR_NUMBER,CLEAN_DB,BOT_TOKEN,BOT_USERNAME,CHAT_URL,POSTGRES_USER,POSTGRES_PASSWORD,REGISTRY_USER,REGISTRY_PASS,DOCKERHUB_USER,DOCKERHUB_PASS
           script: |
             echo "=== Starting deployment ==="
             echo "Environment: $([ "$IS_PRODUCTION" == "true" ] && echo "Production" || echo "PR Preview #$PR_NUMBER")"
@@ -331,6 +335,7 @@ jobs:
             # Telegram Bot
             TELEGRAM_BOT_TOKEN=$BOT_TOKEN
             TELEGRAM_BOT_USERNAME=$BOT_USERNAME
+            CHAT_URL=$CHAT_URL
             
             # Application
             ASPNETCORE_ENVIRONMENT=$([ "$IS_PRODUCTION" == "true" ] && echo "Production" || echo "Staging")

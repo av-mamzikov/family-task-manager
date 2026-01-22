@@ -10,7 +10,7 @@
 GitHub → Ваш репозиторий → Settings → Secrets and variables → Actions → New repository secret
 ```
 
-### Обязательные секреты (9 штук)
+### Обязательные секреты (10 штук)
 
 | Имя секрета             | Что вставить          | Пример                                   |
 |-------------------------|-----------------------|------------------------------------------|
@@ -21,17 +21,19 @@ GitHub → Ваш репозиторий → Settings → Secrets and variables 
 | `REGISTRY_PASSWORD`     | Пароль registry       | `SecurePass123!`                         |
 | `TELEGRAM_BOT_TOKEN`    | Токен бота            | `1234567890:ABCdef...`                   |
 | `TELEGRAM_BOT_USERNAME` | Username бота (БЕЗ @) | `MyFamilyBot`                            |
+| `CHAT_URL`              | URL чата для идей     | `https://t.me/your_feedback_chat`        |
 | `POSTGRES_USER`         | PostgreSQL user       | `familytask`                             |
 | `POSTGRES_PASSWORD`     | PostgreSQL пароль     | `SuperSecure123!`                        |
 
-### Опциональные для PR Preview (4 штуки)
+### Опциональные для PR Preview (5 штук)
 
-| Имя секрета            | Что вставить            |
-|------------------------|-------------------------|
-| `PR_BOT_TOKEN`         | Токен тестового бота    |
-| `PR_BOT_USERNAME`      | Username тестового бота |
-| `PR_POSTGRES_USER`     | `familytask_pr`         |
-| `PR_POSTGRES_PASSWORD` | Пароль для тестовой БД  |
+| Имя секрета            | Что вставить                |
+|------------------------|-----------------------------|
+| `PR_BOT_TOKEN`         | Токен тестового бота        |
+| `PR_BOT_USERNAME`      | Username тестового бота     |
+| `PR_CHAT_URL`          | URL чата для тестовой среды |
+| `PR_POSTGRES_USER`     | `familytask_pr`             |
+| `PR_POSTGRES_PASSWORD` | Пароль для тестовой БД      |
 
 ---
 
@@ -92,6 +94,13 @@ GitHub → Ваш репозиторий → Settings → Secrets and variables 
 - **Описание:** Username production бота (БЕЗ символа @)
 - **Как получить:** Username, который вы указали при создании бота
 
+#### `CHAT_URL`
+
+- **Описание:** URL чата или канала для сбора идей и предложений от пользователей
+- **Формат:** Telegram ссылка (например, `https://t.me/your_feedback_chat`)
+- **Использование:** Отображается в Help-сообщении бота как ссылка "Оставить идею или предложение"
+- **Опционально:** Если не указать, ссылка не будет отображаться
+
 #### `POSTGRES_USER`
 
 - **Описание:** PostgreSQL username для production БД
@@ -148,6 +157,7 @@ openssl rand -base64 32
 ✅ REGISTRY_PASSWORD
 ✅ TELEGRAM_BOT_TOKEN
 ✅ TELEGRAM_BOT_USERNAME
+✅ CHAT_URL
 ✅ POSTGRES_USER
 ✅ POSTGRES_PASSWORD
 ```
@@ -157,6 +167,7 @@ openssl rand -base64 32
 ```
 ✅ PR_BOT_TOKEN
 ✅ PR_BOT_USERNAME
+✅ PR_CHAT_URL
 ✅ PR_POSTGRES_USER
 ✅ PR_POSTGRES_PASSWORD
 ```
