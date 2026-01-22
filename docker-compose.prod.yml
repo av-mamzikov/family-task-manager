@@ -11,6 +11,7 @@ services:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB:-FamilyTaskManager};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - Bot__BotToken=${TELEGRAM_BOT_TOKEN}
       - Bot__BotUsername=${TELEGRAM_BOT_USERNAME}
+      - Bot__ChatUrl=${CHAT_URL}
       - TZ=Europe/Moscow
     networks:
       - family-task-network
