@@ -1,4 +1,5 @@
 using FamilyTaskManager.Core.TaskAggregate;
+using FamilyTaskManager.Host.Modules.Bot.Helpers;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Constants;
 
@@ -17,7 +18,9 @@ public static class BotMessages
 
     public const string FamilySelected = "✅ Семья выбрана!\n\n";
 
-    public static string FamilyCreatedMessage(string familyName) => $"✅ Семья \"{familyName}\" успешно создана!\n\n";
+    public static string FamilyCreatedMessage(string familyName, string timeZone) =>
+      $"✅ Семья \"{familyName}\" успешно создана!\n\n" +
+      $"🌍 Временная зона: {TimeZoneFormatter.FormatTimezoneWithTime(timeZone)}\n\n";
   }
 
   public static class Errors
@@ -76,9 +79,6 @@ public static class BotMessages
                                        "• `0 0 9 */5 * ?` - каждые 5 дней в 9:00\n" +
                                        "• `0 0 9 * * MON` - каждый понедельник в 9:00";
 
-    public const string SendLocation = "Нажмите \"📍 Отправить местоположение\" для автоматического определения, " +
-                                       "или введите название города вручную.";
-
     public const string SpotTasksAvailable =
       "Теперь вы можете создавать задачи для ухода за спотом через меню \"🧩 Споты\".\n\n";
 
@@ -91,18 +91,21 @@ public static class BotMessages
     public const string NoActiveTasks =
       "📋 Активных задач пока нет.\n\nЗадачи можно создавать из шаблонов задач меню спота.";
 
-    public const string OrBackToManual = "или \"⬅️ Назад\" для выбора вручную.";
-    public const string DefaultFamilyName = "ваша семья";
+    public const string TimezoneDetectionByGeoLocation =
+      "🌍 Определение временной зоны по геолокации\n\n" +
+      "⏰ Это нужно для того, чтобы уведомления о задачах приходили вовремя по вашему местному времени.\n\n" +
+      "Нажмите \"📍 Отправить местоположение\" для автоматического определения, " +
+      "или \"⬅️ Назад\" для выбора вручную. \r\n" +
+      "💡 Примечание: отправка геолокации работает только в мобильном приложении Telegram.\r\n";
 
     public static string ChooseTimezoneMethod(string familyName) =>
-      $"🌍 Выберите способ определения временной зоны для семьи \"{familyName}\":";
+      $"🌍 Выберите способ определения временной зоны для семьи \"{familyName}\":\n\n" +
+      "⏰ Это нужно для того, чтобы уведомления о задачах приходили вовремя по вашему местному времени.";
 
-    public static string FamilyCreatedWithTimezone(string familyName, string timezone) =>
-      Success.FamilyCreatedMessage(familyName) +
-      $"🌍 Определенная временная зона: {timezone}\n\n" +
-      Success.NextStepsMessage;
-
-    public static string GetTaskTySpotext(string taskType) => taskType == "onetime" ? "разовую" : "периодическую";
+    public static string ChooseTimezone(string familyName) =>
+      $"🌍 Выберите временную зону для семьи \"{familyName}\":\n\n" +
+      "⏰ Это для того, чтобы уведомления о задачах приходили вовремя по вашему местному времени.\n\n" +
+      "💡 Если вашего города нет в списке, выберите ближайший город с таким же часовым поясом.";
 
     public static string FamilyJoined(string familyName, string roleName) =>
       $"Вы успешно присоединились к семье *{familyName}*\n" +

@@ -31,4 +31,10 @@ public interface ITimeZoneService
   ///   Throws if timezone is invalid.
   /// </summary>
   TimeZoneInfo GetTimeZone(string timezoneId);
+
+  /// <summary>
+  ///   Gets the TimeZoneInfo for the specified timezone identifier.
+  ///   Throws if timezone is invalid.
+  /// </summary>
+  TimeZoneInfo? TryGetTimeZone(string timezoneId);
 }
