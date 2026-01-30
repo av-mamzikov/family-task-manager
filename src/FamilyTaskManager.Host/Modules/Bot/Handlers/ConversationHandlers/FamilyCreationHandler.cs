@@ -8,6 +8,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using TimeZones = FamilyTaskManager.Host.Modules.Bot.Constants.TimeZones;
 
 namespace FamilyTaskManager.Host.Modules.Bot.Handlers.ConversationHandlers;
 
@@ -92,12 +93,10 @@ public class FamilyCreationHandler(
     session.Data.FamilyName = familyName;
     session.Data.InternalState = StateAwaitingTimezone;
 
-    var timezoneKeyboard = GetTimezoneChoiceKeyboard();
-
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
       BotMessages.Messages.ChooseTimezoneMethod(familyName),
-      replyMarkup: timezoneKeyboard,
+      replyMarkup: GetTimezoneChoiceKeyboard(),
       cancellationToken: cancellationToken);
   }
 
@@ -125,7 +124,6 @@ public class FamilyCreationHandler(
 
     try
     {
-      // Convert coordinates to timezone using GeoTimeZone
       var timeZoneResult = TimeZoneLookup.GetTimeZone(location.Latitude, location.Longitude);
       var detectedTimezone = timeZoneResult.Result;
 
@@ -188,9 +186,12 @@ public class FamilyCreationHandler(
 
       session.CurrentFamilyId = result.Value;
 
+      var timezoneMessage = BotMessages.Success.FamilyCreatedMessage(session.Data.FamilyName, detectedTimezone) +
+                            BotMessages.Success.NextStepsMessage;
+
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotMessages.Messages.FamilyCreatedWithTimezone(session.Data.FamilyName, detectedTimezone),
+        timezoneMessage,
         parseMode: ParseMode.Markdown,
         replyMarkup: new ReplyKeyboardRemove(),
         cancellationToken: cancellationToken);
@@ -299,16 +300,28 @@ public class FamilyCreationHandler(
     UserSession session,
     CancellationToken cancellationToken)
   {
-    var timezoneListKeyboard = GetRussianTimeZoneListKeyboard();
+    var timezones = TimeZones.Russian.All;
+
+    var buttons = timezones
+      .Select(tz =>
+        new[]
+        {
+          InlineKeyboardButton.WithCallbackData(TimeZoneFormatter.FormatTimezoneWithTime(tz),
+            CallbackData.FamilyCreation.TimeZone(tz))
+        })
+      .ToList();
+
+    var timezoneListKeyboard = new InlineKeyboardMarkup(buttons);
     var listFamilyName = session.Data.FamilyName ?? "вашей семьи";
 
     await botClient.SendOrEditMessageAsync(
       chatId,
       message,
-      $"🌍 Выберите временную зону для семьи \"{listFamilyName}\":",
+      BotMessages.Messages.ChooseTimezone(listFamilyName),
       replyMarkup: timezoneListKeyboard,
       cancellationToken: cancellationToken);
   }
+
 
   private async Task RequestLocationAsync(
     ITelegramBotClient botClient,
@@ -335,9 +348,7 @@ public class FamilyCreationHandler(
 
     await botClient.SendTextMessageAsync(
       chatId,
-      "🌍 Определение временной зоны по геолокации\n\n" +
-      BotMessages.Messages.SendLocation +
-      BotMessages.Messages.OrBackToManual,
+      BotMessages.Messages.TimezoneDetectionByGeoLocation,
       replyMarkup: locationKeyboard,
       cancellationToken: cancellationToken);
   }
@@ -390,8 +401,7 @@ public class FamilyCreationHandler(
     await botClient.SendOrEditMessageAsync(
       chatId,
       message,
-      BotMessages.Success.FamilyCreatedMessage(session.Data.FamilyName) +
-      $"🌍 Временная зона: {timezoneId}\n\n" +
+      BotMessages.Success.FamilyCreatedMessage(session.Data.FamilyName, timezoneId) +
       BotMessages.Success.NextStepsMessage,
       ParseMode.Markdown,
       cancellationToken: cancellationToken);
@@ -403,32 +413,4 @@ public class FamilyCreationHandler(
       cancellationToken: cancellationToken);
     session.ClearState();
   }
-
-  private static InlineKeyboardMarkup GetRussianTimeZoneListKeyboard() =>
-    new([
-      [
-        InlineKeyboardButton.WithCallbackData("🇷🇺 Калининград",
-          CallbackData.FamilyCreation.TimeZone("Europe/Kaliningrad"))
-      ],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Москва", CallbackData.FamilyCreation.TimeZone("Europe/Moscow"))],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Самара", CallbackData.FamilyCreation.TimeZone("Europe/Samara"))],
-      [
-        InlineKeyboardButton.WithCallbackData("🇷🇺 Екатеринбург",
-          CallbackData.FamilyCreation.TimeZone("Asia/Yekaterinburg"))
-      ],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Омск", CallbackData.FamilyCreation.TimeZone("Asia/Omsk"))],
-      [
-        InlineKeyboardButton.WithCallbackData("🇷🇺 Красноярск",
-          CallbackData.FamilyCreation.TimeZone("Asia/Krasnoyarsk"))
-      ],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Иркутск", CallbackData.FamilyCreation.TimeZone("Asia/Irkutsk"))],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Якутск", CallbackData.FamilyCreation.TimeZone("Asia/Yakutsk"))],
-      [
-        InlineKeyboardButton.WithCallbackData("🇷🇺 Владивосток",
-          CallbackData.FamilyCreation.TimeZone("Asia/Vladivostok"))
-      ],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Магадан", CallbackData.FamilyCreation.TimeZone("Asia/Magadan"))],
-      [InlineKeyboardButton.WithCallbackData("🇷🇺 Камчатка", CallbackData.FamilyCreation.TimeZone("Asia/Kamchatka"))],
-      [InlineKeyboardButton.WithCallbackData("⏭️ Пропустить (UTC)", CallbackData.FamilyCreation.TimeZone("UTC"))]
-    ]);
 }

@@ -113,7 +113,7 @@ public class CreateFamilyBotFlowTests(CustomWebApplicationFactory<Program> facto
       .ToList();
     var successMessage = messages.FirstOrDefault(m => m.Text?.Contains("Семья Ивановых") == true);
     successMessage.ShouldNotBeNull("Должно быть сообщение с подтверждением создания семьи");
-    successMessage!.ShouldContainText("Europe/Moscow");
+    successMessage!.ShouldContainText("Москва");
 
     var menuMessage = messages.Last();
     menuMessage.ShouldContainText("Главное меню");
