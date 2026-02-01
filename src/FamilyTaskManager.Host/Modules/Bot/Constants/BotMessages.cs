@@ -193,7 +193,7 @@ public static class BotMessages
     public static readonly string EnterTemplateTitle =
       $"📝 Введите название шаблона задачи (от {TaskTitle.MinLength} до {TaskTitle.MaxLength} символов):";
 
-    public static readonly string EnterDueDuration =
-      $"⏰ Введите срок выполнения задачи в часах (от {DueDuration.MinHours} до {DueDuration.MaxHours}, где 24 = 1 день, 720 = 30 дней):";
+    public static string EnterDueDuration(int min, int max) =>
+      $"⏰ Введите срок выполнения задачи в часах (от {min} до {max}):";
   }
 }

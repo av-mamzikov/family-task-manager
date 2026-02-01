@@ -367,12 +367,12 @@ public class TemplateFormBotFlowTests(CustomWebApplicationFactory<Program> facto
       adminChatId);
 
     var errorMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
-      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "25"),
+      UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "73"),
       adminChatId);
 
     errorMessage.ShouldNotBeNull();
     errorMessage!.ShouldContainText("Срок выполнения должен быть числом");
-    errorMessage.ShouldContainText("0 до 24");
+    errorMessage.ShouldContainText("0 до 72");
 
     var successMessage = await botClient.SendUpdateAndWaitForLastMessageAsync(
       UpdateFactory.CreateTextUpdate(adminChatId, adminTelegramId, "12"),

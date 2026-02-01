@@ -25,6 +25,9 @@ public class TemplateFormHandler(
   private const string StateAwaitingScheduleMonthDay = "awaiting_schedule_month_day";
   private const string StateAwaitingDueDuration = "awaiting_due_duration";
 
+  private const int MinDueDuration = 0;
+  private const int MaxDueDuration = 72;
+
   private const string FieldTitle = "title";
   private const string FieldPoints = "points";
   private const string FieldSchedule = "schedule";
@@ -192,7 +195,7 @@ public class TemplateFormHandler(
         await botClient.SendOrEditMessageAsync(
           chatId,
           message,
-          "⏰ Введите новый срок выполнения в часах (от 0 до 24):",
+          $"⏰ Введите новый срок выполнения в часах (от {MinDueDuration} до {MaxDueDuration}):",
           cancellationToken: cancellationToken);
         break;
 
@@ -482,7 +485,7 @@ public class TemplateFormHandler(
       };
       await botClient.SendTextMessageAsync(
         message.Chat.Id,
-        BotMessages.Templates.EnterDueDuration,
+        BotMessages.Templates.EnterDueDuration(MinDueDuration, MaxDueDuration),
         replyMarkup: keyboard,
         cancellationToken: cancellationToken);
     }
@@ -525,7 +528,7 @@ public class TemplateFormHandler(
       };
     await botClient.SendTextMessageAsync(
       message.Chat.Id,
-      BotMessages.Templates.EnterDueDuration,
+      BotMessages.Templates.EnterDueDuration(MinDueDuration, MaxDueDuration),
       replyMarkup: dueDurationKeyboard,
       cancellationToken: cancellationToken);
   }
@@ -539,7 +542,8 @@ public class TemplateFormHandler(
   {
     var isEdit = session.Data.TemplateId.HasValue;
 
-    if (!int.TryParse(dueDurationText, out var dueDurationHours) || dueDurationHours < 0 || dueDurationHours > 24)
+    if (!int.TryParse(dueDurationText, out var dueDurationHours) || dueDurationHours < MinDueDuration ||
+        dueDurationHours > MaxDueDuration)
     {
       var keyboard = new ReplyKeyboardMarkup([[new("⬅️ Назад"), new("❌ Отменить")]])
       {
@@ -548,10 +552,10 @@ public class TemplateFormHandler(
       await SendValidationErrorAsync(
         botClient,
         message.Chat.Id,
-        "❌ Срок выполнения должен быть числом от 0 до 24 часов. Попробуйте снова:",
+        $"❌ Срок выполнения должен быть числом от {MinDueDuration} до {MaxDueDuration} часов. Попробуйте снова:",
         isEdit
-          ? "\n\n💡 Введите новый срок в часах (0-24)\n• ⬅️ Назад - Отменить редактирование"
-          : "\n\n💡 Введите срок в часах (0-24)\n• ⬅️ Назад - К расписанию",
+          ? $"\n\n💡 Введите новый срок в часах ({MinDueDuration}-{MaxDueDuration})\n• ⬅️ Назад - Отменить редактирование"
+          : $"\n\n💡 Введите срок в часах ({MinDueDuration}-{MaxDueDuration})\n• ⬅️ Назад - К расписанию",
         keyboard,
         cancellationToken);
       return;
@@ -869,7 +873,7 @@ public class TemplateFormHandler(
       await botClient.SendOrEditMessageAsync(
         chatId,
         message,
-        BotMessages.Templates.EnterDueDuration,
+        BotMessages.Templates.EnterDueDuration(MinDueDuration, MaxDueDuration),
         replyMarkup: keyboard,
         cancellationToken: cancellationToken);
     }
@@ -909,7 +913,7 @@ public class TemplateFormHandler(
     await botClient.SendOrEditMessageAsync(
       chatId,
       message,
-      BotMessages.Templates.EnterDueDuration,
+      BotMessages.Templates.EnterDueDuration(MinDueDuration, MaxDueDuration),
       replyMarkup: keyboard,
       cancellationToken: cancellationToken);
   }
