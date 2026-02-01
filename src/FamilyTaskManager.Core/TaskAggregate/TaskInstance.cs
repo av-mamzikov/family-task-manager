@@ -20,6 +20,7 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
 
     Id = Guid.NewGuid();
     FamilyId = spot.FamilyId;
+    Spot = spot;
     SpotId = spot.Id;
     Title = title.Trim();
     Points = points;
@@ -115,6 +116,8 @@ public class TaskInstance : EntityBase<TaskInstance, Guid>, IAggregateRoot
     {
       TaskId = Id,
       FamilyId = FamilyId,
+      SpotType = Spot.Type,
+      SpotName = Spot.Name,
       Title = Title,
       Points = Points.ToString(),
       CompletedByUserId = completedByMember.UserId,
